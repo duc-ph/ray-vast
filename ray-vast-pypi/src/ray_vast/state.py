@@ -3,6 +3,11 @@
 Callers hold `state.lock` (an RLock) around compound changes. Each method below also takes the lock, so a single call is atomic on its own.
 The head node is not stored here: the provider adds a fixed `head` entry when it lists nodes.
 Times are epoch seconds and always passed in by the caller.
+
+Rules for callers:
+- `Candidate.public_ip` is set once, when vast first reports the instance running, and is never refreshed. The provider compares vast's current `public_ipaddr` with it to detect an IP change (plan step 9).
+- Candidate status: `rented` -> `running` -> `enrolled`. Slot status: `uninitialized` -> `setting-up` -> `up-to-date` (written into the slot's `ray-node-status` tag).
+- Compound changes (claim a free slot and mark enrolled; add a candidate and its IP ref) are done by the caller under `state.lock`.
 """
 import secrets
 import threading
@@ -33,6 +38,7 @@ class Candidate:
     rented_at: float = 0.0
     running_at: Optional[float] = None
     dph_total: float = 0.0
+    last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
 
 
 @dataclass
@@ -94,6 +100,8 @@ class ClusterState:
             return count
 
     def block(self, machine_id, reason, kind, now):
+        if kind not in BLOCK_TTL:
+            raise ValueError("unknown blocklist kind %r; expected one of %s" % (kind, sorted(BLOCK_TTL)))
         with self.lock:
             self.blocklist[machine_id] = BlockEntry(reason, kind, now + BLOCK_TTL[kind])
 

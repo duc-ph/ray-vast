@@ -1,5 +1,7 @@
 import threading
 
+import pytest
+
 from ray_vast.state import Candidate, ClusterState, Slot
 
 
@@ -61,7 +63,38 @@ def test_ip_ref_counts():
     assert state.ip_ref_remove("1.2.3.4") == 1
     assert state.ip_ref_remove("1.2.3.4") == 0
     assert state.ip_ref_remove("1.2.3.4") == 0
-    assert "1.2.3.4" not in state.ip_refs
+    assert state.ip_ref_add("1.2.3.4") == 1
+
+
+def test_block_rejects_unknown_kind():
+    with pytest.raises(ValueError, match="unknown blocklist kind"):
+        ClusterState().block(1, "x", "bogus", now=0.0)
+
+
+def test_single_calls_are_atomic_without_caller_lock():
+    state = ClusterState()
+    counts = []
+
+    def work(t):
+        for i in range(200):
+            state.add_slot(Slot(state.new_slot_id(), "worker"))
+            state.add_candidate(make_candidate(t * 1000 + i))
+            counts.append(state.ip_ref_add("9.9.9.9"))
+            state.mark_enrolled(t * 1000 + i)
+
+    threads = [threading.Thread(target=work, args=(t,)) for t in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(state.slots) == 1600
+    assert len(state.candidates) == 1600
+    assert len(state.enrolled) == 1600
+    assert sorted(counts) == list(range(1, 1601))
+    for t in range(8):
+        for i in range(200):
+            state.ip_ref_remove("9.9.9.9")
+    assert state.ip_ref_add("9.9.9.9") == 1
 
 
 def test_total_dph_drops_when_candidate_removed():
