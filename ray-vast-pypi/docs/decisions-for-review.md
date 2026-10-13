@@ -6,3 +6,7 @@ Technical decisions made while the user was away. Rule: simplest option that wor
 - 2026-10-13 — The sdist includes only `src`, `tests`, `scripts` and the top-level files, not `docs/` or `spikes/`. Reason: keep spike logs out of the published package. (Step 1)
 - 2026-10-13 — The packaging test installs the wheel with `--no-deps` and builds with `--no-isolation`. Reason: fast and offline; the CLI entry point needs only the stdlib to show `--help`. (Step 1)
 - 2026-10-13 — Code review is run per step for steps with logic; step 1 (packaging only) is reviewed together with step 2. Reason: a skeleton has nothing for the Spec/Standards axes to find.
+- 2026-10-13 — `create_instance` retries only on HTTP 429, not on 5xx or connection errors. Reason: a lost reply may already have rented the offer; a retry could rent twice. A rental that we did not record is found by the outside check (label sweep) and destroyed. (Step 3)
+- 2026-10-13 — vast retries: 5 tries, backoff 1-2-4-8 s with jitter, 30 s timeout per call. A destroy of an instance that is already gone (404) is a success. (Step 3)
+- 2026-10-13 — `max_dollars_per_hour` is required (no default). Reason: a missing budget must not mean "no limit". `node_config.disk_gb` defaults to 50. (Step 2)
+- 2026-10-13 — A user filter on an added field (`cpu_cores_effective`, `direct_port_count`) is allowed when it is at least as strict, and it is merged; `num_gpus` must equal `GPU`. Reason: lets one node type per CPU size (`{gte: 8, lt: 16}`). (Step 2)
