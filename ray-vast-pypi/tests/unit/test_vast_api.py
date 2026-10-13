@@ -60,6 +60,25 @@ def test_get_instance_returns_dict_with_optional_key_and_none_when_gone(client):
 
 
 @responses.activate
+@pytest.mark.parametrize("bad_key", ["", "  ", "\n", 5])
+def test_empty_or_blank_instance_key_raises_without_http_call(client, bad_key):
+    with pytest.raises(ValueError):
+        client.get_instance(7, key=bad_key)
+    with pytest.raises(ValueError):
+        client.destroy_instance(7, key=bad_key)
+    assert len(responses.calls) == 0
+
+
+@responses.activate
+def test_instance_key_is_sent_never_the_account_key(client):
+    responses.get(f"{BASE_URL}/instances/7/", json={"instances": {"id": 7}})
+    responses.delete(f"{BASE_URL}/instances/7/", json={"success": True})
+    client.get_instance(7, key="abc")
+    client.destroy_instance(7, key="abc")
+    assert [c.request.headers["Authorization"] for c in responses.calls] == ["Bearer abc", "Bearer abc"]
+
+
+@responses.activate
 def test_list_instances_returns_all(client):
     responses.get(f"{BASE_URL}/instances/", json={"instances": [{"id": 1, "label": "a"}, {"id": 2, "label": "b"}]})
     assert [i["id"] for i in client.list_instances()] == [1, 2]

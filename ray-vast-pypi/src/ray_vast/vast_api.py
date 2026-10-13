@@ -38,7 +38,7 @@ class VastClient:
 
     def _request(self, method, path, key=None, json=None, retry_unsafe=True):
         """Return the response, or None for HTTP 404. Retries 429, 5xx and connection errors with backoff."""
-        headers = {"Authorization": f"Bearer {key or self._api_key}"}
+        headers = {"Authorization": f"Bearer {key if key is not None else self._api_key}"}
         for attempt in range(1, TRIES + 1):
             error = None
             try:
@@ -97,6 +97,8 @@ class VastClient:
 
     def get_instance(self, instance_id, key=None):
         """Return the instance dict, or None when it is gone. `key` is a per-instance key (CONTAINER_API_KEY)."""
+        if key is not None and not (isinstance(key, str) and key.strip()):
+            raise ValueError("key must be a non-empty string when given")
         resp = self._request("GET", f"/instances/{instance_id}/", key=key)
         if resp is None:
             return None
@@ -112,6 +114,8 @@ class VastClient:
 
     def destroy_instance(self, instance_id, key=None):
         """Destroy the instance. An instance that is already gone counts as success."""
+        if key is not None and not (isinstance(key, str) and key.strip()):
+            raise ValueError("key must be a non-empty string when given")
         resp = self._request("DELETE", f"/instances/{instance_id}/", key=key)
         if resp is not None and resp.json().get("success") is False:
             raise VastError(f"DELETE /instances/{instance_id}/: success false")
