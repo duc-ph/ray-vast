@@ -27,7 +27,10 @@ Source: `ray-project/ray` master, commit `68174559` (2026-10-12). Files: `python
 | F6 | `create_node_with_resources_and_labels()` is the call that the autoscaler makes. It can raise `NodeLaunchException`. The launcher runs it in a background thread. | We implement this method directly. It returns at once with the slots. |
 | F7 | These methods must be thread-safe: `non_terminated_nodes`, `is_running`, `is_terminated`, `node_tags`, `internal_ip`, `external_ip`, `create_node*`, `set_node_tags`, `terminate_node(s)`. | One `RLock` around the provider state. |
 | F8 | `bootstrap_config()` is called only by `ray up`. The monitor calls only `validate_config()`. | `ray-vast up` runs `bootstrap_config()` and writes the final YAML to the head. (The design already says this.) |
-| F9 | v1 (`autoscaler.py` `reset()`) makes the provider only once per monitor process. | S1/S2 check the same for v2. |
+| F9 | v2 makes the provider once per monitor process (`v2/autoscaler.py:118`), and reads the config again each loop (S1 check 6). | One provider object; no second server. |
+| F10 | **S1:** v2 needs the head in `non_terminated_nodes`, with the tags `ray-node-type: head` and `ray-user-node-type: head`. Without it, v2 marks the head TERMINATED and never scales, with no error. Each 5 s loop calls `non_terminated_nodes` once and `node_tags`/`is_running` for every node. | The provider lists `head` (cloud ID = the head's `RAY_CLOUD_INSTANCE_ID`). All read methods answer from memory. |
+| F11 | **S1:** v2 plans a new node with the declared minimum CPU, so a cold start can start extra nodes until the first node reports its real cores. The extra nodes stay idle until the idle timeout. | Accepted cost (a few minutes of an extra node). The docs say: declare a CPU value close to the real hosts to reduce it. |
+| F12 | **S1:** v2 timeout `RAY_AUTOSCALER_RECONCILE_ALLOCATE_STATUS_TIMEOUT_S` (default 3600 s) for "allocated, not Ray running". It is longer than our candidate limits (pull ≤ 15 min + enrollment 1 min). | Keep the default. The provider removes a failed slot itself, before v2's timeout. |
 
 ---
 
@@ -94,7 +97,7 @@ A spike is a small, short test that answers one question before we build. Write 
 
 | # | Spike | Where | Cost |
 |---|---|---|---|
-| S1 | A minimal external provider (2 fake nodes) with autoscaler v2 (`RAY_enable_autoscaler_v2=1`) and `disable_node_updaters: true`. Workers start with `RAY_CLOUD_INSTANCE_ID` and `RAY_NODE_TYPE_NAME`. Check: two workers with the same node IP are both seen, and scale-down removes the correct one; a node declared `CPU: 2` that starts with `--num-cpus 4` gets 4 CPUs of tasks; any v2 timeout for an instance that stays a long time between "allocated" and "Ray running" (our pull can take 15 min); how v2 uses the tags of F5. | EC2 dev box, `ray start` on one machine with 2 raylets | $0 |
+| S1 | **Done 2026-10-13: PASS** (see `spikes.md`). A minimal external provider (2 fake nodes) with autoscaler v2 (`RAY_enable_autoscaler_v2=1`) and `disable_node_updaters: true`. Workers start with `RAY_CLOUD_INSTANCE_ID` and `RAY_NODE_TYPE_NAME`. Check: two workers with the same node IP are both seen, and scale-down removes the correct one; a node declared `CPU: 2` that starts with `--num-cpus 4` gets 4 CPUs of tasks; any v2 timeout for an instance that stays a long time between "allocated" and "Ray running" (our pull can take 15 min); how v2 uses the tags of F5. | EC2 dev box, `ray start` on one machine with 2 raylets | $0 |
 | S2 | Facts F1–F9 on Ray 2.59.0 (read the installed source). F9: the provider is made once per monitor process. Kill the monitor on a test head: does Ray start it again? Stop the GCS: does a worker raylet exit after about 60 s (`gcs_rpc_server_reconnect_timeout_s`)? | EC2 dev box | $0 |
 | S3 | Dropped 2026-10-12: no scoped key and no separate account. A thief who reaches the head controls the cluster anyway, and vast's fixed key rights (change the account SSH keys) defeat a scope. The head uses the user's vast account key (documented risk). | — | — |
 | S4 | Dropped 2026-10-12: the bootloader is short (about 500 bytes) and only downloads the bootstrap and checks its hash. Local tests (step 7) check that it works; C5 shows that vast accepts it. | — | — |
@@ -112,7 +115,7 @@ Done when:
 - [x] D8 answered (API JSON form, no parser).
 - [x] Autoscaler v2 chosen (F2).
 - [x] D9 answered (minimum version + warning).
-- [ ] If S1 fails, we stop and change the design before step 1.
+- [x] S1 passed (2026-10-13).
 
 ### Step 1 — Package skeleton
 
@@ -278,7 +281,7 @@ Done when:
 Work (`provider.py`):
 - `__init__`: start-up sweep (D3: destroy all instances with the cluster label, `remove_all()` rules), then start the head server thread (D2) and the reconcile thread.
 - `create_node_with_resources_and_labels(node_config, tags, count, resources, labels)`: make `count` slots with new integer IDs and status `uninitialized`. Rent min(k·count, matching offers not on the blocklist) candidates, only while the total `dph_total` stays under `max_dollars_per_hour`. Return at once. If no offer matches, raise `NodeLaunchException` (category "no offers").
-- `non_terminated_nodes(filters)`: the slots (with or without a candidate), filtered by tags.
+- `non_terminated_nodes(filters)`: `head` (F10) and the slots (with or without a candidate), filtered by tags. All read methods answer from memory, with no vast call (F10).
 - `is_running`: slot has an enrolled worker. `is_terminated`: slot is gone.
 - `node_tags`, `set_node_tags`: from the in-memory state (F5).
 - `internal_ip(id)` and `external_ip(id)` return the worker's public IP (v2 matches by `RAY_CLOUD_INSTANCE_ID`, F3).
@@ -311,7 +314,7 @@ Work (`cli.py`):
   2. Read the user's vast key from the laptop (`~/.config/vastai/vast_api_key` or `VAST_API_KEY`). Copy it to the head (mode 600). Never put it in the YAML, the env of a worker, or a log.
   3. Create the IAM role and instance profile (modify own security group, describe EC2), the security group (SSH from the operator IP), the EC2 head (Ubuntu 24.04, IMDSv2 required, Docker installed by user data).
   4. On the head: pull the image, install `ray-vast` into a derived image or at container start, make the CA and token on the head (`pki.py`), write the bootstrapped YAML (F8).
-  5. Start `RAY_enable_autoscaler_v2=1 RAY_CLOUD_INSTANCE_ID=head ray start --head --autoscaling-config ... --num-cpus=0` in the container with `--network host`, TLS, token and shim env.
+  5. Start `RAY_enable_autoscaler_v2=1 RAY_CLOUD_INSTANCE_ID=head ray start --head --autoscaling-config ... --num-cpus=0` in the container with `docker run --init --network host`, TLS, token and shim env. Keep `disable_launch_config_check` at its v2 default (True).
   6. Wait until `ray status` works. Print the dashboard command.
 - `ray-vast down <yaml>`: label sweep (list, destroy, list again until 0, retry on 429), remove the rules, terminate the head (D5), delete the group and the IAM role. Print what is left (must be nothing).
 - `ray-vast attach`, `ray-vast dashboard` (SSH tunnel to 8265).
