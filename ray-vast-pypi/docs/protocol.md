@@ -41,15 +41,19 @@ All bodies are JSON. All answers are JSON. Port A: TLS, no client cert. Port B: 
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "container_api_key": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` |
+| A | `POST /enroll` | `{"instance_id": int, "container_api_key": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` (refused); 503 `{"reason": str}` (vast unreachable — try again) |
 | A | `POST /report` | `{"instance_id": int, "container_api_key": str, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` (always, if parsable) |
 | B | `POST /heartbeat` | `{"instance_id": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
 | B | `POST /report` | `{"instance_id": int, "kind": "token_check" \| "destroy", "ok": bool, "reason": str}` | 200 `{}` |
 
 Rules:
 - The head checks `container_api_key` with `GET /instances/<id>/` on vast (200 = valid for that ID). The head never stores or logs it after the check.
-- On port B, the head takes the worker identity from the request body and checks that the client cert's IP SAN equals that worker's enrolled public IP.
 - 403 on `/enroll` or `/heartbeat` means "refused": the bootstrap reports (best effort) and destroys its instance at once.
+- 503 on `/enroll`, or a connection error or timeout: the bootstrap tries `/enroll` again after 10 s, until the enrollment deadline. (If an earlier answer was lost, the retry gets 403 "already enrolled", and the worker destroys itself. This is rare and safe.)
+- The head refuses without a destroy when the instance is unknown, already enrolled, from a wrong source IP, has an empty key, or vast answers 401/403/404 for its key (a stranger must not be able to kill a candidate). Any vast error other than 401/403/404 gives 503. Refusals after a valid key (failed host checks, outside check, no free slot) destroy the candidate.
+- `ports` must hold 64 distinct values in 1–65535. `cpu_count` must be 1–4096 and `gpu_count` 0–64; other values give 400.
+- Each node cert has the IP SAN of the worker's public IP and 127.0.0.1, and a URI SAN `rayvast:instance/<instance_id>`. On port B the head checks both against the body's `instance_id` and its enrolled public IP. A cert for another instance is refused with 403 `unknown`.
+- The head makes the node cert before it marks the instance enrolled, so a failure leaves no half-enrolled slot.
 - The head answers `/enroll` only after the outside check (connect to every identity port P on the public IP). Timeout of the whole `/enroll` call on the worker side: 120 s.
 - `num_cpus` is decided by the worker: the real core count = min(`os.sched_getaffinity` size, cgroup `cpu.max` quota / period if set).
 
