@@ -1,4 +1,5 @@
 import argparse
+import os
 
 
 def main(argv=None):
@@ -10,7 +11,16 @@ def main(argv=None):
         ("attach", "open a shell on the head"),
         ("dashboard", "open an SSH tunnel to the Ray dashboard"),
     ]:
-        subparsers.add_parser(name, help=help_text).add_argument("cluster_yaml", nargs="?")
+        sub = subparsers.add_parser(name, help=help_text)
+        sub.add_argument("cluster_yaml")
+        sub.add_argument("--profile", default=os.environ.get("AWS_PROFILE"), help="AWS profile (default: AWS_PROFILE or the default credentials)")
+        if name in ("up", "attach", "dashboard"):
+            sub.add_argument("--key-file", help="SSH private key of the head (or provider.key_file)")
+        if name == "up":
+            sub.add_argument("--key-name", help="EC2 key pair name (or provider.key_name)")
+            sub.add_argument("--wheel", help="ray-vast wheel to install on the head (default: build it from the source tree)")
     args = parser.parse_args(argv)
-    print(f"ray-vast {args.command}: not implemented yet")
-    return 1
+
+    from .commands import run
+
+    return run(args)
