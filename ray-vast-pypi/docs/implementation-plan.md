@@ -56,11 +56,12 @@ I recommend the first option in each row. Tell me if you want a different one.
 
 Rules for all steps:
 
-- Write code on the EC2 dev box (50.112.112.27) and run the tests there.
+- Edit code in the repo; run the tests on the EC2 box `ray-vast-dev` (see `CLAUDE.md`). Never use the badminton box.
 - Follow the CLAUDE.md coding rules: keep simple logic inline, no small helpers that are used only once, linear code.
 - Never log `instance_api_key`, `CONTAINER_API_KEY`, the token, a private key or the vast account key. Each step that touches secrets has a redaction test.
 - Commit to `main` after each step.
-- Before any vast rental: show you the offers (id, GPU, `dph_total`, `inet_down`, `inet_up`, location) and wait for your approval.
+- vast rentals: the cheapest matching offers, label `ray-vast-test-<date>`, $8/day limit. (The user approved autonomous rentals for testing on 2026-10-13.)
+- Implementation subagents follow `docs/agents/implementer.md` and `docs/agents/tdd.md`.
 
 ### Package layout (target)
 
