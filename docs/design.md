@@ -31,16 +31,17 @@ Note: the first design pushed secrets to workers over SSH. We discarded it, beca
 
 ## Enrollment (worker-first)
 
-The provider writes the container command (the `args` of the create request). It contains no secrets: vast shows the env and the command in the metadata, and the container log is at a public URL.
+The provider writes the container command (the `args` of the create request) and the env. vast shows the env and the command in the instance metadata, and the container log is at a public URL. So the command and the log contain no secrets. The env contains one secret with a small exposure: the one-time join token (see Security).
 
-1. **Env:** the head address, the SHA-256 of the bootstrap, the SHA-256 fingerprint of the cluster CA (both public), and the cluster name.
-2. **Bootloader:** a short `sh` and Python script in the command (about 500 bytes). It finds the Python that can `import ray`. It downloads the bootstrap program from the head, checks its SHA-256, and `exec`s it. So the bootstrap becomes PID 1. The bootstrap then downloads the CA cert, checks its fingerprint, and uses it to verify the head for all later calls.
+1. **Env:** the head address, the SHA-256 of the bootstrap, the SHA-256 fingerprint of the cluster CA (both public), the cluster name, and a one-time join token for this instance (`RAYVAST_JOIN_TOKEN`).
+2. **Bootloader:** a short `sh` and Python script in the command (about 1.5 KB). It finds the Python that can `import ray`. It downloads the bootstrap program from the head, checks its SHA-256, and `exec`s it. So the bootstrap becomes PID 1. The bootstrap then downloads the CA cert, checks its fingerprint, and uses it to verify the head for all later calls.
 3. **Bootstrap, local checks:** egress IP equals `PUBLIC_IPADDR`, no NET_RAW and no NET_ADMIN, its own network namespace, empty `/dev/shm`.
-4. **Bootstrap, enrollment request:** it opens a listener on every identity port, then sends the head its instance ID, `CONTAINER_API_KEY`, the local check results and the port map.
+4. **Bootstrap, enrollment request:** it opens a listener on every identity port, then sends the head its instance ID, the join token, the local check results and the port map. `CONTAINER_API_KEY` never leaves the worker.
 5. **Head:**
-   - It calls `GET /instances/<id>` with that key. vast answers 200 only for that instance.
    - It checks that the instance is one of its candidates, that it has not enrolled before, and that the request comes from the instance's public IP.
+   - It checks that the join token is the token that the provider made for this instance. The token is valid only once. (Bootstrap-token pattern, as in `kubeadm join --token`.)
    - It connects to every identity port (the outside check).
+   - It makes no vast call. (On real vast, the head's `GET /instances/<id>` with the worker's `CONTAINER_API_KEY` gives HTTP 401: C5a, C5d.)
 6. **Head, answer:** if a slot is free, the head makes a key and a cert (SAN = the public IP and 127.0.0.1). It sends them with the token, the shim and the `ray start` parameters, inside the TLS connection. If no slot is free, it destroys the candidate.
 7. **Bootstrap, start:** it closes its listeners and writes the files with mode 600. It keeps `CONTAINER_API_KEY` in its own memory for the destroy, removes it from the environment of Ray, and starts Ray as the image's user, with `RAY_CLOUD_INSTANCE_ID=<slot id>` and the host's real core count. If the head refuses the enrollment, the bootstrap destroys its instance at once.
 8. **Bootstrap, token check:** without a token, both agent ports on 127.0.0.1 must answer 401. The bootstrap reports the result, and the head destroys the worker if the check fails.
@@ -49,17 +50,19 @@ The provider writes the container command (the `args` of the create request). It
 
 - Each cluster gets a new CA and a new token. The CA key stays on the head. TLS and `RAY_AUTH_MODE=token` are on for all nodes.
 - Cert life: `cert_max_age_days` (default 365) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `ray-vast up` and the head log warn 14 days before expiry. Reason: when a cert expires, all TLS handshakes with that node fail, and Ray probably loads cert files only at process start. So short certs make outages more likely, but they do not add much security.
-- Secrets never go into the create request, the env, the command or its output. The create response contains `instance_api_key` and must never be logged.
+- Secrets never go into the command or the output. The create response contains `instance_api_key` and must never be logged.
+- The env holds one secret, the one-time join token. vast shows it in the instance metadata to our account's keys (that is, our own workers, which already hold the cluster token) and to the candidate's host (root in that container). Co-tenants and the internet cannot read it. It is valid for one instance, from one IP, for one enrollment. This is a documented risk.
+- A request with a wrong token, from a wrong IP, for an unknown instance or for an enrolled instance is refused without a destroy, so that a stranger cannot kill our candidates.
 - The token check after start (enrollment step 8) is necessary: without `RAY_AUTH_MODE=token`, the job agent runs any shell command for anyone.
 - Co-tenants on the same host share the Docker bridge (172.17.0.0/16) and can reach every Ray port directly. TLS protects the traffic, and the host check for no NET_RAW and no NET_ADMIN makes sure that a co-tenant cannot sniff or spoof. This depends on the host, so we check it on each host.
 - A host has root access to our container, so a malicious host can steal the token and the cert and control the cluster. `datacenter=true` and `verified=true` are added to every offer query. `allow_non_datacenter: true` turns off the datacenter filter and shows a warning.
 - The head's credentials are kept to the minimum:
-  - The IAM role can only change its own security group and describe EC2.
+  - The IAM role can only add and remove rules in the cluster's 5 security groups, and describe EC2.
   - The head uses the user's vast account key, not scoped. vast adds fixed rights to every key (read the account, list all instances, change the account SSH keys), so a scope gives little protection, and a thief who reaches the head controls the cluster anyway. Documented risk: a thief on the head gets the full account key (spend the credit, destroy or reach every instance of the account). If you suspect a leak, rotate the key in the vast console.
   - A worker can run code on the head (`CPU: 0` does not stop a task with `num_cpus=0`), and such a task can read the head's credentials; this is a documented risk.
 - vast puts the account's SSH keys into `/root/.ssh/authorized_keys` of every instance. ray-vast does not use SSH.
 - Security group rules are kept for each public IP, not for each worker. Two workers can share one public IP: two instances on one host, or two hosts of one vast operator behind one NAT IP (seen in C2–C4: 85.10.218.46).
-  - The provider adds a rule (/32, all TCP) for an IP when the instance is `running`, before enrollment.
+  - The provider adds a rule (/32, all TCP) for an IP when the instance is `running`, before enrollment. It uses the first of the cluster's 5 groups that has room (when AWS refuses a rule because the group is full, it tries the next group).
   - It removes the rule only when no worker or candidate uses that IP any more.
   - The rules have the description `ray-vast:<cluster>`, so the provider can rebuild the mapping after a restart.
   - Limit: 5 security groups per cluster, all on the head's network interface, with 60 rules each by default: about 299 worker IPs (group 0 also holds the SSH rule). The user can raise the per-group quota in AWS Service Quotas. The head needs no rule for its own public IP, because the shim keeps that traffic inside the instance (C1: 0 packets).
@@ -97,6 +100,7 @@ The provider writes the container command (the `args` of the create request). It
 - The first candidates that enroll fill the slots. The provider destroys the other candidates at once. A slot that gets no candidate is removed, and the autoscaler asks again.
 - Blocklist by `machine_id`, in the provider's memory, one for each cluster (lost at `down` or a head restart). It expires after 30 days for security failures and after 1 day for network or timeout failures.
 - `max_dollars_per_hour` is a limit on the `dph_total` of workers plus candidates. The provider does not rent above the limit.
+- **Rent-loop breaker:** for each node type, the provider counts the slots that end with no enrolled worker. A successful enrollment sets the count to 0. After 3 failed slots in a row, the provider refuses new launches of that node type for 10 min (`NodeLaunchException("repeated enrollment failures")`, logged at ERROR, shown in `ray status`), then tries again. Reason: in C5a, a fault that affected every host made the provider rent 10 instances in 5 min.
 
 ## Failure handling
 
@@ -110,11 +114,12 @@ The provider writes the container command (the `args` of the create request). It
   - As PID 1, it collects its finished child processes.
   - The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the same user as PID 1, so a Ray task can read `CONTAINER_API_KEY` from `/proc/1/environ` and signal PID 1. The signal then causes a destroy. This is documented: a task already has the token and the node cert, which give more control than the key.
 - The provider destroys every worker or candidate with the status `exited`. Reason: vast starts a stopped container again and keeps the full cost (C4: `dph_total` did not change).
-- After a container restart, the bootloader and the bootstrap run again. The head refuses a second enrollment of the same instance and destroys it.
+- After a container restart, the bootloader and the bootstrap run again. The head refuses a second enrollment of the same instance (403), and the bootstrap then destroys its instance.
 - Outside check: the provider regularly destroys every instance with the cluster label that is not one of its slots or candidates.
 - The provider keeps all its state in memory. A provider restart happens only with a head restart, and then the GCS is new and the old workers cannot rejoin. So, when the provider starts, it destroys every instance with the cluster label and removes every `ray-vast:<cluster>` security group rule (start-up sweep). The enrollment and heartbeat endpoints accept only instances in memory.
 - The head server (bootstrap download, enrollment, heartbeat, reports) is a thread in the provider, in the Ray monitor process. If the monitor stops, the heartbeats stop, and the workers destroy themselves.
-- `ray-vast down` terminates the EC2 head first (so its autoscaler cannot rent new workers), then destroys every vast instance with the cluster label (the list call is retried on rate limits), then deletes the security group (with its worker rules), the IAM role and instance profile. It works when the head is already gone.
+- **No self-healing.** The head container runs `ray start --head --block` with no Docker restart policy. Ray never restarts a dead monitor (S2). With `--block`, a dead monitor stops the head. The workers destroy themselves within 5 min. The EC2 head stays until the user runs `ray-vast down` (and `up` again). This is the same outcome as with standard `ray up` clusters. (A KubeRay-style restart of only the autoscaler is future work.)
+- `ray-vast down` terminates the EC2 head first (so its autoscaler cannot rent new workers), then destroys every vast instance with the cluster label (the list call is retried on rate limits), then deletes the 5 security groups (with their worker rules), the IAM role and instance profile. It works when the head is already gone.
 - The head has no Elastic IP. A reboot keeps its IP. After a stop and a start, run `down` and `up`.
 
 ## CLI (first version)

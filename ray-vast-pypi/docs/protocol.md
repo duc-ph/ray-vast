@@ -4,7 +4,7 @@ This file is the contract between the worker side (`worker/bootloader.sh`, `work
 
 ## Container environment
 
-The provider sets these in the vast create request (`env`). All are public (no secrets).
+The provider sets these in the vast create request (`env`). All are public, except `RAYVAST_JOIN_TOKEN` (see "Join token").
 
 | Variable | Value |
 |---|---|
@@ -14,10 +14,23 @@ The provider sets these in the vast create request (`env`). All are public (no s
 | `RAYVAST_BOOTSTRAP_SHA256` | SHA-256 (hex) of the bootstrap bytes served at `/bootstrap` |
 | `RAYVAST_CA_SHA256` | SHA-256 (hex, lowercase) of the CA cert DER bytes (S5) |
 | `RAYVAST_CLUSTER` | cluster name |
+| `RAYVAST_JOIN_TOKEN` | one-time join token for this instance: 32 random bytes, lowercase hex (64 characters) |
 
 vast sets: `CONTAINER_ID` (instance ID), `CONTAINER_API_KEY` (secret, per instance), `PUBLIC_IPADDR`, `VAST_TCP_PORT_70000` … `VAST_TCP_PORT_70063` (host port P for each identity port; P→P).
 
 For tests only, the bootstrap reads these overrides when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (float; all bootstrap timers are divided by it), `RAYVAST_DIR` (directory for the node key, cert, CA, token and shim; default `/tmp/rayvast`; lets parallel test runs use separate directories), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; used in local Docker tests where egress IP ≠ `PUBLIC_IPADDR`).
+
+## Join token
+
+The join token proves to the head that an `/enroll` request comes from the instance that the provider rented. It follows the bootstrap-token pattern of `kubeadm join --token` and the kubelet bootstrap token.
+
+- The provider makes a new token for each candidate at rent time (`secrets.token_hex(32)`), keeps it in memory with the candidate, and puts it in the create request env.
+- The token is valid for one instance ID, only from that instance's public IP, and only for one successful enrollment. It becomes invalid when the instance enrolls, or when the provider ends the candidate.
+- Who can read it: vast shows the env in the instance metadata, so our account's API key, any `CONTAINER_API_KEY` of our account (that is, our own workers, which already hold the cluster token) and the candidate's host (root in that container) can read it. Co-tenants and the internet cannot. This is a documented risk.
+- Nobody prints or logs the token. The bootstrap keeps it in memory, removes `RAYVAST_JOIN_TOKEN` from its own environment and from the Ray child's environment, and sends it only inside `/enroll` (TLS with the pinned CA).
+- The head compares tokens in constant time (`hmac.compare_digest`).
+
+`CONTAINER_API_KEY` never leaves the worker. The bootstrap uses it only for its own `DELETE`.
 
 ## Port map (worker)
 
@@ -41,20 +54,20 @@ All bodies are JSON. All answers are JSON. Port A: TLS, no client cert. Port B: 
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "container_api_key": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` (refused); 503 `{"reason": str}` (vast unreachable, or the head has not yet seen the instance running — try again) |
-| A | `POST /report` | `{"instance_id": int, "container_api_key": str, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` (always, if parsable) |
+| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` (refused); 503 `{"reason": str}` (the head has not yet seen the instance running — try again) |
+| A | `POST /report` | `{"instance_id": int, "kind": "destroy", "reason": str}` (before enrollment; log only) | 200 `{}` (always, if parsable) |
 | B | `POST /heartbeat` | `{"instance_id": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
 | B | `POST /report` | `{"instance_id": int, "kind": "token_check" \| "destroy", "ok": bool, "reason": str}` | 200 `{}` |
 
 Rules:
-- The head checks `container_api_key` with `GET /instances/<id>/` on vast (200 = valid for that ID). The head never stores or logs it after the check.
+- The head checks the request in this order: the body (400 if malformed); a known candidate that is not enrolled yet; the source IP equals the candidate's public IP; the join token equals the candidate's token; the host checks; the outside check; a free slot. The head makes no vast call during `/enroll`.
 - 403 on `/enroll` or `/heartbeat` means "refused": the bootstrap reports (best effort) and destroys its instance at once.
 - 503 on `/enroll`, or a connection error or timeout: the bootstrap tries `/enroll` again after 10 s, until the enrollment deadline. (If an earlier answer was lost, the retry gets 403 "already enrolled", and the worker destroys itself. This is rare and safe.)
-- The head refuses without a destroy when the instance is unknown, already enrolled, from a wrong source IP, has an empty key, or vast answers 401/403/404 for its key (a stranger must not be able to kill a candidate). Any vast error other than 401/403/404 gives 503. Refusals after a valid key (failed host checks, outside check, no free slot) destroy the candidate.
+- The head refuses WITHOUT a destroy when the instance is unknown, already enrolled, from a wrong source IP, or has a missing or wrong join token (a stranger must not be able to kill a candidate). Refusals after a valid token (failed host checks, failed outside check, no free slot) destroy the candidate and blocklist the host when the reason is a host fault.
 - `ports` must hold 64 distinct values in 1–65535. `cpu_count` must be 1–4096 and `gpu_count` 0–64; other values give 400.
 - Each node cert has the IP SAN of the worker's public IP and 127.0.0.1, and a URI SAN `rayvast:instance/<instance_id>`. On port B the head checks both against the body's `instance_id` and its enrolled public IP. A cert for another instance is refused with 403 `unknown`.
 - The head makes the node cert before it marks the instance enrolled, so a failure leaves no half-enrolled slot.
-- The head answers `/enroll` only after the outside check (connect to every identity port P on the public IP). Timeout of the whole `/enroll` call on the worker side: 120 s.
+- The outside check: the head opens a TCP connection to every identity port P on the public IP (parallel, 5 s timeout each). The bootstrap listens on all 64 ports until it is enrolled. Every port must accept. The head answers `/enroll` only after this check. Timeout of the whole `/enroll` call on the worker side: 120 s.
 - The `no_net_raw_admin` check reads `CapBnd` (the bounding set) in `/proc/self/status`, not `CapEff`: a non-root PID 1 has an empty `CapEff` whatever the container has. The check is false when bit 12 (NET_ADMIN) or bit 13 (NET_RAW) is set.
 - The `egress_ip_ok` check asks `https://api.ipify.org`, then `https://ifconfig.me/ip` when the first one does not answer 200.
 - `num_cpus` is decided by the worker: the real core count = min(`os.sched_getaffinity` size, cgroup `cpu.max` quota / period if set).
