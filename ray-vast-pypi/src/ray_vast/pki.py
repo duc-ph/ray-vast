@@ -59,6 +59,7 @@ def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None):
     """Return (cert_pem, key_pem) for a node or the head. SAN = ip and 127.0.0.1.
 
     The cert is valid for server and client auth, because Ray uses it for mutual TLS.
+    Its expiry is capped at the CA expiry, so a leaf never outlives its CA.
     """
     now = now or datetime.now(timezone.utc)
     ca_cert = x509.load_pem_x509_certificate(ca_cert_pem)
@@ -71,7 +72,7 @@ def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None):
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now - CLOCK_SKEW)
-        .not_valid_after(now + timedelta(days=cert_max_age_days))
+        .not_valid_after(min(now + timedelta(days=cert_max_age_days), ca_cert.not_valid_after_utc))
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         .add_extension(
             x509.SubjectAlternativeName(
@@ -99,13 +100,17 @@ def ca_fingerprint(ca_cert_pem):
 
 
 def expiry_warning(cert_pem, now=None):
-    """Return a warning string if the cert expires within 14 days (or has expired), else None."""
+    """Return a warning string if the cert expires within 14 days (or has expired), else None.
+
+    Callers pass the CA cert: leaf certs never outlive it, so the CA expiry is the cluster expiry.
+    """
     now = now or datetime.now(timezone.utc)
-    left = x509.load_pem_x509_certificate(cert_pem).not_valid_after_utc - now
-    if left <= timedelta(0):
-        return "certificate has expired"
-    if left <= timedelta(days=EXPIRY_WARNING_DAYS):
-        return f"certificate expires in {left.days} days; re-run `ray-vast up` with a new CA before it does"
+    expires = x509.load_pem_x509_certificate(cert_pem).not_valid_after_utc
+    renew = "to renew, make a new cluster (`ray-vast down` then `ray-vast up`)"
+    if expires <= now:
+        return f"the cluster CA expired on {expires:%Y-%m-%d}; {renew}"
+    if expires - now <= timedelta(days=EXPIRY_WARNING_DAYS):
+        return f"the cluster CA expires on {expires:%Y-%m-%d}; {renew}"
     return None
 
 
@@ -115,7 +120,8 @@ def write_head_files(directory, head_ip, cert_max_age_days=365, now=None):
     Keys and the token get mode 600 (set at creation), certs 644. Returns the CA cert PEM and the token.
     """
     directory = Path(directory)
-    directory.mkdir(parents=True, exist_ok=True)
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    directory.chmod(0o700)  # also covers a directory that already existed (and a umask)
     ca_cert, ca_key = make_ca(cert_max_age_days, now)
     head_cert, head_key = make_leaf(ca_cert, ca_key, head_ip, cert_max_age_days, now)
     token = make_token()
