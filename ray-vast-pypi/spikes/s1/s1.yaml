@@ -1,0 +1,41 @@
+cluster_name: s1
+max_workers: 6
+idle_timeout_minutes: 1
+upscaling_speed: 1.0
+provider:
+  type: external
+  module: s1_provider.S1Provider
+  host_ip: 172.31.17.228
+  head_address: 172.31.17.228:6379
+  disable_node_updaters: true
+auth:
+  ssh_user: ray
+head_node_type: head
+available_node_types:
+  head:
+    resources: {CPU: 0}
+    node_config: {}
+    max_workers: 0
+  w2:
+    resources: {CPU: 2, w2: 1}
+    node_config: {start_delay_s: 5}
+    min_workers: 0
+    max_workers: 3
+  w2r4:
+    resources: {CPU: 2, r4: 1}
+    node_config: {start_delay_s: 5, real_cpus: 4}
+    min_workers: 0
+    max_workers: 3
+  slow:
+    resources: {CPU: 1, slow: 1}
+    node_config: {start_delay_s: 900}
+    min_workers: 0
+    max_workers: 3
+head_setup_commands: []
+setup_commands: []
+worker_setup_commands: []
+head_start_ray_commands: []
+worker_start_ray_commands: []
+file_mounts: {}
+cluster_synced_files: []
+initialization_commands: []
