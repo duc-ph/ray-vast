@@ -8,6 +8,7 @@ Ray loads it from `provider: {type: external, module: ray_vast.provider.VastNode
 - `secrets_dir`: directory with `ca.pem`, `ca.key`, `head.pem`, `head.key`, `token` and `vast_api_key` (required).
 - `security_group_id`, `region`, `image`, `max_dollars_per_hour`: required.
 - `candidate_factor`, `order_by`, `port_a`, `port_b`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
+- `vast_api_url` (optional, tests only): the vast API base URL; the local end-to-end tests point it at a fake vast.
 - `image_size_gb` (optional): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min. Without it, 15 min.
 Per node type, Ray passes `node_config` (`offer_query`, `disk_gb`) and `resources` to the create call.
 
@@ -81,7 +82,8 @@ class VastNodeProvider(NodeProvider):
         read = lambda name: (secrets_dir / name).read_bytes()
         ca_cert, ca_key = read("ca.pem"), read("ca.key")
         self._ca_fingerprint = pki.ca_fingerprint(ca_cert)
-        self._vast = vast or VastClient(read("vast_api_key").decode().strip())
+        self._vast = vast or VastClient(read("vast_api_key").decode().strip(), **(
+            {"base_url": cfg["vast_api_url"]} if cfg.get("vast_api_url") else {}))
         self._sg = SecurityGroupRules(
             ec2 or boto3.client("ec2", region_name=cfg["region"], config=ec2_client_config()),
             cfg["security_group_id"], cluster_name)

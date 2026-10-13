@@ -464,6 +464,7 @@ def test_startup_sweep_destroys_labelled_instances_and_rules_then_scales_from_ze
     assert len(create(new)) == 1 and len(env.vast.instances) == 3
 
 
+@pytest.mark.slow  # real threads and real timers
 def test_threads_start_and_stop(env, tmp_path):
     ports = []
     for _ in range(2):
@@ -479,3 +480,27 @@ def test_threads_start_and_stop(env, tmp_path):
     assert not p._thread.is_alive()
     with pytest.raises(requests.ConnectionError):
         requests.get(f"https://127.0.0.1:{ports[0]}/ca.pem", verify=False, timeout=5)
+
+
+def test_vast_api_url_in_the_provider_config_points_the_vast_client_at_it(env, tmp_path, monkeypatch):
+    """Test-only key: the local end-to-end tests run a fake vast server."""
+    import ray_vast.provider
+    from ray_vast import pki
+
+    seen = {}
+
+    class RecordingVast:
+        def __init__(self, api_key, base_url="default"):
+            seen["base_url"] = base_url
+
+        def list_instances(self):
+            return []
+
+    monkeypatch.setattr(ray_vast.provider, "VastClient", RecordingVast)
+    pki.write_head_files(tmp_path / "s", "9.9.9.9")
+    (tmp_path / "s" / "vast_api_key").write_text("k\n")
+    config = {"head_ip": "9.9.9.9", "secrets_dir": str(tmp_path / "s"), "security_group_id": env.group_id,
+              "region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10,
+              "vast_api_url": "http://127.0.0.1:1/api/v0"}
+    ray_vast.provider.VastNodeProvider(config, "c2", ec2=env.ec2, start_threads=False)
+    assert seen["base_url"] == "http://127.0.0.1:1/api/v0"

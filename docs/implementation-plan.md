@@ -51,14 +51,11 @@ ray-vast-pypi/
 | 9 | `VastNodeProvider` | Done; join token and breaker in step 10b |
 | 10 | CLI (`up`, `down`, `attach`, `dashboard`) | Done; live AWS cycle passed; 5 groups and no restart policy in step 10b |
 | 10b | Spec changes of 2026-10-13 | To do |
-| 11 | Local end-to-end on the dev box | Started, paused |
+| 10c | Shim tests and mutation evaluation | To do (parallel with 10b) |
+| 11 | Local end-to-end on the dev box | Started with the old enrollment; continue after 10b |
 | 12 | Live tests on vast (paid) | C5a/C5d ran (enrollment failed, the reason for step 10b) |
 | 13 | Docs and release | To do |
 
-Work that is done but not committed yet (backup in the session scratchpad `backup-1233/`):
-- `tests/unit/test_cli.py`: the step 10 mutation audit (32 of 32 mutants killed).
-- `vast_api.py` and `test_vast_api.py`: safe logging of vast errors.
-- `provider.py`, `test_provider.py`, `tests/local_e2e/`: step 11 work in progress.
 
 ## Step 10b — Spec changes of 2026-10-13
 
@@ -82,6 +79,32 @@ Done when:
 - [ ] No code path sends `CONTAINER_API_KEY` to the head (grep and a test).
 - [ ] A review on both axes finds no HARD item.
 
+## Step 10c — Shim tests and mutation evaluation
+
+The shim (`src/ray_vast/shim/rayvast_shim.c`, rules in [shim.md](shim.md)) has no automated behavior test. `tests/manual/c0_1_shim_unit.sh` (C0) is the hand test to port.
+
+Work:
+- A `slow` test in `tests/integration/` that `LD_PRELOAD`s the shim into small Python processes, with `RAYVAST_PUBLIC_IP` set to an address that the process does not own and `RAYVAST_PRIVATE_IP` to one that it owns (for example a second loopback address or the container's IP). Check each rule of `shim.md`:
+  1. `bind(any, port in RAYVAST_LOCALHOST_PORTS)` → bound to 127.0.0.1; a second bind to the same port in the same process works (`SO_REUSEPORT`, the v2 bug).
+  2. `bind(PUBLIC_IP, port)` → bound to `PRIVATE_IP` (`getsockname`).
+  3. `connect(PUBLIC_IP, localhost-list port)` → reaches a listener on 127.0.0.1.
+  4. `connect(PUBLIC_IP, other port)` → reaches a listener on `PRIVATE_IP`.
+  5. Other addresses and ports go through unchanged.
+  - The same for `AF_INET6` sockets with `::ffff:a.b.c.d` and `::` (rule 1).
+  - errno is kept on a failed call.
+  - `RAYVAST_SHIM_LOG` gets one line for each rewrite, also after the process changes its environment memory (the v3 bug).
+- The test runs against the committed `.so` by default, and against a `.so` path from an env value (for the mutation run).
+- The tests run on Linux only; they skip with a reason elsewhere.
+
+Mutation evaluation:
+- A script in `scripts/` that makes mutants of `rayvast_shim.c` (one small change each: a flipped comparison, a removed rule, a wrong address family check, a removed `SO_REUSEPORT`, a removed errno save, a removed env copy), builds each in the manylinux2014 container, runs the shim test against it, and prints killed and survived.
+- Write the result (mutants, killed, survived, and why each survivor is acceptable or which test was added) into `test-results.md`.
+
+Done when:
+- [ ] Every rule of `shim.md` has a test that fails when the rule is removed.
+- [ ] The mutation run kills every mutant, or each survivor is explained.
+- [ ] The committed `.so` still has the recorded SHA-256 (no source change without a new recorded build).
+
 ## Step 11 — Local end-to-end on the dev box ($0)
 
 A fake vast server runs each "instance" as a local Docker container with the real bootloader and bootstrap, the identity ports mapped P→P, and `PUBLIC_IPADDR` = the dev box IP. The head runs in a container with `--network host`. This tests the whole flow (design 2) without vast cost.
@@ -94,6 +117,8 @@ Scenarios:
 - Stop the head server for 6 min: both workers destroy themselves, and the report endpoint gets the reasons first.
 - Container restart: the second enrollment is refused, and the worker destroys itself.
 - Three enrollment failures in a row: the breaker stops the node type for 10 min (scaled time).
+
+State: the harness and 7 scenarios exist in `tests/local_e2e/` with the old enrollment. Before 10b: run 1 passed 7/7; run 2 left a container behind after the k=2 scenario (leak check error); run 3 failed the battery scenario (`tasks_on_nodes` 1, expected 2, with both workers up). The monitor-crash scenario tests the old restart policy and must change to "the head stops, and the workers destroy themselves".
 
 Done when:
 - [ ] All scenarios pass 3 times in a row.
