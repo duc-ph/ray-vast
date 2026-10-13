@@ -1,7 +1,7 @@
 """A stand-in for `ray.scripts.scripts` (put its parent dir on PYTHONPATH). `main()` plays `ray start --block`.
 
 It writes its argv and a few env values to $FAKE_RAY_OUT, serves HTTP on the two 127.0.0.1 agent ports
-(RAYVAST_LOCALHOST_PORTS) with the status $FAKE_RAY_AGENT_STATUS (default 401), and then:
+(RAYVAST_LOCALHOST_PORTS) with the statuses $FAKE_RAY_AGENT_STATUS (comma list, one per request, the last one repeats; default 401), and then:
 sleeps forever, or exits with $FAKE_RAY_EXIT_CODE after $FAKE_RAY_EXIT_AFTER seconds when that is set.
 """
 import http.server
@@ -21,8 +21,12 @@ def main():
         def log_message(self, *args):
             pass
 
+        count = 0
+
         def do_GET(self):
-            self.send_response(int(env.get("FAKE_RAY_AGENT_STATUS", "401")))
+            statuses = env.get("FAKE_RAY_AGENT_STATUS", "401").split(",")
+            self.send_response(int(statuses[min(Handler.count, len(statuses) - 1)]))
+            Handler.count += 1
             self.send_header("Content-Length", "0")
             self.end_headers()
 

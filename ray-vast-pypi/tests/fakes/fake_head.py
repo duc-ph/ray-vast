@@ -26,6 +26,9 @@ class FakeHead:
         self.gcs_address = gcs_address
         self.expected_api_key = expected_api_key
         self.listen_host = listen_host
+        self.tls_dir = self.pki_dir  # where the TLS cert and key of the two ports come from
+        self.served_ca = None  # bytes to serve at /ca.pem instead of the real CA cert
+        self.trickle_bootstrap = False  # send /bootstrap at one byte per second
         self.refuse_enroll = False
         self.enroll_503s = 0  # answer 503 to this many /enroll calls first
         self.answer_heartbeats = True
@@ -42,7 +45,7 @@ class FakeHead:
     def start(self):
         for name, require_client_cert in (("A", False), ("B", True)):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx.load_cert_chain(self.pki_dir / "head.pem", self.pki_dir / "head.key")
+            ctx.load_cert_chain(self.tls_dir / "head.pem", self.tls_dir / "head.key")
             if require_client_cert:
                 ctx.verify_mode = ssl.CERT_REQUIRED
                 ctx.load_verify_locations(self.pki_dir / "ca.pem")
@@ -81,7 +84,15 @@ class FakeHead:
             def do_GET(self):
                 head.events.append((time.monotonic(), port_name, self.path, None))
                 if port_name == "A" and self.path == "/ca.pem":
-                    self._send(200, (head.pki_dir / "ca.pem").read_bytes(), "application/x-pem-file")
+                    self._send(200, head.served_ca or (head.pki_dir / "ca.pem").read_bytes(), "application/x-pem-file")
+                elif port_name == "A" and self.path == "/bootstrap" and head.trickle_bootstrap:
+                    self.send_response(200)
+                    self.send_header("Content-Length", str(len(head.bootstrap_bytes)))
+                    self.end_headers()
+                    for i in range(len(head.bootstrap_bytes)):
+                        self.wfile.write(head.bootstrap_bytes[i:i + 1])
+                        self.wfile.flush()
+                        time.sleep(1)
                 elif port_name == "A" and self.path == "/bootstrap":
                     self._send(200, head.bootstrap_bytes, "text/x-python")
                 else:

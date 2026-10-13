@@ -16,6 +16,7 @@ import socket
 import ssl
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import urllib.error
@@ -29,6 +30,7 @@ HOST_NETNS_INODES = (0xEFFFFFF9, 0xF0000000)
 ENROLL_DEADLINE_S = 600
 DESTROY_REPORT_TIMEOUT_S = 10
 DESTROY_RETRY_S = 5
+CA_RETRY_S = 5
 ENROLL_RETRY_S = 10
 TOKEN_CHECK_TIMEOUT_S = 180
 
@@ -41,12 +43,15 @@ def log(message):
     print(f"bootstrap: {message}", flush=True)
 
 
-def parse_capeff(status_text):
-    """Return the effective capability set (int) from the text of /proc/<pid>/status."""
+def parse_capbnd(status_text):
+    """Return the capability bounding set (int) from the text of /proc/<pid>/status.
+
+    CapEff is empty for a non-root PID 1 whatever the container has; the bounding set shows what the container got.
+    """
     for line in status_text.splitlines():
-        if line.startswith("CapEff:"):
+        if line.startswith("CapBnd:"):
             return int(line.split()[1], 16)
-    raise ValueError("no CapEff line")
+    raise ValueError("no CapBnd line")
 
 
 def parse_cpu_max(text):
@@ -55,48 +60,94 @@ def parse_cpu_max(text):
     return None if quota == "max" else int(quota) / int(period)
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A redirect answer is returned as it is: the Authorization header must never go to another host."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
 def call(url, ctx, body=None, method=None, headers=None, timeout=10):
-    """One HTTP call. Return (status, body bytes). HTTP error statuses are returned, network errors are raised."""
+    """One HTTP call. Return (status, body bytes). HTTP error statuses are returned, network errors are raised.
+
+    `timeout` is a limit on the whole call (not only on each socket read), so a server that sends 1 byte per second
+    cannot hold it: the call runs in a daemon thread, and a call that is not done in time raises TimeoutError.
+    """
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(
         url, data=data, method=method or ("POST" if data is not None else "GET"), headers=headers or {}
     )
     # No proxy: an image with http_proxy set must not send the head calls or the 127.0.0.1 token check through it.
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPSHandler(context=ctx))
-    try:
-        with opener.open(request, timeout=timeout) as response:
-            return response.status, response.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read()
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), urllib.request.HTTPSHandler(context=ctx), NoRedirect
+    )
+    outcome = []
+
+    def attempt():
+        try:
+            with opener.open(request, timeout=timeout) as response:
+                outcome.append((response.status, response.read()))
+        except urllib.error.HTTPError as e:
+            outcome.append((e.code, e.read()))
+        except BaseException as e:
+            outcome.append(e)
+
+    worker = threading.Thread(target=attempt, daemon=True)
+    worker.start()
+    worker.join(timeout)
+    if not outcome:
+        raise TimeoutError(f"no complete answer within {timeout} s")
+    if isinstance(outcome[0], BaseException):
+        raise outcome[0]
+    return outcome[0]
 
 
-def destroy(s, reason):
+def on_signal(signum, frame):
+    """Ignore all three signals from now on (a second one must not break the destroy), then stop the main flow."""
+    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+        signal.signal(sig, signal.SIG_IGN)
+    raise Stop(f"received {signal.Signals(signum).name}")
+
+
+def egress_ip(echo_urls):
+    """Return the public IP that an echo service sees (the first URL that answers 200), or None."""
+    for echo_url in echo_urls:
+        try:
+            status, answer = call(echo_url, None, timeout=5)
+            if status == 200:
+                return answer.decode().strip()
+        except (*NET_ERRORS, UnicodeDecodeError):
+            pass
+    return None
+
+
+def destroy(state, reason):
     """Report the reason to the head (best effort, at most 10 s), delete this vast instance, and wait. Never returns."""
     for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
         signal.signal(sig, signal.SIG_IGN)
     log(f"destroying this instance: {reason}")
-    if s.report_ctx is not None:
-        body = {"instance_id": s.instance_id, "kind": "destroy", "reason": reason[:2000]}
-        if s.node_ctx is None:
-            body["container_api_key"] = s.api_key
+    if state.report_ctx is not None:
+        body = {"instance_id": state.instance_id, "kind": "destroy", "reason": reason[:2000]}
+        if state.node_ctx is None:
+            body["container_api_key"] = state.api_key
         else:
             body["ok"] = False
         try:
-            call(s.report_url, s.report_ctx, body, timeout=DESTROY_REPORT_TIMEOUT_S)
-        except NET_ERRORS as e:
-            log(f"destroy report failed: {e}")
+            call(state.report_url, state.report_ctx, body, timeout=DESTROY_REPORT_TIMEOUT_S)
+        except Exception as e:
+            log(f"destroy report failed ({type(e).__name__})")
     while True:
         try:
             status, _ = call(
-                f"{s.vast_api}/instances/{s.instance_id}/", None, method="DELETE",
-                headers={"Authorization": f"Bearer {s.api_key}"}, timeout=30,
+                f"{state.vast_api}/instances/{state.instance_id}/", None, method="DELETE",
+                headers={"Authorization": f"Bearer {state.api_key}"}, timeout=30,
             )
             if status in (200, 404):
                 break
             log(f"vast answered HTTP {status} to the delete; retrying")
-        except NET_ERRORS as e:
-            log(f"vast delete failed: {e}; retrying")
-        time.sleep(DESTROY_RETRY_S / s.scale)
+        except Exception as e:  # nothing may end this loop but vast's answer; the message could hold a secret
+            log(f"vast delete failed ({type(e).__name__}); retrying")
+        time.sleep(DESTROY_RETRY_S / state.scale)
     log("vast accepted the delete; waiting for it to stop this container")
     while True:
         time.sleep(3600)
@@ -104,7 +155,7 @@ def destroy(s, reason):
 
 def main():
     env = os.environ
-    s = SimpleNamespace(
+    state = SimpleNamespace(
         instance_id=int(env["CONTAINER_ID"]),
         api_key=env.pop("CONTAINER_API_KEY"),  # kept in memory only; the Ray child must not inherit it (D7)
         vast_api=env.get("RAYVAST_VAST_API", "https://console.vast.ai/api/v0").rstrip("/"),
@@ -112,9 +163,6 @@ def main():
         report_url=None, report_ctx=None, node_ctx=None,
     )
     start = time.monotonic()
-
-    def on_signal(signum, frame):
-        raise Stop(f"received {signal.Signals(signum).name}")
 
     for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
         signal.signal(sig, on_signal)
@@ -130,40 +178,41 @@ def main():
         unverified.verify_mode = ssl.CERT_NONE
         while True:
             try:
-                status, ca_pem = call(f"{base_a}/ca.pem", unverified)
+                status, ca_pem = call(f"{base_a}/ca.pem", unverified, timeout=30)
                 if status == 200:
                     break
                 log(f"head answered HTTP {status} for /ca.pem")
             except NET_ERRORS as e:
                 log(f"cannot fetch /ca.pem: {e}")
-            if time.monotonic() - start > ENROLL_DEADLINE_S / s.scale:
-                destroy(s, "no CA cert from the head before the enrollment deadline")
-            time.sleep(DESTROY_RETRY_S / s.scale)
-        if hashlib.sha256(ssl.PEM_cert_to_DER_cert(ca_pem.decode())).hexdigest() != env["RAYVAST_CA_SHA256"]:
-            destroy(s, "CA cert fingerprint does not match RAYVAST_CA_SHA256")
+            if time.monotonic() - start > ENROLL_DEADLINE_S / state.scale:
+                destroy(state, "no CA cert from the head before the enrollment deadline")
+            time.sleep(CA_RETRY_S / state.scale)
+        # Only a PEM with exactly one cert is accepted, and only the re-encoded DER of that cert is used afterwards:
+        # base64 decoding in `PEM_cert_to_DER_cert` stops at the first padding, so extra certs would be hashed unseen.
+        ca_text = ca_pem.decode()
+        if ca_text.count("BEGIN CERTIFICATE") != 1:
+            destroy(state, "the head's /ca.pem does not hold exactly one certificate")
+        ca_der = ssl.PEM_cert_to_DER_cert(ca_text)
+        if hashlib.sha256(ca_der).hexdigest() != env["RAYVAST_CA_SHA256"]:
+            destroy(state, "CA cert fingerprint does not match RAYVAST_CA_SHA256")
+        ca_pem = ssl.DER_cert_to_PEM_cert(ca_der).encode()
         ctx = ssl.create_default_context(cadata=ca_pem.decode())
-        s.report_url, s.report_ctx = f"{base_a}/report", ctx
+        state.report_url, state.report_ctx = f"{base_a}/report", ctx
 
         # 2. Host checks. The head decides what a failed check means.
-        egress_ip = None
-        for echo_url in ("https://api.ipify.org", "https://ifconfig.me/ip"):
-            try:
-                egress_ip = call(echo_url, None, timeout=5)[1].decode().strip()
-                break
-            except NET_ERRORS:
-                pass
+        public_egress_ip = egress_ip(("https://api.ipify.org", "https://ifconfig.me/ip"))
         with open("/proc/self/status") as f:
-            cap_eff = parse_capeff(f.read())
+            cap_bnd = parse_capbnd(f.read())
         netns_inode = os.stat("/proc/self/ns/net").st_ino
         shm_entries = os.listdir("/dev/shm")
         checks = {
-            "egress_ip_ok": egress_ip == public_ip,
-            "no_net_raw_admin": cap_eff & (3 << 12) == 0,  # NET_ADMIN is bit 12, NET_RAW is bit 13
+            "egress_ip_ok": public_egress_ip == public_ip,
+            "no_net_raw_admin": cap_bnd & (3 << 12) == 0,  # NET_ADMIN is bit 12, NET_RAW is bit 13
             "own_netns": netns_inode not in HOST_NETNS_INODES,
             "shm_empty": not shm_entries,
         }
         checks["details"] = (
-            f"egress_ip={egress_ip} public_ip={public_ip} cap_eff={cap_eff:x} netns_inode={netns_inode} "
+            f"egress_ip={public_egress_ip} public_ip={public_ip} cap_bnd={cap_bnd:x} netns_inode={netns_inode} "
             f"shm_entries={len(shm_entries)}"
         )
         if env.get("RAYVAST_SKIP_HOST_CHECKS") == "1":
@@ -193,7 +242,7 @@ def main():
             cpu_count = min(cpu_count, max(1, math.floor(quota_cores)))
         gpu_count = len(glob.glob("/proc/driver/nvidia/gpus/*"))
         enroll_body = {
-            "instance_id": s.instance_id, "container_api_key": s.api_key, "checks": checks, "ports": ports,
+            "instance_id": state.instance_id, "container_api_key": state.api_key, "checks": checks, "ports": ports,
             "cpu_count": cpu_count, "gpu_count": gpu_count,
         }
         while True:
@@ -204,13 +253,13 @@ def main():
                 log("head answered 503 to /enroll; retrying")
             except NET_ERRORS as e:
                 log(f"enroll call failed: {e}; retrying")
-            if time.monotonic() - start > ENROLL_DEADLINE_S / s.scale:
-                destroy(s, "not enrolled before the enrollment deadline")
-            time.sleep(ENROLL_RETRY_S / s.scale)
+            if time.monotonic() - start > ENROLL_DEADLINE_S / state.scale:
+                destroy(state, "not enrolled before the enrollment deadline")
+            time.sleep(ENROLL_RETRY_S / state.scale)
         if status == 403:
-            destroy(s, f"head refused enrollment: {json.loads(answer).get('reason')}")
+            destroy(state, f"head refused enrollment: {json.loads(answer).get('reason')}")
         if status != 200:
-            destroy(s, f"enrollment failed with HTTP {status}")
+            destroy(state, f"enrollment failed with HTTP {status}")
         answer = json.loads(answer)
 
         # 5. Write the files, close the listeners, start Ray.
@@ -231,7 +280,7 @@ def main():
             listener.close()
         node_ctx = ssl.create_default_context(cadata=ca_pem.decode())
         node_ctx.load_cert_chain(f"{RAYVAST_DIR}/node.pem", f"{RAYVAST_DIR}/node.key")
-        s.report_url, s.report_ctx, s.node_ctx = f"{base_b}/report", node_ctx, node_ctx
+        state.report_url, state.report_ctx, state.node_ctx = f"{base_b}/report", node_ctx, node_ctx
 
         # The private IP is the interface address that routes to the head.
         probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -264,11 +313,11 @@ def main():
         log(f"enrolled as slot {answer['slot_id']}; started ray (pid {ray.pid}) with {cpu_count} cpus")
 
         # 6. Watchdog: heartbeat, token check, reap children, destroy on any exit.
-        heartbeat_interval = answer["heartbeat_interval_s"] / s.scale
-        heartbeat_timeout = answer["heartbeat_timeout_s"] / s.scale
+        heartbeat_interval = answer["heartbeat_interval_s"] / state.scale
+        heartbeat_timeout = answer["heartbeat_timeout_s"] / state.scale
         last_ok = next_heartbeat = time.monotonic()
-        token_deadline = last_ok + TOKEN_CHECK_TIMEOUT_S / s.scale
-        token_result = None  # (ok, reason) once decided
+        token_deadline = last_ok + TOKEN_CHECK_TIMEOUT_S / state.scale
+        token_result = None  # (ok, reason) once decided; any answer but 401 (also 503, no answer) is tried again
         token_reported = False
         while True:
             while True:
@@ -279,7 +328,7 @@ def main():
                 if pid == 0:
                     break
                 if pid == ray.pid:
-                    destroy(s, f"ray start exited with code {os.waitstatus_to_exitcode(wait_status)}")
+                    destroy(state, f"ray start exited with code {os.waitstatus_to_exitcode(wait_status)}")
             now = time.monotonic()
 
             if not token_reported:
@@ -290,15 +339,15 @@ def main():
                             statuses.append(call(f"http://127.0.0.1:{port}/", None, timeout=2)[0])
                         except NET_ERRORS:
                             statuses.append(None)
-                    if None not in statuses:
-                        token_result = (statuses == [401, 401], f"agent ports answered {statuses} without a token")
+                    if statuses == [401, 401]:
+                        token_result = (True, "agent ports answered 401 without a token")
                     elif now > token_deadline:
-                        token_result = (False, f"agent ports answered {statuses} before the deadline")
+                        token_result = (False, f"agent ports answered {statuses} (not 401 twice) before the deadline")
                 if token_result is not None:
                     try:
                         status, _ = call(
                             f"{base_b}/report", node_ctx,
-                            {"instance_id": s.instance_id, "kind": "token_check", "ok": token_result[0],
+                            {"instance_id": state.instance_id, "kind": "token_check", "ok": token_result[0],
                              "reason": token_result[1]},
                         )
                         token_reported = status == 200
@@ -308,22 +357,22 @@ def main():
             if now >= next_heartbeat:
                 next_heartbeat = now + heartbeat_interval
                 try:
-                    status, _ = call(f"{base_b}/heartbeat", node_ctx, {"instance_id": s.instance_id})
+                    status, _ = call(f"{base_b}/heartbeat", node_ctx, {"instance_id": state.instance_id})
                     if status == 200:
                         last_ok = now
                     elif status == 403:
-                        destroy(s, "head refused the heartbeat (403)")
+                        destroy(state, "head refused the heartbeat (403)")
                     else:
                         log(f"heartbeat answered HTTP {status}")
                 except NET_ERRORS as e:
                     log(f"heartbeat failed: {e}")
             if now - last_ok > heartbeat_timeout:
-                destroy(s, f"no successful heartbeat for {heartbeat_timeout * s.scale:.0f} s")
+                destroy(state, f"no successful heartbeat for {heartbeat_timeout * state.scale:.0f} s")
             time.sleep(1)
     except Stop as e:
-        destroy(s, str(e))
+        destroy(state, str(e))
     except Exception:
-        destroy(s, f"unexpected error:\n{traceback.format_exc()}")
+        destroy(state, f"unexpected error:\n{traceback.format_exc()}")
 
 
 if __name__ == "__main__":

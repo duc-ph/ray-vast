@@ -39,7 +39,7 @@ def wait_for(condition, timeout=30):
 class Run:
     """The bootstrap in a subprocess, with its stdout in a file."""
 
-    def __init__(self, world, tmp_path, **env_overrides):
+    def __init__(self, world, tmp_path, argv=None, **env_overrides):
         self.world = world
         self.ray_out = tmp_path / "ray_out.json"
         self.stdout_path = tmp_path / "stdout.txt"
@@ -49,7 +49,7 @@ class Run:
         )
         env.update(env_overrides)
         self.proc = subprocess.Popen(
-            [sys.executable, "-I", "-S", str(BOOTSTRAP_PATH)], env=env,
+            argv or [sys.executable, "-I", "-S", str(BOOTSTRAP_PATH)], env=env,
             stdout=open(self.stdout_path, "w"), stderr=subprocess.STDOUT, start_new_session=True,
         )
 
@@ -63,16 +63,34 @@ class Run:
 
 
 @pytest.fixture
-def world(tmp_path):
-    w = World(tmp_path)
+def new_world(tmp_path):
+    """Return a function that makes a World (not started: change the fake head first, then `start()` it)."""
+    worlds = []
+
+    def make(**kwargs):
+        w = World(tmp_path / f"world{len(worlds)}", **kwargs)
+        runs = []
+        w.run = lambda **overrides: runs.append(Run(w, tmp_path, **overrides)) or runs[-1]
+        w.runs = runs
+        worlds.append(w)
+        return w
+
+    yield make
+    for w in worlds:
+        for r in w.runs:
+            try:
+                os.killpg(r.proc.pid, signal.SIGKILL)  # the bootstrap and its (fake) ray child
+            except ProcessLookupError:
+                pass
+            r.proc.wait()
+        w.stop()
+
+
+@pytest.fixture
+def world(new_world):
+    w = new_world()
     w.start()
-    runs = []
-    w.run = lambda **overrides: runs.append(Run(w, tmp_path, **overrides)) or runs[-1]
-    yield w
-    for r in runs:
-        os.killpg(r.proc.pid, signal.SIGKILL)  # the bootstrap and its (fake) ray child
-        r.proc.wait()
-    w.stop()
+    return w
 
 
 def test_bootstrap_imports_only_stdlib():
@@ -88,18 +106,9 @@ def test_bootloader_is_small_posix_sh_and_found_as_package_data():
 
     text = importlib.resources.files("ray_vast").joinpath("worker/bootloader.sh").read_text()
     assert text == BOOTLOADER_PATH.read_text()
-    assert len(text.encode()) < 1024
+    assert len(text.encode()) < 1536
     assert subprocess.run(["sh", "-n", str(BOOTLOADER_PATH)]).returncode == 0
     assert "'" not in text.replace("-c '", "").rstrip().rstrip("'")  # one single-quoted block, so `sh -c` can carry it
-
-
-def test_capeff_parse_reads_the_effective_set():
-    docker_default = "Name:\tsh\nCapInh:\t0000000000000000\nCapEff:\t00000000a80425fb\nCapBnd:\t00000000a80425fb\n"
-    assert bootstrap.parse_capeff(docker_default) == 0xA80425FB
-    assert 0xA80425FB & (3 << 12) != 0  # docker default has NET_RAW (bit 13)
-    assert bootstrap.parse_capeff("CapEff:\t00000000a80405fb\n") & (3 << 12) == 0  # after --cap-drop NET_RAW
-    with pytest.raises(ValueError):
-        bootstrap.parse_capeff("Name:\tsh\n")
 
 
 @pytest.mark.parametrize("text, cores", [("max 100000\n", None), ("200000 100000\n", 2.0), ("150000 100000", 1.5)])
@@ -155,7 +164,7 @@ def test_token_check_is_reported_ok_when_agent_ports_answer_401(world, tmp_path)
 
 def test_token_check_is_reported_failed_when_an_agent_port_lets_a_tokenless_request_in(world, tmp_path):
     world.run(FAKE_RAY_AGENT_STATUS="200")
-    assert wait_for(lambda: world.head.bodies("B", "/report"))
+    assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=40)
     report = world.head.bodies("B", "/report")[0]
     assert (report["kind"], report["ok"]) == ("token_check", False)
 
@@ -242,10 +251,243 @@ def test_destroy_retries_until_vast_accepts(world, tmp_path):
 
 def test_stdout_has_no_secret(world, tmp_path):
     run = world.run()
-    assert wait_for(lambda: world.head.bodies("B", "/report"))
+    assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=40)
     run.proc.send_signal(signal.SIGTERM)
     assert wait_for(lambda: world.vast.destroys)
     node_key = Path("/tmp/rayvast/node.key").read_text()
     for secret in (world.api_key, world.token, node_key.splitlines()[1]):
         assert secret not in run.stdout
     assert "destroying this instance" in run.stdout
+
+
+def serve_once(handler_body, tmp_port_holder=None):
+    """A plain HTTP server on a free port; `handler_body(handler)` answers GET and DELETE. Return (server, url)."""
+    import http.server
+    import threading
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+
+        def do_GET(self):
+            handler_body(self)
+
+        do_DELETE = do_GET
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    server.daemon_threads = True
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, f"http://127.0.0.1:{server.server_address[1]}"
+
+
+def test_a_ca_pem_with_a_second_cert_behind_the_real_one_is_not_trusted(new_world):
+    """`PEM_cert_to_DER_cert` decodes only up to the first base64 padding, so real+rogue PEM has the real fingerprint."""
+    import hashlib
+    import ssl
+    from datetime import datetime, timedelta, timezone
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import NameOID
+    from ray_vast import pki
+
+    # The cluster CA of ray_vast.pki always has a DER length that is a multiple of 3 (no base64 padding), so build a
+    # CA with a padded encoding here.
+    key = ec.generate_private_key(ec.SECP256R1())
+    for cn_length in (1, 2, 3):
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "c" * cn_length)])
+        now = datetime.now(timezone.utc)
+        cert = (
+            x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
+            .serial_number(1).not_valid_before(now - timedelta(days=1)).not_valid_after(now + timedelta(days=1))
+            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True).sign(key, hashes.SHA256())
+        )
+        padded_ca = cert.public_bytes(serialization.Encoding.PEM)
+        if len(cert.public_bytes(serialization.Encoding.DER)) % 3 != 0:
+            break
+    world = new_world()
+    world.ca_pem = padded_ca
+    rogue_dir = world.pki_dir.parent / "rogue"
+    rogue_ca, _ = pki.write_head_files(rogue_dir, "127.0.0.1")
+    forged = padded_ca + rogue_ca
+    pinned = hashlib.sha256(ssl.PEM_cert_to_DER_cert(forged.decode())).hexdigest()
+    assert pinned == pki.ca_fingerprint(padded_ca)  # the forgery passes a hash of the decoded PEM
+    world.head.served_ca = forged
+    world.head.tls_dir = rogue_dir  # the head cert is signed by the rogue CA only
+    world.start()
+    world.run()
+    assert wait_for(lambda: world.vast.destroys)
+    assert world.head.bodies("A", "/enroll") == []
+
+
+def test_a_slow_trickle_answer_hits_the_total_time_limit():
+    import threading
+
+    def trickle(handler):
+        handler.send_response(200)
+        handler.send_header("Content-Length", "1000")
+        handler.end_headers()
+        for _ in range(1000):
+            handler.wfile.write(b"x")
+            handler.wfile.flush()
+            time.sleep(0.5)
+
+    server, url = serve_once(trickle)
+    outcome = []
+
+    def attempt():
+        try:
+            bootstrap.call(url, None, timeout=2)
+            outcome.append("returned")
+        except OSError:
+            outcome.append("network error")
+
+    thread = threading.Thread(target=attempt, daemon=True)
+    started = time.monotonic()
+    thread.start()
+    thread.join(timeout=8)
+    server.shutdown()
+    assert outcome == ["network error"] and time.monotonic() - started < 6
+
+
+def test_the_signal_handler_ignores_all_three_signals_before_it_raises():
+    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+    try:
+        with pytest.raises(bootstrap.Stop):
+            bootstrap.on_signal(signal.SIGTERM, None)
+        assert [signal.getsignal(sig) for sig in previous] == [signal.SIG_IGN] * 3
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+
+
+def test_destroy_keeps_retrying_through_any_exception(monkeypatch):
+    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+    answers = [RuntimeError("odd"), (500, b""), (200, b"{}")]
+    calls = []
+
+    class Done(BaseException):
+        pass
+
+    def fake_call(*args, **kwargs):
+        calls.append(args[0])
+        answer = answers[len(calls) - 1]
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    def fake_sleep(seconds):
+        if seconds >= 3600:
+            raise Done
+
+    monkeypatch.setattr(bootstrap, "call", fake_call)
+    monkeypatch.setattr(bootstrap.time, "sleep", fake_sleep)
+    state = bootstrap.SimpleNamespace(
+        instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=1.0, report_url=None, report_ctx=None,
+        node_ctx=None,
+    )
+    try:
+        with pytest.raises(Done):
+            bootstrap.destroy(state, "test")
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+    assert len(calls) == 3
+
+
+def test_token_check_retries_a_non_401_answer_until_401(world, tmp_path):
+    run = world.run(FAKE_RAY_AGENT_STATUS="503,401")
+    assert wait_for(lambda: world.head.bodies("B", "/report")), run.stdout
+    report = world.head.bodies("B", "/report")[0]
+    assert (report["kind"], report["ok"]) == ("token_check", True)
+
+
+def test_capbnd_parse_reads_the_bounding_set():
+    text = "CapInh:\t0\nCapEff:\t0000000000000000\nCapBnd:\t00000000a80425fb\n"
+    assert bootstrap.parse_capbnd(text) == 0xA80425FB  # CapEff is 0 here (non-root); the bounding set is not
+    assert bootstrap.parse_capbnd(text) & (3 << 12) != 0  # docker default has NET_RAW (bit 13)
+    assert bootstrap.parse_capbnd("CapBnd:\t00000000a80405fb\n") & (3 << 12) == 0  # after --cap-drop NET_RAW
+    with pytest.raises(ValueError):
+        bootstrap.parse_capbnd("CapEff:\t0\n")
+
+
+def test_egress_ip_tries_the_next_echo_url_after_a_non_200():
+    def bad(handler):
+        handler.send_response(500)
+        handler.send_header("Content-Length", "11")
+        handler.end_headers()
+        handler.wfile.write(b"server down")
+
+    def good(handler):
+        handler.send_response(200)
+        handler.send_header("Content-Length", "8")
+        handler.end_headers()
+        handler.wfile.write(b"1.2.3.4\n")
+
+    bad_server, bad_url = serve_once(bad)
+    good_server, good_url = serve_once(good)
+    try:
+        assert bootstrap.egress_ip([bad_url, good_url]) == "1.2.3.4"
+        assert bootstrap.egress_ip([bad_url]) is None
+    finally:
+        bad_server.shutdown()
+        good_server.shutdown()
+
+
+def test_calls_do_not_follow_redirects_so_the_vast_key_stays_on_its_host():
+    seen = []
+
+    def target(handler):
+        seen.append(handler.headers.get("Authorization"))
+        handler.send_response(200)
+        handler.send_header("Content-Length", "0")
+        handler.end_headers()
+
+    target_server, target_url = serve_once(target)
+
+    def redirect(handler):
+        handler.send_response(302)
+        handler.send_header("Location", target_url)
+        handler.send_header("Content-Length", "0")
+        handler.end_headers()
+
+    redirect_server, redirect_url = serve_once(redirect)
+    try:
+        status, _ = bootstrap.call(redirect_url, None, headers={"Authorization": "Bearer secret"})  # urllib follows GET redirects
+    finally:
+        redirect_server.shutdown()
+        target_server.shutdown()
+    assert status == 302 and seen == []
+
+
+BOOTLOADER = ["sh", "-c", BOOTLOADER_PATH.read_text()]  # as the provider's `args` run it; `import ray` works through the fake
+
+
+def test_bootloader_with_a_wrong_bootstrap_hash_destroys_its_instance_and_does_not_exit(world):
+    run = world.run(argv=BOOTLOADER, RAYVAST_BOOTSTRAP_SHA256="0" * 64)
+    assert wait_for(lambda: world.vast.destroys)
+    assert world.vast.destroys[0][1] == world.instance_id
+    time.sleep(1)
+    assert run.proc.poll() is None
+    assert world.head.bodies("A", "/ca.pem") == []  # the downloaded bootstrap never ran
+
+
+def test_bootloader_retries_the_download_until_the_head_is_up(new_world):
+    world = new_world()  # not started: the first download is refused
+    run = world.run(argv=BOOTLOADER)
+    time.sleep(3)
+    assert run.proc.poll() is None and world.vast.destroys == []
+    world.start()
+    assert wait_for(lambda: world.head.bodies("A", "/enroll"), timeout=30), run.stdout
+    assert world.vast.destroys == []
+
+
+def test_bootloader_gives_up_a_trickling_download_after_its_total_time_limit(new_world):
+    world = new_world()
+    world.head.trickle_bootstrap = True
+    world.start()
+    run = world.run(argv=BOOTLOADER)
+    downloads = lambda: [e for e in world.head.events if e[2] == "/bootstrap"]
+    assert wait_for(lambda: len(downloads()) >= 2, timeout=70), run.stdout  # 30 s limit + 10 s pause, then a retry
+    assert run.proc.poll() is None and world.vast.destroys == []

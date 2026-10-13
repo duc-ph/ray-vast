@@ -41,7 +41,7 @@ All bodies are JSON. All answers are JSON. Port A: TLS, no client cert. Port B: 
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "container_api_key": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` (refused); 503 `{"reason": str}` (vast unreachable — try again) |
+| A | `POST /enroll` | `{"instance_id": int, "container_api_key": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason": str}` (refused); 503 `{"reason": str}` (vast unreachable, or the head has not yet seen the instance running — try again) |
 | A | `POST /report` | `{"instance_id": int, "container_api_key": str, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` (always, if parsable) |
 | B | `POST /heartbeat` | `{"instance_id": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
 | B | `POST /report` | `{"instance_id": int, "kind": "token_check" \| "destroy", "ok": bool, "reason": str}` | 200 `{}` |
@@ -55,6 +55,8 @@ Rules:
 - Each node cert has the IP SAN of the worker's public IP and 127.0.0.1, and a URI SAN `rayvast:instance/<instance_id>`. On port B the head checks both against the body's `instance_id` and its enrolled public IP. A cert for another instance is refused with 403 `unknown`.
 - The head makes the node cert before it marks the instance enrolled, so a failure leaves no half-enrolled slot.
 - The head answers `/enroll` only after the outside check (connect to every identity port P on the public IP). Timeout of the whole `/enroll` call on the worker side: 120 s.
+- The `no_net_raw_admin` check reads `CapBnd` (the bounding set) in `/proc/self/status`, not `CapEff`: a non-root PID 1 has an empty `CapEff` whatever the container has. The check is false when bit 12 (NET_ADMIN) or bit 13 (NET_RAW) is set.
+- The `egress_ip_ok` check asks `https://api.ipify.org`, then `https://ifconfig.me/ip` when the first one does not answer 200.
 - `num_cpus` is decided by the worker: the real core count = min(`os.sched_getaffinity` size, cgroup `cpu.max` quota / period if set).
 
 ## Bootstrap timers (defaults)

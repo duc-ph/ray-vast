@@ -42,6 +42,7 @@ class World:
                  api_key="FAKEKEY-vast-container-api-key", instance_id=424242, bootstrap_bytes=None):
         self.pki_dir = Path(tmp_path) / "pki"
         self.ca_pem, self.token = pki.write_head_files(self.pki_dir, head_ip)
+        self.started = False
         self.api_key = api_key
         self.instance_id = instance_id
         self.head_ip = head_ip
@@ -79,7 +80,9 @@ class World:
     def start(self):
         self.head.start()
         self.vast.start()
+        self.started = True
 
     def stop(self):
-        self.head.stop()
-        self.vast.stop()
+        if self.started:
+            self.head.stop()
+            self.vast.stop()
