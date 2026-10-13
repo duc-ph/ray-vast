@@ -114,7 +114,7 @@ The provider writes the container command (the `args` of the create request). It
 - Outside check: the provider regularly destroys every instance with the cluster label that is not one of its slots or candidates.
 - The provider keeps all its state in memory. A provider restart happens only with a head restart, and then the GCS is new and the old workers cannot rejoin. So, when the provider starts, it destroys every instance with the cluster label and removes every `ray-vast:<cluster>` security group rule (start-up sweep). The enrollment and heartbeat endpoints accept only instances in memory.
 - The head server (bootstrap download, enrollment, heartbeat, reports) is a thread in the provider, in the Ray monitor process. If the monitor stops, the heartbeats stop, and the workers destroy themselves.
-- `ray-vast down` destroys everything by label and retries the list call (rate limit). Then it removes the security group rules, terminates the EC2 head, and deletes the security group and the IAM role.
+- `ray-vast down` terminates the EC2 head first (so its autoscaler cannot rent new workers), then destroys every vast instance with the cluster label (the list call is retried on rate limits), then deletes the security group (with its worker rules), the IAM role and instance profile. It works when the head is already gone.
 - The head has no Elastic IP. A reboot keeps its IP. After a stop and a start, run `down` and `up`.
 
 ## CLI (first version)
