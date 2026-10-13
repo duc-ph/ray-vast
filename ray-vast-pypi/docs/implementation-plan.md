@@ -99,13 +99,13 @@ A spike is a small, short test that answers one question before we build. Write 
 | # | Spike | Where | Cost |
 |---|---|---|---|
 | S1 | **Done 2026-10-13: PASS** (see `spikes.md`). A minimal external provider (2 fake nodes) with autoscaler v2 (`RAY_enable_autoscaler_v2=1`) and `disable_node_updaters: true`. Workers start with `RAY_CLOUD_INSTANCE_ID` and `RAY_NODE_TYPE_NAME`. Check: two workers with the same node IP are both seen, and scale-down removes the correct one; a node declared `CPU: 2` that starts with `--num-cpus 4` gets 4 CPUs of tasks; any v2 timeout for an instance that stays a long time between "allocated" and "Ray running" (our pull can take 15 min); how v2 uses the tags of F5. | EC2 dev box, `ray start` on one machine with 2 raylets | $0 |
-| S2 | Facts F1–F9 on Ray 2.59.0 (read the installed source). F9: the provider is made once per monitor process. Kill the monitor on a test head: does Ray start it again? Stop the GCS: does a worker raylet exit after about 60 s (`gcs_rpc_server_reconnect_timeout_s`)? | EC2 dev box | $0 |
+| S2 | **Done 2026-10-13** (see `spikes.md`). Facts F1–F9 on Ray 2.59.0 (read the installed source). F9: the provider is made once per monitor process. Kill the monitor on a test head: does Ray start it again? Stop the GCS: does a worker raylet exit after about 60 s (`gcs_rpc_server_reconnect_timeout_s`)? | EC2 dev box | $0 |
 | S3 | Dropped 2026-10-12: no scoped key and no separate account. A thief who reaches the head controls the cluster anyway, and vast's fixed key rights (change the account SSH keys) defeat a scope. The head uses the user's vast account key (documented risk). | — | — |
 | S4 | Dropped 2026-10-12: the bootloader is short (about 500 bytes) and only downloads the bootstrap and checks its hash. Local tests (step 7) check that it works; C5 shows that vast accepts it. | — | — |
 | S5 | **Done 2026-10-13: PASS** (see `spikes.md`). Can the bootstrap pin the CA with stdlib Python only? The image has only Python and Ray, and Ray does not depend on `cryptography` (checked in `setup.py`). Plan: download `/ca.pem` without verification, compare its SHA-256 with `RAYVAST_CA_SHA256`, then connect again with `cafile=ca.pem` and full verification (chain + IP SAN). Negative: wrong fingerprint, other CA, missing SAN. mTLS with `load_cert_chain` for the heartbeat. Run in `rayproject/ray:2.59.0-py311-cpu` and in a slim Python 3.9 image. | EC2 dev box | $0 |
 
 Done when:
-- [ ] `docs/spikes.md` has a result line for S1, S2 and S5.
+- [x] `docs/spikes.md` has a result line for S1, S2 and S5.
 - [x] D1 answered (separate project).
 - [x] D2 answered (thread in the provider).
 - [x] D3 answered (memory only + start-up sweep).
@@ -315,7 +315,7 @@ Work (`cli.py`):
   2. Read the user's vast key from the laptop (`~/.config/vastai/vast_api_key` or `VAST_API_KEY`). Copy it to the head (mode 600). Never put it in the YAML, the env of a worker, or a log.
   3. Create the IAM role and instance profile (modify own security group, describe EC2), the security group (SSH from the operator IP), the EC2 head (Ubuntu 24.04, IMDSv2 required, Docker installed by user data).
   4. On the head: pull the image, install `ray-vast` into a derived image or at container start, make the CA and token on the head (`pki.py`), write the bootstrapped YAML (F8).
-  5. Start `RAY_enable_autoscaler_v2=1 RAY_CLOUD_INSTANCE_ID=head ray start --head --autoscaling-config ... --num-cpus=0` in the container with `docker run --init --network host`, TLS, token and shim env. Keep `disable_launch_config_check` at its v2 default (True).
+  5. Start `RAY_enable_autoscaler_v2=1 RAY_CLOUD_INSTANCE_ID=head ray start --head --block --autoscaling-config ... --num-cpus=0` as the container's main process with `docker run --init --restart unless-stopped --network host` (S2: a dead monitor stays dead; `--block` stops the head and Docker restarts it; the restarted head reuses the CA, token and certs from the mounted directory), TLS, token and shim env. Keep `disable_launch_config_check` at its v2 default (True).
   6. Wait until `ray status` works. Print the dashboard command.
 - `ray-vast down <yaml>`: label sweep (list, destroy, list again until 0, retry on 429), remove the rules, terminate the head (D5), delete the group and the IAM role. Print what is left (must be nothing).
 - `ray-vast attach`, `ray-vast dashboard` (SSH tunnel to 8265).

@@ -23,9 +23,20 @@ Ray 2.59.0, autoscaler v2, `rayproject/ray:2.59.0-py311-cpu` on EC2 `ray-vast-de
 - **F.** The head container needs `docker run --init`. Without it, Ray processes stay as zombies after `ray stop`.
 - **G.** Timeouts are read from the env when the monitor starts, so they go on the head's `ray start`. `REQUEST_STATUS` (600 s) and `MAX_NUM_RETRY_REQUEST_TO_ALLOCATE` (3) do not affect us, because the provider returns slots at once.
 
-## S2 — Ray facts on 2.59.0
+## S2 — Ray facts on 2.59.0 (2026-10-13): done
 
-Not run yet.
+| Question | Answer | Evidence |
+|---|---|---|
+| Does Ray restart a dead monitor (SIGKILL or SIGTERM)? | No. GCS and raylet keep running; no autoscaling, no error. | `_private/node.py:1540` (`start_monitor` called once, `:1655`); 180 s watch |
+| Worker raylet after GCS loss | Exits 60 s after the head stops ("Failed to connect to GCS within 60 seconds"); `ray start --block` exits with code 1 about 0.3 s later. | `gcs_rpc_server_reconnect_timeout_s`, default 60 (`src/ray/common/ray_config_def.h:549`, tag ray-2.59.0) |
+| Worker raylet killed (SIGKILL) | `ray start --block` exits with code 1 after about 0.9 s. | `scripts/scripts.py:1284-1317` |
+| F1, F6 | Confirmed: external provider loaded by `load_function_or_class`; v2 calls `create_node_with_resources_and_labels` from the `ray::NodeLauncherPool` thread pool and turns every exception into a `LaunchNodeError`. | `_private/providers.py:179-181`; `v2/instance_manager/node_provider.py:486` |
+| F7 | v2 calls `non_terminated_nodes`, `is_running`, `node_tags` (reconciler thread), `terminate_nodes` (single adapter thread), `post_process`, `safe_to_scale`. It never calls `set_node_tags`, `is_terminated`, `internal_ip`, `external_ip`. | `v2/instance_manager/node_provider.py:513-530` |
+
+### Findings that change the plan
+
+- **A dead monitor stays dead.** With D2 the heartbeats then stop and the workers destroy themselves, but the head stays without autoscaling. Fix (decision): the head container runs `ray start --head --block` as its main process with `docker run --restart unless-stopped`. With `--block`, Ray stops the whole head when a child process dies unexpectedly (`scripts.py:1284-1317`); Docker then starts a new head, whose provider sweeps the old workers (D3) and scales again. The CA, token and head cert stay in the mounted directory, so a restarted head reuses them. To test in step 10/11.
+- **The worker bootstrap can rely on `ray start --block` exiting** (about 60 s after GCS loss, about 1 s after a raylet death). Then the bootstrap destroys the instance.
 
 ## S5 — CA pinning with stdlib Python (2026-10-13): PASS
 
