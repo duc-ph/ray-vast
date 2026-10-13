@@ -16,3 +16,4 @@ Technical decisions made while the user was away. Rule: simplest option that wor
 - 2026-10-13 — PKI: RSA-2048 keys (proven with Ray gRPC in C0–C4); leaf certs have serverAuth + clientAuth; `not_before` is 5 min in the past (worker clock skew); CA `pathlen:0`; `cryptography>=42`. (Step 4)
 - 2026-10-13 — Fingerprint = SHA-256 of the CA cert's DER bytes, lowercase hex (S5). (Step 4)
 - 2026-10-13 — The head server uses two ports: plain TLS (download, enrollment) and mTLS (heartbeat, reports). Reason: one TLS context cannot require client certs for only some paths (S5).
+- 2026-10-13 — State: the head is not stored in `ClusterState`; the provider adds the fixed `head` entry (F10). A worker stays in `candidates` after enrollment (with `Slot.instance_id` set) until destroyed, so `total_dph` covers candidates and workers. `ip_ref_remove` stops at 0 (cleanup never raises). Slot IDs `slot-<n>-<hex6>`. (Step 5)
