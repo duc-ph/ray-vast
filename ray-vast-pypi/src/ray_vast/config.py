@@ -21,6 +21,8 @@ PROVIDER_DEFAULTS = {
     "allow_non_datacenter": False,
     "order_by": "dph_total",
     "head_instance_type": "t3.large",
+    "port_a": 7443,
+    "port_b": 7444,
 }
 
 
