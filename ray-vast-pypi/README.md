@@ -239,6 +239,24 @@ Always run `ray-vast down` when you finish.
 
 **Clean-up check.** `down` prints `left: nothing` when it is done. If something remains, it lists it and exits with code 1. Then run `down` again. Nothing should be left after `down`: no vast instance with the label `ray-vast:<cluster_name>`, no EC2 head, no security group `ray-vast-<cluster_name>`, no IAM role or instance profile with that name.
 
+## Tests
+
+Run the tests on a Linux box with Docker. Install with `pip install -e '.[test]'`.
+
+Fast run, for the TDD loop (about 30 s). It skips tests that start processes, containers, TLS servers or wheel builds, or that wait on real timers:
+
+```
+pytest
+```
+
+Full run, once before you finish. It adds the slow tests (bootstrap subprocesses, wheel build, Docker containers) and still skips the tests that spend money or need a Ray cluster:
+
+```
+pytest -o addopts="" -m "not live and not local_e2e"
+```
+
+A slow test has `@pytest.mark.slow`. Every test that starts a process starts it in a new session and kills the whole process group in a finalizer. A session check fails the run if a test leaves a process or a container behind. The bootstrap tests set `RAYVAST_DIR` to a temp directory, so runs can overlap.
+
 ## More documents
 
 - [docs/security.md](docs/security.md): the security model and the known gaps. Read it before you use the cluster with real data.

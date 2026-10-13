@@ -57,6 +57,8 @@ def test_get_instance_returns_dict_with_optional_key_and_none_when_gone(client):
     assert responses.calls[0].request.headers["Authorization"] == "Bearer CONTAINERKEY"
     assert client.get_instance(8) is None
     assert client.get_instance(9) is None
+    responses.get(f"{BASE_URL}/instances/10/", json={"instances": {}})
+    assert client.get_instance(10) is None
 
 
 @responses.activate
@@ -203,7 +205,7 @@ def test_every_call_has_a_timeout(client):
     client.get_instance(1)
     client.destroy_instance(1)
     assert len(responses.calls) == 5
-    assert all(c.request.req_kwargs["timeout"] for c in responses.calls)
+    assert [c.request.req_kwargs["timeout"] for c in responses.calls] == [30] * 5
 
 
 FIXTURES = pathlib.Path(__file__).resolve().parents[1] / "fixtures"
@@ -247,3 +249,52 @@ def test_live_search_with_gpu_24gb_example_query():
     offers = VastClient(key).search_offers(query)  # raises on HTTP 400 if the body (type: on-demand) is not accepted
     print(len(offers), "offers for", query)
     assert isinstance(offers, list)
+
+
+@responses.activate
+def test_backoff_delay_includes_jitter(sleeps):
+    jittery = VastClient("K", sleep=sleeps.append, jitter=lambda: 0.5)
+    responses.get(f"{BASE_URL}/instances/", status=429)
+    responses.get(f"{BASE_URL}/instances/", status=429)
+    responses.get(f"{BASE_URL}/instances/", json={"instances": []})
+    jittery.list_instances()
+    assert sleeps == [1.5, 3.0]
+
+
+@responses.activate
+def test_create_does_not_retry_a_lost_connection(client, sleeps):
+    responses.put(f"{BASE_URL}/asks/1/", body=requests.ConnectionError("boom"))
+    responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
+    with pytest.raises(VastError):
+        client.create_instance(1, "img", {}, [], "l", 20)
+    assert len(responses.calls) == 1 and sleeps == []
+
+
+@responses.activate
+def test_create_with_success_false_raises_even_when_it_returns_a_contract(client):
+    responses.put(f"{BASE_URL}/asks/1/", json={"success": False, "new_contract": 5})
+    with pytest.raises(VastError):
+        client.create_instance(1, "img", {}, [], "l", 20)
+
+
+@responses.activate
+def test_create_on_missing_offer_raises_404(client):
+    responses.put(f"{BASE_URL}/asks/1/", status=404)
+    with pytest.raises(VastError) as e:
+        client.create_instance(1, "img", {}, [], "l", 20)
+    assert e.value.status == 404
+
+
+@responses.activate
+def test_bearer_token_in_a_short_error_body_is_redacted(client):
+    responses.get(f"{BASE_URL}/instances/", status=400, body='{"detail": "bad Bearer TOPSECRET99 sent"}')
+    with pytest.raises(VastError) as e:
+        client.list_instances()
+    assert "TOPSECRET99" not in str(e.value)
+
+
+@responses.activate
+def test_base_url_with_trailing_slash_is_accepted(sleeps):
+    slashed = VastClient("K", base_url=BASE_URL + "/", sleep=sleeps.append)
+    responses.get(f"{BASE_URL}/instances/", json={"instances": []})
+    assert slashed.list_instances() == []

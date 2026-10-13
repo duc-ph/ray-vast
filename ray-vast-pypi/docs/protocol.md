@@ -17,7 +17,7 @@ The provider sets these in the vast create request (`env`). All are public (no s
 
 vast sets: `CONTAINER_ID` (instance ID), `CONTAINER_API_KEY` (secret, per instance), `PUBLIC_IPADDR`, `VAST_TCP_PORT_70000` … `VAST_TCP_PORT_70063` (host port P for each identity port; P→P).
 
-For tests only, the bootstrap reads these overrides when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (float; all bootstrap timers are divided by it), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; used in local Docker tests where egress IP ≠ `PUBLIC_IPADDR`).
+For tests only, the bootstrap reads these overrides when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (float; all bootstrap timers are divided by it), `RAYVAST_DIR` (directory for the node key, cert, CA, token and shim; default `/tmp/rayvast`; lets parallel test runs use separate directories), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; used in local Docker tests where egress IP ≠ `PUBLIC_IPADDR`).
 
 ## Port map (worker)
 

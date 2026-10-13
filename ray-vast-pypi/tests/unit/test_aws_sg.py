@@ -107,3 +107,21 @@ def test_live_allow_revoke_on_temporary_group():
         assert rules(ec2, group_id) == []
     finally:
         ec2.delete_security_group(GroupId=group_id)
+
+
+def test_cluster_names_that_share_a_prefix_do_not_share_rules(ec2, group_id):
+    SecurityGroupRules(ec2, group_id, "c10").allow_ip("1.2.3.4")
+    sg = SecurityGroupRules(ec2, group_id, "c1")
+    sg.revoke_all()
+    assert rules(ec2, group_id) == [("1.2.3.4/32", "ray-vast:c10")]
+
+
+def test_revoke_all_with_no_rules_sends_no_revoke_call(ec2, group_id, monkeypatch):
+    monkeypatch.setattr(ec2, "revoke_security_group_ingress", failing_with("InvalidParameterValue"))
+    SecurityGroupRules(ec2, group_id, "c1").revoke_all()
+
+
+def test_ec2_client_config_sets_timeouts_and_retries():
+    config = aws_sg.ec2_client_config()
+    assert (config.connect_timeout, config.read_timeout) == (5, 30)
+    assert config.retries == {"max_attempts": 5, "mode": "standard"}

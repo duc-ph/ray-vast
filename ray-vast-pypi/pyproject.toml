@@ -14,7 +14,7 @@ authors = [{ name = "Duc Pham", email = "thiel.pham@gmail.com" }]
 dependencies = ["ray[default]>=2.59", "boto3", "cryptography>=42", "pyyaml", "requests"]
 
 [project.optional-dependencies]
-test = ["pytest", "moto", "responses", "freezegun", "build", "hatchling"]
+test = ["pytest", "moto[server]", "responses", "freezegun", "build", "hatchling"]
 
 [project.scripts]
 ray-vast = "ray_vast.cli:main"
@@ -29,9 +29,10 @@ include = ["src", "tests", "scripts", "README.md", "LICENSE", "CHANGELOG.md", "p
 testpaths = ["tests"]
 markers = [
     "live: uses real AWS or vast.ai (skipped by default)",
-    "slow: takes more than 30 s",
+    "slow: starts processes, containers, TLS servers or wheel builds, or waits on real timers (skipped by default)",
+    "local_e2e: runs a Ray head and workers in Docker on the dev box (step 11; skipped by default)",
 ]
-addopts = "-m 'not live'"
+addopts = "-m 'not slow and not live and not local_e2e'"
 
 [tool.ruff]
 line-length = 120

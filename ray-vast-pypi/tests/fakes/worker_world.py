@@ -1,7 +1,10 @@
 """One test world for the worker: PKI, fake head, fake vast, and the container env that vast would set."""
+import ctypes
 import hashlib
 import random
+import signal
 import socket
+import sys
 from pathlib import Path
 
 import ray_vast
@@ -15,6 +18,12 @@ BOOTSTRAP_PATH = PACKAGE / "worker" / "bootstrap.py"
 BOOTLOADER_PATH = PACKAGE / "worker" / "bootloader.sh"
 SHIM_PATH = PACKAGE / "shim" / "librayvast_shim.so"
 FAKE_RAY_DIR = Path(__file__).parent / "fake_ray_pkg"
+
+
+def die_with_parent():
+    """`preexec_fn` for a test subprocess: the kernel kills it if the test process dies first (Linux only)."""
+    if sys.platform.startswith("linux"):
+        ctypes.CDLL(None).prctl(1, signal.SIGKILL)  # PR_SET_PDEATHSIG = 1
 
 
 def free_ports(count):

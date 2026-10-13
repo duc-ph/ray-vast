@@ -26,11 +26,13 @@ def installed(tmp_path_factory):
     return bin_dir, wheel
 
 
+@pytest.mark.slow  # builds a wheel or an sdist
 def test_wheel_is_pure_python(installed):
     _, wheel = installed
     assert wheel.name.endswith("-py3-none-any.whl")
 
 
+@pytest.mark.slow  # builds a wheel or an sdist
 def test_console_script_prints_help(installed):
     bin_dir, _ = installed
     result = subprocess.run([str(bin_dir / "ray-vast"), "--help"], capture_output=True, text=True)
@@ -39,6 +41,7 @@ def test_console_script_prints_help(installed):
         assert command in result.stdout
 
 
+@pytest.mark.slow  # builds a wheel or an sdist
 def test_package_data_is_found_after_install(installed):
     bin_dir, _ = installed
     code = (
@@ -51,6 +54,7 @@ def test_package_data_is_found_after_install(installed):
     assert result.stdout.split() == ["True"] * 4
 
 
+@pytest.mark.slow  # builds a wheel or an sdist
 def test_installed_shim_has_committed_sha256(installed):
     bin_dir, _ = installed
     code = "from importlib.resources import files; print(files('ray_vast').joinpath('shim/librayvast_shim.so').read_bytes().hex())"
@@ -58,6 +62,7 @@ def test_installed_shim_has_committed_sha256(installed):
     assert hashlib.sha256(bytes.fromhex(result.stdout.strip())).hexdigest() == COMMITTED_SHIM_SHA256
 
 
+@pytest.mark.slow  # builds a wheel or an sdist
 def test_sdist_has_sources_and_no_docs(tmp_path):
     subprocess.run(
         [sys.executable, "-m", "build", "--sdist", "--no-isolation", "--outdir", str(tmp_path), str(PROJECT)],
@@ -69,3 +74,8 @@ def test_sdist_has_sources_and_no_docs(tmp_path):
     for expected in ("src/ray_vast/shim/librayvast_shim.so", "src/ray_vast/worker/bootstrap.py", "pyproject.toml"):
         assert expected in names
     assert not [n for n in names if n.startswith(("docs/", "spikes/"))]
+
+
+def test_source_shim_has_committed_sha256():
+    shim = PROJECT / "src" / "ray_vast" / "shim" / "librayvast_shim.so"
+    assert hashlib.sha256(shim.read_bytes()).hexdigest() == COMMITTED_SHIM_SHA256

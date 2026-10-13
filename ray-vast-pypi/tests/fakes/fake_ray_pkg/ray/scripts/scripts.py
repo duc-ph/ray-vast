@@ -2,7 +2,7 @@
 
 It writes its argv and a few env values to $FAKE_RAY_OUT, serves HTTP on the two 127.0.0.1 agent ports
 (RAYVAST_LOCALHOST_PORTS) with the statuses $FAKE_RAY_AGENT_STATUS (comma list, one per request, the last one repeats; default 401), and then:
-sleeps forever, or exits with $FAKE_RAY_EXIT_CODE after $FAKE_RAY_EXIT_AFTER seconds when that is set.
+sleeps until its parent is gone, or exits with $FAKE_RAY_EXIT_CODE after $FAKE_RAY_EXIT_AFTER seconds when that is set.
 """
 import http.server
 import json
@@ -36,5 +36,6 @@ def main():
     if "FAKE_RAY_EXIT_AFTER" in env:
         time.sleep(float(env["FAKE_RAY_EXIT_AFTER"]))
         sys.exit(int(env.get("FAKE_RAY_EXIT_CODE", "1")))
-    while True:
-        time.sleep(3600)
+    parent = os.getppid()
+    while os.getppid() == parent:  # stand-in for a real `ray start --block`: never outlive the bootstrap
+        time.sleep(1)

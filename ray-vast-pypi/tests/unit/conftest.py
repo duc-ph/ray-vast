@@ -1,4 +1,6 @@
 """Shared fixtures for the provider tests: an in-memory vast, a fake clock, a moto security group."""
+import shutil
+
 import boto3
 import pytest
 from moto import mock_aws
@@ -70,10 +72,18 @@ def offer(offer_id, machine_id, dph=0.5, inet_down=1000):
     return {"id": offer_id, "machine_id": machine_id, "dph_total": dph, "inet_down": inet_down}
 
 
+@pytest.fixture(scope="session")
+def head_files(tmp_path_factory):
+    """The CA, head cert and token for 9.9.9.9, made once (RSA key generation is slow); each test copies them."""
+    directory = tmp_path_factory.mktemp("head_files") / "secrets"
+    pki.write_head_files(directory, "9.9.9.9")
+    return directory
+
+
 @pytest.fixture
-def env(tmp_path):
+def env(tmp_path, head_files):
     secrets = tmp_path / "secrets"
-    pki.write_head_files(secrets, "9.9.9.9")
+    shutil.copytree(head_files, secrets)
     (secrets / "vast_api_key").write_text("vast-key\n")
     with mock_aws():
         ec2 = boto3.client("ec2", region_name="us-west-2", config=aws_sg.ec2_client_config())

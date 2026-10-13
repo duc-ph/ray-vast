@@ -24,7 +24,7 @@ import urllib.request
 from types import SimpleNamespace
 
 NET_ERRORS = (OSError, http.client.HTTPException)  # OSError covers URLError, SSLError and timeouts
-RAYVAST_DIR = "/tmp/rayvast"
+RAYVAST_DIR = os.environ.get("RAYVAST_DIR", "/tmp/rayvast")  # the override is for tests only
 # Inode of the initial network namespace (new kernels, old kernels). A container with its own netns has another one.
 HOST_NETNS_INODES = (0xEFFFFFF9, 0xF0000000)
 ENROLL_DEADLINE_S = 600

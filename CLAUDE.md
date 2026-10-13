@@ -23,6 +23,7 @@ best understood together.
 ```
 - Worker-side code (`src/ray_vast/worker/`) uses the Python stdlib only.
 - Never log `instance_api_key`, `CONTAINER_API_KEY`, the cluster token, private keys or the vast key.
+- Tests: fast run `pytest` (default; skips `slow`, `live`, `local_e2e`) in the TDD loop. Full run `pytest -o addopts="" -m "not live and not local_e2e"` once at the end. Mark a test `@pytest.mark.slow` if it starts processes, containers, TLS servers or wheel builds, or waits on real timers. Start every process in a new session and kill the group in a finalizer.
 - Edit code on the laptop; run tests on the dev box (rsync `ray-vast-pypi/` to `~/ray-vast-pypi/` on the box).
 
 ## Docs

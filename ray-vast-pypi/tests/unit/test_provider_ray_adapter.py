@@ -2,12 +2,15 @@
 The full autoscaler end-to-end test is step 11."""
 import time
 
+import pytest
 import yaml
 from ray.autoscaler.v2.instance_manager.config import FileConfigReader
 from ray.autoscaler.v2.instance_manager.node_provider import NodeProviderAdapter
 
 from ray_vast.config import bootstrap_config
 from conftest import offer
+
+pytestmark = pytest.mark.slow  # imports Ray and runs the provider threads
 
 CLUSTER = {
     "cluster_name": "c1",

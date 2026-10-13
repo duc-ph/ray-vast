@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fakes.worker_world import BOOTLOADER_PATH, BOOTSTRAP_PATH, FAKE_RAY_DIR, World  # noqa: E402
+from fakes.worker_world import BOOTLOADER_PATH, BOOTSTRAP_PATH, FAKE_RAY_DIR, World, die_with_parent  # noqa: E402
 
 spec = importlib.util.spec_from_file_location("rayvast_bootstrap", BOOTSTRAP_PATH)
 bootstrap = importlib.util.module_from_spec(spec)
@@ -42,15 +42,18 @@ class Run:
     def __init__(self, world, tmp_path, argv=None, **env_overrides):
         self.world = world
         self.ray_out = tmp_path / "ray_out.json"
+        self.dir = tmp_path / "rayvast"  # RAYVAST_DIR: not the fixed /tmp/rayvast, so test runs can overlap
         self.stdout_path = tmp_path / "stdout.txt"
         env = world.env()
         env.update(
-            PATH=os.environ["PATH"], PYTHONPATH=str(FAKE_RAY_DIR), FAKE_RAY_OUT=str(self.ray_out), **FAST
+            PATH=os.environ["PATH"], PYTHONPATH=str(FAKE_RAY_DIR), FAKE_RAY_OUT=str(self.ray_out),
+            RAYVAST_DIR=str(self.dir), **FAST
         )
         env.update(env_overrides)
         self.proc = subprocess.Popen(
             argv or [sys.executable, "-I", "-S", str(BOOTSTRAP_PATH)], env=env,
             stdout=open(self.stdout_path, "w"), stderr=subprocess.STDOUT, start_new_session=True,
+            preexec_fn=die_with_parent,
         )
 
     @property
@@ -116,8 +119,8 @@ def test_cgroup_cpu_max_parse(text, cores):
     assert bootstrap.parse_cpu_max(text) == cores
 
 
+@pytest.mark.slow
 def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
-    shutil.rmtree("/tmp/rayvast", ignore_errors=True)  # modes apply only to new files
     run = world.run()
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat") and run.ray_out.exists()), run.stdout
     enroll = world.head.bodies("A", "/enroll")[0]
@@ -141,20 +144,21 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     env = run.ray["env"]
     assert env["RAY_CLOUD_INSTANCE_ID"] == "slot-1" and env["RAY_NODE_TYPE_NAME"] == "worker"
     assert env["RAY_USE_TLS"] == "1" and env["RAY_AUTH_MODE"] == "token"
-    assert env["RAY_TLS_SERVER_CERT"] == "/tmp/rayvast/node.pem" and env["RAY_TLS_SERVER_KEY"] == "/tmp/rayvast/node.key"
-    assert env["RAY_TLS_CA_CERT"] == "/tmp/rayvast/ca.pem" and env["RAY_AUTH_TOKEN_PATH"] == "/tmp/rayvast/token"
-    assert env["LD_PRELOAD"] == "/tmp/rayvast/librayvast_shim.so"
+    assert env["RAY_TLS_SERVER_CERT"] == f"{run.dir}/node.pem" and env["RAY_TLS_SERVER_KEY"] == f"{run.dir}/node.key"
+    assert env["RAY_TLS_CA_CERT"] == f"{run.dir}/ca.pem" and env["RAY_AUTH_TOKEN_PATH"] == f"{run.dir}/token"
+    assert env["LD_PRELOAD"] == f"{run.dir}/librayvast_shim.so"
     assert env["RAYVAST_PUBLIC_IP"] == "127.0.0.1" and env["RAYVAST_PRIVATE_IP"] == "127.0.0.1"
     assert env["RAYVAST_LOCALHOST_PORTS"] == f"{p + 4},{p + 5}"
     assert env["RAY_num_workers_soft_limit"] == "10"
     assert "CONTAINER_API_KEY" not in env
 
-    assert oct(os.stat("/tmp/rayvast").st_mode & 0o777) == "0o700"
+    assert oct(os.stat(run.dir).st_mode & 0o777) == "0o700"
     for name in ("ca.pem", "node.pem", "node.key", "token", "librayvast_shim.so"):
-        assert oct(os.stat(f"/tmp/rayvast/{name}").st_mode & 0o777) == "0o600", name
-    assert Path("/tmp/rayvast/token").read_text() == world.token
+        assert oct(os.stat(f"{run.dir}/{name}").st_mode & 0o777) == "0o600", name
+    assert Path(run.dir / "token").read_text() == world.token
 
 
+@pytest.mark.slow
 def test_token_check_is_reported_ok_when_agent_ports_answer_401(world, tmp_path):
     run = world.run()
     assert wait_for(lambda: world.head.bodies("B", "/report")), run.stdout
@@ -162,6 +166,7 @@ def test_token_check_is_reported_ok_when_agent_ports_answer_401(world, tmp_path)
     assert (report["kind"], report["ok"]) == ("token_check", True)
 
 
+@pytest.mark.slow
 def test_token_check_is_reported_failed_when_an_agent_port_lets_a_tokenless_request_in(world, tmp_path):
     world.run(FAKE_RAY_AGENT_STATUS="200")
     assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=40)
@@ -169,6 +174,7 @@ def test_token_check_is_reported_failed_when_an_agent_port_lets_a_tokenless_requ
     assert (report["kind"], report["ok"]) == ("token_check", False)
 
 
+@pytest.mark.slow
 def test_head_refusing_enrollment_destroys_at_once_without_starting_ray(world, tmp_path):
     world.head.refuse_enroll = True
     run = world.run()
@@ -180,12 +186,14 @@ def test_head_refusing_enrollment_destroys_at_once_without_starting_ray(world, t
     assert not run.ray_out.exists()
 
 
+@pytest.mark.slow
 def test_wrong_ca_fingerprint_destroys_before_any_enrollment(world, tmp_path):
     world.run(RAYVAST_CA_SHA256="0" * 64)
     assert wait_for(lambda: world.vast.destroys)
     assert world.head.bodies("A", "/enroll") == []
 
 
+@pytest.mark.slow
 def test_sigterm_reports_then_destroys_and_the_process_stays_alive(world, tmp_path):
     run = world.run()
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat"))
@@ -198,6 +206,7 @@ def test_sigterm_reports_then_destroys_and_the_process_stays_alive(world, tmp_pa
     assert run.proc.poll() is None  # never exits: vast stops the container after the delete
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGHUP])
 def test_sigint_and_sighup_destroy_too(world, tmp_path, sig):
     run = world.run()
@@ -206,6 +215,7 @@ def test_sigint_and_sighup_destroy_too(world, tmp_path, sig):
     assert wait_for(lambda: world.vast.destroys)
 
 
+@pytest.mark.slow
 def test_ray_exit_destroys_with_its_exit_code(world, tmp_path):
     world.run(FAKE_RAY_EXIT_AFTER="2", FAKE_RAY_EXIT_CODE="3")
     assert wait_for(lambda: world.vast.destroys)
@@ -213,15 +223,16 @@ def test_ray_exit_destroys_with_its_exit_code(world, tmp_path):
     assert "code 3" in reports[0]["reason"]
 
 
+@pytest.mark.slow
 def test_heartbeats_stop_then_destroy_after_the_timeout_and_not_before(world, tmp_path):
-    run = world.run()
+    run = world.run(RAYVAST_TIME_SCALE="100")  # the timeout is 300 s / 100 = 3 s
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat"))
     world.head.answer_heartbeats = False
     stopped = time.monotonic()
-    time.sleep(7)  # the timeout is 300 s / 30 = 10 s
+    time.sleep(1.5)
     assert world.vast.destroys == []
-    assert wait_for(lambda: world.vast.destroys, timeout=15)
-    assert 9 <= world.vast.destroys[0][0] - stopped <= 14
+    assert wait_for(lambda: world.vast.destroys, timeout=10)
+    assert 2.9 <= world.vast.destroys[0][0] - stopped <= 6
     reports = [e[3] for e in world.head.events if e[1] == "B" and e[3] and e[3].get("kind") == "destroy"]
     assert "heartbeat" in reports[0]["reason"]
 
@@ -233,6 +244,7 @@ def test_heartbeat_403_destroys_at_once(world, tmp_path):
     assert wait_for(lambda: world.vast.destroys, timeout=5)
 
 
+@pytest.mark.slow
 def test_enroll_503_is_retried_until_the_head_accepts(world, tmp_path):
     world.head.enroll_503s = 2
     run = world.run()
@@ -241,6 +253,7 @@ def test_enroll_503_is_retried_until_the_head_accepts(world, tmp_path):
     assert world.vast.destroys == []
 
 
+@pytest.mark.slow
 def test_destroy_retries_until_vast_accepts(world, tmp_path):
     world.vast.delete_statuses = [500, 429]
     world.head.refuse_enroll = True
@@ -249,12 +262,13 @@ def test_destroy_retries_until_vast_accepts(world, tmp_path):
     assert len(world.vast.destroys) == 1
 
 
+@pytest.mark.slow
 def test_stdout_has_no_secret(world, tmp_path):
     run = world.run()
     assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=40)
     run.proc.send_signal(signal.SIGTERM)
     assert wait_for(lambda: world.vast.destroys)
-    node_key = Path("/tmp/rayvast/node.key").read_text()
+    node_key = Path(run.dir / "node.key").read_text()
     for secret in (world.api_key, world.token, node_key.splitlines()[1]):
         assert secret not in run.stdout
     assert "destroying this instance" in run.stdout
@@ -276,10 +290,11 @@ def serve_once(handler_body, tmp_port_holder=None):
 
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.daemon_threads = True
-    threading.Thread(target=server.serve_forever, daemon=True).start()
+    threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
     return server, f"http://127.0.0.1:{server.server_address[1]}"
 
 
+@pytest.mark.slow
 def test_a_ca_pem_with_a_second_cert_behind_the_real_one_is_not_trusted(new_world):
     """`PEM_cert_to_DER_cert` decodes only up to the first base64 padding, so real+rogue PEM has the real fingerprint."""
     import hashlib
@@ -321,6 +336,7 @@ def test_a_ca_pem_with_a_second_cert_behind_the_real_one_is_not_trusted(new_worl
     assert world.head.bodies("A", "/enroll") == []
 
 
+@pytest.mark.slow
 def test_a_slow_trickle_answer_hits_the_total_time_limit():
     import threading
 
@@ -396,6 +412,67 @@ def test_destroy_keeps_retrying_through_any_exception(monkeypatch):
     assert len(calls) == 3
 
 
+def run_destroy(monkeypatch, state, answers):
+    """Run `destroy` with `call` and `sleep` replaced (the injected clock). Return the calls and the sleeps."""
+    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+    calls, sleeps = [], []
+
+    class Done(BaseException):
+        pass
+
+    def fake_call(url, ctx, body=None, **kwargs):
+        calls.append((url, body, kwargs.get("method")))
+        return answers[len(calls) - 1]
+
+    def fake_sleep(seconds):
+        sleeps.append(seconds)
+        if seconds >= 3600:
+            raise Done
+
+    monkeypatch.setattr(bootstrap, "call", fake_call)
+    monkeypatch.setattr(bootstrap.time, "sleep", fake_sleep)
+    try:
+        with pytest.raises(Done):
+            bootstrap.destroy(state, "the reason")
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+    return calls, sleeps
+
+
+def test_destroy_before_enrollment_reports_with_the_container_key_then_deletes(monkeypatch):
+    state = bootstrap.SimpleNamespace(
+        instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=30.0, report_url="https://head/report",
+        report_ctx=object(), node_ctx=None,
+    )
+    calls, _ = run_destroy(monkeypatch, state, [(200, b""), (200, b"{}")])
+    assert calls[0] == ("https://head/report", {"instance_id": 7, "kind": "destroy", "reason": "the reason",
+                                                "container_api_key": "k"}, None)
+    assert calls[1][0] == "http://vast.invalid/instances/7/" and calls[1][2] == "DELETE"
+
+
+def test_destroy_after_enrollment_reports_without_the_key_and_retries_on_the_scaled_period(monkeypatch):
+    ctx = object()
+    state = bootstrap.SimpleNamespace(
+        instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=30.0, report_url="https://head/report",
+        report_ctx=ctx, node_ctx=ctx,
+    )
+    calls, sleeps = run_destroy(monkeypatch, state, [(200, b""), (500, b""), (429, b""), (404, b"")])
+    assert calls[0][1] == {"instance_id": 7, "kind": "destroy", "reason": "the reason", "ok": False}
+    assert [c[2] for c in calls[1:]] == ["DELETE"] * 3  # 500 and 429 are retried, 404 counts as done
+    assert sleeps == [bootstrap.DESTROY_RETRY_S / 30.0] * 2 + [3600]
+
+
+def test_destroy_without_a_report_channel_still_deletes(monkeypatch):
+    state = bootstrap.SimpleNamespace(
+        instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=1.0, report_url=None, report_ctx=None,
+        node_ctx=None,
+    )
+    calls, _ = run_destroy(monkeypatch, state, [(200, b"{}")])
+    assert [c[2] for c in calls] == ["DELETE"]
+
+
+@pytest.mark.slow
 def test_token_check_retries_a_non_401_answer_until_401(world, tmp_path):
     run = world.run(FAKE_RAY_AGENT_STATUS="503,401")
     assert wait_for(lambda: world.head.bodies("B", "/report")), run.stdout
@@ -464,6 +541,7 @@ def test_calls_do_not_follow_redirects_so_the_vast_key_stays_on_its_host():
 BOOTLOADER = ["sh", "-c", BOOTLOADER_PATH.read_text()]  # as the provider's `args` run it; `import ray` works through the fake
 
 
+@pytest.mark.slow
 def test_bootloader_with_a_wrong_bootstrap_hash_destroys_its_instance_and_does_not_exit(world):
     run = world.run(argv=BOOTLOADER, RAYVAST_BOOTSTRAP_SHA256="0" * 64)
     assert wait_for(lambda: world.vast.destroys)
@@ -473,6 +551,7 @@ def test_bootloader_with_a_wrong_bootstrap_hash_destroys_its_instance_and_does_n
     assert world.head.bodies("A", "/ca.pem") == []  # the downloaded bootstrap never ran
 
 
+@pytest.mark.slow
 def test_bootloader_retries_the_download_until_the_head_is_up(new_world):
     world = new_world()  # not started: the first download is refused
     run = world.run(argv=BOOTLOADER)
@@ -483,6 +562,7 @@ def test_bootloader_retries_the_download_until_the_head_is_up(new_world):
     assert world.vast.destroys == []
 
 
+@pytest.mark.slow
 def test_bootloader_gives_up_a_trickling_download_after_its_total_time_limit(new_world):
     world = new_world()
     world.head.trickle_bootstrap = True

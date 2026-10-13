@@ -328,3 +328,56 @@ def test_live_example_query_returns_offers(path):
         )
         response.raise_for_status()
         assert len(response.json()["offers"]) >= 1, name
+
+
+def test_offer_query_rejects_cpu_floor_below_node_resources_by_one():
+    for condition in ({"gte": 3}, {"gt": 3}):
+        with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'.*looser"):
+            query(offer_query={"cpu_cores_effective": condition})
+
+
+def test_offer_query_ram_unit_boundary_is_1000_mb():
+    with pytest.raises(ValueError, match="unit is MB"):
+        query(offer_query={"gpu_ram": {"gte": 999}})
+    assert query(offer_query={"gpu_ram": {"gte": 1000}})["gpu_ram"] == {"gte": 1000}
+
+
+def test_offer_query_rejects_boolean_ram_value():
+    with pytest.raises(ValueError, match="not a number"):
+        query(offer_query={"gpu_ram": {"gte": True}})
+
+
+def test_offer_query_notin_needs_a_list():
+    with pytest.raises(ValueError, match=r"'geolocation'.*list"):
+        query(offer_query={"geolocation": {"notin": "US"}})
+    assert query(offer_query={"geolocation": {"notin": ["CN", "RU"]}})["geolocation"] == {"notin": ["CN", "RU"]}
+
+
+def test_offer_query_rejects_empty_condition():
+    with pytest.raises(ValueError, match=r"'w'.*'dlperf'.*mapping"):
+        query(offer_query={"dlperf": {}})
+
+
+def test_bootstrap_requires_cluster_name():
+    with pytest.raises(ValueError, match="cluster_name"):
+        bootstrap_config(make(cluster_name=None))
+
+
+def test_bootstrap_rejects_head_node_type_that_is_not_defined():
+    with pytest.raises(ValueError, match="head_node_type 'nope'"):
+        bootstrap_config(make(head_node_type="nope"))
+
+
+@pytest.mark.parametrize("bad", [True, -1])
+def test_bootstrap_rejects_boolean_or_negative_worker_cpu_and_gpu(bad):
+    for field in ("CPU", "GPU"):
+        config = make()
+        config["available_node_types"]["w"]["resources"][field] = bad
+        with pytest.raises(ValueError, match=rf"'w'.*{field}"):
+            bootstrap_config(config)
+
+
+def test_bootstrap_does_not_warn_when_cpu_equals_worker_ports():
+    config = make()
+    config["available_node_types"]["w"]["resources"]["CPU"] = 58
+    assert bootstrap_config(config)[1] == []
