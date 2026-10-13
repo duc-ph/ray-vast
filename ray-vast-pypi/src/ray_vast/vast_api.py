@@ -101,8 +101,14 @@ class VastClient:
             raise ValueError("key must be a non-empty string when given")
         resp = self._request("GET", f"/instances/{instance_id}/", key=key)
         if resp is None:
+            log.warning("GET /instances/%s/: HTTP 404", instance_id)
             return None
-        instance = resp.json().get("instances")
+        answer = resp.json()
+        instance = answer.get("instances")
+        if not instance:
+            # Shape only, never values: this explains a refused key check without leaking a key or a header.
+            log.warning("GET /instances/%s/: HTTP %s keys=%s instances=%s", instance_id, resp.status_code,
+                        sorted(answer), type(instance).__name__)
         return instance or None
 
     def list_instances(self):

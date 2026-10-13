@@ -298,3 +298,29 @@ def test_base_url_with_trailing_slash_is_accepted(sleeps):
     slashed = VastClient("K", base_url=BASE_URL + "/", sleep=sleeps.append)
     responses.get(f"{BASE_URL}/instances/", json={"instances": []})
     assert slashed.list_instances() == []
+
+
+@responses.activate
+@pytest.mark.parametrize("status, body, expected", [
+    (200, {"instances": [], "x": 1}, "HTTP 200 keys=['instances', 'x'] instances=list"),
+    (200, {"instances": None}, "HTTP 200 keys=['instances'] instances=NoneType"),
+    (200, {"instances": {"id": 7, "actual_status": "loading", "ssh_key": SECRET}}, None),
+    (404, {"error": "no"}, "HTTP 404"),
+])
+def test_empty_instance_answer_is_logged_without_secrets(client, caplog, status, body, expected):
+    caplog.set_level(logging.DEBUG)
+    responses.get(f"{BASE_URL}/instances/7/", status=status, json=body)
+    client.get_instance(7, key="CONTAINERKEY-SECRET")
+    if expected:
+        assert expected in caplog.text
+    assert "CONTAINERKEY-SECRET" not in caplog.text and SECRET not in caplog.text
+
+
+@responses.activate
+def test_instance_dict_without_content_logs_its_id_and_status(client, caplog):
+    caplog.set_level(logging.DEBUG)
+    responses.get(f"{BASE_URL}/instances/7/", json={"instances": {"id": 7}, "k": 1})
+    assert client.get_instance(7, key="K") == {"id": 7}
+    responses.get(f"{BASE_URL}/instances/8/", json={"instances": {}})
+    client.get_instance(8, key="K")
+    assert "instances=dict" in caplog.text

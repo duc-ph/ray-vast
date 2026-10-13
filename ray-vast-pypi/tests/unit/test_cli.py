@@ -5,6 +5,7 @@ from pathlib import Path
 
 import boto3
 import botocore.exceptions
+import botocore.waiter
 import pytest
 import yaml
 from botocore.awsrequest import AWSResponse
@@ -38,6 +39,7 @@ class FakeSsh:
         self.image_bytes = image_bytes
         self.ca_pem = pki.make_ca(ca_days)[0].decode()
         self.interactive_calls = []
+        self.timeouts = {}  # command -> timeout it was run with
 
     def _record(self, kind, ip, what, stdin=None):
         self.calls.append((kind, ip, what, stdin))
@@ -46,6 +48,7 @@ class FakeSsh:
 
     def run(self, ip, command, stdin=None, timeout=900):
         self._record("run", ip, command, stdin)
+        self.timeouts[command] = timeout
         if command.startswith("cat ") and command.endswith("/ca.pem"):
             return self.ca_pem
         if command.startswith("cat ") and command.endswith("/token"):
@@ -143,6 +146,7 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
     assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in head["Tags"]
     volume = ec2.describe_volumes(VolumeIds=[head["BlockDeviceMappings"][0]["Ebs"]["VolumeId"]])["Volumes"][0]
     assert (volume["Size"], volume["VolumeType"]) == (60, "gp3")
+    assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in volume["Tags"]
 
     [group] = ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": [name]}])["SecurityGroups"]
     assert head["SecurityGroups"][0]["GroupId"] == group["GroupId"]
@@ -150,10 +154,12 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
 
     assert iam.get_instance_profile(InstanceProfileName=name)["InstanceProfile"]["Roles"][0]["RoleName"] == name
     assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in iam.get_role(RoleName=name)["Role"]["Tags"]
+    assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in iam.get_instance_profile(InstanceProfileName=name)["InstanceProfile"]["Tags"]
     policy = iam.get_role_policy(RoleName=name, PolicyName="head")["PolicyDocument"]
-    scoped = [s for s in policy["Statement"] if s["Resource"] != "*"]
-    assert scoped[0]["Resource"].endswith(f"security-group/{group['GroupId']}")
-    assert "ec2:DescribeSecurityGroups" in policy["Statement"][0]["Action"]
+    assert policy["Statement"] == [
+        {"Effect": "Allow", "Action": ["ec2:DescribeSecurityGroups", "ec2:DescribeInstances"], "Resource": "*"},
+        {"Effect": "Allow", "Action": ["ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress"],
+         "Resource": f"arn:aws:ec2:{REGION}:123456789012:security-group/{group['GroupId']}"}]  # 123456789012 is moto's account
 
     assert (json.loads((tmp_path / "state" / f"{CLUSTER}.json").read_text()))["security_group_id"] == group["GroupId"]
     assert ssh.calls[0][2].startswith("cloud-init status")  # waited for SSH and Docker first
@@ -176,6 +182,12 @@ def test_up_starts_the_head_container_and_keeps_secrets_off_command_lines(aws, c
     assert env["RAY_AUTH_TOKEN_PATH"] == f"{secrets_dir}/token" and env["RAY_TLS_SERVER_KEY"] == f"{secrets_dir}/head.key"
     assert f"--node-ip-address={env['RAYVAST_PUBLIC_IP']}" in container_command
     assert "--num-cpus=0" in container_command  # the head runs no tasks
+    assert "--init" in options
+    assert f"--autoscaling-config=/home/ubuntu/ray-vast-{CLUSTER}/cluster.yaml" in container_command
+    assert env["RAY_CLOUD_INSTANCE_ID"] == "head" and env["RAY_NODE_TYPE_NAME"] == "head"
+    assert env["LD_PRELOAD"] == "/site-packages/ray_vast/shim/librayvast_shim.so"
+    assert env["RAY_TLS_CA_CERT"] == f"{secrets_dir}/ca.pem" and env["RAY_TLS_SERVER_CERT"] == f"{secrets_dir}/head.pem"
+    assert env["RAYVAST_LOCALHOST_PORTS"] == "6384,6385" and env["RAYVAST_PRIVATE_IP"].startswith("10.")
     assert any(c.endswith("ray status") for c in lines)  # `up` waited until Ray answered
 
     # No secret on any command line: the vast key goes through stdin into a 600 file; the config on the head has none.
@@ -541,3 +553,104 @@ def test_main_down_without_a_vast_key_cleans_aws_warns_and_exits_0(running_clust
     out = capsys.readouterr().out
     assert "not swept" in out and "left: nothing" in out
     assert what_is_left(aws, FakeVast()) == []
+
+
+# --- mutation audit of step 10: behaviors the tests above did not pin ----------------------------------------------------
+
+def no_op_response(**kwargs):
+    """A `before-call` hook result: AWS answers 200 and does nothing."""
+    return AWSResponse("https://aws", 200, {}, None), {}
+
+
+def test_up_strips_the_key_pair_from_the_head_config_and_keeps_a_user_image_size(aws, cluster_yaml, wheel, tmp_path):
+    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "key_file": "~/yaml.pem", "key_name": "yaml-key", "image_size_gb": 9})
+    cluster_yaml.write_text(yaml.safe_dump(raw))
+    ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
+    [config_text] = [c[3] for c in ssh.calls if c[2].startswith("cat >") and c[2].endswith("cluster.yaml")]
+    provider = yaml.safe_load(config_text)["provider"]
+    assert "key_name" not in provider and "key_file" not in provider and "yaml.pem" not in config_text
+    assert provider["image_size_gb"] == 9  # the image is 4.5 GB, but the user's value wins
+
+
+def test_up_runs_the_slow_head_steps_with_long_timeouts(aws, cluster_yaml, wheel, tmp_path):
+    ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
+    timeouts = ssh.timeouts
+    [build] = [t for c, t in timeouts.items() if c.startswith("sudo docker build")]
+    [cloud_init] = [t for c, t in timeouts.items() if c.startswith("cloud-init status")]
+    assert (build, cloud_init) == (1800, 600)
+
+
+def test_ssh_run_has_a_timeout_and_sends_secrets_on_stdin(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_run(argv, **kwargs):
+        seen.update(argv=argv, **kwargs)
+        raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    ssh = commands.Ssh(tmp_path / "k.pem", tmp_path / "known_hosts")
+    with pytest.raises(commands.SshError, match=r"ssh 1\.2\.3\.4: timed out after 900 s: true"):
+        ssh.run("1.2.3.4", "true", stdin="secret-on-stdin")
+    assert seen["timeout"] == 900 and seen["input"] == "secret-on-stdin" and "secret-on-stdin" not in seen["argv"]
+    with pytest.raises(commands.SshError, match="timed out after 5 s"):
+        ssh.run("1.2.3.4", "true", timeout=5)
+    assert seen["timeout"] == 5
+
+
+def test_up_on_a_cluster_with_a_head_but_no_state_file_stops_too(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    (tmp_path / "state" / f"{CLUSTER}.json").unlink()
+    ssh = FakeSsh()
+    with pytest.raises(commands.CliError, match="already exists"):
+        run_up(aws, cluster_yaml, wheel, tmp_path, ssh=ssh)
+    assert ssh.calls == []
+
+
+def test_down_terminates_the_head_before_it_destroys_vast_instances_and_waits_for_it(aws, cluster_yaml, wheel, tmp_path, monkeypatch):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    [head] = commands._head_instances(aws.client("ec2"), CLUSTER)
+    order, waited = [], []
+    aws.events.register("before-call.ec2.TerminateInstances", lambda **kw: order.append("terminate head"))
+
+    class Vast(FakeVast):
+        def destroy_instance(self, instance_id):
+            order.append(f"destroy vast {instance_id}")
+            super().destroy_instance(instance_id)
+    monkeypatch.setattr(botocore.waiter.Waiter, "wait", lambda self, **kwargs: waited.append((self.name, kwargs)))
+    vast = Vast([{"id": 1, "label": f"ray-vast:{CLUSTER}"}])
+    assert commands.down(CLUSTER, REGION, aws, vast, tmp_path / "state", sleep=lambda s: None, out=lambda m: None) == []
+    assert order == ["terminate head", "destroy vast 1"]
+    assert waited == [("InstanceTerminated", {"InstanceIds": [head["InstanceId"]]})]
+
+
+@pytest.mark.parametrize("hook, kind", [
+    ("ec2.TerminateInstances", "EC2 instance"), ("ec2.DeleteSecurityGroup", "security group"), ("iam.DeleteInstanceProfile", "instance profile")])
+def test_down_reports_each_kind_of_resource_that_could_not_be_removed(aws, cluster_yaml, wheel, tmp_path, monkeypatch, hook, kind):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    monkeypatch.setattr(botocore.waiter.Waiter, "wait", lambda self, **kwargs: None)  # the head never terminates; do not wait for it
+    aws.events.register(f"before-call.{hook}", no_op_response)
+    left = commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path / "state", sleep=lambda s: None, out=lambda m: None)
+    assert len(left) == 1 and left[0].startswith(kind + " ")
+
+
+def test_down_removes_the_known_hosts_file(aws, tmp_path):
+    (tmp_path / f"{CLUSTER}.known_hosts").write_text("1.2.3.4 ssh-ed25519 AAAA")
+    commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path, sleep=lambda s: None, out=lambda m: None)
+    assert not (tmp_path / f"{CLUSTER}.known_hosts").exists()
+
+
+def test_dashboard_fixes_the_modes_of_an_old_token_file_and_directory(tmp_path):
+    (tmp_path / CLUSTER).mkdir(mode=0o755)
+    (tmp_path / CLUSTER).chmod(0o755)
+    (tmp_path / CLUSTER / "token").write_text("old-token")
+    (tmp_path / CLUSTER / "token").chmod(0o644)
+    commands.dashboard(FakeSsh(), "1.2.3.4", tmp_path, CLUSTER, out=lambda m: None)
+    token_file = tmp_path / CLUSTER / "token"
+    assert token_file.read_text() == "tok-0123456789abcdef"
+    assert oct(token_file.stat().st_mode & 0o777) == "0o600" and oct(token_file.parent.stat().st_mode & 0o777) == "0o700"
+
+
+def test_main_down_exits_1_when_something_is_left(running_cluster, aws, home, cluster_yaml, capsys, monkeypatch):
+    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
+    aws.events.register("before-call.iam.DeleteRole", no_op_response)
+    assert cli.main(["down", str(cluster_yaml)]) == 1
+    assert f"left: role ray-vast-{CLUSTER}" in capsys.readouterr().out
