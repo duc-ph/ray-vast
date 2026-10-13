@@ -7,6 +7,8 @@ import pytest
 import requests
 import responses
 
+import ray_vast
+
 from ray_vast.vast_api import BASE_URL, VastClient, VastError
 
 SECRET = "SECRET123"
@@ -131,6 +133,77 @@ def test_secrets_never_leak(client, caplog):
     assert "ACCOUNTKEY" not in everything
 
 
+@responses.activate
+def test_error_body_is_redacted_before_truncation(client):
+    body = json.dumps({"pad": "x" * 265, "instance_api_key": SECRET, "Auth_Token": "TOK999", "note": "Bearer ACCOUNTKEY"})
+    assert body.index(SECRET) < 300 < body.index(SECRET) + len(SECRET)  # the secret straddles char 300
+    responses.get(f"{BASE_URL}/instances/", status=400, body=body)
+    with pytest.raises(VastError) as e:
+        client.list_instances()
+    assert SECRET not in str(e.value) and "TOK999" not in str(e.value) and "ACCOUNTKEY" not in str(e.value)
+    assert "xxxx" in str(e.value)
+
+
+@responses.activate
+def test_create_failure_message_has_no_secret_fields(client):
+    responses.put(f"{BASE_URL}/asks/1/", json={"success": False, "error": "no_such_ask", "instance_api_key": SECRET})
+    with pytest.raises(VastError) as e:
+        client.create_instance(1, "img", {}, [], "l", 20)
+    assert "no_such_ask" in str(e.value) and SECRET not in str(e.value)
+
+
+@responses.activate
+def test_search_and_list_raise_on_404(client):
+    responses.post(f"{BASE_URL}/bundles/", status=404)
+    responses.get(f"{BASE_URL}/instances/", status=404)
+    with pytest.raises(VastError):
+        client.search_offers({})
+    with pytest.raises(VastError):
+        client.list_instances()
+
+
+@responses.activate
+def test_destroy_with_success_false_raises(client):
+    responses.delete(f"{BASE_URL}/instances/1/", json={"success": False, "msg": "busy"})
+    with pytest.raises(VastError):
+        client.destroy_instance(1)
+
+
+@responses.activate
+def test_every_call_has_a_timeout(client):
+    responses.post(f"{BASE_URL}/bundles/", json={"offers": []})
+    responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
+    responses.get(f"{BASE_URL}/instances/", json={"instances": []})
+    responses.get(f"{BASE_URL}/instances/1/", json={"instances": {"id": 1}})
+    responses.delete(f"{BASE_URL}/instances/1/", json={"success": True})
+    client.search_offers({})
+    client.create_instance(1, "img", {}, [], "l", 20)
+    client.list_instances()
+    client.get_instance(1)
+    client.destroy_instance(1)
+    assert len(responses.calls) == 5
+    assert all(c.request.req_kwargs["timeout"] for c in responses.calls)
+
+
+FIXTURES = pathlib.Path(__file__).resolve().parents[1] / "fixtures"
+
+
+@responses.activate
+def test_real_archived_shapes(client):
+    offer = json.loads((FIXTURES / "vast_offer.json").read_text())
+    poll = json.loads((FIXTURES / "vast_instance_poll.json").read_text())
+    # The poll output keeps only some fields; public_ipaddr and ports (keyed "<port>/tcp") follow tests/manual/c4_rent.py.
+    instance = {"id": 55448911, "machine_id": offer["machine_id"], "public_ipaddr": "85.10.218.46\n",
+                "ports": {"70040/tcp": [{"HostIp": "0.0.0.0", "HostPort": "70040"}]}, **poll}
+    responses.post(f"{BASE_URL}/bundles/", json={"offers": [offer]})
+    responses.get(f"{BASE_URL}/instances/55448911/", json={"instances": instance})
+    got_offer = client.search_offers({})[0]
+    got = client.get_instance(55448911)
+    assert (got_offer["id"], got_offer["machine_id"], got_offer["dph_total"]) == (48743418, 3969, 0.09703703703703705)
+    assert got["actual_status"] == "running" and got["dph_total"] == pytest.approx(0.1025925925925926)
+    assert got["machine_id"] == 3969 and got["public_ipaddr"].strip() == "85.10.218.46" and "70040/tcp" in got["ports"]
+
+
 LIVE_KEY = pathlib.Path("~/.config/vastai/vast_api_key").expanduser()
 
 
@@ -139,3 +212,17 @@ def test_live_search_offers_returns_offers():
     key = os.environ.get("VAST_API_KEY") or LIVE_KEY.read_text().strip()
     offers = VastClient(key).search_offers({"num_gpus": {"eq": 0}, "rentable": {"eq": True}}, limit=3)
     assert offers and "dph_total" in offers[0]
+
+
+@pytest.mark.live
+def test_live_search_with_gpu_24gb_example_query():
+    import yaml
+
+    from ray_vast.config import build_offer_query, load_and_bootstrap
+
+    config, _ = load_and_bootstrap(pathlib.Path(ray_vast.__file__).parent / "examples" / "gpu-24gb.yaml")
+    query = build_offer_query(config["available_node_types"]["gpu24"], config["provider"]["allow_non_datacenter"], "gpu24")
+    key = os.environ.get("VAST_API_KEY") or LIVE_KEY.read_text().strip()
+    offers = VastClient(key).search_offers(query)  # raises on HTTP 400 if the body (type: on-demand) is not accepted
+    print(len(offers), "offers for", query)
+    assert isinstance(offers, list)

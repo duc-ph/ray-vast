@@ -14,7 +14,10 @@ TIMEOUT_S = 30
 TRIES = 5
 BACKOFF_BASE_S = 1.0
 BACKOFF_MAX_S = 8.0
-_SECRET_RE = re.compile(r'("instance_api_key"\s*:\s*)"[^"]*"')
+_SECRET_RES = (
+    re.compile(r'("[^"]*(?:api_key|token)[^"]*"\s*:\s*)"[^"]*"', re.IGNORECASE),
+    re.compile(r"Bearer\s+\S+", re.IGNORECASE),
+)
 
 
 class VastError(Exception):
@@ -33,7 +36,7 @@ class VastClient:
         self._jitter = jitter
         self._session = requests.Session()
 
-    def _request(self, method, path, key=None, json=None, retry_5xx=True):
+    def _request(self, method, path, key=None, json=None, retry_unsafe=True):
         """Return the response, or None for HTTP 404. Retries 429, 5xx and connection errors with backoff."""
         headers = {"Authorization": f"Bearer {key or self._api_key}"}
         for attempt in range(1, TRIES + 1):
@@ -43,25 +46,31 @@ class VastClient:
                 status = resp.status_code
             except requests.RequestException as e:
                 status, error = None, type(e).__name__  # the exception text may hold the URL or headers
-            if error and (not retry_5xx or attempt == TRIES):
+            if error and (not retry_unsafe or attempt == TRIES):
                 raise VastError(f"{method} {path}: {error}")
             if status is not None:
                 if status == 404:
                     return None
                 if status < 400:
                     return resp
-                if not (status == 429 or (status >= 500 and retry_5xx)) or attempt == TRIES:
-                    body = _SECRET_RE.sub(r'\1"<redacted>"', resp.text[:300])
+                if not (status == 429 or (status >= 500 and retry_unsafe)) or attempt == TRIES:
+                    body = resp.text
+                    for pattern in _SECRET_RES:
+                        body = pattern.sub(lambda m: (m.group(1) + '"<redacted>"') if m.lastindex else "Bearer <redacted>", body)
+                    body = body[:300]
                     raise VastError(f"{method} {path}: HTTP {status}: {body}", status=status)
             delay = min(BACKOFF_BASE_S * 2 ** (attempt - 1), BACKOFF_MAX_S) * (1 + self._jitter())
             log.warning("%s %s: HTTP %s, retry %d/%d in %.1f s", method, path, status or "connection error",
                         attempt, TRIES - 1, delay)
             self._sleep(delay)
 
-    def search_offers(self, query, order_by="dph_total", limit=20):
+    def search_offers(self, query, order_by="dph_total", limit=100):
         """Return the offers matching `query` (vast filter dict), cheapest first by default."""
         body = {**query, "order": [[order_by, "asc"]], "type": "on-demand", "limit": limit}
-        return self._request("POST", "/bundles/", json=body).json()["offers"]
+        resp = self._request("POST", "/bundles/", json=body)
+        if resp is None:
+            raise VastError("POST /bundles/: HTTP 404", status=404)
+        return resp.json()["offers"]
 
     def create_instance(self, offer_id, image, env, args, label, disk_gb):
         """Rent `offer_id` and return the new instance ID. The per-instance key in the response is dropped."""
@@ -75,13 +84,14 @@ class VastClient:
             "disk": disk_gb,
         }
         # A 5xx or a lost connection may still have rented the offer, so only 429 retries (no duplicate rentals).
-        resp = self._request("PUT", f"/asks/{offer_id}/", json=body, retry_5xx=False)
+        resp = self._request("PUT", f"/asks/{offer_id}/", json=body, retry_unsafe=False)
         if resp is None:
             raise VastError(f"PUT /asks/{offer_id}/: offer not found", status=404)
         result = resp.json()
         result.pop("instance_api_key", None)
         if not result.get("success", True) or "new_contract" not in result:
-            raise VastError(f"PUT /asks/{offer_id}/: {_SECRET_RE.sub('', str(result))[:300]}")
+            reason = {k: result.get(k) for k in ("success", "error", "msg") if k in result}
+            raise VastError(f"PUT /asks/{offer_id}/: {reason}"[:300])
         log.info("rented offer %s as instance %s", offer_id, result["new_contract"])
         return int(result["new_contract"])
 
@@ -95,8 +105,13 @@ class VastClient:
 
     def list_instances(self):
         """Return all instances of the account."""
-        return self._request("GET", "/instances/").json()["instances"]
+        resp = self._request("GET", "/instances/")
+        if resp is None:
+            raise VastError("GET /instances/: HTTP 404", status=404)
+        return resp.json()["instances"]
 
     def destroy_instance(self, instance_id, key=None):
         """Destroy the instance. An instance that is already gone counts as success."""
-        self._request("DELETE", f"/instances/{instance_id}/", key=key)
+        resp = self._request("DELETE", f"/instances/{instance_id}/", key=key)
+        if resp is not None and resp.json().get("success") is False:
+            raise VastError(f"DELETE /instances/{instance_id}/: success false")
