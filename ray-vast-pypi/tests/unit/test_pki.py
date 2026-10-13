@@ -127,3 +127,13 @@ def test_lifetime_follows_cert_max_age_days():
     cert, _ = pki.make_ca(cert_max_age_days=30, now=T0)
     assert pki.expiry_warning(cert, now=T0 + timedelta(days=15)) is None
     assert pki.expiry_warning(cert, now=T0 + timedelta(days=16)) is not None
+
+
+def test_leaf_with_instance_id_has_a_uri_san(ca):
+    ca_cert, ca_key = ca
+    cert, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, now=T0, instance_id=42)
+    san = x509.load_pem_x509_certificate(cert).extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    assert san.get_values_for_type(x509.UniformResourceIdentifier) == ["rayvast:instance/42"]
+    plain, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, now=T0)
+    san = x509.load_pem_x509_certificate(plain).extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    assert san.get_values_for_type(x509.UniformResourceIdentifier) == []

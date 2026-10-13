@@ -55,8 +55,9 @@ def make_ca(cert_max_age_days=365, now=None):
     return cert.public_bytes(serialization.Encoding.PEM), _key_pem(key)
 
 
-def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None):
-    """Return (cert_pem, key_pem) for a node or the head. SAN = ip and 127.0.0.1.
+def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None, instance_id=None):
+    """Return (cert_pem, key_pem) for a node or the head. SAN = ip and 127.0.0.1, plus the URI
+    `rayvast:instance/<instance_id>` when `instance_id` is given (node certs: the head binds a cert to one instance).
 
     The cert is valid for server and client auth, because Ray uses it for mutual TLS.
     Its expiry is capped at the CA expiry, so a leaf never outlives its CA.
@@ -65,6 +66,9 @@ def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None):
     ca_cert = x509.load_pem_x509_certificate(ca_cert_pem)
     ca_key = serialization.load_pem_private_key(ca_key_pem, password=None)
     key = _new_key()
+    san = [x509.IPAddress(ipaddress.ip_address(ip)), x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
+    if instance_id is not None:
+        san.append(x509.UniformResourceIdentifier(f"rayvast:instance/{instance_id}"))
     cert = (
         x509.CertificateBuilder()
         .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, ip)]))
@@ -74,12 +78,7 @@ def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None):
         .not_valid_before(now - CLOCK_SKEW)
         .not_valid_after(min(now + timedelta(days=cert_max_age_days), ca_cert.not_valid_after_utc))
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-        .add_extension(
-            x509.SubjectAlternativeName(
-                [x509.IPAddress(ipaddress.ip_address(ip)), x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
-            ),
-            critical=False,
-        )
+        .add_extension(x509.SubjectAlternativeName(san), critical=False)
         .add_extension(
             x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH, ExtendedKeyUsageOID.CLIENT_AUTH]),
             critical=False,

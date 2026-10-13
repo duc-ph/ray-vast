@@ -38,7 +38,9 @@ class Candidate:
     rented_at: float = 0.0
     running_at: Optional[float] = None
     dph_total: float = 0.0
+    node_type: Optional[str] = None  # set by the provider at rent time; used when the candidate's own slot is gone
     last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
+    pull_limit_s: float = 900.0  # the provider's limit for "rented, not yet running" (image pull)
 
 
 @dataclass

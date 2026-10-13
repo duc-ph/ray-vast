@@ -179,6 +179,8 @@ class HeadServer:
                 raise ValueError("types")
             if sorted(ports) != list(IDENTITY_PORTS) or not all(0 < p < 65536 for p in ports.values()):
                 raise ValueError("ports")
+            if len(set(ports.values())) != len(ports) or not 1 <= cpu_count <= 4096 or not 0 <= gpu_count <= 64:
+                raise ValueError("values")
         except (KeyError, TypeError, ValueError, AttributeError):
             return 400, {"reason": "bad request"}
 
@@ -199,12 +201,16 @@ class HeadServer:
             return 403, {"reason": reason}
         log.info("enroll request: instance %s, machine %s, ip %s", instance_id, cand.machine_id, source_ip)
 
+        # A wrong key gets no destroy: a co-tenant behind the same IP must not be able to kill our candidate.
         try:
             instance = self.vast.get_instance(instance_id, key=container_key)
-        except VastError:
+        except VastError as e:
+            if e.status not in (401, 403, 404):
+                log.warning("enroll of instance %s: vast error %s, asking the worker to retry", instance_id, e.status)
+                return 503, {"reason": "vast is unavailable, retry"}
             instance = None
         if instance is None:
-            self._destroy(cand, "container key is not valid for this instance")
+            log.warning("enroll refused for instance %s: container key is not valid", instance_id)
             return 403, {"reason": "container key is not valid for this instance"}
 
         failed = [name for name in (*SECURITY_CHECKS, "egress_ip_ok") if checks.get(name) is not True]
@@ -229,14 +235,18 @@ class HeadServer:
             self._destroy(cand, reason)
             return 403, {"reason": reason}
 
+        # The cert comes before the slot is taken, so a failure here leaves nothing half-enrolled.
+        cert_pem, key_pem = pki.make_leaf(self.ca_cert_pem, self.ca_key_pem, cand.public_ip, instance_id=instance_id)
         with state.lock:
             if instance_id in state.enrolled or instance_id not in state.candidates:
                 return 403, {"reason": "already enrolled"}  # a parallel request won; keep the instance
             wanted = state.slots.get(cand.slot_id)
+            node_type = cand.node_type or (wanted.node_type if wanted else None)
             slot = None
-            if wanted is not None:
-                free = [s for s in state.slots.values() if s.node_type == wanted.node_type and s.instance_id is None]
-                slot = wanted if wanted in free else (free[0] if free else None)
+            if wanted is not None and wanted.instance_id is None:
+                slot = wanted
+            elif node_type is not None:
+                slot = next((s for s in state.slots.values() if s.node_type == node_type and s.instance_id is None), None)
             if slot is not None:
                 state.mark_enrolled(instance_id)
                 slot.instance_id, slot.status = instance_id, "setting-up"
@@ -244,7 +254,6 @@ class HeadServer:
             self._destroy(cand, "no free slot")
             return 403, {"reason": "no free slot"}
 
-        cert_pem, key_pem = pki.make_leaf(self.ca_cert_pem, self.ca_key_pem, cand.public_ip)
         log.info("enrolled instance %s (machine %s, ip %s) into %s", instance_id, cand.machine_id, cand.public_ip,
                  slot.id)
         return 200, {
@@ -278,14 +287,15 @@ class HeadServer:
         with self.state.lock:
             cand = self.state.candidates.get(instance_id)
             enrolled = instance_id in self.state.enrolled
-        cert_ips = [v for k, v in (peer_cert or {}).get("subjectAltName", ()) if k == "IP Address"]
-        if cand is None or not enrolled or cand.public_ip not in cert_ips:
+        san = (peer_cert or {}).get("subjectAltName", ())
+        if (cand is None or not enrolled or ("IP Address", cand.public_ip) not in san
+                or ("URI", f"rayvast:instance/{instance_id}") not in san):
             log.warning("port B request %s refused for instance %s", path, instance_id)
             return 403, {"reason": "unknown"}
         if path == "/heartbeat":
             with self.state.lock:
                 cand.last_heartbeat = self.clock()
-        elif body.get("kind") == "token_check" and body.get("ok") is False:
+        elif body.get("kind") == "token_check" and body.get("ok") is not True:
             self._destroy(cand, "token check failed: " + str(body.get("reason", ""))[:200])
         elif body.get("kind") == "destroy":
             log.warning("worker %s asks to be destroyed: %s", instance_id, _clip(body.get("reason")))
