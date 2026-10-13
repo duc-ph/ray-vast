@@ -1,0 +1,27 @@
+# An 80 GB GPU tier, two GPUs in each worker, in the US.
+cluster_name: gpu-80gb
+max_workers: 2
+idle_timeout_minutes: 5
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 10.0
+  candidate_factor: 2
+auth:
+  ssh_user: ray
+head_node_type: head
+available_node_types:
+  head:
+    resources: {CPU: 0}
+    node_config: {}
+    max_workers: 0
+  gpu80:
+    resources: {CPU: 16, GPU: 2}
+    min_workers: 0
+    max_workers: 2
+    node_config:
+      disk_gb: 100
+      offer_query:
+        gpu_ram: {gte: 80000}   # MB
+        dlperf: {gte: 100}
+        geolocation: {in: [US]}

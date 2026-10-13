@@ -1,0 +1,27 @@
+# A CPU-heavy variant: one small GPU and many CPU cores in each worker.
+# CPU is a minimum. The offer must have at least this many effective cores.
+# Do not set CPU above 58. Each Ray worker process needs one worker port.
+cluster_name: cpu-heavy
+max_workers: 3
+idle_timeout_minutes: 5
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 4.0
+auth:
+  ssh_user: ray
+head_node_type: head
+available_node_types:
+  head:
+    resources: {CPU: 0}
+    node_config: {}
+    max_workers: 0
+  cpu32:
+    resources: {CPU: 32, GPU: 1}
+    min_workers: 0
+    max_workers: 3
+    node_config:
+      offer_query:
+        gpu_ram: {gte: 12000, lte: 24000}   # MB
+        cpu_ram: {gte: 64000}               # MB
+        dlperf: {gte: 20}
