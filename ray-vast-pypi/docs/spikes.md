@@ -8,8 +8,8 @@ Ray 2.59.0, autoscaler v2, `rayproject/ray:2.59.0-py311-cpu` on EC2 `ray-vast-de
 |---|---|---|---|---|
 | 1 | Matching by `RAY_CLOUD_INSTANCE_ID` with a shared IP | Pass | 2 slots, both raylets on one IP; ALLOCATED → RAY_RUNNING 18 s after submit; no assert | `logs/run1/check1.log`, `monitor/` |
 | 2 | Scale-down removes the correct node | Pass | drain after 61.7 s idle, `terminate_nodes([slot])` 5 s later; the correct raylet stopped | `logs/run1/raylet-slot-*.log` |
-| 3 | Real cores on a running node | Pass | `CPU: 2` type started with 4 CPUs ran 4 × 1-CPU tasks at once; v2 plans a new node with 2 CPUs | `logs/run1/check3*.log` |
-| 4 | Slow start (15 min) | Pass | ALLOCATED → RAY_RUNNING after 905 s, no timeout. Timeout `RAY_AUTOSCALER_RECONCILE_ALLOCATE_STATUS_TIMEOUT_S`, default 3600 s (`v2/instance_manager/config.py:84-113`). With 60 s: terminate and a new slot every 65 s, with no limit. | `logs/run2_timeout60/` |
+| 3 | Real cores on a running node | Pass | `CPU: 2` type started with 4 CPUs ran 4 × 1-CPU tasks at once; v2 plans a new node with 2 CPUs | `logs/run1/check3*.log`; `v2/scheduler.py:454` (running node: reported resources), `:571` (new node: declared) |
+| 4 | Slow start (15 min) | Pass | ALLOCATED → RAY_RUNNING after 905 s, no timeout. Timeout `RAY_AUTOSCALER_RECONCILE_ALLOCATE_STATUS_TIMEOUT_S`, default 3600 s (`v2/instance_manager/config.py:84-113`, used in `reconciler.py:1036-1050`). With 60 s: terminate and a new slot every 65 s, with no limit. | `logs/run2_timeout60/` |
 | 5 | Tags | Info | Create writes `ray-node-name`, `ray-node-type`, `ray-node-status`, `ray-launch-config`, `ray-launch-request`, `ray-user-node-type`. 0 `set_node_tags` calls. `node_tags` reads only `ray-node-type`, `ray-user-node-type`, `ray-launch-request` (`node_provider.py:357-373`). | `logs/run1/provider.log` |
 | 6 | One provider object | Pass | `__init__` ran 1 time in 28 min; a config edit was used without a new object (`v2/autoscaler.py:118`, config read again each loop `:211`) | `logs/run1/provider.log` |
 
