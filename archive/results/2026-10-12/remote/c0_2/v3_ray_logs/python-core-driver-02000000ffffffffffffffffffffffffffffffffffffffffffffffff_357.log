@@ -1,0 +1,99 @@
+[2026-10-12 15:29:38,847 I 357 357] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 357
+[2026-10-12 15:29:38,853 I 357 357] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 15:29:38,853 I 357 357] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 15:29:38,853 I 357 357] event.cc:332: Set ray event level to warning
+[2026-10-12 15:29:38,854 I 357 357] grpc_server.cc:144: driver server started, listening on port 10007.
+[2026-10-12 15:29:38,856 I 357 357] core_worker_process.cc:299: Initializing worker at address: 203.0.113.10:10007 worker_id=02000000ffffffffffffffffffffffffffffffffffffffffffffffff node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:38,857 I 357 357] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 15:29:38,858 I 357 791] core_worker.cc:507: Event stats:
+
+
+Global stats: 12 total (10 active)
+Queueing time: mean = 0.00ms, max = 0.03ms, min = 0.03ms, total = 0.03ms
+Execution time:  mean = 0.06ms, total = 0.68ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 7 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.01ms, Queueing time: mean = 0.00ms, max = 0.03ms, min = 0.03ms, total = 0.03ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (0 active), Execution time: mean = 0.68ms, total = 0.68ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberPoll - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberCommandBatch - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo.OnReplyReceived - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.01ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+Execution time:  mean = 0.02ms, total = 0.04ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.04ms, total = 0.04ms, Queueing time: mean = 0.02ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 1
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 15:29:38,859 I 357 791] accessor.cc:475: Received address and liveness notification for node, IsAlive = 1 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:38,859 I 357 791] normal_task_submitter.cc:846: Number of alive nodes:1
+[2026-10-12 15:29:38,872 W 357 357] actor_manager.cc:110: Failed to look up actor with name '_ray_internal_job_actor_raysubmit_76G8Pmt9eEMRqT9f'. This could because 1. You are trying to look up a named actor you didn't create. 2. The named actor died. 3. You did not use a namespace matching the namespace of the actor.
+[2026-10-12 15:29:39,019 I 357 357] actor_task_submitter.cc:75: Set actor max pending calls to -1 actor_id=407bde2a671748e5cef334d302000000
+[2026-10-12 15:29:39,034 I 357 791] actor_manager.cc:236: received notification on actor, state: PENDING_CREATION, ip address: , port: 0, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=407bde2a671748e5cef334d302000000 worker_id=NIL_ID node_id=NIL_ID
+[2026-10-12 15:29:39,037 I 357 791] actor_manager.cc:236: received notification on actor, state: PENDING_CREATION, ip address: , port: 0, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=407bde2a671748e5cef334d302000000 worker_id=NIL_ID node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:40,175 I 357 791] actor_manager.cc:236: received notification on actor, state: ALIVE, ip address: 203.0.113.10, port: 10008, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=407bde2a671748e5cef334d302000000 worker_id=1ad9438aa371a1dad7bb2397f471febc6d053f8422c1a67e70765881 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:41,497 W 357 791] task_manager.cc:1678: Task attempt e082c90ab8422b00407bde2a671748e5cef334d302000000 failed with error ACTOR_UNAVAILABLE Fail immediately? 0, status IntentionalSystemExit: Worker exits with an exit code 0. exit_actor() is called., error info actor_unavailable_error {
+  actor_id: "@{\336*g\027H\345\316\3634\323\002\000\000\000"
+}
+error_message: "The actor is temporarily unavailable: IntentionalSystemExit: Worker exits with an exit code 0. exit_actor() is called."
+error_type: ACTOR_UNAVAILABLE
+
+[2026-10-12 15:29:41,497 I 357 791] task_manager.cc:1557: task e082c90ab8422b00407bde2a671748e5cef334d302000000 retries left: 0, oom retries left: 0, task failed due to oom: 0
+[2026-10-12 15:29:41,497 I 357 791] task_manager.cc:1572: No retries left for task e082c90ab8422b00407bde2a671748e5cef334d302000000, not going to resubmit.
+[2026-10-12 15:29:41,497 I 357 791] actor_task_submitter.cc:783: PushActorTask failed because of network error, this task will be stashed away and waiting for Death info from GCS, wait_queue_size=1 task_id=e082c90ab8422b00407bde2a671748e5cef334d302000000
+[2026-10-12 15:29:41,501 I 357 791] actor_manager.cc:236: received notification on actor, state: DEAD, ip address: 203.0.113.10, port: 10008, num_restarts: 0, death context type=ActorDiedErrorContext actor_id=407bde2a671748e5cef334d302000000 worker_id=1ad9438aa371a1dad7bb2397f471febc6d053f8422c1a67e70765881 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:41,502 I 357 791] actor_task_submitter.cc:429: Failing pending tasks for actor because the actor is already dead. actor_id=407bde2a671748e5cef334d302000000
+[2026-10-12 15:29:41,502 I 357 791] task_manager.cc:1649: Task failed: IntentionalSystemExit: Worker exits with an exit code 0. exit_actor() is called.: Type=ACTOR_TASK, Language=PYTHON, Resources: {}, function_descriptor={type=PythonFunctionDescriptor, module_name=ray.dashboard.modules.job.job_supervisor, class_name=JobSupervisor, function_name=run, function_hash=}, task_id=e082c90ab8422b00407bde2a671748e5cef334d302000000, task_name=JobSupervisor.run, job_id=02000000, num_args=4, num_returns=1, max_retries=0, depth=1, attempt_number=0, actor_task_spec={actor_id=407bde2a671748e5cef334d302000000, actor_caller_id=ffffffffffffffffffffffffffffffffffffffff02000000, seq_no=0, retry_exceptions=0}, dependencies={}
+[2026-10-12 15:29:41,502 I 357 791] actor_manager.cc:236: received notification on actor, state: DEAD, ip address: 203.0.113.10, port: 10008, num_restarts: 0, death context type=ActorDiedErrorContext actor_id=407bde2a671748e5cef334d302000000 worker_id=1ad9438aa371a1dad7bb2397f471febc6d053f8422c1a67e70765881 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:41,502 I 357 791] actor_task_submitter.cc:429: Failing pending tasks for actor because the actor is already dead. actor_id=407bde2a671748e5cef334d302000000
+[2026-10-12 15:29:42,033 W 357 357] task_manager.cc:1678: Task attempt 39088be3736e590a407bde2a671748e5cef334d302000000 failed with error ACTOR_DIED Fail immediately? 0, status IOError: cancelling task of dead actor, error info actor_died_error {
+  actor_died_error_context {
+    error_message: "The actor is dead because its worker process has died. Worker exit type: INTENDED_USER_EXIT Worker exit detail: User requested to exit the actor."
+    owner_id: "\002\000\000\000\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377"
+    owner_ip_address: "203.0.113.10"
+    node_ip_address: "203.0.113.10"
+    pid: 806
+    name: "_ray_internal_job_actor_raysubmit_76G8Pmt9eEMRqT9f"
+    ray_namespace: "SUPERVISOR_ACTOR_RAY_NAMESPACE"
+    class_name: "JobSupervisor"
+    actor_id: "@{\336*g\027H\345\316\3634\323\002\000\000\000"
+    reason: WORKER_DIED
+  }
+}
+error_message: "The actor is dead because its worker process has died. Worker exit type: INTENDED_USER_EXIT Worker exit detail: User requested to exit the actor."
+error_type: ACTOR_DIED
+
+[2026-10-12 15:29:42,033 I 357 357] task_manager.cc:1557: task 39088be3736e590a407bde2a671748e5cef334d302000000 retries left: 0, oom retries left: 0, task failed due to oom: 0
+[2026-10-12 15:29:42,033 I 357 357] task_manager.cc:1572: No retries left for task 39088be3736e590a407bde2a671748e5cef334d302000000, not going to resubmit.
+[2026-10-12 15:29:42,033 I 357 357] task_manager.cc:1649: Task failed: IOError: cancelling task of dead actor: Type=ACTOR_TASK, Language=PYTHON, Resources: {}, function_descriptor={type=PythonFunctionDescriptor, module_name=ray.dashboard.modules.job.job_supervisor, class_name=JobSupervisor, function_name=ping, function_hash=}, task_id=39088be3736e590a407bde2a671748e5cef334d302000000, task_name=JobSupervisor.ping, job_id=02000000, num_args=0, num_returns=1, max_retries=-1, depth=1, attempt_number=0, actor_task_spec={actor_id=407bde2a671748e5cef334d302000000, actor_caller_id=ffffffffffffffffffffffffffffffffffffffff02000000, seq_no=2, retry_exceptions=0}, dependencies={}
+[2026-10-12 15:29:49,050 W 357 357] reference_counter.cc:480: Tried to decrease ref count for nonexistent object ID: ffffffffffffffff407bde2a671748e5cef334d30200000001000000

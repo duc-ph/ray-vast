@@ -1,0 +1,16 @@
+== ss -ltnpe sport 6384
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                                                                                                                       
+LISTEN 0      128        127.0.0.1:6384      0.0.0.0:*    users:(("ray::DashboardA",pid=14429,fd=38)) uid:1000 ino:55624 sk:1018 cgroup:/system.slice/docker-a308029cc3edde2434c266d6b29eb6f38af1f3a6f08eb0d92a6c1a96cda15bad.scope <->
+LISTEN 0      128        127.0.0.1:6384      0.0.0.0:*    users:(("ray::DashboardA",pid=14429,fd=37)) uid:1000 ino:55623 sk:1019 cgroup:/system.slice/docker-a308029cc3edde2434c266d6b29eb6f38af1f3a6f08eb0d92a6c1a96cda15bad.scope <->
+== fds of the pid -> socket inodes
+pid=14429
+37 socket:[55623]
+38 socket:[55624]
+== 20 sequential no-token requests
+     20 401
+== agent log lines about the HTTP server
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:30:40,751	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:30:40,754	INFO http_server_agent.py:138 -- Dashboard agent http address: 127.0.0.1:6384

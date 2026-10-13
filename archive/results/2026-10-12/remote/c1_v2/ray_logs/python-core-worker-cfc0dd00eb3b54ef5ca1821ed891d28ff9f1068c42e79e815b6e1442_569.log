@@ -1,0 +1,81 @@
+[2026-10-12 15:26:22,453 I 569 569] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 569
+[2026-10-12 15:26:22,460 I 569 569] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 15:26:22,460 I 569 569] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 15:26:22,460 I 569 569] event.cc:332: Set ray event level to warning
+[2026-10-12 15:26:22,462 I 569 569] grpc_server.cc:144: worker server started, listening on port 10003.
+[2026-10-12 15:26:22,465 I 569 569] core_worker_process.cc:299: Initializing worker at address: 35.85.154.224:10003 worker_id=cfc0dd00eb3b54ef5ca1821ed891d28ff9f1068c42e79e815b6e1442 node_id=55141e36c530f99abce257cc8f59ebdbb084898a7bceec2e6574bf48
+[2026-10-12 15:26:22,483 I 569 569] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 15:26:22,484 I 569 569] core_worker.cc:577: Adjusted worker niceness to 15
+[2026-10-12 15:26:22,484 I 569 569] open_telemetry_metric_recorder.cc:149: OpenTelemetry metric exporter configured with TLS and mTLS enabled
+[2026-10-12 15:26:22,485 I 569 584] core_worker.cc:507: Event stats:
+
+
+Global stats: 11 total (9 active)
+Queueing time: mean = 0.04ms, max = 0.37ms, min = 0.02ms, total = 0.39ms
+Execution time:  mean = 0.00ms, total = 0.02ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 8 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.02ms, Queueing time: mean = 0.05ms, max = 0.37ms, min = 0.02ms, total = 0.39ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	CoreWorker.ExitIfParentRayletDies - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.01ms, max = 0.03ms, min = 0.03ms, total = 0.03ms
+Execution time:  mean = 0.02ms, total = 0.04ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.04ms, total = 0.04ms, Queueing time: mean = 0.03ms, max = 0.03ms, min = 0.03ms, total = 0.03ms
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 0
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 15:26:23,964 I 569 584] core_worker_shutdown_executor.cc:269: Executing handle exit: INTENDED_SYSTEM_EXIT - Worker exited because it was idle for a long time (timeout: -1ms)
+[2026-10-12 15:26:23,964 I 569 584] core_worker_shutdown_executor.cc:141: Executing worker exit: INTENDED_SYSTEM_EXIT - Worker exited because it was idle for a long time (timeout: 10000ms)
+[2026-10-12 15:26:23,965 I 569 569] core_worker_shutdown_executor.cc:217: Wait for currently executing tasks in the underlying thread pools to finish.
+[2026-10-12 15:26:23,965 I 569 569] core_worker_shutdown_executor.cc:247: Releasing local references, then draining reference counter.
+[2026-10-12 15:26:23,970 I 569 569] core_worker_shutdown_executor.cc:303: Try killing all child processes of this worker as it exits. Child process pids: 
+[2026-10-12 15:26:23,974 I 569 569] core_worker_shutdown_executor.cc:368: Sending disconnect message to the local raylet.
+[2026-10-12 15:26:23,974 I 569 569] raylet_ipc_client.cc:133: RayletIpcClient::Disconnect, exit_type=INTENDED_SYSTEM_EXIT, exit_detail=Worker exited because it was idle for a long time, has creation_task_exception_pb_bytes=0
+[2026-10-12 15:26:23,981 I 569 569] core_worker_shutdown_executor.cc:384: Disconnected from the local raylet.
+[2026-10-12 15:26:23,981 I 569 569] task_event_buffer.cc:548: Shutting down TaskEventBuffer.
+[2026-10-12 15:26:23,981 I 569 591] task_event_buffer.cc:507: Task event buffer io service stopped.
+[2026-10-12 15:26:23,983 I 569 569] ray_event_recorder_base.cc:69: Stopping RayEventRecorder and flushing remaining events.
+[2026-10-12 15:26:23,983 I 569 584] core_worker_process.cc:199: Core worker main io service stopped.
+[2026-10-12 15:26:23,983 I 569 569] core_worker_shutdown_executor.cc:92: Waiting for joining a core worker io thread. If it hangs here, there might be deadlock or a high load in the core worker io service.
+[2026-10-12 15:26:23,983 I 569 569] core_worker_shutdown_executor.cc:109: Waiting for joining the object-freed callback thread.
+[2026-10-12 15:26:23,983 I 569 585] core_worker_process.cc:219: Object-freed callback service stopped.
+[2026-10-12 15:26:23,989 I 569 569] core_worker_shutdown_executor.cc:118: Disconnecting a GCS client.
+[2026-10-12 15:26:23,989 I 569 569] core_worker_shutdown_executor.cc:125: Core worker ready to be deallocated.
+[2026-10-12 15:26:23,989 I 569 569] core_worker_process.cc:1058: Task execution loop terminated. Waiting for shutdown to complete...
+[2026-10-12 15:26:23,989 I 569 569] core_worker_shutdown_executor.cc:43: Shutdown completed successfully
+[2026-10-12 15:26:23,989 I 569 569] core_worker_process.cc:1060: Shutdown complete. Removing the global worker.
+[2026-10-12 15:26:23,989 I 569 569] core_worker_shutdown_executor.cc:43: Shutdown completed successfully
+[2026-10-12 15:26:23,989 I 569 569] core_worker.cc:593: Core worker is destructed
+[2026-10-12 15:26:24,214 I 569 569] core_worker_process.cc:954: Destructing CoreWorkerProcessImpl. pid: 569
+[2026-10-12 15:26:24,217 I 569 569] stats.h:176: Stats module has shutdown.

@@ -1,0 +1,68 @@
+2026-10-12 15:29:03,876	INFO scripts.py:1493 -- Did not find any active Ray processes.
+== step 2: ray start with the shim (PRIVATE_IP=172.31.31.46)
+2026-10-12 15:29:11,882	SUCC scripts.py:1086 -- [32m--------------------[39m
+2026-10-12 15:29:11,882	INFO scripts.py:1088 -- [36mNext steps[39m
+2026-10-12 15:29:11,882	INFO cli_output_helpers.py:16 -- [2mNote: The following commands are intended for use on[22m
+2026-10-12 15:29:11,882	INFO cli_output_helpers.py:17 -- [2mthe head node or within the cluster network.[22m
+2026-10-12 15:29:11,882	INFO scripts.py:1092 -- To add another node to this Ray cluster, run
+2026-10-12 15:29:11,883	INFO scripts.py:1095 -- [1m  ray start --address='203.0.113.10:6379'[22m
+2026-10-12 15:29:11,883	INFO scripts.py:1106 -- To connect to this Ray cluster:
+2026-10-12 15:29:11,883	INFO scripts.py:1108 -- [35mimport[39m[26m ray
+2026-10-12 15:29:11,883	INFO scripts.py:1109 -- ray[35m.[39m[26minit(_node_ip_address[35m=[39m[26m[33m'203.0.113.10'[39m[26m)
+2026-10-12 15:29:11,883	INFO scripts.py:1123 -- To submit a Ray job using the Ray Jobs CLI:
+2026-10-12 15:29:11,883	INFO scripts.py:1124 -- [1m  RAY_API_SERVER_ADDRESS='http://127.0.0.1:8265' ray job submit --working-dir . -- python my_script.py[22m
+2026-10-12 15:29:11,883	INFO scripts.py:1133 -- See https://docs.ray.io/en/latest/cluster/running-applications/job-submission/index.html 
+2026-10-12 15:29:11,883	INFO scripts.py:1137 -- for more information on submitting Ray jobs to the Ray cluster.
+2026-10-12 15:29:11,883	INFO scripts.py:1142 -- To terminate the Ray runtime, run
+2026-10-12 15:29:11,883	INFO scripts.py:1143 -- [1m  ray stop[22m
+2026-10-12 15:29:11,883	INFO scripts.py:1146 -- To view the status of the cluster, use
+2026-10-12 15:29:11,883	INFO scripts.py:1147 --   [1mray status[22m[26m
+2026-10-12 15:29:11,883	INFO scripts.py:1151 -- To monitor and debug Ray, view the dashboard at 
+2026-10-12 15:29:11,883	INFO scripts.py:1152 --   [1m127.0.0.1:8265[22m[26m
+2026-10-12 15:29:11,883	INFO scripts.py:1159 -- [4mIf connection to the dashboard fails, check your firewall settings and network configuration.[24m
+======== Autoscaler status: 2026-10-12 15:29:27.050534 ========
+Node status
+---------------------------------------------------------------
+Active:
+ 1 node_c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+Pending:
+ (no pending nodes)
+Recent failures:
+ (no failures)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0.0/2.0 CPU
+ 0B/5.00GiB memory
+ 0B/2.14GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)
+     30 gcs_server      /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs --config_list=eyJhdXRvbWF0aWNfb2JqZWN0X3NwaWxsaW5nX2VuYWJsZWQiOiB0cnVlLCAib2JqZWN0X3NwaWxsaW5nX2NvbmZpZyI6ICJ7XCJ0eXBlXCI6IFwiZmlsZXN5c3RlbVwiLCBcInBhcmFtc1wiOiB7XCJkaXJlY3RvcnlfcGF0aFwiOiBcIi90bXAvcmF5L3Nlc3Npb25fMjAyNi0xMC0xMl8xNS0yOS0wNV84MTM1MThfMjFcIn19IiwgImlzX2V4dGVybmFsX3N0b3JhZ2VfdHlwZV9mcyI6IHRydWV9 --gcs_server_port=6379 --metrics-agent-port=6383 --node-ip-address=203.0.113.10 --session-name=session_2026-10-12_15-29-05_813518_21 --ray-commit=dd83c3a703a5422d0b47f142cb380c6330817608 --session-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21 --node-id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688 --stdout_filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/gcs_server.out --stderr_filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/gcs_server.err
+     64 python3.11      /home/ray/anaconda3/bin/python3.11 -m ray.util.client.server --address=203.0.113.10:6379 --host=203.0.113.10 --port=10001 --mode=proxy --runtime-env-agent-address=http://203.0.113.10:6385 --node-id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+    319 raylet          /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet --raylet_socket_name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/raylet --store_socket_name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/plasma_store --object_manager_port=6381 --min_worker_port=10002 --max_worker_port=10100 --node_manager_port=6380 --node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688 --node_ip_address=203.0.113.10 --maximum_startup_concurrency=2 --static_resource_list=node:203.0.113.10,1.0,node:__internal_head__,1.0,CPU,2,memory,5369881396,object_store_memory,2301377740 --python_worker_command=/home/ray/anaconda3/bin/python3.11 /home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/setup_worker.py /home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py --node-ip-address=203.0.113.10 --node-manager-port=RAY_NODE_MANAGER_PORT_PLACEHOLDER --object-store-name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/plasma_store --raylet-name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/raylet --redis-address=None --metrics-agent-port=6383 --logging-rotate-bytes=536870912 --logging-rotate-backup-count=5 --runtime-env-agent-port=6385 --gcs-address=203.0.113.10:6379 --session-name=session_2026-10-12_15-29-05_813518_21 --temp-dir=/tmp/ray --webui=127.0.0.1:8265 --cluster-id=5842156484c08f44a7d4989e315432162d2840b4bd0ac77cc9f4ad03 RAY_WORKER_DYNAMIC_OPTION_PLACEHOLDER --java_worker_command= --cpp_worker_command= --native_library_path=/home/ray/anaconda3/lib/python3.11/site-packages/ray/cpp/lib --temp_dir=/tmp/ray --session_dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21 --log_dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs --resource_dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/runtime_resources --metrics-agent-port=6383 --metrics_export_port=6382 --runtime_env_agent_port=6385 --object_store_memory=2301377740 --plasma_directory=/tmp/ray --fallback_directory=/tmp/ray/session_2026-10-12_15-29-05_813518_21 --ray-debugger-external=0 --gcs-address=203.0.113.10:6379 --session-name=session_2026-10-12_15-29-05_813518_21 --labels= --cluster-id=5842156484c08f44a7d4989e315432162d2840b4bd0ac77cc9f4ad03 --stdout_filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/raylet.out --stderr_filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/raylet.err --head --num_prestart_python_workers=2 --dashboard_agent_command=/home/ray/anaconda3/bin/python3.11 -u /home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/agent.py --node-id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688 --node-ip-address=203.0.113.10 --metrics-export-port=6382 --grpc-port=6383 --listen-port=6384 --node-manager-port=RAY_NODE_MANAGER_PORT_PLACEHOLDER --object-store-name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/plasma_store --raylet-name=/tmp/ray/session_2026-10-12_15-29-05_813518_21/sockets/raylet --temp-dir=/tmp/ray --session-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21 --log-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs --logging-rotate-bytes=536870912 --logging-rotate-backup-count=5 --session-name=session_2026-10-12_15-29-05_813518_21 --gcs-address=203.0.113.10:6379 --cluster-id-hex=5842156484c08f44a7d4989e315432162d2840b4bd0ac77cc9f4ad03 --stdout-filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/dashboard_agent.out --stderr-filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/dashboard_agent.err --logging-filename=dashboard_agent.log --head --runtime_env_agent_command=/home/ray/anaconda3/bin/python3.11 -u /home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/runtime_env/agent/main.py --node-id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688 --node-ip-address=203.0.113.10 --runtime-env-agent-port=6385 --session-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21 --gcs-address=203.0.113.10:6379 --cluster-id-hex=5842156484c08f44a7d4989e315432162d2840b4bd0ac77cc9f4ad03 --runtime-env-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/runtime_resources --logging-rotate-bytes=536870912 --logging-rotate-backup-count=5 --log-dir=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs --temp-dir=/tmp/ray --stdout-filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/runtime_env_agent.out --stderr-filepath=/tmp/ray/session_2026-10-12_15-29-05_813518_21/logs/runtime_env_agent.err --logging-filename=runtime_env_agent.log --node-name=203.0.113.10
+== LD_PRELOAD in /proc/<pid>/environ of every process in the container
+1 sleep env_LD_PRELOAD=0 shim_mapped=0
+114 python3.11 env_LD_PRELOAD=1 shim_mapped=5
+115 python3.11 env_LD_PRELOAD=1 shim_mapped=5
+116 ray-dashboard-M env_LD_PRELOAD=0 shim_mapped=5
+117 ray-dashboard-D env_LD_PRELOAD=0 shim_mapped=5
+118 ray-dashboard-E env_LD_PRELOAD=0 shim_mapped=5
+119 ray-dashboard-J env_LD_PRELOAD=0 shim_mapped=5
+120 ray-dashboard-N env_LD_PRELOAD=0 shim_mapped=5
+124 ray-dashboard-R env_LD_PRELOAD=0 shim_mapped=5
+126 ray-dashboard-S env_LD_PRELOAD=0 shim_mapped=5
+146 ray-dashboard-S env_LD_PRELOAD=0 shim_mapped=5
+190 ray-dashboard-T env_LD_PRELOAD=0 shim_mapped=5
+30 gcs_server env_LD_PRELOAD=1 shim_mapped=5
+318 python3.11 env_LD_PRELOAD=1 shim_mapped=5
+319 raylet env_LD_PRELOAD=1 shim_mapped=5
+357 ray::DashboardA env_LD_PRELOAD=1 shim_mapped=5
+359 ray::RuntimeEnv env_LD_PRELOAD=1 shim_mapped=5
+468 bash env_LD_PRELOAD=0 shim_mapped=0
+63 python3.11 env_LD_PRELOAD=1 shim_mapped=5
+64 python3.11 env_LD_PRELOAD=1 shim_mapped=5
+65 python3.11 env_LD_PRELOAD=1 shim_mapped=5

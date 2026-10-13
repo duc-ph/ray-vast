@@ -1,0 +1,13 @@
+step,start_utc,end_utc,duration_s,head_cpu,head_ram,vast_cost_usd,notes
+C0.setup2 launch+status-ok,2026-10-12T22:05:27Z,2026-10-12T22:07:34Z,127,,,0,ec2 run-instances to instance-status-ok
+C0.setup6 docker pull ray image,2026-10-12T22:10Z,2026-10-12T22:11Z,36.4,cpu 0-24% idle (2 vCPU busy),~0.82-0.87 GB used,0,951 MB compressed; containerd snapshotter
+C0.2.1 ray start no shim (hang on GCS connect to unroutable fake IP),2026-10-12T22:11:39Z,2026-10-12T22:17:06Z,327,not sampled,not sampled,0,ended by ray stop --force; RuntimeError Failed to start GCS
+C0.2.3 driver shim v1,2026-10-12T22:19:49Z,2026-10-12T22:19:57Z,8,see remote/c0_2_v1/step3_vmstat.log,,0,<1 min
+C1.5 driver + job submit shim v3,2026-10-12T22:31:08Z,2026-10-12T22:31:25Z,17,vmstat us avg 29% max 50%,head container 640 MiB; host 1.3 GB used of 7.6 GB,0,<1 min
+C1 steady state after step 5,2026-10-12T22:31:54Z,,,container cpu 3.8%; load 0.28,container 640 MiB; host used 1323 MB,0,idle head with CPU 0
+C2.setup rent 3 candidates to ssh,2026-10-12T22:47:22Z,2026-10-12T22:49:30Z,~128,not sampled,not sampled,~0.02,3 rentals; create->running 64-65 s
+C2.2 battery,2026-10-12T23:00:33Z,2026-10-12T23:02:46Z,133,see remote/c2/c2_2_vmstat.log,not sampled,~0.01,W-hp + W-nohp ~$0.375/h
+C2.5 battery (runtime-env on localhost),2026-10-12T23:08:07Z,2026-10-12T23:10:14Z,127,not sampled,not sampled,~0.01,
+C2.6 port exhaustion (tasks + actors + driver),2026-10-12T23:11:25Z,2026-10-12T23:23:06Z,~700,not sampled,not sampled,~0.07,actor test 560 s (4 actors fail at +360 s)
+C3.3 watchdog wait + self-destroy,2026-10-12T23:35:15Z,2026-10-12T23:44:02Z,527,head idle,head idle,~0.02,W-hp only $0.103/h
+Day total vast,2026-10-12T22:47Z,2026-10-12T23:45:32Z,,,,0.348,credit 12.0547 -> 11.7064; 8 rentals in total

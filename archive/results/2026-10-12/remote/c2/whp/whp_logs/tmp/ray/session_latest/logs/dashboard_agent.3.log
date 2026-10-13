@@ -1,0 +1,41 @@
+2026-10-12 16:25:11,853	INFO agent.py:177 -- Dashboard agent grpc address: 143.55.45.86:42942
+2026-10-12 16:25:11,854	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 16:25:12,257	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 16:25:12,257	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 16:25:12,258	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 16:25:12,258	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 16:25:12,258	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 16:25:12,258	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 16:25:12,258	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 16:25:12,259	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 16:25:12,259	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 16:25:12,259	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 16:25:12,259	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 16:25:12,259	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 16:25:12,259	WARNING utils.py:485 -- Ray currently does not support initializing Ray with fractional cpus. Your num_cpus will be truncated from 5.76 to 5.
+2026-10-12 16:25:12,263	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 16:25:12,263	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 16:25:12,263	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 16:25:12,267	INFO http_server_agent.py:138 -- Dashboard agent http address: 127.0.0.1:42838
+2026-10-12 16:25:12,267	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <PlainResource  /api/job_agent/jobs/> -> <function JobAgent.submit_job at 0x7fbbec544fe0>
+2026-10-12 16:25:12,267	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/job_agent/jobs/> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <function JobAgent.stop_job at 0x7fbbec5451c0>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [DELETE] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <function JobAgent.delete_job at 0x7fbbec5453a0>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <function JobAgent.get_job_logs at 0x7fbbec545580>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <function JobAgent.tail_job_logs at 0x7fbbec545760>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/local_raylet_healthz> -> <function HealthzAgent.health_check at 0x7fbbec2972e0>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/local_raylet_healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/healthz> -> <function HealthzAgent.unified_health at 0x7fbbec297560>
+2026-10-12 16:25:12,268	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,269	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method StaticResource._handle of <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')>>
+2026-10-12 16:25:12,269	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fbbec093f50>>
+2026-10-12 16:25:12,269	INFO http_server_agent.py:147 -- Registered 16 routes.
+2026-10-12 16:25:12,351	INFO process_watcher.py:45 -- raylet pid is 8254
+2026-10-12 16:25:12,351	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 16:25:12,353	INFO event_utils.py:132 -- Monitor events logs modified after 1791845711.9279485 on /tmp/ray/session_2026-10-12_15-30-36_200268_13/logs/events, the source types are all.
+2026-10-12 16:25:12,409	INFO gpu_providers.py:552 -- Using GPU Provider: NvidiaGpuProvider
+2026-10-12 16:25:12,444	INFO gpu_providers.py:380 -- Failed to retrieve GPU process SM utilization using `nvmlDeviceGetProcessesUtilizationInfo`, error: Function Not Found

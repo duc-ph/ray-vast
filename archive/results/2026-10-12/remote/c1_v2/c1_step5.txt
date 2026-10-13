@@ -1,0 +1,59 @@
+HEAD_IP=35.85.154.224 HEAD_PRIVATE_IP=172.31.31.46
+== driver with num_cpus=0; tcpdump on ens5 for packets to or from HEAD_IP
+2026-10-12T22:26:21Z
+2026-10-12 15:26:21,730	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.85.154.224:6379...
+2026-10-12 15:26:21,756	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+cluster resources: {'memory': 5362891162.0, 'node:35.85.154.224': 1.0, 'object_store_memory': 2298381926.0, 'node:__internal_head__': 1.0}
+tasks: 20 done, sum=2470 (expect 2470), 1.0s
+actor: 10 calls, last=10 (expect 10), 0.4s
+pip task: emoji 2.12.1 (expect 2.12.1), 4.7s
+DRIVER OK
+2026-10-12T22:26:28Z
+== ray job submit through the dashboard
+{'object_store_memory': 2298381926.0, 'node:35.85.154.224': 1.0, 'node:__internal_head__': 1.0, 'memory': 5362891162.0}
+2026-10-12 15:26:37,725	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-12 15:26:37,725	SUCC cli.py:67 -- [32mJob 'raysubmit_88aVhtGDWpunQMS1' succeeded[39m
+2026-10-12 15:26:37,725	SUCC cli.py:68 -- [32m------------------------------------------[39m
+== packets on ens5 with HEAD_IP: 0
+== established TCP with peer HEAD_IP: 0
+== shim log: connect lines to HEAD_IP, by new address
+    106 172.31.31.46
+    103 ::ffff:172.31.31.46
+== shim log counts by comm, call, af
+     35 python connect af=inet6
+     35 python connect af=inet
+     26 python3.11 connect af=inet6
+     26 python3.11 connect af=inet
+     20 ray::IDLE connect af=inet6
+     20 ray::IDLE connect af=inet
+     10 raylet connect af=inet
+      9 ray connect af=inet6
+      8 ray connect af=inet
+      6 raylet connect af=inet6
+      5 gcs_server connect af=inet6
+      5 gcs_server connect af=inet
+      2 ray::_ray_inter connect af=inet6
+      2 ray::_ray_inter connect af=inet
+      1 python3.11 bind af=inet6
+== shim log counts by comm, call, port
+     56 python connect 6379
+     52 python3.11 connect 6379
+     32 ray::IDLE connect 6379
+     17 ray connect 6379
+      8 ray::IDLE connect 6380
+      8 python connect 6380
+      4 raylet connect 6385
+      4 raylet connect 6379
+      4 ray::_ray_inter connect 6379
+      4 gcs_server connect 6380
+      2 raylet connect 10005
+      2 raylet connect 10004
+      2 raylet connect 10003
+      2 raylet connect 10002
+      2 python connect 10005
+      2 python connect 10004
+      2 python connect 10003
+      2 gcs_server connect 10007
+      2 gcs_server connect 10004
+      2 gcs_server connect 10002
+      1 python3.11 bind 10001

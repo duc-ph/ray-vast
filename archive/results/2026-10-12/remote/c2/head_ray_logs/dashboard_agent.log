@@ -1,0 +1,110 @@
+2026-10-12 15:30:40,486	INFO agent.py:177 -- Dashboard agent grpc address: 35.85.154.224:6383
+2026-10-12 15:30:40,487	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 15:30:40,747	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 15:30:40,747	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:30:40,747	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:30:40,747	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 15:30:40,747	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 15:30:40,748	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 15:30:40,748	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 15:30:40,748	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 15:30:40,748	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 15:30:40,748	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 15:30:40,751	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 15:30:40,751	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:30:40,752	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 15:30:40,754	INFO http_server_agent.py:138 -- Dashboard agent http address: 127.0.0.1:6384
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <PlainResource  /api/job_agent/jobs/> -> <function JobAgent.submit_job at 0x7721c8168fe0>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/job_agent/jobs/> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <function JobAgent.stop_job at 0x7721c81691c0>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [DELETE] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <function JobAgent.delete_job at 0x7721c81693a0>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,754	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <function JobAgent.get_job_logs at 0x7721c8169580>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <function JobAgent.tail_job_logs at 0x7721c8169760>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/local_raylet_healthz> -> <function HealthzAgent.health_check at 0x7721b0c4b2e0>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/local_raylet_healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/healthz> -> <function HealthzAgent.unified_health at 0x7721b0c4b560>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method StaticResource._handle of <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7721b0a3e510>>
+2026-10-12 15:30:40,755	INFO http_server_agent.py:147 -- Registered 16 routes.
+2026-10-12 15:30:40,757	INFO process_watcher.py:45 -- raylet pid is 310
+2026-10-12 15:30:40,757	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 15:30:40,757	INFO event_utils.py:132 -- Monitor events logs modified after 1791842440.5433593 on /tmp/ray/session_2026-10-12_15-30-36_200268_13/logs/events, the source types are all.
+2026-10-12 15:30:59,051	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:30:59 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:30:59,063	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:30:59 -0700] "GET /api/jobs/ HTTP/1.1" 403 199 "-" "curl/8.5.0"
+2026-10-12 15:30:59,072	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:30:59 -0700] "GET /api/jobs/ HTTP/1.1" 404 174 "-" "curl/8.5.0"
+2026-10-12 15:30:59,189	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:30:59 -0700] "GET /api/jobs/ HTTP/1.1" 401 224 "-" "Python-urllib/3.11"
+2026-10-12 15:31:17,558	INFO optional_utils.py:224 -- Connecting to ray with address=35.85.154.224:6379
+2026-10-12 15:31:17,560	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.85.154.224:6379...
+2026-10-12 15:31:17,582	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-12 15:31:17,634	INFO job_manager.py:535 -- Starting job with submission_id: raysubmit_knZnUqxGS3fb6Usp
+2026-10-12 15:31:17,636	INFO job_manager.py:459 -- Head node ID found in GCS; scheduling job driver on head node 22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0 using a label selector
+2026-10-12 15:31:17,638	INFO job_manager.py:583 -- Runtime env is setting up.
+2026-10-12 15:31:17,790	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:31:17 -0700] "POST /api/job_agent/jobs/ HTTP/1.1" 200 246 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 15:31:18,819	INFO event_utils.py:170 -- Found new event log file: /tmp/ray/session_2026-10-12_15-30-36_200268_13/logs/events/event_JOBS.log
+2026-10-12 15:31:24,837	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:31:20 -0700] "GET /api/job_agent/jobs/raysubmit_knZnUqxGS3fb6Usp/logs/tail HTTP/1.1" 101 0 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 15:33:29,834	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,840	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,847	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,854	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,860	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,866	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,872	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,879	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,889	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,898	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,909	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,917	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,924	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,930	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,937	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,943	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,950	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,956	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,962	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 15:33:29,968	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:33:29 -0700] "GET /api/jobs/ HTTP/1.1" 401 205 "-" "curl/8.5.0"
+2026-10-12 16:02:38,265	INFO job_manager.py:535 -- Starting job with submission_id: raysubmit_ggrLE2PsgSfpGYnJ
+2026-10-12 16:02:38,267	INFO job_manager.py:459 -- Head node ID found in GCS; scheduling job driver on head node 22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0 using a label selector
+2026-10-12 16:02:38,267	INFO job_manager.py:583 -- Runtime env is setting up.
+2026-10-12 16:02:38,271	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:02:38 -0700] "POST /api/job_agent/jobs/ HTTP/1.1" 200 246 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:02:45,308	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:02:41 -0700] "GET /api/job_agent/jobs/raysubmit_ggrLE2PsgSfpGYnJ/logs/tail HTTP/1.1" 101 0 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:06:37,703	INFO job_manager.py:535 -- Starting job with submission_id: raysubmit_ycbzyeCJ9nNdY8Bk
+2026-10-12 16:06:37,705	INFO job_manager.py:459 -- Head node ID found in GCS; scheduling job driver on head node 22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0 using a label selector
+2026-10-12 16:06:37,706	INFO job_manager.py:583 -- Runtime env is setting up.
+2026-10-12 16:06:37,710	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:06:37 -0700] "POST /api/job_agent/jobs/ HTTP/1.1" 200 246 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:06:44,744	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:06:40 -0700] "GET /api/job_agent/jobs/raysubmit_ycbzyeCJ9nNdY8Bk/logs/tail HTTP/1.1" 101 0 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:07:22,576	INFO event_utils.py:170 -- Found new event log file: /tmp/ray/session_2026-10-12_15-30-36_200268_13/logs/events/event_GCS.log
+2026-10-12 16:10:06,152	INFO job_manager.py:535 -- Starting job with submission_id: raysubmit_YjrgMhYaevRnGbT4
+2026-10-12 16:10:06,154	INFO job_manager.py:459 -- Head node ID found in GCS; scheduling job driver on head node 22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0 using a label selector
+2026-10-12 16:10:06,154	INFO job_manager.py:583 -- Runtime env is setting up.
+2026-10-12 16:10:06,157	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:10:06 -0700] "POST /api/job_agent/jobs/ HTTP/1.1" 200 246 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:10:13,185	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:10:09 -0700] "GET /api/job_agent/jobs/raysubmit_YjrgMhYaevRnGbT4/logs/tail HTTP/1.1" 101 0 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 16:40:38,021	INFO agent.py:275 -- Terminated Raylet: ip=35.85.154.224, node_id=22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0. _check_parent_via_pipe: The parent is dead.
+2026-10-12 16:40:38,026	ERROR process_watcher.py:115 -- Raylet is terminated. Termination is unexpected. Possible reasons include: (1) SIGKILL by the user or system OOM killer, (2) Invalid memory access from Raylet causing SIGSEGV or SIGBUS, (3) Other termination signals. Last 20 lines of the Raylet logs:
+    [state-dump] 	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberCommandBatch.OnReplyReceived - 2 total (0 active), Execution time: mean = 0.21ms, total = 0.42ms, Queueing time: mean = 0.30ms, max = 0.53ms, min = 0.07ms, total = 0.60ms
+    [state-dump] 	NodeManagerService.grpc_server.ReturnWorkerLease - 2 total (0 active), Execution time: mean = 1.77ms, total = 3.55ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberCommandBatch - 2 total (0 active), Execution time: mean = 3.38ms, total = 6.77ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ReporterService.grpc_client.HealthCheck.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.29ms, total = 0.29ms, Queueing time: mean = 1.35ms, max = 1.35ms, min = 1.35ms, total = 1.35ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.GetAllNodeAddressAndLiveness - 1 total (0 active), Execution time: mean = 4.21ms, total = 4.21ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::InternalKVGcsService.grpc_client.GetInternalConfig.OnReplyReceived - 1 total (0 active), Execution time: mean = 1424.18ms, total = 1424.18ms, Queueing time: mean = 0.01ms, max = 0.01ms, min = 0.01ms, total = 0.01ms
+    [state-dump] 	CoreWorkerService.grpc_client.KillActor - 1 total (0 active), Execution time: mean = 18.44ms, total = 18.44ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManagerService.grpc_server.KillLocalActor.HandleRequestImpl - 1 total (0 active), Execution time: mean = 1.04ms, total = 1.04ms, Queueing time: mean = 0.02ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+    [state-dump] 	CoreWorkerService.grpc_client.KillActor.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.05ms, total = 0.05ms, Queueing time: mean = 0.01ms, max = 0.01ms, min = 0.01ms, total = 0.01ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.RegisterNode.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.38ms, total = 0.38ms, Queueing time: mean = 0.02ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+    [state-dump] 	NodeManagerService.grpc_server.KillLocalActor - 1 total (0 active), Execution time: mean = 19.06ms, total = 19.06ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.RegisterNode - 1 total (0 active), Execution time: mean = 2.31ms, total = 2.31ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::JobInfoGcsService.grpc_client.GetAllJobInfo - 1 total (0 active), Execution time: mean = 5.50ms, total = 5.50ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.GetAllNodeAddressAndLiveness.OnReplyReceived - 1 total (0 active), Execution time: mean = 2.21ms, total = 2.21ms, Queueing time: mean = 0.50ms, max = 0.50ms, min = 0.50ms, total = 0.50ms
+    [state-dump] 	ReporterService.grpc_client.HealthCheck - 1 total (0 active), Execution time: mean = 16.10ms, total = 16.10ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::JobInfoGcsService.grpc_client.GetAllJobInfo.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.01ms, total = 0.01ms, Queueing time: mean = 0.43ms, max = 0.43ms, min = 0.43ms, total = 0.43ms
+    [state-dump] 	ray::rpc::InternalKVGcsService.grpc_client.GetInternalConfig - 1 total (0 active), Execution time: mean = 2.13ms, total = 2.13ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] DebugString() time ms: 0
+    [state-dump] 
+    [state-dump] 
+

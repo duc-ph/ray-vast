@@ -1,0 +1,61 @@
+[2026-10-12 15:19:55,871 I 1401 1401] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 1401
+[2026-10-12 15:19:55,873 I 1401 1401] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 15:19:55,873 I 1401 1401] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 15:19:55,873 I 1401 1401] event.cc:332: Set ray event level to warning
+[2026-10-12 15:19:55,874 I 1401 1401] grpc_server.cc:144: worker server started, listening on port 10006.
+[2026-10-12 15:19:55,876 I 1401 1401] core_worker_process.cc:299: Initializing worker at address: 203.0.113.10:10006 worker_id=3c67bc670bcc608838f8ecb1232fdca23be537c739157efe9e5b09fd node_id=f1b81f56caa6c31075315f94506771df7f95b0574226cd6940c199cd
+[2026-10-12 15:19:55,877 I 1401 1401] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 15:19:55,878 I 1401 1401] core_worker.cc:577: Adjusted worker niceness to 15
+[2026-10-12 15:19:55,878 I 1401 1417] core_worker.cc:507: Event stats:
+
+
+Global stats: 11 total (9 active)
+Queueing time: mean = 0.01ms, max = 0.11ms, min = 0.03ms, total = 0.13ms
+Execution time:  mean = 0.00ms, total = 0.02ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 8 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.02ms, Queueing time: mean = 0.02ms, max = 0.11ms, min = 0.03ms, total = 0.13ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	CoreWorker.ExitIfParentRayletDies - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.03ms, max = 0.07ms, min = 0.07ms, total = 0.07ms
+Execution time:  mean = 0.02ms, total = 0.04ms
+Event stats:
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.04ms, total = 0.04ms, Queueing time: mean = 0.07ms, max = 0.07ms, min = 0.07ms, total = 0.07ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 0
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 15:19:56,676 I 1401 1417] core_worker_shutdown_executor.cc:303: Try killing all child processes of this worker as it exits. Child process pids: 
+[2026-10-12 15:19:56,677 I 1401 1417] core_worker_shutdown_executor.cc:368: Sending disconnect message to the local raylet.
+[2026-10-12 15:19:56,677 I 1401 1417] raylet_ipc_client.cc:133: RayletIpcClient::Disconnect, exit_type=INTENDED_USER_EXIT, exit_detail=Worker force exited because its job has finished, has creation_task_exception_pb_bytes=0
+[2026-10-12 15:19:56,677 I 1401 1417] core_worker_shutdown_executor.cc:384: Disconnected from the local raylet.
+[2026-10-12 15:19:56,677 W 1401 1417] core_worker_shutdown_executor.cc:393: Quick exit - terminating process immediately

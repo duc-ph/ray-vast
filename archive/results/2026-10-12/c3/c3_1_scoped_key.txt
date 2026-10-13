@@ -1,0 +1,8 @@
+GET own instance: HTTP 200 instance 55632730 status running
+GET other instance: HTTP 401 {"success":false,"msg":"Authorization Error. Your key lacks proper privileges to perform this action, due to a constraint on id"}
+DELETE other instance: HTTP 401 {"success":false,"msg":"Authorization Error. Your key lacks proper privileges to perform this action, due to a constraint on id"}
+GET users/current: HTTP 200 fields=52 has_credit=True has_email=True
+POST bundles (offer search): HTTP 200 2 offers
+GET instances (list): HTTP 200 2 instances listed: [55632730, 55638058]
+GET auth/apikeys: HTTP 200 5 keys listed; 0 with a full key value
+GET ssh keys: HTTP 200 2 ssh keys

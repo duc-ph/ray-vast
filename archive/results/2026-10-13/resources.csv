@@ -1,0 +1,8 @@
+step,start_utc,end_utc,duration_s,head_cpu,head_ram,vast_cost_usd,notes
+C4.setup1 launch+status-ok,2026-10-13T00:03:38Z,2026-10-13T00:06:28Z,170,,,0,ec2 run-instances to instance-status-ok
+C4.setup2 rent W-kill+candidate,2026-10-13T00:10:00Z,2026-10-13T00:12:20Z,140,,,~0.005,rent script incl. 60 s sshd wait; candidate 55643070 failed sshd limit
+C4.setup2 rent W-hb,2026-10-13T00:13:20Z,2026-10-13T00:14:40Z,80,,,~0.004,running 64 s ssh 71 s
+C4.setup2 host checks (parallel),2026-10-13T00:17Z,2026-10-13T00:18:40Z,100,not measured,not measured,,90 s listener hold per worker
+C4.1 W-kill kill tests + restart loop,2026-10-13T00:23:00Z,2026-10-13T00:27:43Z,283,,,,root kill 00:25:30Z; destroyed 00:27:37Z
+C4.2 W-hb pause + stop,2026-10-13T00:28:01Z,2026-10-13T00:35:42Z,461,,,,self-destroy t0+5:11 (check grid)
+C4 total vast,2026-10-13T00:10Z,2026-10-13T00:37Z,,,,0.106,credit 11.7064 -> 11.6000 at 00:37Z (3 rentals)

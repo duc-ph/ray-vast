@@ -1,0 +1,84 @@
+HEAD_IP=54.149.65.222 HEAD_PRIVATE_IP=172.31.26.62
+== setup 1: CA, token, head cert (SAN IP:54.149.65.222, IP:127.0.0.1)
+total 32
+subject=CN = rayvast-head
+issuer=CN = rayvast-test-ca-c4-20261013
+notAfter=Oct 15 00:09:01 2026 GMT
+X509v3 Subject Alternative Name: 
+    IP Address:54.149.65.222, IP Address:127.0.0.1
+/opt/rayvast-test/secrets/head.crt: OK
+== setup 2: head.env (paths only, no secret values)
+RAY_USE_TLS=1
+RAY_TLS_SERVER_CERT=/opt/rayvast-test/secrets/head.crt
+RAY_TLS_SERVER_KEY=/opt/rayvast-test/secrets/head.key
+RAY_TLS_CA_CERT=/opt/rayvast-test/secrets/ca.crt
+RAY_AUTH_MODE=token
+RAY_AUTH_TOKEN_PATH=/opt/rayvast-test/secrets/token
+LD_PRELOAD=/opt/rayvast-test/shim/librayvast_shim.so
+RAYVAST_PUBLIC_IP=54.149.65.222
+RAYVAST_PRIVATE_IP=172.31.26.62
+RAYVAST_LOCALHOST_PORTS=6384
+RAYVAST_SHIM_LOG=/opt/rayvast-test/results/c4_head_shim.log
+HEAD_IP=54.149.65.222 HEAD_PRIVATE_IP=172.31.26.62
+1c082417a3abca2a0ae92219c17440b05d01f500b8f97c42b79b979c98708982
+rayvast-head rayproject/ray:2.59.0-py311-cpu Up Less than a second
+2.59.0 3.11.16 (main, Sep  2 2026, 23:39:52) [GCC 15.3.0]
+HEAD_IP=54.149.65.222 HEAD_PRIVATE_IP=172.31.26.62
+2026-10-12 17:09:11,748	INFO scripts.py:1143 -- [1m  ray stop[22m
+2026-10-12 17:09:11,748	INFO scripts.py:1146 -- To view the status of the cluster, use
+2026-10-12 17:09:11,748	INFO scripts.py:1147 --   [1mray status[22m[26m
+2026-10-12 17:09:11,748	INFO scripts.py:1151 -- To monitor and debug Ray, view the dashboard at 
+2026-10-12 17:09:11,748	INFO scripts.py:1152 --   [1m127.0.0.1:8265[22m[26m
+2026-10-12 17:09:11,748	INFO scripts.py:1159 -- [4mIf connection to the dashboard fails, check your firewall settings and network configuration.[24m
+======== Autoscaler status: 2026-10-12 17:09:27.266254 ========
+Node status
+---------------------------------------------------------------
+Active:
+ 1 node_d4c057dd243567d307667602ca830a2c90b26f3632050b6ca0ae4b7b
+Pending:
+ (no pending nodes)
+Recent failures:
+ (no failures)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0B/4.99GiB memory
+ 0B/2.14GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)
+== shim mapped in each process
+      2 bash shim_mapped=5
+      1 gcs_server shim_mapped=5
+      6 python3.11 shim_mapped=5
+      1 ray-dashboard-D shim_mapped=5
+      1 ray-dashboard-E shim_mapped=5
+      1 ray-dashboard-J shim_mapped=5
+      1 ray-dashboard-M shim_mapped=5
+      1 ray-dashboard-N shim_mapped=5
+      1 ray-dashboard-R shim_mapped=5
+      2 ray-dashboard-S shim_mapped=5
+      1 ray-dashboard-T shim_mapped=5
+      1 ray::DashboardA shim_mapped=5
+      1 ray::RuntimeEnv shim_mapped=5
+      1 raylet shim_mapped=5
+      1 sleep shim_mapped=5
+      1 sort shim_mapped=5
+      1 uniq shim_mapped=5
+== no token (host curl, same network namespace as the container; the image has no curl)
+no token: 401
+wrong token: 403
+right token: 404
+== no token, from inside the container (python urllib)
+container no token: 401
+== the job port is not reachable on the public or private IP
+private ip: 000
+private ip: connect failed (rc=7)
+LISTEN 0      128                127.0.0.1:6384       0.0.0.0:*          
+LISTEN 0      128                127.0.0.1:6384       0.0.0.0:*          
+LISTEN 0      128             172.31.26.62:6385       0.0.0.0:*          
+LISTEN 0      128                127.0.0.1:8265       0.0.0.0:*          
+LISTEN 0      4096                       *:6379             *:*          

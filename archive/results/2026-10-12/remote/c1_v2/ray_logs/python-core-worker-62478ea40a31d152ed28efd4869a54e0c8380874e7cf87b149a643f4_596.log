@@ -1,0 +1,66 @@
+[2026-10-12 15:26:23,039 I 596 596] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 596
+[2026-10-12 15:26:23,045 I 596 596] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 15:26:23,045 I 596 596] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 15:26:23,045 I 596 596] event.cc:332: Set ray event level to warning
+[2026-10-12 15:26:23,050 I 596 596] grpc_server.cc:144: worker server started, listening on port 10004.
+[2026-10-12 15:26:23,054 I 596 596] core_worker_process.cc:299: Initializing worker at address: 35.85.154.224:10004 worker_id=62478ea40a31d152ed28efd4869a54e0c8380874e7cf87b149a643f4 node_id=55141e36c530f99abce257cc8f59ebdbb084898a7bceec2e6574bf48
+[2026-10-12 15:26:23,069 I 596 596] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 15:26:23,070 I 596 596] core_worker.cc:577: Adjusted worker niceness to 15
+[2026-10-12 15:26:23,070 I 596 596] open_telemetry_metric_recorder.cc:149: OpenTelemetry metric exporter configured with TLS and mTLS enabled
+[2026-10-12 15:26:23,070 I 596 612] core_worker.cc:507: Event stats:
+
+
+Global stats: 11 total (9 active)
+Queueing time: mean = 0.03ms, max = 0.27ms, min = 0.02ms, total = 0.28ms
+Execution time:  mean = 0.00ms, total = 0.02ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 8 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.02ms, Queueing time: mean = 0.04ms, max = 0.27ms, min = 0.02ms, total = 0.28ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	CoreWorker.ExitIfParentRayletDies - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.01ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+Execution time:  mean = 0.02ms, total = 0.04ms
+Event stats:
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.04ms, total = 0.04ms, Queueing time: mean = 0.02ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 0
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 15:26:23,080 I 596 596] actor_task_submitter.cc:75: Set actor max pending calls to -1 actor_id=0e71df8fde705b58a91388e701000000
+[2026-10-12 15:26:23,080 I 596 596] core_worker.cc:3079: Creating actor actor_id=0e71df8fde705b58a91388e701000000
+[2026-10-12 15:26:23,082 I 596 596] task_receiver.cc:117: Actor creation task finished, task_id: ffffffffffffffff0e71df8fde705b58a91388e701000000, actor_id: 0e71df8fde705b58a91388e701000000, actor_repr_name: 
+[2026-10-12 15:26:28,470 I 596 612] core_worker.cc:4459: Force kill actor request has received. exiting immediately... The actor is dead because its owner has died. Owner Id: 01000000ffffffffffffffffffffffffffffffffffffffffffffffff Owner Ip address: 35.85.154.224 Owner worker exit type: INTENDED_USER_EXIT Worker exit detail: Owner's worker process has crashed.
+[2026-10-12 15:26:28,470 I 596 612] core_worker_shutdown_executor.cc:303: Try killing all child processes of this worker as it exits. Child process pids: 
+[2026-10-12 15:26:28,471 I 596 612] core_worker_shutdown_executor.cc:368: Sending disconnect message to the local raylet.
+[2026-10-12 15:26:28,471 I 596 612] raylet_ipc_client.cc:133: RayletIpcClient::Disconnect, exit_type=INTENDED_SYSTEM_EXIT, exit_detail=Worker exits because the actor is killed. The actor is dead because its owner has died. Owner Id: 01000000ffffffffffffffffffffffffffffffffffffffffffffffff Owner Ip address: 35.85.154.224 Owner worker exit type: INTENDED_USER_EXIT Worker exit detail: Owner's worker process has crashed., has creation_task_exception_pb_bytes=0
+[2026-10-12 15:26:28,474 I 596 612] core_worker_shutdown_executor.cc:384: Disconnected from the local raylet.
+[2026-10-12 15:26:28,474 W 596 612] core_worker_shutdown_executor.cc:393: Quick exit - terminating process immediately

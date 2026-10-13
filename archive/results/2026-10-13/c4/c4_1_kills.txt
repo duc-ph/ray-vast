@@ -1,0 +1,67 @@
+== process table
+2026-10-13T00:23:02Z
+    PID    PPID USER     STAT COMMAND
+      1       0 root     Ss   sudo -E /usr/bin/python3 /opt/rayvast/watchdog.py
+   1509       1 root     S    /usr/bin/python3 /opt/rayvast/watchdog.py
+   2488    2487 ray      Ss   bash -c date -u +%FT%TZ; ps -o pid,ppid,user,stat,args -p 1,$(pgrep -f watchdog.py | paste -sd,); pgrep -f /opt/rayvast/watchdog.py
+1
+1509
+WD=1509
+== C4.1.1 as ray: kill -9 watchdog, kill -9 1
+rc=1
+rc=0
+bash: line 1: kill: (1509) - Operation not permitted
+== C4.1.2 as ray: sudo -n kill -9 watchdog
+sudo: a password is required
+rc=1
+== C4.1.3 Ray task pinned to W-kill
+2026-10-12 17:23:07,576	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.149.65.222:6379...
+2026-10-12 17:23:07,615	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+{
+ "uid": 1000,
+ "euid": 1000,
+ "pid": 2536,
+ "node_ip": "143.55.45.86",
+ "watchdog": "PermissionError(1, 'Operation not permitted')",
+ "pid1": "NO ERROR (signal sent)",
+ "sudo_kill": "rc=1 sudo: a password is required",
+ "proc1_environ": "PermissionError(13, 'Permission denied')",
+ "watchdog_alive": true,
+ "ps": "    PID    PPID USER     COMMAND\n      1       0 root     sudo -E /usr/bin/python3 /opt/rayvast/watchdog.py\n   1509       1 root     /usr/bin/python3 /opt/rayvast/watchdog.py\n"
+}
+== after
+    PID    PPID USER     STAT COMMAND
+      1       0 root     Ss   sudo -E /usr/bin/python3 /opt/rayvast/watchdog.py
+   1509       1 root     S    /usr/bin/python3 /opt/rayvast/watchdog.py
+2026-10-13T00:22:39Z check heartbeat_age=28s
+2026-10-13T00:22:54Z check heartbeat_age=3s
+2026-10-13T00:23:09Z check heartbeat_age=18s
+43
+== PID 1 credentials (why ray can signal it)
+Uid:	1000	0	0	0
+Gid:	0	0	0	0
+SigCgt:	00000000000b7a07
+Uid:	0	0	0	0
+SigCgt:	0000000000000002
+== zombies
+     47 1 sshd
+== extra: as ray, kill -TSTP 1 (sudo relays signals to the command?)
+2026-10-13T00:23:50Z
+rc=0
+    PID    PPID USER     STAT COMMAND
+      1       0 root     Ss   sudo -E /usr/bin/python3 /opt/rayvast/watchdog.py
+   1509       1 root     S    /usr/bin/python3 /opt/rayvast/watchdog.py
+2026-10-13T00:24:30Z
+    PID STAT COMMAND
+      1 Ss   sudo -E /usr/bin/python3 /opt/rayvast/watchdog.py
+   1509 S    /usr/bin/python3 /opt/rayvast/watchdog.py
+2026-10-13T00:23:54Z check heartbeat_age=23s
+2026-10-13T00:24:09Z check heartbeat_age=38s
+2026-10-13T00:24:24Z check heartbeat_age=12s
+== C4.1.4 as root: kill -9 1509
+root
+2026-10-13T00:25:30.850671779Z
+rc=0
+2026-10-13T00:25:35Z
+ssh: connect to host 143.55.45.86 port 42066: Connection refused
+ssh_rc=255

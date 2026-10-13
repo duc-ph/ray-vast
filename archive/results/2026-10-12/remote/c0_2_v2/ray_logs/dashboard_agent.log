@@ -1,0 +1,48 @@
+2026-10-12 15:23:09,384	INFO agent.py:177 -- Dashboard agent grpc address: 203.0.113.10:6383
+2026-10-12 15:23:09,385	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 15:23:09,641	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 15:23:09,641	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 15:23:09,642	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:23:09,642	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:23:09,642	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 15:23:09,642	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 15:23:09,642	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 15:23:09,645	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 15:23:09,645	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:23:09,645	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 15:23:09,647	INFO http_server_agent.py:138 -- Dashboard agent http address: 127.0.0.1:6384
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <PlainResource  /api/job_agent/jobs/> -> <function JobAgent.submit_job at 0x78c57c35cfe0>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/job_agent/jobs/> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <function JobAgent.stop_job at 0x78c57c35d1c0>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [DELETE] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <function JobAgent.delete_job at 0x78c57c35d3a0>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <function JobAgent.get_job_logs at 0x78c57c35d580>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <function JobAgent.tail_job_logs at 0x78c57c35d760>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/local_raylet_healthz> -> <function HealthzAgent.health_check at 0x78c57c08f2e0>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/local_raylet_healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/healthz> -> <function HealthzAgent.unified_health at 0x78c57c08f560>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-23-05_208853_1569/logs')> -> <bound method StaticResource._handle of <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-23-05_208853_1569/logs')>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-23-05_208853_1569/logs')> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x78c55443a5d0>>
+2026-10-12 15:23:09,648	INFO http_server_agent.py:147 -- Registered 16 routes.
+2026-10-12 15:23:09,650	INFO process_watcher.py:45 -- raylet pid is 1867
+2026-10-12 15:23:09,650	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 15:23:09,650	INFO event_utils.py:132 -- Monitor events logs modified after 1791841989.4322946 on /tmp/ray/session_2026-10-12_15-23-05_208853_1569/logs/events, the source types are all.
+2026-10-12 15:23:35,987	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:23:35 -0700] "GET /api/jobs/ HTTP/1.1" 404 174 "-" "curl/8.5.0"
+2026-10-12 15:23:37,564	INFO optional_utils.py:224 -- Connecting to ray with address=203.0.113.10:6379
+2026-10-12 15:23:37,566	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 203.0.113.10:6379...
+2026-10-12 15:23:37,574	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-12 15:23:37,591	INFO job_manager.py:535 -- Starting job with submission_id: raysubmit_AUnfNacSDVMrbdeb
+2026-10-12 15:23:37,593	INFO job_manager.py:459 -- Head node ID found in GCS; scheduling job driver on head node 0b2036cb40a091c4780490090f9740370289b54fea7a1a50cb70f5ed using a label selector
+2026-10-12 15:23:37,595	INFO job_manager.py:583 -- Runtime env is setting up.
+2026-10-12 15:23:37,748	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:23:37 -0700] "POST /api/job_agent/jobs/ HTTP/1.1" 200 246 "-" "Python/3.11 aiohttp/3.14.3"
+2026-10-12 15:23:37,755	INFO event_utils.py:170 -- Found new event log file: /tmp/ray/session_2026-10-12_15-23-05_208853_1569/logs/events/event_JOBS.log
+2026-10-12 15:23:44,792	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:23:40 -0700] "GET /api/job_agent/jobs/raysubmit_AUnfNacSDVMrbdeb/logs/tail HTTP/1.1" 101 0 "-" "Python/3.11 aiohttp/3.14.3"

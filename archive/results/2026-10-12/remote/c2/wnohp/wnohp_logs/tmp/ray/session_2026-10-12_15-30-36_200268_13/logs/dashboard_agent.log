@@ -1,0 +1,66 @@
+2026-10-12 15:59:43,878	INFO agent.py:177 -- Dashboard agent grpc address: 185.62.108.226:45536
+2026-10-12 15:59:43,879	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 15:59:44,164	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 15:59:44,164	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 15:59:44,165	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:59:44,165	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:59:44,165	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:59:44,165	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 15:59:44,165	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 15:59:44,166	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 15:59:44,166	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 15:59:44,166	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 15:59:44,166	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 15:59:44,166	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 15:59:44,166	WARNING utils.py:485 -- Ray currently does not support initializing Ray with fractional cpus. Your num_cpus will be truncated from 5.76 to 5.
+2026-10-12 15:59:44,169	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 15:59:44,170	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:59:44,170	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 15:59:44,172	INFO http_server_agent.py:138 -- Dashboard agent http address: 127.0.0.1:45136
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <PlainResource  /api/job_agent/jobs/> -> <function JobAgent.submit_job at 0x7fe7d4445080>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/job_agent/jobs/> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [POST] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <function JobAgent.stop_job at 0x7fe7d4445260>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/stop> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [DELETE] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <function JobAgent.delete_job at 0x7fe7d4445440>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <function JobAgent.get_job_logs at 0x7fe7d4445620>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <function JobAgent.tail_job_logs at 0x7fe7d4445800>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <DynamicResource  /api/job_agent/jobs/{job_or_submission_id}/logs/tail> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/local_raylet_healthz> -> <function HealthzAgent.health_check at 0x7fe7d419b380>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/local_raylet_healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <PlainResource  /api/healthz> -> <function HealthzAgent.unified_health at 0x7fe7d419b600>
+2026-10-12 15:59:44,173	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <PlainResource  /api/healthz> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,174	INFO http_server_agent.py:146 -- <ResourceRoute [GET] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method StaticResource._handle of <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')>>
+2026-10-12 15:59:44,174	INFO http_server_agent.py:146 -- <ResourceRoute [OPTIONS] <StaticResource  /logs -> PosixPath('/tmp/ray/session_2026-10-12_15-30-36_200268_13/logs')> -> <bound method _PreflightHandler._preflight_handler of <aiohttp_cors.cors_config._CorsConfigImpl object at 0x7fe7a80e7d50>>
+2026-10-12 15:59:44,174	INFO http_server_agent.py:147 -- Registered 16 routes.
+2026-10-12 15:59:44,345	INFO process_watcher.py:45 -- raylet pid is 1743
+2026-10-12 15:59:44,345	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 15:59:44,346	INFO event_utils.py:132 -- Monitor events logs modified after 1791844183.9350047 on /tmp/ray/session_2026-10-12_15-30-36_200268_13/logs/events, the source types are all.
+2026-10-12 15:59:44,391	INFO gpu_providers.py:552 -- Using GPU Provider: NvidiaGpuProvider
+2026-10-12 15:59:44,418	INFO gpu_providers.py:380 -- Failed to retrieve GPU process SM utilization using `nvmlDeviceGetProcessesUtilizationInfo`, error: Not Found
+2026-10-12 16:03:45,358	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:03:45 -0700] "GET /api/jobs/ HTTP/1.1" 401 224 "-" "Python-urllib/3.11"
+2026-10-12 16:03:45,360	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:16:03:45 -0700] "GET /api/jobs/ HTTP/1.1" 403 218 "-" "Python-urllib/3.11"
+2026-10-12 16:07:09,110	INFO agent.py:275 -- Terminated Raylet: ip=185.62.108.226, node_id=e4d636dc5420646a6046d9dcb0a86708a17829b4dbc92f769b6b2b7d. _check_parent_via_pipe: The parent is dead.
+2026-10-12 16:07:09,112	ERROR process_watcher.py:115 -- Raylet is terminated. Termination is unexpected. Possible reasons include: (1) SIGKILL by the user or system OOM killer, (2) Invalid memory access from Raylet causing SIGSEGV or SIGBUS, (3) Other termination signals. Last 20 lines of the Raylet logs:
+    [2026-10-12 16:06:45,970 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=36a5c36f42723721c24cdd7b72d0bb332a27aaed09f9aedeef7ee6db job_id=06000000
+    [2026-10-12 16:06:45,971 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=5311d92f66989bccb37b7d1e141dd4e668f2fa42d852b0e60e34659b job_id=06000000
+    [2026-10-12 16:06:45,973 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=b04243685790f2d1ab46a06fed211e75aa1799de3aa98cbcc69d8404 job_id=06000000
+    [2026-10-12 16:06:45,973 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=f5e5c488bff669b5d7e44bbcdcc67d56e7f7c80276324b55cd35f508 job_id=06000000
+    [2026-10-12 16:06:45,974 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=cd2b390d10c177e73e574cc4eee14c22c3bc9881d9c212bd9a51ca41 job_id=06000000
+    [2026-10-12 16:06:45,975 I 1743 1743] (raylet) node_manager.cc:1504: Disconnecting worker, graceful=true, disconnect_type=3, has_creation_task_exception=false worker_id=07897b51d2417eae2fdc12d9a3071cc77519832a6c76dba5b7359815 job_id=06000000
+    [2026-10-12 16:06:45,984 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,985 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,986 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,987 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,988 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,988 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:45,988 W 1743 1794] (raylet) store.cc:366: Disconnecting client due to connection error with code 2: End of file
+    [2026-10-12 16:06:46,453 W 1743 1743] (raylet) retryable_grpc_client.cc:85: Core worker 185.62.108.226 has been unavailable for more than 1 seconds
+    [2026-10-12 16:06:46,454 I 1743 1743] (raylet) core_worker_client_pool.cc:55: Disconnecting core worker client because the worker is dead worker_id=a48b72838bf406242a7455f86d15b4e4bc34a7cd10bf102c3a068ddb node_id=e4d636dc5420646a6046d9dcb0a86708a17829b4dbc92f769b6b2b7d
+    [2026-10-12 16:06:46,454 I 1743 1743] (raylet) ownership_object_directory.cc:250: Failed to get object location update. This should only happen if the worker / node is dead. worker_id=a48b72838bf406242a7455f86d15b4e4bc34a7cd10bf102c3a068ddb node_id=e4d636dc5420646a6046d9dcb0a86708a17829b4dbc92f769b6b2b7d
+    [2026-10-12 16:06:46,690 W 1743 1743] (raylet) retryable_grpc_client.cc:85: Core worker 35.85.154.224 has been unavailable for more than 1 seconds
+    [2026-10-12 16:06:46,861 I 1743 1743] (raylet) core_worker_client_pool.cc:55: Disconnecting core worker client because the worker is dead worker_id=06000000ffffffffffffffffffffffffffffffffffffffffffffffff node_id=22c56dbbad2a64b32f44bcfb5f5b4c0315894aaff65feda6ecedfbe0
+    [2026-10-12 16:06:46,861 I 1743 1743] (raylet) subscriber.cc:325: A worker is dead. subscription_failure_callback will be invoked. Publisher id: 06000000ffffffffffffffffffffffffffffffffffffffffffffffff
+    [2026-10-12 16:06:46,861 I 1743 1743] (raylet) ownership_object_directory.cc:250: Failed to get object location update. This should only happen if the worker / node is dead. worker_id=06000000ffffffffffffffffffffffffffffffffffffffffffffffff node_id=e4d636dc5420646a6046d9dcb0a86708a17829b4dbc92f769b6b2b7d
+

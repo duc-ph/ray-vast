@@ -1,0 +1,76 @@
+== step 4: shim log counts (comm call af) and ss -ltnp
+     26 python3.11 connect af=inet
+     22 python connect af=inet
+     20 ray::IDLE connect af=inet
+      9 python3.11 connect af=inet6
+      8 raylet connect af=inet
+      8 ray connect af=inet
+      8 python connect af=inet6
+      5 raylet connect af=inet6
+      4 ray::IDLE connect af=inet6
+      4 gcs_server connect af=inet
+      3 ray connect af=inet6
+      3 gcs_server connect af=inet6
+      2 ray::DashboardA bind+reuseport af=inet
+      1 ray::RuntimeEnv bind af=inet
+      1 ray::DashboardA connect af=inet6
+      1 ray::DashboardA connect af=inet
+      1 python3.11 bind af=inet6
+-- distinct rewrites
+     26 python3.11 connect 203.0.113.10:6379 -> 172.31.31.46:6379
+     16 ray::IDLE connect 203.0.113.10:6379 -> 172.31.31.46:6379
+     16 python connect 203.0.113.10:6379 -> 172.31.31.46:6379
+      9 python3.11 connect ::ffff:203.0.113.10:6379 -> ::ffff:172.31.31.46:6379
+      8 ray connect 203.0.113.10:6379 -> 172.31.31.46:6379
+      4 ray::IDLE connect ::ffff:203.0.113.10:6380 -> ::ffff:172.31.31.46:6380
+      4 ray::IDLE connect 203.0.113.10:6380 -> 172.31.31.46:6380
+      3 ray connect ::ffff:203.0.113.10:6379 -> ::ffff:172.31.31.46:6379
+      2 raylet connect 203.0.113.10:6385 -> 172.31.31.46:6385
+      2 raylet connect 203.0.113.10:6379 -> 172.31.31.46:6379
+      2 python connect ::ffff:203.0.113.10:6380 -> ::ffff:172.31.31.46:6380
+      2 python connect ::ffff:203.0.113.10:6379 -> ::ffff:172.31.31.46:6379
+      2 python connect 203.0.113.10:6380 -> 172.31.31.46:6380
+      2 gcs_server connect 203.0.113.10:6380 -> 172.31.31.46:6380
+      1 raylet connect ::ffff:203.0.113.10:6379 -> ::ffff:172.31.31.46:6379
+      1 raylet connect ::ffff:203.0.113.10:10006 -> ::ffff:172.31.31.46:10006
+      1 raylet connect ::ffff:203.0.113.10:10005 -> ::ffff:172.31.31.46:10005
+      1 raylet connect ::ffff:203.0.113.10:10004 -> ::ffff:172.31.31.46:10004
+      1 raylet connect ::ffff:203.0.113.10:10003 -> ::ffff:172.31.31.46:10003
+      1 raylet connect 203.0.113.10:10006 -> 172.31.31.46:10006
+      1 raylet connect 203.0.113.10:10005 -> 172.31.31.46:10005
+      1 raylet connect 203.0.113.10:10004 -> 172.31.31.46:10004
+      1 raylet connect 203.0.113.10:10003 -> 172.31.31.46:10003
+      1 ray::RuntimeEnv bind 203.0.113.10:6385 -> 172.31.31.46:6385
+      1 ray::DashboardA connect ::ffff:203.0.113.10:6380 -> ::ffff:172.31.31.46:6380
+      1 ray::DashboardA connect 203.0.113.10:6380 -> 172.31.31.46:6380
+      1 ray::DashboardA bind+reuseport 203.0.113.10:6384 -> 127.0.0.1:6384
+      1 ray::DashboardA bind+reuseport 127.0.0.1:6384 -> 127.0.0.1:6384
+      1 python3.11 bind ::ffff:203.0.113.10:10001 -> ::ffff:172.31.31.46:10001
+      1 python connect ::ffff:203.0.113.10:10006 -> ::ffff:172.31.31.46:10006
+      1 python connect ::ffff:203.0.113.10:10005 -> ::ffff:172.31.31.46:10005
+      1 python connect ::ffff:203.0.113.10:10004 -> ::ffff:172.31.31.46:10004
+      1 python connect ::ffff:203.0.113.10:10003 -> ::ffff:172.31.31.46:10003
+      1 python connect 203.0.113.10:10006 -> 172.31.31.46:10006
+      1 python connect 203.0.113.10:10005 -> 172.31.31.46:10005
+      1 python connect 203.0.113.10:10004 -> 172.31.31.46:10004
+      1 python connect 203.0.113.10:10003 -> 172.31.31.46:10003
+      1 gcs_server connect ::ffff:203.0.113.10:6380 -> ::ffff:172.31.31.46:6380
+      1 gcs_server connect ::ffff:203.0.113.10:10005 -> ::ffff:172.31.31.46:10005
+      1 gcs_server connect ::ffff:203.0.113.10:10002 -> ::ffff:172.31.31.46:10002
+      1 gcs_server connect 203.0.113.10:10005 -> 172.31.31.46:10005
+      1 gcs_server connect 203.0.113.10:10002 -> 172.31.31.46:10002
+State  Recv-Q Send-Q         Local Address:Port  Peer Address:PortProcess                                                 
+LISTEN 0      128                127.0.0.1:6384       0.0.0.0:*    users:(("ray::DashboardA",pid=8172,fd=37))             
+LISTEN 0      128                127.0.0.1:6384       0.0.0.0:*    users:(("ray::DashboardA",pid=8172,fd=36))             
+LISTEN 0      5                    0.0.0.0:6382       0.0.0.0:*    users:(("ray::DashboardA",pid=8172,fd=32))             
+LISTEN 0      4096               127.0.0.1:36367      0.0.0.0:*    users:(("containerd",pid=1864,fd=14))                  
+LISTEN 0      5                    0.0.0.0:44217      0.0.0.0:*    users:(("python3.11",pid=7892,fd=21))                  
+LISTEN 0      5                    0.0.0.0:44227      0.0.0.0:*    users:(("python3.11",pid=7894,fd=50))                  
+LISTEN 0      128                127.0.0.1:8265       0.0.0.0:*    users:(("python3.11",pid=7894,fd=57))                  
+LISTEN 0      128             172.31.31.46:6385       0.0.0.0:*    users:(("ray::RuntimeEnv",pid=8174,fd=27))             
+LISTEN 0      4096   [::ffff:172.31.31.46]:10001            *:*    users:(("python3.11",pid=7893,fd=14))                  
+LISTEN 0      4096                       *:6380             *:*    users:(("raylet",pid=8149,fd=39))                      
+LISTEN 0      4096                       *:6381             *:*    users:(("raylet",pid=8149,fd=30))                      
+LISTEN 0      4096                       *:6383             *:*    users:(("ray::DashboardA",pid=8172,fd=31))             
+LISTEN 0      4096                       *:6379             *:*    users:(("gcs_server",pid=7859,fd=44))                  
+LISTEN 0      4096      [::ffff:127.0.0.1]:10001            *:*    users:(("python3.11",pid=7893,fd=13))                  

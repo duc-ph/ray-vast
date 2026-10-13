@@ -1,0 +1,99 @@
++ docker exec rayvast-c0 rm -rf /tmp/ray
++ sudo iptables -t nat -I OUTPUT 1 -d 203.0.113.10/32 -m comment --comment rayvast-c0-1b -j DNAT --to-destination 172.31.31.46
++ sudo iptables -t nat -S OUTPUT
+-P OUTPUT ACCEPT
+-A OUTPUT -d 203.0.113.10/32 -m comment --comment rayvast-c0-1b -j DNAT --to-destination 172.31.31.46
+-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
++ set +x
+2026-10-12 15:17:42,615	INFO scripts.py:1137 -- for more information on submitting Ray jobs to the Ray cluster.
+2026-10-12 15:17:42,615	INFO scripts.py:1142 -- To terminate the Ray runtime, run
+2026-10-12 15:17:42,615	INFO scripts.py:1143 -- [1m  ray stop[22m
+2026-10-12 15:17:42,615	INFO scripts.py:1146 -- To view the status of the cluster, use
+2026-10-12 15:17:42,615	INFO scripts.py:1147 --   [1mray status[22m[26m
+2026-10-12 15:17:42,615	INFO scripts.py:1151 -- To monitor and debug Ray, view the dashboard at 
+2026-10-12 15:17:42,615	INFO scripts.py:1152 --   [1m127.0.0.1:8265[22m[26m
+2026-10-12 15:17:42,615	INFO scripts.py:1159 -- [4mIf connection to the dashboard fails, check your firewall settings and network configuration.[24m
+ray start rc=0 after 10 s
+    179       00:53 gcs_server      /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/gcs/gcs_server --log_dir=/tmp/ray/session_2026-1
+    469       00:50 rayle <defunct> [raylet] <defunct>
+-- files with Errno 99:
+runtime_env_agent.err
+-- raylet.out tail
+[state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.UnregisterNode - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+[state-dump] DebugString() time ms: 0
+[state-dump] 
+[state-dump] 
+[2026-10-12 15:17:42,409 I 469 469] (raylet) accessor.cc:475: Received address and liveness notification for node, IsAlive = 1 node_id=a104df87c2c5769ea13f657f2caf42767ba204868af1094ae93f8251
+[2026-10-12 15:17:42,417 I 469 469] (raylet) metrics_agent_client.cc:59: Exporter initialized.
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/runtime_env/agent/main.py", line 248, in <module>
+    sock.bind(sockaddr)
+OSError: [Errno 99] Cannot assign requested address
+---
+[2026-10-12 15:17:38,740 E 469 496] (raylet) agent_manager.cc:87: The raylet exited immediately because one Ray agent failed, agent_name = runtime_env_agent.
+The raylet fate shares with the agent. This can happen because
+- The version of `grpcio` doesn't follow Ray's requirement. Agent can segfault with the incorrect `grpcio` version. Check the grpcio version `pip freeze | grep grpcio`.
+- The agent failed to start because of unexpected error or port conflict. Read the log `cat /tmp/ray/session_latest/logs/{dashboard_agent|runtime_env_agent}.log`. You can find the log file structure here https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#logging-direc
+- The agent is killed by the OS (e.g., out of memory).
+reason_message: "runtime_env_agent failed and raylet fate-shares with it."
+[2026-10-12 15:17:42,395 I 469 469] (raylet) metrics_agent_client.cc:45: Initializing exporter ...
+[2026-10-12 15:17:42,417 I 469 469] (raylet) metrics_agent_client.cc:59: Exporter initialized.
+dashboard.err
+dashboard.log
+dashboard.out
+dashboard_DataHead.err
+dashboard_DataHead.log
+dashboard_DataHead.out
+dashboard_EventHead.err
+dashboard_EventHead.log
+dashboard_EventHead.out
+dashboard_JobHead.err
+dashboard_JobHead.log
+dashboard_JobHead.out
+dashboard_MetricsHead.err
+dashboard_MetricsHead.log
+dashboard_MetricsHead.out
+dashboard_NodeHead.err
+dashboard_NodeHead.log
+dashboard_NodeHead.out
+dashboard_ReportHead.err
+dashboard_ReportHead.log
+dashboard_ReportHead.out
+dashboard_ServeHead.err
+dashboard_ServeHead.log
+dashboard_ServeHead.out
+dashboard_StateHead.err
+dashboard_StateHead.log
+dashboard_StateHead.out
+dashboard_TrainHead.err
+dashboard_TrainHead.log
+dashboard_TrainHead.out
+dashboard_agent.err
+dashboard_agent.log
+dashboard_agent.out
+debug_state.txt
+events
+export_events
+gcs_server.err
+gcs_server.out
+log_monitor.err
+log_monitor.log
+log_monitor.out
+monitor.err
+monitor.log
+monitor.out
+nsight
+old
+profiles
+ray_client_server.err
+ray_client_server.out
+raylet.err
+raylet.out
+rocprof_sys
+runtime_env_agent.err
+runtime_env_agent.log
+runtime_env_agent.out
+    [state-dump] 
+    [state-dump] 
+    [2026-10-12 15:17:42,409 I 469 469] (raylet) accessor.cc:475: Received address and liveness notification for node, IsAlive = 1 node_id=a104df87c2c5769ea13f657f2caf42767ba204868af1094ae93f8251
+    [2026-10-12 15:17:42,417 I 469 469] (raylet) metrics_agent_client.cc:59: Exporter initialized.
+

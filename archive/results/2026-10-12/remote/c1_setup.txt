@@ -1,0 +1,29 @@
+HEAD_IP=35.85.154.224 HEAD_PRIVATE_IP=172.31.31.46
+== setup 1: CA, token, head cert (SAN IP:35.85.154.224, IP:127.0.0.1)
+total 32
+-rw------- 1 ubuntu ubuntu 1155 Oct 12 22:25 ca.crt
+-rw------- 1 ubuntu ubuntu 1704 Oct 12 22:25 ca.key
+-rw------- 1 ubuntu ubuntu   41 Oct 12 22:25 ca.srl
+-rw------- 1 ubuntu ubuntu 1147 Oct 12 22:25 head.crt
+-rw------- 1 ubuntu ubuntu  895 Oct 12 22:25 head.csr
+-rw------- 1 ubuntu ubuntu   45 Oct 12 22:25 head.ext
+-rw------- 1 ubuntu ubuntu 1704 Oct 12 22:25 head.key
+-rw------- 1 ubuntu ubuntu   65 Oct 12 22:25 token
+subject=CN = rayvast-head
+issuer=CN = rayvast-test-ca-20261012
+notAfter=Oct 14 22:25:28 2026 GMT
+X509v3 Subject Alternative Name: 
+    IP Address:35.85.154.224, IP Address:127.0.0.1
+/opt/rayvast-test/secrets/head.crt: OK
+== setup 2: head.env (paths only, no secret values)
+RAY_USE_TLS=1
+RAY_TLS_SERVER_CERT=/opt/rayvast-test/secrets/head.crt
+RAY_TLS_SERVER_KEY=/opt/rayvast-test/secrets/head.key
+RAY_TLS_CA_CERT=/opt/rayvast-test/secrets/ca.crt
+RAY_AUTH_MODE=token
+RAY_AUTH_TOKEN_PATH=/opt/rayvast-test/secrets/token
+LD_PRELOAD=/opt/rayvast-test/shim/librayvast_shim.so
+RAYVAST_PUBLIC_IP=35.85.154.224
+RAYVAST_PRIVATE_IP=172.31.31.46
+RAYVAST_LOCALHOST_PORTS=6384
+RAYVAST_SHIM_LOG=/opt/rayvast-test/results/c1_shim.log

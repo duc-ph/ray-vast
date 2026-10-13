@@ -1,0 +1,22 @@
+c55e7c6aba1cdbdfe31aea3be6a01891bb9c3ed34789ea36fa3926cc0b902cc2
+== step 1: ray start without the shim
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/autoscaler/_private/cli_logger.py", line 812, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/scripts/scripts.py", line 1074, in start
+    node = ray._private.node.Node(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 416, in __init__
+    self.start_head_processes()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 1651, in start_head_processes
+    assert self.get_gcs_client() is not None
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 952, in get_gcs_client
+    self._init_gcs_client()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 1025, in _init_gcs_client
+    raise RuntimeError(
+RuntimeError: Failed to start GCS.  Last 1 lines of error files:
+[2026-10-12 15:12:09,199 E 15 15] (gcs_server) gcs_server.cc:1138: Failed to establish connection to the event+metrics exporter agent. Events and metrics will not be exported. Exporter agent status: RpcError: Running out of retries to initialize the metrics agent. rpc_code: 14
+
+.Please check /tmp/ray/session_2026-10-12_15-11-39_144552_7/logs/gcs_server.out for details. Last connection error: None

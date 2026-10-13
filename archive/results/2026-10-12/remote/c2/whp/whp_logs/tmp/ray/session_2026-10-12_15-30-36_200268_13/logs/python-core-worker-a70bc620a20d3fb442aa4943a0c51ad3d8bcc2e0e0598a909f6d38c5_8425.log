@@ -1,0 +1,62 @@
+[2026-10-12 16:25:33,160 I 8425 8425] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 8425
+[2026-10-12 16:25:33,177 I 8425 8425] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 16:25:33,177 I 8425 8425] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 16:25:33,177 I 8425 8425] event.cc:332: Set ray event level to warning
+[2026-10-12 16:25:33,184 I 8425 8425] grpc_server.cc:144: worker server started, listening on port 42623.
+[2026-10-12 16:25:33,186 I 8425 8425] core_worker_process.cc:299: Initializing worker at address: 143.55.45.86:42623 worker_id=a70bc620a20d3fb442aa4943a0c51ad3d8bcc2e0e0598a909f6d38c5 node_id=9b30b3c327d709b45e3317a6e6de0f7f7ecbecbcf71de2461f6e6358
+[2026-10-12 16:25:34,006 I 8425 8425] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 16:25:34,008 I 8425 8425] core_worker.cc:577: Adjusted worker niceness to 15
+[2026-10-12 16:25:34,008 I 8425 8425] open_telemetry_metric_recorder.cc:149: OpenTelemetry metric exporter configured with TLS and mTLS enabled
+[2026-10-12 16:25:34,008 I 8425 8763] core_worker.cc:507: Event stats:
+
+
+Global stats: 11 total (9 active)
+Queueing time: mean = 0.00ms, max = 0.03ms, min = 0.02ms, total = 0.05ms
+Execution time:  mean = 0.00ms, total = 0.04ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 8 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.04ms, Queueing time: mean = 0.01ms, max = 0.03ms, min = 0.02ms, total = 0.05ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	CoreWorker.ExitIfParentRayletDies - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.02ms, max = 0.04ms, min = 0.04ms, total = 0.04ms
+Execution time:  mean = 0.05ms, total = 0.10ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.10ms, total = 0.10ms, Queueing time: mean = 0.04ms, max = 0.04ms, min = 0.04ms, total = 0.04ms
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 0
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 16:25:45,736 I 8425 8763] core_worker_shutdown_executor.cc:303: Try killing all child processes of this worker as it exits. Child process pids: 
+[2026-10-12 16:25:45,736 I 8425 8763] core_worker_shutdown_executor.cc:368: Sending disconnect message to the local raylet.
+[2026-10-12 16:25:45,736 I 8425 8763] raylet_ipc_client.cc:133: RayletIpcClient::Disconnect, exit_type=INTENDED_USER_EXIT, exit_detail=Worker force exited because its job has finished, has creation_task_exception_pb_bytes=0
+[2026-10-12 16:25:45,737 I 8425 8763] core_worker_shutdown_executor.cc:384: Disconnected from the local raylet.
+[2026-10-12 16:25:45,737 W 8425 8763] core_worker_shutdown_executor.cc:393: Quick exit - terminating process immediately

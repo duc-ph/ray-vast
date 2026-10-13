@@ -1,0 +1,80 @@
+######## 143.55.45.86 42778
+== 1. plaintext HTTP/2 (gRPC) to raylet 143.55.45.86:42002
+http_code=000
+curl rc=56
+== 2a. TLS, no client cert
+verify error:num=20:unable to get local issuer certificate
+verify error:num=21:unable to verify the first certificate
+CONNECTED(00000003)
+Verification error: unable to verify the first certificate
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Can't use SSL_get_servername
+depth=0 CN = rayvast-whp
+verify error:num=20:unable to get local issuer certificate
+== 2b. TLS with a client cert from an unknown CA
+verify error:num=20:unable to get local issuer certificate
+verify error:num=21:unable to verify the first certificate
+CONNECTED(00000003)
+Verification error: unable to verify the first certificate
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+== 3. runtime-env agent 143.55.45.86:42975
+no token: 401
+wrong token: 403
+== 4. job port 143.55.45.86:42838 (expect refused)
+000
+curl rc=7 (7 = connection refused)
+== 5. job port on the worker's 127.0.0.1 (python, over SSH)
+127.0.0.1:42838 no token: 401
+127.0.0.1:42838 wrong token: 403
+== 6. metrics 143.55.45.86:42055
+metrics: 200
+lines=587 ray_ lines=376
+== extra: dashboard-agent gRPC 143.55.45.86:42942 and object manager 143.55.45.86:42650 plaintext
+42650 http_code=000
+rc=56
+42942 http_code=000
+rc=56
+######## 185.62.108.226 45809
+== 1. plaintext HTTP/2 (gRPC) to raylet 185.62.108.226:45494
+http_code=000
+curl rc=56
+== 2a. TLS, no client cert
+verify error:num=20:unable to get local issuer certificate
+verify error:num=21:unable to verify the first certificate
+CONNECTED(00000003)
+Verification error: unable to verify the first certificate
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Can't use SSL_get_servername
+depth=0 CN = rayvast-wnohp
+verify error:num=20:unable to get local issuer certificate
+== 2b. TLS with a client cert from an unknown CA
+verify error:num=20:unable to get local issuer certificate
+verify error:num=21:unable to verify the first certificate
+CONNECTED(00000003)
+Verification error: unable to verify the first certificate
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+== 3. runtime-env agent 185.62.108.226:45832
+no token: 401
+wrong token: 403
+== 4. job port 185.62.108.226:45136 (expect refused)
+000
+curl rc=7 (7 = connection refused)
+== 5. job port on the worker's 127.0.0.1 (python, over SSH)
+127.0.0.1:45136 no token: 401
+127.0.0.1:45136 wrong token: 403
+== 6. metrics 185.62.108.226:45351
+metrics: 200
+lines=610 ray_ lines=401
+== extra: dashboard-agent gRPC 185.62.108.226:45536 and object manager 185.62.108.226:45923 plaintext
+45923 http_code=000
+rc=56
+45536 http_code=000
+rc=56
+== 143.55.45.86:42002 raylet
+no cert: handshake ok (None, alpn=h2); server answered 0 bytes; first frame type=None (4=SETTINGS => accepted)
+rogue CA cert: handshake ok (None, alpn=h2); server answered 0 bytes; first frame type=None (4=SETTINGS => accepted)
+valid cert (control, head.crt): handshake ok (TLSv1.3, alpn=h2); server answered 46 bytes; first frame type=4 (4=SETTINGS => accepted)
+== 185.62.108.226:45494 raylet
+no cert: handshake ok (None, alpn=h2); server answered 0 bytes; first frame type=None (4=SETTINGS => accepted)
+rogue CA cert: handshake ok (None, alpn=h2); server answered 0 bytes; first frame type=None (4=SETTINGS => accepted)
+valid cert (control, head.crt): handshake ok (TLSv1.3, alpn=h2); server answered 46 bytes; first frame type=4 (4=SETTINGS => accepted)

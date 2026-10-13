@@ -1,0 +1,96 @@
++ export DEBIAN_FRONTEND=noninteractive
++ DEBIAN_FRONTEND=noninteractive
++ date -u +%FT%TZ
++ command -v /usr/sbin/sshd
++ sudo -E apt-get update -qq
++ sudo -E apt-get install -y -qq openssh-server python3
++ date -u +%FT%TZ
++ env
++ grep -E '^(VAST_TCP_PORT_[0-9]+|PUBLIC_IPADDR|CONTAINER_ID)='
++ sudo tee /etc/rayvast_vast.env
++ for d in /root /home/ray
++ sudo mkdir -p /root/.ssh
++ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGsX9rmRb3Z2XnzLHh4UMnTOcVjfyVkkorkUgn/e5n+g rayvast-head-c4'
++ sudo tee /root/.ssh/authorized_keys
++ for d in /root /home/ray
++ sudo mkdir -p /home/ray/.ssh
++ echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGsX9rmRb3Z2XnzLHh4UMnTOcVjfyVkkorkUgn/e5n+g rayvast-head-c4'
++ sudo tee /home/ray/.ssh/authorized_keys
++ sudo chown -R ray:users /home/ray/.ssh
++ sudo chmod 700 /root/.ssh /home/ray/.ssh
++ sudo chmod 600 /root/.ssh/authorized_keys /home/ray/.ssh/authorized_keys
++ sudo mkdir -p /run/sshd /opt/rayvast
++ sudo chown ray:users /opt/rayvast
++ sudo /usr/sbin/sshd -p 36609 -o PasswordAuthentication=no -o PermitRootLogin=prohibit-password
++ date -u +%FT%TZ
++ sudo tee /opt/rayvast/watchdog.py
++ sudo chmod 644 /opt/rayvast/watchdog.py
++ set +x
+2026-10-13T00:14:29Z start pid=1390 ppid=1 uid=0 instance=55643474 key_present=True check=15s grace=600s max_age=300s
+2026-10-13T00:14:29Z check heartbeat=missing since_start=0s
+2026-10-13T00:14:44Z check heartbeat=missing since_start=15s
+2026-10-13T00:14:59Z check heartbeat_age=5s
+2026-10-13T00:15:14Z check heartbeat_age=20s
+2026-10-13T00:15:29Z check heartbeat_age=35s
+2026-10-13T00:15:44Z check heartbeat_age=10s
+2026-10-13T00:15:59Z check heartbeat_age=25s
+2026-10-13T00:16:14Z check heartbeat_age=0s
+2026-10-13T00:16:29Z check heartbeat_age=15s
+2026-10-13T00:16:44Z check heartbeat_age=30s
+2026-10-13T00:16:59Z check heartbeat_age=4s
+2026-10-13T00:17:14Z check heartbeat_age=19s
+2026-10-13T00:17:29Z check heartbeat_age=34s
+2026-10-13T00:17:44Z check heartbeat_age=10s
+2026-10-13T00:17:59Z check heartbeat_age=25s
+2026-10-13T00:18:14Z check heartbeat_age=40s
+2026-10-13T00:18:29Z check heartbeat_age=14s
+2026-10-13T00:18:44Z check heartbeat_age=29s
+2026-10-13T00:18:59Z check heartbeat_age=3s
+2026-10-13T00:19:14Z check heartbeat_age=18s
+2026-10-13T00:19:29Z check heartbeat_age=33s
+2026-10-13T00:19:44Z check heartbeat_age=7s
+2026-10-13T00:19:59Z check heartbeat_age=22s
+2026-10-13T00:20:14Z check heartbeat_age=37s
+2026-10-13T00:20:29Z check heartbeat_age=12s
+2026-10-13T00:20:44Z check heartbeat_age=27s
+2026-10-13T00:20:59Z check heartbeat_age=3s
+2026-10-13T00:21:14Z check heartbeat_age=18s
+2026-10-13T00:21:29Z check heartbeat_age=33s
+2026-10-13T00:21:44Z check heartbeat_age=8s
+2026-10-13T00:21:59Z check heartbeat_age=23s
+2026-10-13T00:22:14Z check heartbeat_age=39s
+2026-10-13T00:22:29Z check heartbeat_age=14s
+2026-10-13T00:22:44Z check heartbeat_age=29s
+2026-10-13T00:22:59Z check heartbeat_age=4s
+2026-10-13T00:23:14Z check heartbeat_age=19s
+2026-10-13T00:23:29Z check heartbeat_age=34s
+2026-10-13T00:23:44Z check heartbeat_age=8s
+2026-10-13T00:23:59Z check heartbeat_age=23s
+2026-10-13T00:24:14Z check heartbeat_age=38s
+2026-10-13T00:24:29Z check heartbeat_age=12s
+2026-10-13T00:24:44Z check heartbeat_age=27s
+2026-10-13T00:24:59Z check heartbeat_age=1s
+2026-10-13T00:25:14Z check heartbeat_age=17s
+2026-10-13T00:25:29Z check heartbeat_age=32s
+2026-10-13T00:25:44Z check heartbeat_age=10s
+2026-10-13T00:25:59Z check heartbeat_age=25s
+2026-10-13T00:26:14Z check heartbeat_age=3s
+2026-10-13T00:26:29Z check heartbeat_age=18s
+2026-10-13T00:26:44Z check heartbeat_age=33s
+2026-10-13T00:27:00Z check heartbeat_age=12s
+2026-10-13T00:27:15Z check heartbeat_age=27s
+2026-10-13T00:27:30Z check heartbeat_age=5s
+2026-10-13T00:27:45Z check heartbeat_age=20s
+2026-10-13T00:28:00Z check heartbeat_age=35s
+2026-10-13T00:28:15Z check heartbeat_age=14s
+2026-10-13T00:28:30Z check heartbeat_age=29s
+2026-10-13T00:28:45Z check heartbeat_age=44s
+2026-10-13T00:29:00Z check heartbeat_age=59s
+2026-10-13T00:29:15Z check heartbeat_age=74s
+2026-10-13T00:29:30Z check heartbeat_age=89s
+2026-10-13T00:29:45Z check heartbeat_age=104s
+2026-10-13T00:30:00Z check heartbeat_age=119s
+2026-10-13T00:30:15Z check heartbeat_age=134s
+2026-10-13T00:30:30Z check heartbeat_age=11s
+2026-10-13T00:30:45Z check heartbeat_age=26s
+2026-10-13T00:31:00Z check heartbeat_age=41s

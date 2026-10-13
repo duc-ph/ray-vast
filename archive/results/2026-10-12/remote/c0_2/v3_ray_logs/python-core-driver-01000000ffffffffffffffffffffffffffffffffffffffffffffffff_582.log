@@ -1,0 +1,83 @@
+[2026-10-12 15:29:29,937 I 582 582] core_worker_process.cc:872: Constructing CoreWorkerProcess. pid: 582
+[2026-10-12 15:29:29,939 I 582 582] event.cc:499: Ray Event initialized for CORE_WORKER
+[2026-10-12 15:29:29,939 I 582 582] event.cc:499: Ray Event initialized for EXPORT_TASK
+[2026-10-12 15:29:29,939 I 582 582] event.cc:332: Set ray event level to warning
+[2026-10-12 15:29:30,569 I 582 582] grpc_server.cc:144: driver server started, listening on port 10002.
+[2026-10-12 15:29:30,572 I 582 582] core_worker_process.cc:299: Initializing worker at address: 203.0.113.10:10002 worker_id=01000000ffffffffffffffffffffffffffffffffffffffffffffffff node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:30,573 I 582 582] task_event_buffer.cc:535: Reporting task events to GCS every 1000ms.
+[2026-10-12 15:29:30,575 I 582 603] core_worker.cc:507: Event stats:
+
+
+Global stats: 12 total (9 active)
+Queueing time: mean = 0.04ms, max = 0.40ms, min = 0.02ms, total = 0.43ms
+Execution time:  mean = 0.04ms, total = 0.54ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 7 total (6 active, 1 running), Execution time: mean = 0.00ms, total = 0.01ms, Queueing time: mean = 0.00ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.02ms, total = 0.02ms, Queueing time: mean = 0.40ms, max = 0.40ms, min = 0.40ms, total = 0.40ms
+	ray::rpc::WorkerInfoGcsService.grpc_client.AddWorkerInfo - 1 total (0 active), Execution time: mean = 0.51ms, total = 0.51ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberCommandBatch - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberPoll - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+	Publisher.CheckDeadSubscribers - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+
+-----------------
+Task execution event stats:
+
+Global stats: 0 total (0 active)
+Queueing time: mean = -nanms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Execution time:  mean = -nanms, total = 0.00ms
+Event stats:
+
+-----------------
+Task Event stats:
+
+IO Service Stats:
+
+Global stats: 2 total (1 active)
+Queueing time: mean = 0.01ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+Execution time:  mean = 0.02ms, total = 0.04ms
+Event stats:
+	PeriodicalRunner.RunFnPeriodically - 1 total (0 active), Execution time: mean = 0.04ms, total = 0.04ms, Queueing time: mean = 0.02ms, max = 0.02ms, min = 0.02ms, total = 0.02ms
+	CoreWorker.deadline_timer.flush_task_events - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+Other Stats:
+	gcs_grpc_in_progress:0
+	event_aggregator_grpc_in_progress:0
+	current number of task status events in buffer: 1
+	current number of profile events in buffer: 0
+	current number of dropped task attempts tracked: 0
+	total task events sent: 0 MiB
+	total number of task attempts sent: 0
+	total number of task attempts dropped reported: 0
+	total number of sent failure: 0
+	num status task events dropped: 0
+	num profile task events dropped: 0
+	num ray task events reported to aggregator: 0
+	num ray task events failed to report to aggregator: 0
+	num of task attempts dropped reported to aggregator: 0
+	num of failed requests to aggregator: 0
+
+[2026-10-12 15:29:30,576 I 582 603] accessor.cc:475: Received address and liveness notification for node, IsAlive = 1 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:30,576 I 582 603] normal_task_submitter.cc:846: Number of alive nodes:1
+[2026-10-12 15:29:30,781 W 582 603] normal_task_submitter.cc:270: Task submission is being throttled: pending lease requests (10) reached limit (10), with 1 tasks waiting for lease requests. This especially affects workloads submitting many tasks of the same type to a cluster with few nodes but many cores per node. Consider increasing RAY_max_pending_lease_requests_per_scheduling_category.
+[2026-10-12 15:29:31,110 I 582 582] actor_task_submitter.cc:75: Set actor max pending calls to -1 actor_id=6d4c3e9d820e5ff19441c0b801000000
+[2026-10-12 15:29:31,116 I 582 603] actor_manager.cc:236: received notification on actor, state: PENDING_CREATION, ip address: , port: 0, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=6d4c3e9d820e5ff19441c0b801000000 worker_id=NIL_ID node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:31,116 I 582 603] actor_manager.cc:236: received notification on actor, state: PENDING_CREATION, ip address: , port: 0, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=6d4c3e9d820e5ff19441c0b801000000 worker_id=NIL_ID node_id=NIL_ID
+[2026-10-12 15:29:31,545 I 582 603] actor_manager.cc:236: received notification on actor, state: ALIVE, ip address: 203.0.113.10, port: 10005, num_restarts: 0, death context type=CONTEXT_NOT_SET actor_id=6d4c3e9d820e5ff19441c0b801000000 worker_id=8067b053198add85d0a74bb43d86692cdec92e54b0896576ee1fda95 node_id=c19eb0f6afc7a2cee982306c521f3181efe011030aaf23fbd8a13688
+[2026-10-12 15:29:36,870 I 582 582] core_worker.cc:663: Sending disconnect message to the local raylet.
+[2026-10-12 15:29:36,870 I 582 582] raylet_ipc_client.cc:133: RayletIpcClient::Disconnect, exit_type=INTENDED_USER_EXIT, exit_detail=Shutdown by ray.shutdown()., has creation_task_exception_pb_bytes=0
+[2026-10-12 15:29:36,870 I 582 582] core_worker.cc:667: Disconnected from the local raylet.
+[2026-10-12 15:29:36,870 I 582 582] task_event_buffer.cc:548: Shutting down TaskEventBuffer.
+[2026-10-12 15:29:36,872 I 582 662] task_event_buffer.cc:507: Task event buffer io service stopped.
+[2026-10-12 15:29:36,872 I 582 582] ray_event_recorder_base.cc:69: Stopping RayEventRecorder and flushing remaining events.
+[2026-10-12 15:29:36,872 I 582 603] core_worker_process.cc:199: Core worker main io service stopped.
+[2026-10-12 15:29:36,872 I 582 582] core_worker_shutdown_executor.cc:92: Waiting for joining a core worker io thread. If it hangs here, there might be deadlock or a high load in the core worker io service.
+[2026-10-12 15:29:36,872 I 582 582] core_worker_shutdown_executor.cc:109: Waiting for joining the object-freed callback thread.
+[2026-10-12 15:29:36,873 I 582 604] core_worker_process.cc:219: Object-freed callback service stopped.
+[2026-10-12 15:29:36,877 I 582 582] core_worker_shutdown_executor.cc:118: Disconnecting a GCS client.
+[2026-10-12 15:29:36,877 I 582 582] core_worker_shutdown_executor.cc:125: Core worker ready to be deallocated.
+[2026-10-12 15:29:36,877 I 582 582] core_worker_process.cc:1075: Waiting for driver shutdown to complete...
+[2026-10-12 15:29:36,877 I 582 582] core_worker_shutdown_executor.cc:43: Shutdown completed successfully
+[2026-10-12 15:29:36,877 I 582 582] core_worker_process.cc:1077: Driver shutdown complete. Removing the global worker.
+[2026-10-12 15:29:36,877 I 582 582] core_worker_shutdown_executor.cc:43: Shutdown completed successfully
+[2026-10-12 15:29:36,877 I 582 582] core_worker.cc:593: Core worker is destructed
+[2026-10-12 15:29:36,879 I 582 582] core_worker_process.cc:954: Destructing CoreWorkerProcessImpl. pid: 582
+[2026-10-12 15:29:36,883 I 582 582] stats.h:176: Stats module has shutdown.

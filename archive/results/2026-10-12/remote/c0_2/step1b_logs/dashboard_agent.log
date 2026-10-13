@@ -1,0 +1,77 @@
+2026-10-12 15:17:38,749	INFO agent.py:177 -- Dashboard agent grpc address: 203.0.113.10:6383
+2026-10-12 15:17:38,750	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 15:17:39,007	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 15:17:39,007	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 15:17:39,007	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:17:39,007	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:17:39,007	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:17:39,007	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 15:17:39,008	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 15:17:39,008	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 15:17:39,008	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 15:17:39,008	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 15:17:39,008	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 15:17:39,008	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 15:17:39,010	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 15:17:39,011	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:17:39,011	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 15:17:39,013	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 1/6). Retrying in 0.19s. Error: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:39,208	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 2/6). Retrying in 0.29s. Error: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:39,501	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 3/6). Retrying in 0.46s. Error: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:39,964	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 4/6). Retrying in 0.81s. Error: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:40,779	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 5/6). Retrying in 1.61s. Error: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:42,387	ERROR http_server_agent.py:85 -- Agent port #6384 failed to bind after 6 attempts.
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 59, in _start_site_with_retry
+    await site.start()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/aiohttp/web_runner.py", line 138, in start
+    self._server = await loop.create_server(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/asyncio/base_events.py", line 1539, in create_server
+    raise OSError('could not bind on any address out of %r'
+OSError: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:42,389	ERROR agent.py:233 -- Failed to start HTTP server with exception: could not bind on any address out of [('203.0.113.10', 6384)]. The agent will stay alive but the HTTP service will be disabled.
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/agent.py", line 224, in run
+    await self.http_server.start(modules)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 135, in start
+    site = await self._start_site_with_retry()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 92, in _start_site_with_retry
+    raise last_exception
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 59, in _start_site_with_retry
+    await site.start()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/aiohttp/web_runner.py", line 138, in start
+    self._server = await loop.create_server(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/asyncio/base_events.py", line 1539, in create_server
+    raise OSError('could not bind on any address out of %r'
+OSError: could not bind on any address out of [('203.0.113.10', 6384)]
+2026-10-12 15:17:42,390	INFO process_watcher.py:45 -- raylet pid is 469
+2026-10-12 15:17:42,390	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 15:17:42,390	INFO event_utils.py:132 -- Monitor events logs modified after 1791841658.798673 on /tmp/ray/session_2026-10-12_15-17-34_429250_171/logs/events, the source types are all.
+2026-10-12 15:17:42,436	ERROR reporter_agent.py:1098 -- Failed to access agent process 495
+2026-10-12 15:17:47,450	ERROR reporter_agent.py:1098 -- Failed to access agent process 495
+2026-10-12 15:17:48,745	INFO agent.py:275 -- Terminated Raylet: ip=203.0.113.10, node_id=a104df87c2c5769ea13f657f2caf42767ba204868af1094ae93f8251. _check_parent_via_pipe: The parent is dead.
+2026-10-12 15:17:48,745	ERROR process_watcher.py:115 -- Raylet is terminated. Termination is unexpected. Possible reasons include: (1) SIGKILL by the user or system OOM killer, (2) Invalid memory access from Raylet causing SIGSEGV or SIGBUS, (3) Other termination signals. Last 20 lines of the Raylet logs:
+    [state-dump] 	ObjectManager.UpdateAvailableMemory - 1 total (0 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.30ms, max = 0.30ms, min = 0.30ms, total = 0.30ms
+    [state-dump] 	NodeManager.deadline_timer.spill_objects_when_over_threshold - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.deadline_timer.record_metrics - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.deadline_timer.debug_state_dump - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.RegisterNode.OnReplyReceived - 1 total (0 active), Execution time: mean = 0.39ms, total = 0.39ms, Queueing time: mean = 1.52ms, max = 1.52ms, min = 1.52ms, total = 1.52ms
+    [state-dump] 	ray::rpc::InternalKVGcsService.grpc_client.GetInternalConfig - 1 total (0 active), Execution time: mean = 0.89ms, total = 0.89ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberCommandBatch - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.deadline_timer.flush_free_objects - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::InternalKVGcsService.grpc_client.GetInternalConfig.OnReplyReceived - 1 total (0 active), Execution time: mean = 4882.72ms, total = 4882.72ms, Queueing time: mean = 0.04ms, max = 0.04ms, min = 0.04ms, total = 0.04ms
+    [state-dump] 	ray::rpc::ControlPlanePubSubGcsService.grpc_client.GcsSubscriberPoll - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.GCCancelledLeaseTombstones - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ClusterResourceManager.ResetRemoteNodeView - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.ScheduleAndGrantLeases - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	NodeManager.GCTaskFailureReason - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] 	ray::rpc::NodeInfoGcsService.grpc_client.UnregisterNode - 1 total (1 active), Execution time: mean = 0.00ms, total = 0.00ms, Queueing time: mean = 0.00ms, max = -0.00ms, min = 9223372036854.78ms, total = 0.00ms
+    [state-dump] DebugString() time ms: 0
+    [state-dump] 
+    [state-dump] 
+    [2026-10-12 15:17:42,409 I 469 469] (raylet) accessor.cc:475: Received address and liveness notification for node, IsAlive = 1 node_id=a104df87c2c5769ea13f657f2caf42767ba204868af1094ae93f8251
+    [2026-10-12 15:17:42,417 I 469 469] (raylet) metrics_agent_client.cc:59: Exporter initialized.
+

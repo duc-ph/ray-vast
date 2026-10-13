@@ -1,0 +1,22 @@
+2026-10-12 15:17:36,174	INFO server.py:913 -- Starting Ray Client server on 203.0.113.10:10001, args Namespace(host='203.0.113.10', port=10001, mode='proxy', address='203.0.113.10:6379', redis_username=None, runtime_env_agent_address='http://203.0.113.10:6385', node_id='a104df87c2c5769ea13f657f2caf42767ba204868af1094ae93f8251')
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1791843456.191056     213 add_port.cc:83] Failed to add port to server: No address added out of total 1 resolved for '203.0.113.10:10001'
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/client/server/__main__.py", line 4, in <module>
+    main()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/client/server/server.py", line 915, in main
+    server = serve_proxier(
+             ^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/client/server/proxier.py", line 931, in serve_proxier
+    add_port_to_grpc_server(server, build_address(host, port))
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_common/tls_utils.py", line 82, in add_port_to_grpc_server
+    return server.add_insecure_port(address)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/grpc/_server.py", line 1481, in add_insecure_port
+    return _common.validate_port_binding_result(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/grpc/_common.py", line 181, in validate_port_binding_result
+    raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
+RuntimeError: Failed to bind to address 203.0.113.10:10001; set GRPC_VERBOSITY=debug environment variable to see detailed error message.

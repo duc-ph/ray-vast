@@ -1,0 +1,53 @@
+2026-10-12 15:19:09,196	INFO agent.py:177 -- Dashboard agent grpc address: 203.0.113.10:6383
+2026-10-12 15:19:09,197	INFO utils.py:319 -- Get all modules by type: DashboardAgentModule
+2026-10-12 15:19:09,460	INFO utils.py:352 -- Available modules: [<class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>, <class 'ray.dashboard.modules.event.event_agent.EventAgent'>, <class 'ray.dashboard.modules.job.job_agent.JobAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgent'>, <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>, <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>, <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>]
+2026-10-12 15:19:09,461	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.aggregator.aggregator_agent.AggregatorAgent'>
+2026-10-12 15:19:09,461	INFO aggregator_agent.py:153 -- Event HTTP target is not enabled or publishing events to external HTTP service is disabled. Skipping sending events to external HTTP service. events_export_addr: 
+2026-10-12 15:19:09,461	INFO aggregator_agent.py:172 -- Publishing events to GCS is disabled
+2026-10-12 15:19:09,461	INFO aggregator_agent.py:191 -- Publishing events to the dashboard head is disabled
+2026-10-12 15:19:09,461	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.event.event_agent.EventAgent'>
+2026-10-12 15:19:09,461	INFO event_agent.py:51 -- Event agent cache buffer size: 10240
+2026-10-12 15:19:09,462	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.job.job_agent.JobAgent'>
+2026-10-12 15:19:09,462	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgent'>
+2026-10-12 15:19:09,462	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.log.log_agent.LogAgentV1Grpc'>
+2026-10-12 15:19:09,462	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.healthz_agent.HealthzAgent'>
+2026-10-12 15:19:09,462	INFO agent.py:196 -- Loading DashboardAgentModule: <class 'ray.dashboard.modules.reporter.reporter_agent.ReporterAgent'>
+2026-10-12 15:19:09,468	WARNING gpu_profile_manager.py:78 -- [GpuProfilingManager] `dynolog` is not installed, GPU profiling will not be available.
+2026-10-12 15:19:09,468	WARNING gpu_profile_manager.py:135 -- [GpuProfilingManager] GPU profiling is disabled, skipping daemon setup.
+2026-10-12 15:19:09,469	INFO agent.py:201 -- Loaded 7 modules.
+2026-10-12 15:19:09,471	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 1/6). Retrying in 0.14s. Error: [Errno 98] error while attempting to bind on address ('127.0.0.1', 6384): address already in use
+2026-10-12 15:19:09,612	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 2/6). Retrying in 0.25s. Error: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:09,859	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 3/6). Retrying in 0.50s. Error: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:10,360	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 4/6). Retrying in 0.83s. Error: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:11,196	WARNING http_server_agent.py:79 -- Failed to bind to port 6384 (attempt 5/6). Retrying in 1.62s. Error: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:12,821	ERROR http_server_agent.py:85 -- Agent port #6384 failed to bind after 6 attempts.
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 59, in _start_site_with_retry
+    await site.start()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/aiohttp/web_runner.py", line 138, in start
+    self._server = await loop.create_server(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/asyncio/base_events.py", line 1536, in create_server
+    raise OSError(err.errno, msg) from None
+OSError: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:12,823	ERROR agent.py:233 -- Failed to start HTTP server with exception: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use. The agent will stay alive but the HTTP service will be disabled.
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/agent.py", line 224, in run
+    await self.http_server.start(modules)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 135, in start
+    site = await self._start_site_with_retry()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 92, in _start_site_with_retry
+    raise last_exception
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/dashboard/http_server_agent.py", line 59, in _start_site_with_retry
+    await site.start()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/aiohttp/web_runner.py", line 138, in start
+    self._server = await loop.create_server(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/asyncio/base_events.py", line 1536, in create_server
+    raise OSError(err.errno, msg) from None
+OSError: [Errno 98] error while attempting to bind on address ('203.0.113.10', 6384): address already in use
+2026-10-12 15:19:12,824	INFO process_watcher.py:45 -- raylet pid is 964
+2026-10-12 15:19:12,824	INFO process_watcher.py:65 -- check_parent_via_pipe
+2026-10-12 15:19:12,824	INFO event_utils.py:132 -- Monitor events logs modified after 1791841749.2450209 on /tmp/ray/session_2026-10-12_15-19-05_029504_664/logs/events, the source types are all.
+2026-10-12 15:20:50,749	INFO web_log.py:229 -- 127.0.0.1 [12/Oct/2026:15:20:50 -0700] "GET /api/jobs/ HTTP/1.1" 404 174 "-" "curl/8.5.0"

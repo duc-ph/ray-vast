@@ -1,0 +1,29 @@
+== step 1: bind 203.0.113.10:5000 without the shim
+OSError: [Errno 99] Cannot assign requested address
+== step 2: same bind with the shim, then listen and keep it open
+bound to ('127.0.0.1', 5000)
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      128        127.0.0.1:5000      0.0.0.0:*          
+shim log bind lines: 1
+2026-10-12T22:10:43.091Z 3578 python3 bind 203.0.113.10:5000 -> 127.0.0.1:5000 af=inet
+== step 3: http.server --bind 203.0.113.10 and curl, both with the shim
+curl code: 200
+shim log connect lines: 1
+2026-10-12T22:10:44.162Z 3585 python3 bind 203.0.113.10:5000 -> 127.0.0.1:5000 af=inet
+2026-10-12T22:10:45.105Z 3589 curl connect 203.0.113.10:5000 -> 127.0.0.1:5000 af=inet
+== step 4: RAYVAST_LOCALHOST_PORTS=5001, bind 0.0.0.0:5001 with the shim
+bound to ('127.0.0.1', 5001)
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
+LISTEN 0      128        127.0.0.1:5001      0.0.0.0:*          
+2026-10-12T22:10:45.134Z 3593 python3 bind 0.0.0.0:5001 -> 127.0.0.1:5001 af=inet
+== extra a: errno passes through (connect to a rewritten port with no listener)
+ConnectionRefusedError 111 [Errno 111] Connection refused
+2026-10-12T22:10:46.145Z 3597 python3 connect 203.0.113.10:5002 -> 127.0.0.1:5002 af=inet
+== extra b: IPv4-mapped IPv6 (the form that gRPC dual-stack sockets use)
+v6 server ('::ffff:127.0.0.1', 5003) client peer ('::ffff:127.0.0.1', 5003)
+v6 any ('::', 5004)
+2026-10-12T22:10:46.175Z 3599 python3 bind ::ffff:203.0.113.10:5003 -> ::ffff:127.0.0.1:5003 af=inet6
+2026-10-12T22:10:46.175Z 3599 python3 connect ::ffff:203.0.113.10:5003 -> ::ffff:127.0.0.1:5003 af=inet6
+== extra c: unrelated addresses pass through unchanged (no log lines)
+checkip 200
+shim log lines: 0
