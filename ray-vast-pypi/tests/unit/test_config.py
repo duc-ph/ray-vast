@@ -117,6 +117,57 @@ def test_offer_query_rejects_gpu_count_in_wider_list():
         query(offer_query={"num_gpus": {"in": [2, 4]}})
 
 
+def test_offer_query_rejects_non_numeric_ram():
+    with pytest.raises(ValueError, match=r"'w'.*'gpu_ram'"):
+        query(offer_query={"gpu_ram": {"gte": "24GB"}})
+
+
+def test_offer_query_rejects_non_list_in_value():
+    with pytest.raises(ValueError, match=r"'w'.*'geolocation'.*list"):
+        query(offer_query={"geolocation": {"in": "US"}})
+
+
+def test_offer_query_rejects_list_for_scalar_operator():
+    with pytest.raises(ValueError, match=r"'w'.*'dlperf'.*scalar"):
+        query(offer_query={"dlperf": {"gte": [40]}})
+
+
+def test_offer_query_accepts_cpu_eq_at_or_above_floor():
+    assert query(offer_query={"cpu_cores_effective": {"eq": 4}})["cpu_cores_effective"] == {"eq": 4}
+
+
+def test_offer_query_accepts_cpu_in_list_above_floor():
+    assert query(offer_query={"cpu_cores_effective": {"in": [4, 8]}})["cpu_cores_effective"] == {"in": [4, 8]}
+
+
+def test_offer_query_rejects_cpu_in_list_with_value_below_floor():
+    with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'"):
+        query(offer_query={"cpu_cores_effective": {"in": [2, 8]}})
+
+
+def test_offer_query_rejects_cpu_eq_below_floor():
+    with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'"):
+        query(offer_query={"cpu_cores_effective": {"eq": 2}})
+
+
+@pytest.mark.parametrize(
+    "condition",
+    [{"gte": 8, "lt": 4}, {"gt": 8, "lte": 8}, {"gte": 8, "lt": 8}, {"gt": 5, "lt": 5}],
+)
+def test_offer_query_rejects_empty_range(condition):
+    with pytest.raises(ValueError, match=r"'w'.*'dlperf'.*never match"):
+        query(offer_query={"dlperf": condition})
+
+
+def test_offer_query_accepts_single_point_range():
+    assert query(offer_query={"dlperf": {"gte": 8, "lte": 8}})["dlperf"] == {"gte": 8, "lte": 8}
+
+
+def test_offer_query_rejects_empty_range_on_added_field():
+    with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'.*never match"):
+        query(offer_query={"cpu_cores_effective": {"gte": 8, "lt": 4}})
+
+
 def test_offer_query_rejects_contradicting_gpu_count():
     with pytest.raises(ValueError, match=r"'w'.*'num_gpus'"):
         query(offer_query={"num_gpus": {"eq": 1}})
@@ -147,10 +198,10 @@ def test_bootstrap_accepts_two_cpu_tiers_with_own_core_bands():
     config = make()
     types = config["available_node_types"]
     del types["w"]
-    for name, cpu, cond in [("gpu24_c8", 8, {"gte": 8, "lt": 16}), ("gpu24_c16", 16, {"gte": 16})]:
-        types[name] = {
+    for type_name, cpu, band in [("gpu24_c8", 8, {"gte": 8, "lt": 16}), ("gpu24_c16", 16, {"gte": 16})]:
+        types[type_name] = {
             "resources": {"CPU": cpu, "GPU": 1},
-            "node_config": {"offer_query": {"gpu_ram": {"gte": 24000}, "cpu_cores_effective": cond}},
+            "node_config": {"offer_query": {"gpu_ram": {"gte": 24000}, "cpu_cores_effective": band}},
         }
     out, warnings = bootstrap_config(config)
     assert out["available_node_types"]["gpu24_c8"]["node_config"]["offer_query"]["cpu_cores_effective"] == {"gte": 8, "lt": 16}

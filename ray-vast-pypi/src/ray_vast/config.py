@@ -24,18 +24,34 @@ PROVIDER_DEFAULTS = {
 }
 
 
-def build_offer_query(node_type_config, allow_non_datacenter, node_type="?"):
+def build_offer_query(node_type_config, allow_non_datacenter, name):
     """Return the vast API query: the user's offer_query plus the filters that ray-vast adds."""
     resources = node_type_config["resources"]
     user_query = node_type_config.get("node_config", {}).get("offer_query") or {}
     for field, condition in user_query.items():
+        where = f"node type {name!r}: offer_query field {field!r}"
         if not isinstance(condition, dict) or not condition:
-            raise ValueError(f"node type {node_type!r}: offer_query field {field!r} must be a mapping of operator to value")
+            raise ValueError(f"{where} must be a mapping of operator to value")
         for op, value in condition.items():
             if op not in QUERY_OPS:
-                raise ValueError(f"node type {node_type!r}: offer_query field {field!r} has unknown operator {op!r}")
-            if field in MB_FIELDS and any(v < 1000 for v in (value if isinstance(value, list) else [value])):
-                raise ValueError(f"node type {node_type!r}: offer_query field {field!r} value {value} is below 1000; the unit is MB")
+                raise ValueError(f"{where} has unknown operator {op!r}")
+            if op in ("in", "notin") and not isinstance(value, list):
+                raise ValueError(f"{where}: operator {op!r} needs a list, got {value!r}")
+            if op not in ("in", "notin") and isinstance(value, (list, dict)):
+                raise ValueError(f"{where}: operator {op!r} needs a scalar, got {value!r}")
+            if field in MB_FIELDS:
+                for v in value if isinstance(value, list) else [value]:
+                    if isinstance(v, bool) or not isinstance(v, (int, float)):
+                        raise ValueError(f"{where}: value {v!r} is not a number")
+                    if v < 1000:
+                        raise ValueError(f"{where}: value {v} is below 1000; the unit is MB")
+        for lower_op in ("gte", "gt"):
+            for upper_op in ("lte", "lt"):
+                if lower_op in condition and upper_op in condition:
+                    lower, upper = condition[lower_op], condition[upper_op]
+                    strict = lower_op == "gt" or upper_op == "lt"
+                    if isinstance(lower, (int, float)) and isinstance(upper, (int, float)) and (lower > upper or (strict and lower == upper)):
+                        raise ValueError(f"{where}: {condition} can never match")
 
     added = {
         "num_gpus": {"eq": resources["GPU"]},
@@ -49,20 +65,17 @@ def build_offer_query(node_type_config, allow_non_datacenter, node_type="?"):
     merged = dict(user_query)
     for field, condition in added.items():
         user = user_query.get(field)
+        where = f"node type {name!r}: offer_query field {field!r}"
         if user is None:
             merged[field] = condition
         elif field in ("cpu_cores_effective", "direct_port_count"):
             floor = condition["gte"]
-            if not (user.get("gte", 0) >= floor or user.get("gt", 0) >= floor):
-                raise ValueError(
-                    f"node type {node_type!r}: offer_query field {field!r} is {user}, "
-                    f"which is looser than the added filter {condition}"
-                )
+            eq_or_in = [user["eq"]] if "eq" in user else user.get("in")
+            at_or_above = lambda v: isinstance(v, (int, float)) and v >= floor
+            if not (at_or_above(user.get("gte")) or at_or_above(user.get("gt")) or (eq_or_in and all(at_or_above(v) for v in eq_or_in))):
+                raise ValueError(f"{where} is {user}, which is looser than the added filter {condition}")
         elif user != condition and not (field == "num_gpus" and user == {"in": [condition["eq"]]}):
-            raise ValueError(
-                f"node type {node_type!r}: offer_query field {field!r} is {user}, "
-                f"but ray-vast sets it to {condition} from the node type"
-            )
+            raise ValueError(f"{where} is {user}, but ray-vast sets it to {condition} from the node type")
         else:
             merged[field] = condition
     return merged

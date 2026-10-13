@@ -13,3 +13,6 @@ Technical decisions made while the user was away. Rule: simplest option that wor
 - 2026-10-13 — The vast key is not a config field. The CLI reads it from `VAST_API_KEY` or `~/.config/vastai/vast_api_key` (the vast CLI's file). Reason: keeps the secret out of the cluster YAML. The field is `cert_max_age_days` (plan said `cert_max_age`), for a clear unit. (Step 2 review)
 - 2026-10-13 — Provider fields other than `region`, `image` and `max_dollars_per_hour` have defaults (`candidate_factor` 2, `cert_max_age_days` 365, `allow_non_datacenter` false, `order_by` `dph_total`, `head_instance_type` `t3.large`). (Step 2 review)
 - 2026-10-13 — The packaging test does not install the full Ray dependency set in a clean venv (it uses `--no-deps`). Reason: Ray is large; the full install is exercised by the head container in step 10 and the end-to-end tests. (Step 1 review)
+- 2026-10-13 — PKI: RSA-2048 keys (proven with Ray gRPC in C0–C4); leaf certs have serverAuth + clientAuth; `not_before` is 5 min in the past (worker clock skew); CA `pathlen:0`; `cryptography>=42`. (Step 4)
+- 2026-10-13 — Fingerprint = SHA-256 of the CA cert's DER bytes, lowercase hex (S5). (Step 4)
+- 2026-10-13 — The head server uses two ports: plain TLS (download, enrollment) and mTLS (heartbeat, reports). Reason: one TLS context cannot require client certs for only some paths (S5).
