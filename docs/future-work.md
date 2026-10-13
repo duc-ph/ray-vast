@@ -9,3 +9,4 @@ Items that we agreed not to build in the first version.
 - **Rolling cert renewal.** The CA file holds the old and the new CA together (gRPC accepts a CA bundle). The autoscaler replaces the workers one at a time with workers that have new certs, and the head restarts last.
 - **Total budget.** `max_spend`: the head stops all workers when the cluster spends this amount.
 - **Blocklist across clusters.** Keep the blocklist in a file (on the laptop or in S3), so that a new cluster does not rent known bad hosts again. (First version: one blocklist in memory for each cluster.)
+- **Autoscaler restart without losing the cluster.** Run the autoscaler monitor in its own container with a restart policy, as KubeRay does, and make the provider rebuild its state from vast (instance labels) instead of the start-up sweep. Then a monitor crash does not end the running jobs. (First version: no self-healing; a dead monitor stops the head.)
