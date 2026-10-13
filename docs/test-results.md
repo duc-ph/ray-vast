@@ -189,3 +189,22 @@ The final shim is v3 (`shim/rayvast_shim.c`, build sha256 `79055dea…17fd`). It
 - The Claude Code permission classifier blocked the security group changes from the test agent. The lead ran them.
 - Get the container logs before the destroy.
 - Not tested: `kill -TERM 1` and `kill -INT 1` from the ray user (no approval for a third rental). Test it in T13.
+
+# Live cycle C5a and C5d (2026-10-13)
+
+Setup: `ray-vast up` from a clean copy of commit 207c74b (EC2 `t3.large` head, us-west-2), image `rayproject/ray:2.59.0-py311-cpu`, one worker type `{CPU: 4, GPU: 1}`, `min_workers: 1`, `max_dollars_per_hour: 1.0`. Logs: `archive/results/2026-10-13/c5a/`.
+
+| Item | Result |
+|---|---|
+| `up` on real AWS | Pass |
+| Provider rents candidates on real vast | Pass (2 per slot with `candidate_factor: 2`) |
+| Enrollment | **Fail.** The head refused every candidate: "container key is not valid". C5d (with more logging) showed that vast answers the head's `GET /instances/<id>/` with HTTP 401 when the head sends the worker's `CONTAINER_API_KEY`. On 2026-10-12 (C3) the same call worked from inside the container. |
+| Rent loop | Each refused candidate was destroyed, and the provider rented new ones: 10 rentals in 5 min. Only `max_dollars_per_hour` limits this. |
+| vast instance fields | `id`, `label`, `actual_status` (`loading` → `running`), `cur_state`, `intended_status`, `public_ipaddr`, `machine_id`, `ports` (`"P/tcp": [{"HostIp": "0.0.0.0", "HostPort": "P"}, …]`, 64 entries), `dph_total`, `gpu_name`, `extra_env`, `onstart`, `image_args`. No `instance_api_key` in the list. |
+| Monitor log | `/tmp/ray/session_latest/logs/monitor.log` (the provider and the head server log there too). |
+| `down` | Pass: "left: nothing"; independent checks found 0 vast instances and no EC2, SG or IAM objects. An `up` that was stopped in the middle was also cleaned up by `down`. |
+| Cost | C5a $0.017, C5d $0.017 (vast). |
+
+Changes from these findings:
+- Enrollment no longer uses `CONTAINER_API_KEY` on the head. The bootstrap serves a random nonce on its 64 identity ports and sends it in `/enroll`; the head reads it back from every port (see `ray-vast-pypi/docs/decisions-for-review.md`).
+- To do: the provider stops renting after repeated candidate failures of one node type (a circuit breaker), so a fault cannot rent in a loop.
