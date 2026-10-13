@@ -427,6 +427,29 @@ def test_concurrent_creates_never_pass_the_budget(env):
     assert p._reserved_dph == 0
 
 
+def test_create_in_the_gap_between_reservation_and_rental_cannot_pass_the_budget(env):
+    env.vast.offers = [offer(1, 11, dph=1), offer(2, 12, dph=1)]
+    p = env.make(max_dollars_per_hour=1.5, candidate_factor=1)
+    errors = []
+
+    def second_create_runs_while_the_first_is_renting():
+        # The first create has taken its offer and has not recorded the rental yet.
+        def second():
+            try:
+                create(p)
+            except NodeLaunchException as e:
+                errors.append(e)
+
+        t = threading.Thread(target=second)
+        t.start()
+        t.join(timeout=10)
+
+    env.vast.on_create = second_create_runs_while_the_first_is_renting
+    create(p)
+    assert len(env.vast.instances) == 1 and p.state.total_dph() == 1
+    assert [e.category for e in errors] == ["budget"]
+
+
 def test_startup_sweep_destroys_labelled_instances_and_rules_then_scales_from_zero(env):
     env.vast.offers = [offer(1, 11), offer(2, 12)]
     old = env.make()

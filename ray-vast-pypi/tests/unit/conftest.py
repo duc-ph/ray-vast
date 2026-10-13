@@ -14,6 +14,7 @@ class FakeVast:
         self.offers, self.instances, self.calls, self.fail_create = [], {}, [], False
         self.fail_list = self.fail_destroy = False
         self.next_id, self.requests = 100, []
+        self.on_create = None  # one-shot hook that runs inside the next create_instance call, before the rental
         self.state = None  # set by the env fixture: every call checks that the provider lock is not held
 
     def _call(self, name):
@@ -27,6 +28,9 @@ class FakeVast:
 
     def create_instance(self, offer_id, image, env, args, label, disk_gb):
         self._call("create_instance")
+        hook, self.on_create = self.on_create, None
+        if hook:
+            hook()
         if self.fail_create:
             raise VastError("PUT: HTTP 500")
         self.next_id += 1

@@ -160,6 +160,8 @@ def test_error_body_is_redacted_before_truncation(client):
     with pytest.raises(VastError) as e:
         client.list_instances()
     assert SECRET not in str(e.value) and "TOK999" not in str(e.value) and "ACCOUNTKEY" not in str(e.value)
+    # truncating first would leave the front part of the secret in the message
+    assert body[body.index(SECRET):300] not in str(e.value)
     assert "xxxx" in str(e.value)
 
 
