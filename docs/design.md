@@ -7,7 +7,7 @@ Note: the first design pushed secrets to workers over SSH. We discarded it, beca
 ## Topology
 
 - The head is on AWS EC2, in a region that the user chooses. The workers are vast instances.
-- The head runs the same Docker image as the workers, with `--network host`. Then Python and Ray versions match exactly.
+- The head runs the workers' Docker image plus the ray-vast package (a derived image that `ray-vast up` builds on the head), with `--network host`. Then Python and Ray versions match exactly.
 - Reason for AWS: if the head stops, the cluster is difficult to recover. vast instances can stop at any time, and on many hosts the IP can change while the instance runs. The AWS security group protects the parts that only the head has (GCS, the dashboard), so a DDoS can stop only single workers, not the cluster.
 - The head has `resources: {CPU: 0}` set explicitly. The provider lists the head as node `head` (the head's `RAY_CLOUD_INSTANCE_ID`), with the tags `ray-node-type: head` and `ray-user-node-type: head`. Without it, v2 marks the head as terminated and never scales (S1). `ray-vast up` stops with an error if the head type has no resources. The autoscaler is v2 (`RAY_enable_autoscaler_v2=1`, Ray's default since 2.50). v2 wraps our `NodeProvider` in its `NodeProviderAdapter`. v2 matches a Ray node to an instance by `RAY_CLOUD_INSTANCE_ID`, not by IP, so two workers can share one public IP. `disable_node_updaters` is always True: the provider never uses the Ray node updater.
 - The head and the workers run the same Ray version (the image sets it). `ray-vast up` warns if the version is not in the tested list (now: 2.59).
@@ -48,7 +48,7 @@ The provider writes the container command (the `args` of the create request). It
 ## Security
 
 - Each cluster gets a new CA and a new token. The CA key stays on the head. TLS and `RAY_AUTH_MODE=token` are on for all nodes.
-- Cert life: `cert_max_age` (default 365 days) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `ray-vast up` and the head log warn 14 days before expiry. Reason: when a cert expires, all TLS handshakes with that node fail, and Ray probably loads cert files only at process start. So short certs make outages more likely, but they do not add much security.
+- Cert life: `cert_max_age_days` (default 365) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `ray-vast up` and the head log warn 14 days before expiry. Reason: when a cert expires, all TLS handshakes with that node fail, and Ray probably loads cert files only at process start. So short certs make outages more likely, but they do not add much security.
 - Secrets never go into the create request, the env, the command or its output. The create response contains `instance_api_key` and must never be logged.
 - The token check after start (enrollment step 8) is necessary: without `RAY_AUTH_MODE=token`, the job agent runs any shell command for anyone.
 - Co-tenants on the same host share the Docker bridge (172.17.0.0/16) and can reach every Ray port directly. TLS protects the traffic, and the host check for no NET_RAW and no NET_ADMIN makes sure that a co-tenant cannot sniff or spoof. This depends on the host, so we check it on each host.
@@ -79,8 +79,8 @@ The provider writes the container command (the `args` of the create request). It
 - Ports: 64 identity ports. Ray uses 6 fixed ports, and the other 58 are worker ports. Each worker process (task, actor or driver) needs one port. When no port is free: tasks wait, actors fail after about 6 min with a misleading error, and drivers fail at once. Idle workers keep their ports for about 60 s.
   - Ray has no setting that limits the total number of worker processes.
   - `ray-vast up` warns if `CPU` is more than the number of worker ports. The docs explain the actor error, and that actors also use ports.
-  - The provider starts Ray with `--worker-port-list` set to the identity ports, and with `RAY_num_workers_soft_limit` below the port count, so that idle workers release their ports earlier.
-- `order_by` sorts the matching offers (default `dph`).
+  - The provider starts Ray with `--worker-port-list` set to the identity ports, and with `RAY_num_workers_soft_limit` = min(cpu_count, 58), so that idle workers release their ports earlier.
+- `order_by` sorts the matching offers (default `dph_total`).
 - `GPU: 1` alone is not sufficient: a GTX 1080 and a B200 are very different. So a node type sets both a VRAM range and a `dlperf` minimum.
   - The vast market (1825 offers on 2026-10-12) groups into VRAM tiers: 8, 12, 16, 24, 32, 48, 80, 96 and 140+ GB. Speed changes up to 8× within one tier.
   - Do not use vast's `total_flops`: it is FP32 without tensor cores (an A100 shows 15.6, an RTX 5090 shows 108).
