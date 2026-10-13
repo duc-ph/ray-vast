@@ -1,6 +1,7 @@
 import hashlib
 import subprocess
 import sys
+import tarfile
 import venv
 from pathlib import Path
 
@@ -55,3 +56,16 @@ def test_installed_shim_has_committed_sha256(installed):
     code = "from importlib.resources import files; print(files('ray_vast').joinpath('shim/librayvast_shim.so').read_bytes().hex())"
     result = subprocess.run([str(bin_dir / "python"), "-c", code], capture_output=True, text=True, check=True)
     assert hashlib.sha256(bytes.fromhex(result.stdout.strip())).hexdigest() == COMMITTED_SHIM_SHA256
+
+
+def test_sdist_has_sources_and_no_docs(tmp_path):
+    subprocess.run(
+        [sys.executable, "-m", "build", "--sdist", "--no-isolation", "--outdir", str(tmp_path), str(PROJECT)],
+        check=True, capture_output=True,
+    )
+    with tarfile.open(next(tmp_path.glob("ray_vast-*.tar.gz"))) as tar:
+        # Names look like "ray_vast-<version>/<path>"; drop the first part.
+        names = {name.split("/", 1)[1] for name in tar.getnames() if "/" in name}
+    for expected in ("src/ray_vast/shim/librayvast_shim.so", "src/ray_vast/worker/bootstrap.py", "pyproject.toml"):
+        assert expected in names
+    assert not [n for n in names if n.startswith(("docs/", "spikes/"))]
