@@ -17,6 +17,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -29,10 +30,12 @@ import botocore.exceptions
 import yaml
 
 from . import config as config_module
+from . import pki
 from .aws_sg import ec2_client_config
 from .vast_api import VastClient
 
 TAG_KEY = "ray-vast-cluster"
+BUILD_TIMEOUT = 600  # seconds for `python -m build` on the laptop
 TESTED_RAY_VERSIONS = ("2.59",)
 UBUNTU_OWNER = "099720109477"
 UBUNTU_AMI_NAME = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
@@ -46,6 +49,9 @@ HEAD_PORTS = {  # fixed Ray ports on the head (docs/test-results.md "Ports")
 JOB_PORT, RUNTIME_ENV_PORT = 6384, 6385
 LIVE_STATES = ["pending", "running", "stopping", "stopped", "shutting-down"]
 NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
+# AWS gives no own error code for an instance profile that has not propagated yet: RunInstances answers with the generic
+# `InvalidParameterValue` and this text in the message ("Invalid IAM Instance Profile name/ARN"). Match on the text.
+PROFILE_NOT_READY = "Invalid IAM Instance Profile"
 USER_DATA = """#!/bin/bash
 set -e
 export DEBIAN_FRONTEND=noninteractive
@@ -108,6 +114,12 @@ def _head_instances(ec2, cluster):
     return [i for r in reservations for i in r["Instances"]]
 
 
+def _our_groups(ec2, cluster):
+    """Security groups of the cluster: by name AND tag, so a same-named group of someone else is never touched."""
+    return ec2.describe_security_groups(Filters=[
+        {"Name": "group-name", "Values": [f"ray-vast-{cluster}"]}, {"Name": f"tag:{TAG_KEY}", "Values": [cluster]}])["SecurityGroups"]
+
+
 def _vast_instances(vast, cluster):
     return [i for i in vast.list_instances() if i.get("label") == f"ray-vast:{cluster}"]
 
@@ -132,6 +144,8 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     region, name = provider["region"], f"ray-vast-{cluster}"
     tags = [{"Key": TAG_KEY, "Value": cluster}, {"Key": "Name", "Value": name}]
     ec2, iam = _clients(session, region)
+    if _head_instances(ec2, cluster) or (Path(state_dir) / f"{cluster}.json").exists():
+        raise CliError(f"cluster {cluster} already exists; use `ray-vast down` first")
     account = session.client("sts", config=ec2_client_config()).get_caller_identity()["Account"]
 
     # 1. AWS resources. The role comes first: if the user lacks IAM permissions, nothing else exists yet.
@@ -163,7 +177,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
                 TagSpecifications=[{"ResourceType": rt, "Tags": tags} for rt in ("instance", "volume")])
             break
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] != "InvalidParameterValue" or "nstance Profile" not in str(e) or attempt == 11:
+            if e.response["Error"]["Code"] != "InvalidParameterValue" or PROFILE_NOT_READY not in e.response["Error"].get("Message", "") or attempt == 11:
                 raise
             sleep(5)
     instance_id = launched["Instances"][0]["InstanceId"]
@@ -202,6 +216,10 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     # 4. Config and secrets on the head. The CA key is made inside a container and never leaves the head.
     head_provider = {k: v for k, v in provider.items() if k not in ("key_name", "key_file")}
     head_provider.update(head_ip=head_ip, secrets_dir=secrets, security_group_id=group_id)
+    # The build pulled provider.image; its size sets the workers' pull time limit (provider.image_size_gb), unless the user set it.
+    size_bytes = ssh.run(head_ip, f"sudo docker image inspect --format '{{{{.Size}}}}' {shlex.quote(provider['image'])}").strip()
+    if size_bytes.isdigit() and "image_size_gb" not in head_provider:
+        head_provider["image_size_gb"] = -(-int(size_bytes) // 10**9)
     head_config = {**config, "provider": head_provider}
     ssh.run(head_ip, f"cat > {work}/cluster.yaml", stdin=yaml.safe_dump(head_config))
     ssh.run(head_ip, f"umask 077 && cat > {secrets}/vast_api_key", stdin=vast_key)
@@ -232,6 +250,9 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
             if attempt == 59:
                 raise
             sleep(5)
+    expiry = pki.expiry_warning(ssh.run(head_ip, f"cat {secrets}/ca.pem").encode())
+    if expiry:
+        out(f"warning: {expiry}")
     out(f"cluster {cluster} is up. Head IP {head_ip}.")
     out(f"  dashboard: ray-vast dashboard {config_path}   (then open http://127.0.0.1:8265)")
     out(f"  shell:     ray-vast attach {config_path}")
@@ -239,7 +260,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
 
 
 def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print):
-    """Remove everything of the cluster. Returns the list of what is left (empty on success)."""
+    """Remove everything of the cluster. Returns the list of what is left (empty on success). `vast` is None without a vast key."""
     name = f"ray-vast-{cluster}"
     ec2, iam = _clients(session, region)
 
@@ -249,7 +270,10 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
         ec2.terminate_instances(InstanceIds=head_ids)
         out(f"terminating head {', '.join(head_ids)}")
 
-    for _ in range(60):
+    if vast is None:
+        out(f"warning: no vast key, so vast instances were not swept. Set VAST_API_KEY and run `ray-vast down` again, or list "
+            f"them with `vastai show instances` and destroy those with label ray-vast:{cluster} (`vastai destroy instance ID`).")
+    for _ in range(60 if vast else 0):
         found = _vast_instances(vast, cluster)
         if not found:
             break
@@ -261,7 +285,7 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
     if head_ids:
         ec2.get_waiter("instance_terminated").wait(InstanceIds=head_ids)
 
-    for group in ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": [name]}])["SecurityGroups"]:
+    for group in _our_groups(ec2, cluster):
         for attempt in range(60):  # the network interface of the head can outlive the instance for a while
             try:
                 ec2.delete_security_group(GroupId=group["GroupId"])
@@ -289,15 +313,35 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
 
     for path in (Path(state_dir) / f"{cluster}.json", Path(state_dir) / f"{cluster}.known_hosts"):
         path.unlink(missing_ok=True)
+    shutil.rmtree(Path(state_dir) / cluster, ignore_errors=True)
 
-    left = [f"vast instance {i['id']}" for i in _vast_instances(vast, cluster)]
+    left = [f"vast instance {i['id']}" for i in _vast_instances(vast, cluster)] if vast else []
     left += [f"EC2 instance {i['InstanceId']}" for i in _head_instances(ec2, cluster)]
-    left += [f"security group {g['GroupId']}" for g in ec2.describe_security_groups(
-        Filters=[{"Name": "group-name", "Values": [name]}])["SecurityGroups"]]
-    left += [f"instance profile {p['InstanceProfileName']}" for p in iam.list_instance_profiles()["InstanceProfiles"] if p["InstanceProfileName"] == name]
-    left += [f"role {r['RoleName']}" for r in iam.list_roles()["Roles"] if r["RoleName"] == name]
+    left += [f"security group {g['GroupId']}" for g in _our_groups(ec2, cluster)]
+    for kind, get, kwargs in (("instance profile", iam.get_instance_profile, {"InstanceProfileName": name}),
+                              ("role", iam.get_role, {"RoleName": name})):
+        try:
+            get(**kwargs)
+            left.append(f"{kind} {name}")
+        except iam.exceptions.NoSuchEntityException:
+            pass
     out("left: " + (", ".join(left) if left else "nothing"))
     return left
+
+
+def dashboard(ssh, ip, state_dir, cluster, out=print):
+    """Copy the cluster token to `<state_dir>/<cluster>/token`, print the env line for the Ray CLI, open the tunnel."""
+    token = ssh.run(ip, f"cat /home/{SSH_USER}/ray-vast-{cluster}/secrets/token").strip()
+    token_file = Path(state_dir) / cluster / "token"
+    token_file.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    token_file.parent.chmod(0o700)
+    token_file.unlink(missing_ok=True)  # O_EXCL makes the mode apply to a fresh file
+    with os.fdopen(os.open(token_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as f:
+        f.write(token)
+    out("for `ray job submit` set:")
+    out(f"  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH={token_file}")
+    out("dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265")
+    return ssh.interactive(ip, "-N", "-L", "8265:127.0.0.1:8265")
 
 
 def _public_ip():
@@ -333,12 +377,17 @@ def run(args):
                     source = Path(__file__).resolve().parents[2]
                     if not (source / "pyproject.toml").exists():
                         raise CliError("not running from a source tree: pass --wheel")
-                    subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", tmp, str(source)], check=True, capture_output=True)
+                    subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", tmp, str(source)],
+                                   check=True, capture_output=True, timeout=BUILD_TIMEOUT)
                     wheel = next(Path(tmp).glob("ray_vast-*.whl"))
                 up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":
-            left = down(cluster, provider["region"], session, VastClient(_read_vast_key()), state_dir)
+            try:
+                vast = VastClient(_read_vast_key())
+            except CliError:
+                vast = None  # `down` warns that the vast instances were not swept; AWS is still cleaned up
+            left = down(cluster, provider["region"], session, vast, state_dir)
             return 1 if left else 0
         else:
             ec2, _ = _clients(session, provider["region"])
@@ -348,8 +397,7 @@ def run(args):
             ip = heads[0]["PublicIpAddress"]
             if args.command == "attach":
                 return ssh.interactive(ip, "-t")
-            print("dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel)")
-            return ssh.interactive(ip, "-N", "-L", "8265:127.0.0.1:8265")
+            return dashboard(ssh, ip, state_dir, cluster)
     except botocore.exceptions.ClientError as e:
         code = e.response["Error"]["Code"]
         message = f"ray-vast {args.command}: AWS error {code}: {e.response['Error'].get('Message', '')}"
@@ -358,6 +406,9 @@ def run(args):
         if args.command == "up":
             message += f"\nRun `ray-vast down {args.cluster_yaml}` to remove what was created."
         print(message, file=sys.stderr)
+        return 1
+    except subprocess.TimeoutExpired as e:
+        print(f"ray-vast {args.command}: timed out after {e.timeout} s: {shlex.join(map(str, e.cmd))}", file=sys.stderr)
         return 1
     except (CliError, subprocess.CalledProcessError) as e:
         print(f"ray-vast {args.command}: {e}", file=sys.stderr)
