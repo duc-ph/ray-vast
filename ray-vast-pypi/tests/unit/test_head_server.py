@@ -2,6 +2,7 @@ import logging
 import random
 import socket
 import subprocess
+import threading
 
 import pytest
 import requests
@@ -20,9 +21,13 @@ class StubVast:
 
     def __init__(self):
         self.keys, self.get_calls, self.destroyed = {}, [], []
+        self.get_barrier = None  # when set, get_instance waits there, so parallel requests overlap
+        self.destroy_error = None
 
     def get_instance(self, instance_id, key=None):
         self.get_calls.append(instance_id)
+        if self.get_barrier:
+            self.get_barrier.wait(timeout=10)
         if instance_id not in self.keys:
             return None
         if self.keys[instance_id] != key:
@@ -31,6 +36,8 @@ class StubVast:
 
     def destroy_instance(self, instance_id, key=None):
         self.destroyed.append(instance_id)
+        if self.destroy_error:
+            raise self.destroy_error
 
 
 @pytest.fixture
@@ -112,8 +119,7 @@ def test_ca_and_bootstrap_are_served_on_port_a(env):
     assert requests.get(f"https://127.0.0.1:{env.port_a}/ca.pem", verify=env.ca_file, timeout=30).content == env.ca_cert
     resp = requests.get(f"https://127.0.0.1:{env.port_a}/bootstrap", verify=env.ca_file, timeout=30)
     assert resp.content == b"print('boot')"
-    import hashlib
-    assert env.server.bootstrap_sha256 == hashlib.sha256(b"print('boot')").hexdigest()
+    assert env.server.bootstrap_sha256 == "fa8196cd37ef904decb437400646a1d984feaf5c050efee114f8a8d619008ba0"
 
 
 def test_another_instances_key_is_refused_and_destroyed(env):
@@ -124,29 +130,55 @@ def test_another_instances_key_is_refused_and_destroyed(env):
     assert env.destroyed_ips == [("127.0.0.1", 0)]
 
 
+def test_two_parallel_failing_enrollments_lower_the_ip_ref_once(env):
+    add_candidate(env, 11)
+    add_candidate(env, 12)  # same IP: the ref count is 2
+    env.vast.get_barrier = threading.Barrier(2)
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(enroll(env, 11, key="wrong").status_code))
+               for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert results == [403, 403]
+    assert env.vast.destroyed == [11]
+    assert env.state.ip_refs == {"127.0.0.1": 1} and env.destroyed_ips == [("127.0.0.1", 1)]
+
+
+def test_ip_ref_is_lowered_even_if_the_vast_destroy_raises(env):
+    add_candidate(env, 11)
+    env.vast.destroy_error = RuntimeError("boom")
+    assert enroll(env, 11, key="wrong").status_code == 403
+    assert 11 not in env.state.candidates and env.state.ip_refs == {} and env.destroyed_ips == [("127.0.0.1", 0)]
+
+
 def test_second_enrollment_of_the_same_instance_is_refused(env):
     add_candidate(env, 11)
     assert enroll(env, 11).status_code == 200
+    refs = dict(env.state.ip_refs)
     assert enroll(env, 11).status_code == 403
     assert env.vast.destroyed == [] and 11 in env.state.candidates  # the enrolled worker stays
+    assert env.state.ip_refs == refs
 
 
 def test_wrong_source_ip_is_refused(env):
     add_candidate(env, 11, ip="10.9.9.9")
     assert enroll(env, 11).status_code == 403
     assert 11 not in env.state.enrolled and env.vast.destroyed == []
+    assert env.state.ip_refs == {"10.9.9.9": 1}
 
 
 @pytest.mark.parametrize("key", ["", "   "])
 def test_empty_container_key_is_refused_without_a_vast_call(env, key):
     add_candidate(env, 11)
     assert enroll(env, 11, key=key).status_code == 403
-    assert env.vast.get_calls == []
+    assert env.vast.get_calls == [] and env.state.ip_refs == {"127.0.0.1": 1}
 
 
 def test_unknown_instance_is_refused_without_a_vast_call(env):
     assert enroll(env, 99).status_code == 403
-    assert env.vast.get_calls == []
+    assert env.vast.get_calls == [] and env.state.ip_refs == {}
 
 
 def test_two_candidates_for_one_slot_first_wins(env):
@@ -259,6 +291,7 @@ def test_failed_token_check_destroys_the_worker(env):
                          **worker_session(env, "10.0.0.5"))
     assert resp.status_code == 200
     assert env.vast.destroyed == [11] and 11 not in env.state.candidates
+    assert 11 in env.state.enrolled  # it can never enroll again
 
 
 def test_passing_token_check_and_destroy_report_do_not_destroy(env):

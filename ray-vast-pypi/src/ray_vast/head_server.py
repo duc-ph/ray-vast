@@ -147,18 +147,24 @@ class HeadServer:
         self._servers = []
 
     def _destroy(self, cand, reason):
-        """End a candidate or worker: destroy the vast instance, drop it from state, lower the IP ref count."""
+        """End a candidate or worker: destroy the vast instance, drop it from state, lower the IP ref count.
+
+        Idempotent: only the caller that removes the candidate from state does the work.
+        """
+        if self.state.remove_candidate(cand.instance_id) is None:
+            return
         log.warning("destroying instance %s (machine %s, ip %s): %s", cand.instance_id, cand.machine_id,
                     cand.public_ip, _clip(reason))
         try:
             self.vast.destroy_instance(cand.instance_id)
-        except VastError as e:
-            log.error("destroy of instance %s failed (the provider sweep will retry): %s", cand.instance_id, e)
-        self.state.remove_candidate(cand.instance_id)
-        if cand.public_ip is not None:
-            remaining = self.state.ip_ref_remove(cand.public_ip)
-            if self.on_destroy:
-                self.on_destroy(cand.public_ip, remaining)
+        except Exception as e:  # the provider sweep destroys what is left
+            log.error("destroy of instance %s failed (the provider sweep will retry): %s", cand.instance_id,
+                      type(e).__name__)
+        finally:
+            if cand.public_ip is not None:
+                remaining = self.state.ip_ref_remove(cand.public_ip)
+                if self.on_destroy:
+                    self.on_destroy(cand.public_ip, remaining)
 
     def enroll(self, body, source_ip):
         """Return (status, answer) for POST /enroll. The checks run in the order of the plan, cheapest first."""
@@ -277,7 +283,8 @@ class HeadServer:
             log.warning("port B request %s refused for instance %s", path, instance_id)
             return 403, {"reason": "unknown"}
         if path == "/heartbeat":
-            cand.last_heartbeat = self.clock()
+            with self.state.lock:
+                cand.last_heartbeat = self.clock()
         elif body.get("kind") == "token_check" and body.get("ok") is False:
             self._destroy(cand, "token check failed: " + str(body.get("reason", ""))[:200])
         elif body.get("kind") == "destroy":
