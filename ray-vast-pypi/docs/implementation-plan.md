@@ -102,7 +102,7 @@ A spike is a small, short test that answers one question before we build. Write 
 | S2 | Facts F1–F9 on Ray 2.59.0 (read the installed source). F9: the provider is made once per monitor process. Kill the monitor on a test head: does Ray start it again? Stop the GCS: does a worker raylet exit after about 60 s (`gcs_rpc_server_reconnect_timeout_s`)? | EC2 dev box | $0 |
 | S3 | Dropped 2026-10-12: no scoped key and no separate account. A thief who reaches the head controls the cluster anyway, and vast's fixed key rights (change the account SSH keys) defeat a scope. The head uses the user's vast account key (documented risk). | — | — |
 | S4 | Dropped 2026-10-12: the bootloader is short (about 500 bytes) and only downloads the bootstrap and checks its hash. Local tests (step 7) check that it works; C5 shows that vast accepts it. | — | — |
-| S5 | Can the bootstrap pin the CA with stdlib Python only? The image has only Python and Ray, and Ray does not depend on `cryptography` (checked in `setup.py`). Plan: download `/ca.pem` without verification, compare its SHA-256 with `RAYVAST_CA_SHA256`, then connect again with `cafile=ca.pem` and full verification (chain + IP SAN). Negative: wrong fingerprint, other CA, missing SAN. mTLS with `load_cert_chain` for the heartbeat. Run in `rayproject/ray:2.59.0-py311-cpu` and in a slim Python 3.9 image. | EC2 dev box | $0 |
+| S5 | **Done 2026-10-13: PASS** (see `spikes.md`). Can the bootstrap pin the CA with stdlib Python only? The image has only Python and Ray, and Ray does not depend on `cryptography` (checked in `setup.py`). Plan: download `/ca.pem` without verification, compare its SHA-256 with `RAYVAST_CA_SHA256`, then connect again with `cafile=ca.pem` and full verification (chain + IP SAN). Negative: wrong fingerprint, other CA, missing SAN. mTLS with `load_cert_chain` for the heartbeat. Run in `rayproject/ray:2.59.0-py311-cpu` and in a slim Python 3.9 image. | EC2 dev box | $0 |
 
 Done when:
 - [ ] `docs/spikes.md` has a result line for S1, S2 and S5.
@@ -256,7 +256,7 @@ Done when:
 
 ### Step 8 — Head server (enrollment, heartbeat, reports)
 
-Work (`head_server.py`), HTTPS on one port (only worker IPs can reach it, via the security group):
+Work (`head_server.py`), HTTPS on two ports (S5): port A without client certs (`/ca.pem`, `/bootstrap`, `/enroll`, `/report` before enrollment), port B that requires a client cert from the cluster CA (`/heartbeat`, `/report` after enrollment). `ThreadingHTTPServer`; the TLS handshake runs in the request thread with a timeout (S5). Only worker IPs can reach the ports (security group):
 - `GET /ca.pem`, `GET /bootstrap` (no auth; no secrets in them).
 - `POST /enroll`:
   1. `GET /instances/<id>` on vast with the sent key. Only 200 is a pass.

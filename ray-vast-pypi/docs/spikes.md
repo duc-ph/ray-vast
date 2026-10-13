@@ -27,6 +27,28 @@ Ray 2.59.0, autoscaler v2, `rayproject/ray:2.59.0-py311-cpu` on EC2 `ray-vast-de
 
 Not run yet.
 
-## S5 — CA pinning with stdlib Python
+## S5 — CA pinning with stdlib Python (2026-10-13): PASS
 
-Not run yet.
+`python -I`, `urllib.request` only, in `rayproject/ray:2.59.0-py311-cpu` (Python 3.11.16, OpenSSL 3.6) and `python:3.9-slim` (3.9.25, OpenSSL 3.5). Same results on both. Code: [`../spikes/s5/`](../spikes/s5/) (client 23 lines).
+
+| Check | Result (3.11 and 3.9) |
+|---|---|
+| Happy path: unverified `/ca.pem` → fingerprint → verified `/enroll` → mTLS `/heartbeat` | Pass |
+| Wrong fingerprint | Stops before any pinned call |
+| Server cert from another CA | `CERTIFICATE_VERIFY_FAILED` |
+| Rogue server with its own `ca.pem` | Fingerprint mismatch |
+| Head cert without the IP in the SAN | `IP address mismatch` |
+| `/heartbeat` without a client cert | `TLSV13_ALERT_CERTIFICATE_REQUIRED` |
+| `/heartbeat` with a client cert from another CA | `TLSV1_ALERT_UNKNOWN_CA` |
+
+Limit: all tests used the IP `127.0.0.1` (the same IP-SAN code path), not the box's public IP.
+
+**Fingerprint convention:** SHA-256 of the DER form of the CA cert, lowercase hex. Worker: `hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem)).hexdigest()`. Head: `pki.ca_fingerprint()` (same value as `openssl x509 -outform DER | sha256sum`).
+
+**Stdlib calls:** unverified context (`check_hostname = False`, `CERT_NONE`) only for `/ca.pem`; then `ssl.create_default_context(cafile=ca.pem)` (checks the IP SAN by default); mTLS adds `load_cert_chain(crt, key)`; `urllib.request.urlopen(req, context=ctx, timeout=...)`.
+
+### Findings that change the plan
+
+- **Two head ports.** One `SSLContext` has one `verify_mode`, so the head server uses one port without client certs (`/ca.pem`, `/bootstrap`, `/enroll`, `/report` before enrollment) and one port that requires a client cert (`/heartbeat`, `/report` after enrollment).
+- With TLS 1.3, a refused client cert shows on the first read as `ssl.SSLError` (not `URLError`). The bootstrap catches both around each call.
+- The head server must do the TLS handshake in the request thread, with a timeout. A handshake in the accept loop lets one slow client stop the server.
