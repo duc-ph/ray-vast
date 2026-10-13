@@ -86,23 +86,71 @@ Then run:
 
 ```
 ray-vast up example.yaml          # make the head and start the cluster
-ray-vast dashboard example.yaml   # SSH tunnel; open http://127.0.0.1:8265
-ray job submit ...                # see the note below
+ray-vast dashboard example.yaml   # terminal 1: copy the token, open the SSH tunnel
+```
+
+`dashboard` copies the cluster token to `~/.ray-vast/<cluster_name>/token` (mode 600). It prints this line:
+
+```
+export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/home/you/.ray-vast/<cluster_name>/token
+```
+
+Then keep the tunnel open and use a second terminal. Run the export line, and submit the job:
+
+```
+export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...      # the line that dashboard printed
+ray job submit --address http://127.0.0.1:8265 -- python -c "import ray; print(ray.cluster_resources())"
+```
+
+Open http://127.0.0.1:8265 for the dashboard. Stop the tunnel with Ctrl-C. When you finish:
+
+```
 ray-vast down example.yaml        # destroy all workers and the head
 ```
 
-`ray-vast attach example.yaml` opens a shell on the head.
+You can also submit a job on the head. Run `ray-vast attach example.yaml`, then `sudo docker exec ray-vast-head ray job submit --address http://127.0.0.1:8265 -- ...`.
 
-Use `--profile NAME` to pick an AWS profile. `up`, `attach` and `dashboard` take `--key-file`. `up` also takes `--key-name` and `--wheel`.
-
-Token note: the cluster uses token authentication. The head runs Ray in the Docker container `ray-vast-head`, and the token is in that container. The sure way to submit a job is to run `ray job submit` on the head:
+## CLI reference
 
 ```
-ray-vast attach example.yaml
-sudo docker exec ray-vast-head ray job submit --address http://127.0.0.1:8265 -- python -c "import ray; print(ray.cluster_resources())"
+ray-vast {up,down,attach,dashboard} CLUSTER_YAML [options]
 ```
 
-TODO(cli): `ray-vast` does not give the token to the laptop yet. Submit from the laptop through the tunnel only after the CLI supports it.
+| Command | What it does |
+|---|---|
+| `up` | Makes the IAM role, the security group, the instance profile and the EC2 head. Builds a derived image on the head. Starts Ray. |
+| `down` | Removes everything of the cluster. Prints `left: nothing` when done. Exit code 1 if something is left. |
+| `attach` | Opens an SSH shell on the head. |
+| `dashboard` | Copies the token to the laptop, prints the `export` line, and opens an SSH tunnel to port 8265 of the head. |
+
+| Option | Commands | Meaning |
+|---|---|---|
+| `--profile NAME` | all | AWS profile. Default: `AWS_PROFILE`, or the default credentials. |
+| `--key-file FILE` | `up`, `attach`, `dashboard` | Private SSH key of the head. Or set `provider.key_file`. |
+| `--key-name NAME` | `up` | EC2 key pair name. Or set `provider.key_name`. |
+| `--wheel FILE` | `up` | The ray-vast wheel to install on the head. Default: build it from the source tree. Use it if you do not run from a source tree. |
+
+Rules:
+
+- The option wins over the YAML field.
+- `down` needs no SSH key.
+- The cluster name must match `[A-Za-z0-9][A-Za-z0-9_-]{0,39}`. The YAML needs `cluster_name` and `provider.region`.
+- `up` stops at once if the cluster already exists. It checks for an EC2 head with the cluster tag and for `~/.ray-vast/<cluster>.json`. Run `ray-vast down` first.
+- `up` reads the vast key from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`. It sends the key to the head.
+- `up` measures the image size and writes `image_size_gb` into the head config. A value in your YAML wins.
+- `down` ends the head first. So the autoscaler cannot rent new workers. Then it destroys the vast instances. Then it deletes the security group, the instance profile and the role.
+- `down` without a vast key cleans AWS, prints a warning that the vast instances were not swept, and exits with code 0. Set `VAST_API_KEY` and run `down` again. Or destroy the instances with the label `ray-vast:<cluster_name>` by hand (`vastai show instances`, `vastai destroy instance ID`).
+- `down` finds everything by tag and name. It works when `up` failed half way, when the head is gone, and when the local state file is missing.
+
+State files on your laptop, in `~/.ray-vast/`:
+
+| File | Content |
+|---|---|
+| `<cluster>.json` | Region, head instance ID and IP, security group, role and instance profile names. |
+| `<cluster>.known_hosts` | SSH host keys of the head (`StrictHostKeyChecking=accept-new`). |
+| `<cluster>/token` | The cluster token. Written by `dashboard`. Mode 600. |
+
+`down` deletes all three.
 
 `up` takes several minutes: the head installs Docker, builds the derived image and starts Ray.
 Workers start only when a job needs them. A new worker takes about 1 to 2 minutes to join (the image pull time depends on the host).
@@ -128,10 +176,10 @@ The cluster file is a Ray cluster YAML. ray-vast adds fields to it.
 | `region` | required | AWS region of the head. |
 | `image` | required | Docker image for the head and the workers (see "Requirements"). |
 | `max_dollars_per_hour` | required | Limit for the sum of `dph_total` over all workers and candidates. The provider does not rent above it. A missing value is an error, not "no limit". |
-| `key_name` | none | EC2 key pair name. Or use `--key-name`. |
-| `key_file` | none | Private key file for SSH. Or use `--key-file`. |
+| `key_name` | none | EC2 key pair name. `up` needs it, here or in `--key-name`. |
+| `key_file` | none | Private key file for SSH. `up`, `attach` and `dashboard` need it, here or in `--key-file`. |
 | `candidate_factor` | 2 | The provider rents up to this many candidates for each slot. Extra candidates are destroyed when the slots are full. |
-| `image_size_gb` | not set | Size of the image. The pull limit for a candidate is `2 x image_size_gb x 8000 / inet_down` seconds, between 5 and 15 minutes. If you do not set it, the limit is 15 minutes. |
+| `image_size_gb` | measured by `up` | Size of the image in GB. `up` measures it and sets it. A value in your YAML wins. The pull limit for a candidate is `2 x image_size_gb x 8000 / inet_down` seconds, between 5 and 15 minutes. If the value is missing, the limit is 15 minutes. |
 | `cert_max_age_days` | 365 | Life of the CA and of every node certificate. |
 | `allow_non_datacenter` | false | If true, the datacenter filter is removed and `up` shows a warning. See [docs/security.md](docs/security.md). |
 | `order_by` | `dph_total` | The sort field for matching offers. The cheapest offers come first. |
@@ -222,7 +270,7 @@ Always run `ray-vast down` when you finish.
 **Logs.**
 
 - Head, all output: `ray-vast attach example.yaml`, then `sudo docker logs ray-vast-head`.
-- Provider and head server log: the Ray monitor log in the head container, `sudo docker exec ray-vast-head cat /tmp/ray/session_latest/logs/monitor.log`. TODO(cli): confirm this path on a live head.
+- Provider and head server log: the Ray monitor log in the head container. Find the file with `sudo docker exec ray-vast-head sh -c 'ls /tmp/ray/session_latest/logs | grep -i monitor'`. TODO: the exact file name is not confirmed on a live head yet.
 - Worker logs: the Ray dashboard and `ray logs`.
 - Vast keeps no container log after a destroy. So a worker sends the reason for each destroy to the head before it destroys itself. The reason is in the head log. Typical reasons: no heartbeat for 5 minutes, enrollment refused by the head (403), a failed token check, no enrollment in 10 minutes, a signal (TERM, INT or HUP), or the Ray process ended.
 - The head logs every enrollment decision: instance ID, machine ID, IP and the reason. It never logs secrets.

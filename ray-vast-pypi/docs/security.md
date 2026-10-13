@@ -48,13 +48,13 @@ A rented instance (a candidate) gets its secrets only after these steps:
 6. The head connects to all 64 identity ports from outside.
 7. If a slot is free, the head sends the cert, key, token and shim inside the TLS connection. If no slot is free, it destroys the candidate.
 
-A refusal because of an unknown instance, a second enrollment, a wrong source IP or a bad key does not destroy the instance. Reason: a stranger, for example a co-tenant behind the same NAT IP, must not be able to kill your candidates with guessed IDs. The provider ends such candidates with its own time limits. A vast outage gives HTTP 503, and the worker tries again.
+A refusal because of an unknown instance, a second enrollment, a wrong source IP or a bad key does not destroy the instance. Reason: a stranger, for example a co-tenant behind the same NAT IP, must not be able to kill your candidates with guessed IDs. The provider ends such candidates with its own time limits. A vast outage gives HTTP 503, and the worker tries again. A bad or unknown `CONTAINER_API_KEY` (vast answers 401, 403 or 404) gives 403 and no destroy, for the same reason. A failed host check does destroy the candidate and puts the host on the blocklist.
 
 After a container restart, the bootstrap runs again. The head refuses a second enrollment of the same instance and destroys it.
 
 ### Instance-bound node certificates
 
-Each node cert has the IP SAN of the worker's public IP and 127.0.0.1, and a URI SAN `rayvast:instance/<id>`. The head checks both on its mTLS port. So a worker cannot send heartbeats or reports for another instance, even on the same IP. A former holder of a re-rented IP also cannot.
+Each node cert has the IP SAN of the worker's public IP and 127.0.0.1, and a URI SAN `rayvast:instance/<id>`. The head checks both on its mTLS port. So a worker cannot send heartbeats or reports for another instance, even on the same IP. A former holder of a re-rented IP also cannot. A cert without the URI SAN of the instance is refused.
 
 ### Head server ports
 
@@ -76,6 +76,15 @@ ray-vast adds `datacenter=true` and `verified=true` to every offer query. `allow
 
 The bootstrap is PID 1 on each worker. If the heartbeat fails for 5 minutes, or the head refuses it, the worker destroys its own instance. This limits the cost and the exposure of a worker that the head no longer controls. See the README for the full list of triggers.
 
+### Hardening of the worker program
+
+- The bootstrap makes the CA PEM again from the DER bytes that it hashed. It refuses a `/ca.pem` that holds more than one certificate. Reason: a PEM with two certificates could pass the SHA-256 check while OpenSSL trusts both.
+- Every HTTP call of the worker has a limit on the total time, not only on each read. A server that sends one byte per second cannot hang PID 1.
+- Vast calls do not follow redirects. The `Authorization` header never goes to another host.
+- The host check for NET_RAW and NET_ADMIN reads `CapBnd` (the bounding set of the container), not `CapEff`. A non-root PID 1 has an empty `CapEff` even when the container has the capabilities.
+- The bootloader never exits. If it cannot get the bootstrap, it tries again. After a hash mismatch, or after 10 minutes of failures, it destroys its own instance with `CONTAINER_API_KEY`. If the image has no Python with Ray, it waits, and the head destroys the instance.
+- If the head answers 503 (for example a vast outage), the worker tries again.
+
 ## What a malicious vast host can do
 
 A host has root access to the container. A malicious host can:
@@ -94,13 +103,15 @@ A co-tenant is another party's instance on the same host. Co-tenants share the D
 
 ### Full vast account key on the head
 
-The head uses your vast account API key. It is not scoped. Vast adds fixed rights to every key: read the account, list all instances, and change the account SSH keys. So a scope gives little protection. A thief who reaches the head can spend your credit, destroy or reach every instance of the account, and read the account. The thief also controls the cluster. If you suspect a leak, rotate the key in the vast console. Use a separate vast account for ray-vast, with a small credit balance, if you want to limit the damage.
+The head holds your full vast account API key (documented risk). The key is not scoped. Vast adds fixed rights to every key: read the account, list all instances, and change the account SSH keys. So a scope gives little protection. A thief who reaches the head can spend your credit, destroy or reach every instance of the account, and read the account. The thief also controls the cluster. If you suspect a leak, rotate the key in the vast console. Use a separate vast account for ray-vast, with a small credit balance, if you want to limit the damage.
 
 ### A task can read the head credentials
 
 A worker can run code on the head. `CPU: 0` on the head does not stop a task with `num_cpus=0`. Such a task can read the head credentials, including the vast key and the CA key. Only run code that you trust on this cluster.
 
 ### `CONTAINER_API_KEY` is readable by tasks
+
+This is a documented risk.
 
 Ray runs as the same user as the bootstrap (PID 1). So a Ray task can read `CONTAINER_API_KEY` from `/proc/1/environ`. The key can destroy its own instance and nothing else, which is less than what a task already has (the token and the node cert). A task can also send a signal to PID 1. The signal causes a destroy of the instance, not an exit. `SIGKILL` from inside the container is dropped by the kernel. The bootstrap removes the key from the environment of the Ray process, so it does not leak into logs by accident. It is not hidden from a task that reads `/proc/1/environ`.
 
@@ -134,4 +145,4 @@ The dashboard binds to 127.0.0.1 on the head. `ray-vast dashboard` uses an SSH t
 
 ## Reporting a problem
 
-TODO: add a contact or an issue link before release.
+TODO: add a contact or an issue link before release. The contact is not decided yet.
