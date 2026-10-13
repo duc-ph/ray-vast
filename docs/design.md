@@ -62,7 +62,7 @@ The provider writes the container command (the `args` of the create request). It
   - The provider adds a rule (/32, all TCP) for an IP when the instance is `running`, before enrollment.
   - It removes the rule only when no worker or candidate uses that IP any more.
   - The rules have the description `ray-vast:<cluster>`, so the provider can rebuild the mapping after a restart.
-  - Limit: one security group per cluster, so the AWS rule quota for one group (default 60, about 59 worker IPs with the SSH rule). The user can raise the quota in AWS Service Quotas. The head needs no rule for its own public IP, because the shim keeps that traffic inside the instance (C1: 0 packets).
+  - Limit: 5 security groups per cluster, all on the head's network interface, with 60 rules each by default: about 299 worker IPs (group 0 also holds the SSH rule). The user can raise the per-group quota in AWS Service Quotas. The head needs no rule for its own public IP, because the shim keeps that traffic inside the instance (C1: 0 packets).
 - The head server has two ports: one for the bootloader download and enrollment (no client cert), and one for the heartbeat and reports that requires a node cert (mTLS). Both are reachable only from worker IPs (security group).
 - The user gives job credentials with `runtime_env` `env_vars`. They are on every worker. The docs say to use a separate read-only IAM user for one prefix.
 - Known gaps (documented):
