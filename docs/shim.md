@@ -1,6 +1,6 @@
 # rayvast shim
 
-`rayvast_shim.c` is the final shim (v3). It passed all tests in C0–C4 (see [docs/test-results.md](../docs/test-results.md)). `librayvast_shim.so` is the build that the tests used.
+The `LD_PRELOAD` shim that lets Ray advertise a public IP that the container does not own (design.md 8.2). The source and the build are in `ray-vast-pypi/src/ray_vast/shim/`: `rayvast_shim.c` (v3) and `librayvast_shim.so`, the build that passed C0–C4 ([test-results.md](test-results.md)). `ray-vast-pypi/scripts/build_shim.sh` builds it again.
 
 - Source sha256 `8b31675b…6611`. It is the same file as `archive/results/2026-10-12/shim_builds/rayvast_shim.c`.
 - Build sha256: `79055dea6e913180c362c81e2b0c9903dd7a39bac5e3d5bab0e491bb9b3817fd`.
@@ -41,5 +41,6 @@ IPv4 only. `AF_INET6` is handled only for `::ffff:a.b.c.d` (and `::` for rule 1)
 ## Version history
 
 - **v1:** rules 1–5.
-- **v2:** `SO_REUSEPORT` for rule 1. The dashboard agent binds the job port twice; without it, the second bind fails and `ray job submit` gives 500.
-- **v3:** copy the environment values at start. Ray's setproctitle overwrites the environment memory, so v2 lost log lines in renamed processes.
+- **v2:** `SO_REUSEPORT` for rule 1. The dashboard agent binds the job port twice in one process (to the node IP, then to 127.0.0.1). Rule 1 made both 127.0.0.1, so the second bind failed with Errno 98, the agent logged "HTTP service will be disabled", and `ray job submit` gave 500. All other checks passed. Both sockets are on one aiohttp runner, so `SO_REUSEPORT` is safe.
+- **v3:** copy the environment values at start. The shim kept the `getenv()` pointer for `RAYVAST_SHIM_LOG`, and Ray's setproctitle overwrites the environment memory, so the renamed processes (`ray::*`, `ray-dashboard-*`) lost their log lines. The rewrites still worked.
+- All versions handle `AF_INET6` sockets with `::ffff:a.b.c.d` addresses, keep errno, and write each log line with one `O_APPEND` write.

@@ -1,4 +1,4 @@
-"""PID 1 on a worker: host checks, enrollment, Ray start, watchdog. Python stdlib only (see docs/protocol.md).
+"""PID 1 on a worker: host checks, enrollment, Ray start, watchdog. Python stdlib only (see docs/design.md section 5).
 
 The bootloader downloads this file from the head and runs it. Rules for this file:
 - It never ends without a destroy of its vast instance (`destroy`).

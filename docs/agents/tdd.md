@@ -2,7 +2,7 @@
 
 Source: mattpocock-skills tdd skill (copied for subagents). Project notes first:
 
-- **Seams are pre-agreed:** the seams under test are the public interfaces and the tests listed in the step of `ray-vast-pypi/docs/implementation-plan.md` that you implement. Do not ask the user to confirm seams (the user is away). If a listed test is at a bad seam, choose a better seam and report it.
+- **Seams are pre-agreed:** the seams under test are the public interfaces and the tests listed in the step of `docs/implementation-plan.md` that you implement. Do not ask the user to confirm seams (the user is away). If a listed test is at a bad seam, choose a better seam and report it.
 - Terms: `CONTEXT.md`. Standards: `CODING_STANDARDS.md`.
 - Python, pytest. Mock only system boundaries: vast HTTP (`responses` or a small fake server), AWS (`moto`), time (inject a clock), randomness.
 

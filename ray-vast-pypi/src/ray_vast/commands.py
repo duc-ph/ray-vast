@@ -41,7 +41,7 @@ UBUNTU_OWNER = "099720109477"
 UBUNTU_AMI_NAME = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
 SSH_USER = "ubuntu"
 CONTAINER = "ray-vast-head"
-HEAD_PORTS = {  # fixed Ray ports on the head (docs/test-results.md "Ports")
+HEAD_PORTS = {  # fixed Ray ports on the head (docs/design.md 7.1)
     "node-manager-port": 6380, "object-manager-port": 6381, "metrics-export-port": 6382,
     "dashboard-agent-grpc-port": 6383, "dashboard-agent-listen-port": 6384, "runtime-env-agent-port": 6385,
     "min-worker-port": 10002, "max-worker-port": 10100,

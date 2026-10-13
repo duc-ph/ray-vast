@@ -1,18 +1,18 @@
 # Instructions for implementation subagents
 
-You implement one step of `ray-vast-pypi/docs/implementation-plan.md`. The lead agent gives you the step number and any extra notes.
+You implement one step of `docs/implementation-plan.md`. The lead agent gives you the step number and any extra notes.
 
 ## Read first
 1. `CLAUDE.md` (repo root): machines, rules, coding convention.
 2. `CODING_STANDARDS.md` (repo root).
-3. `CONTEXT.md` (terms), `docs/design.md`.
-4. `ray-vast-pypi/docs/implementation-plan.md`: part 1 (facts), part 2 (decisions), your step, and the steps it depends on.
-5. `ray-vast-pypi/docs/spikes.md`.
-6. `ray-vast-pypi/docs/agents/tdd.md`: follow it (red → green, vertical slices, seams = the tests in your step).
+3. `CONTEXT.md` (terms), `docs/design.md` (the spec, with the Ray facts and the worker ↔ head protocol).
+4. `docs/implementation-plan.md`: your step and the steps it depends on. `docs/decisions.md` for the reasons.
+5. `docs/spikes.md` if your step touches Ray behavior.
+6. `docs/agents/tdd.md`: follow it (red → green, vertical slices, seams = the tests in your step).
 7. The code that already exists in `ray-vast-pypi/`.
 
 ## How to work
-- **Fast tests in the TDD loop, the full suite once at the end.** In each red → green cycle, run only the fast test(s) for the behavior you work on (`pytest tests/unit/test_<module>.py -k <name>`; the default `pytest` run excludes `slow`, `live` and `local_e2e`). Run the full suite (`pytest -o addopts="" -m "not live and not local_e2e"`) only once, as the final check before your report. A new test that starts processes, containers, TLS servers or wheel builds, or waits on real timers, gets `@pytest.mark.slow`; every such test must clean up its processes and containers, even when it fails.
+- **Fast tests in the TDD loop, the full suite once at the end.** In each red → green cycle, run only the fast test(s) for the behavior you work on (`pytest tests/unit/test_<module>.py -k <name>`). Run the full suite only once, as the final check before your report. The commands and the `slow` marker rules are in `ray-vast-pypi/README.md` ("Tests"); every test that starts processes or containers must clean them up, even when it fails.
 - **Red before green, with proof.** For each behavior: write the test, run it on the box, and see it FAIL for the right reason; only then write the code and see it pass. Your report must include, for each new behavior, the failing test name and the one-line failure reason from the red run. A test that you never saw fail does not count.
 - Edit files in the local repo: `/Users/ducpham/Desktop/workspace/Onedrive/Home/projects/ray-vast/ray-vast-pypi/`. Stay inside the files of your step; do not change other modules except for small, needed fixes (report them).
 - Run tests on the dev box, not on the laptop: `rsync -az --exclude .venv --exclude __pycache__ <repo>/ray-vast-pypi/ ubuntu@<box-ip>:~/ray-vast-pypi/`, (never `--delete`: other agents rsync in parallel), then run `pytest` there in a venv (`~/ray-vast-pypi/.venv`, Python 3.11 or 3.12, `pip install -e '.[test]'`). The box: EC2 tag `Name=ray-vast-dev`, `--profile personal --region us-west-2`, key `~/phduc-personal.pem`. If SSH times out, add a /32 TCP 22 rule for the laptop's current IP to `ray-vast-dev-sg`.

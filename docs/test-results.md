@@ -1,6 +1,6 @@
-# Test results, C0–C4 (2026-10-12/13)
+# Test results
 
-This file has the important data from the test cycles C0–C4: the setup, the result of each test item, the facts that we found about vast and Ray, and the lessons for the next cycles. The open tests are in [test-plan.md](test-plan.md). The final shim is in [`shim/`](../shim/README.md).
+This file has the important data from the test cycles that ran (C0–C4 on 2026-10-12/13, C5a/C5d on 2026-10-13): the setup, the result of each test item, the facts that we found about vast and Ray, and the lessons for the next cycles. The open tests are in [test-plan.md](test-plan.md). The shim is described in [shim.md](shim.md).
 
 The raw data is in `archive/results/`:
 
@@ -130,11 +130,7 @@ All hosts passed the host checks: 64/64 identity ports, 63/63 ports reachable fr
 
 ## Shim history
 
-The final shim is v3 (`shim/rayvast_shim.c`, build sha256 `79055dea…17fd`). It passed C0–C4. See [shim/README.md](../shim/README.md).
-
-- **v1 → v2:** the dashboard agent binds the job port twice in one process (to the node IP, then to 127.0.0.1). Rule 1 made both 127.0.0.1, so the second bind failed with Errno 98. The agent logged "HTTP service will be disabled", and `ray job submit` failed with 500. All other checks passed. Fix: `SO_REUSEPORT` on each bind to a port in `RAYVAST_LOCALHOST_PORTS`. Both sockets are on one aiohttp runner, so this is safe.
-- **v2 → v3:** the shim kept the `getenv()` pointer for `RAYVAST_SHIM_LOG`. Ray's setproctitle overwrites the environment memory, so the renamed processes (`ray::*`, `ray-dashboard-*`) lost their log lines. The rewrites still worked. Fix: copy the values at start.
-- The shim also handles `AF_INET6` sockets with `::ffff:a.b.c.d` addresses (gRPC uses dual-stack sockets), and `::` for rule 1. It keeps errno, and writes each log line with one `O_APPEND` write.
+The final shim is v3. It passed C0–C4. The versions and the bugs that each one fixed are in [shim.md](shim.md).
 
 ## Facts that we found
 
@@ -158,7 +154,7 @@ The final shim is v3 (`shim/rayvast_shim.c`, build sha256 `79055dea…17fd`). It
 - Create: `PUT /asks/<offer>/`. `env` can be a dict (`{"-p 70000:70000": "1", ..., "NAME": "value"}`). `runtype: args` with `args: ["bash", "-c", script]` replaces the image command.
 - **The create response contains `instance_api_key`.** Treat it as a secret and never log it.
 - vast puts that key in the container as `CONTAINER_API_KEY`. Other env values: `JUPYTER_TOKEN`, `OPEN_BUTTON_TOKEN`, `PUBLIC_KEY`/`SSH_PUBLIC_KEY`.
-- The instance metadata shows `extra_env`, `image_args` and `jupyter_token` in clear text. `request_logs` gives an unauthenticated S3 URL with the container stdout. So no secret may go into env, args or stdout.
+- The instance metadata shows `extra_env`, `image_args` and `jupyter_token` in clear text. `request_logs` gives an unauthenticated S3 URL with the container stdout. So no secret may go into args or stdout, and a secret in the env is visible to the account and the host (the rule is in design.md 5.1).
 - `CONTAINER_API_KEY`: own GET and own DELETE give 200 (the instance is gone in less than 2 s). Other instances: 401. `users/current`, `auth/apikeys`, `/ssh/`: 401. But `GET /instances/` lists **all** instances of the account. Offer search is public (no auth needed).
 - Scoped keys: the format in the vast docs is refused. This format works with `POST /api/v0/auth/apikeys/`:
   `{"api":{"instance_read":{"api.instance":{"GET":{"constraints":{"id":{"eq":ID}}}}},"instance_write":{"api.instance":{"DELETE":{"constraints":{"id":{"eq":ID}}}}}}}`
@@ -190,7 +186,7 @@ The final shim is v3 (`shim/rayvast_shim.c`, build sha256 `79055dea…17fd`). It
 - Get the container logs before the destroy.
 - Not tested: `kill -TERM 1` and `kill -INT 1` from the ray user (no approval for a third rental). Test it in T13.
 
-# Live cycle C5a and C5d (2026-10-13)
+## Live cycle C5a and C5d (2026-10-13)
 
 Setup: `ray-vast up` from a clean copy of commit 207c74b (EC2 `t3.large` head, us-west-2), image `rayproject/ray:2.59.0-py311-cpu`, one worker type `{CPU: 4, GPU: 1}`, `min_workers: 1`, `max_dollars_per_hour: 1.0`. Logs: `archive/results/2026-10-13/c5a/`.
 
@@ -206,5 +202,5 @@ Setup: `ray-vast up` from a clean copy of commit 207c74b (EC2 `t3.large` head, u
 | Cost | C5a $0.017, C5d $0.017 (vast). |
 
 Changes from these findings:
-- Enrollment no longer uses `CONTAINER_API_KEY` on the head. The bootstrap serves a random nonce on its 64 identity ports and sends it in `/enroll`; the head reads it back from every port (see `ray-vast-pypi/docs/decisions-for-review.md`).
-- To do: the provider stops renting after repeated candidate failures of one node type (a circuit breaker), so a fault cannot rent in a loop.
+- Enrollment no longer uses `CONTAINER_API_KEY` on the head. The provider gives each candidate a one-time join token in the env, and `/enroll` carries it (design.md 5.2; decisions.md).
+- The rent-loop breaker: after 3 failed slots in a row of one node type, the provider stops that type for 10 min (design.md 4).

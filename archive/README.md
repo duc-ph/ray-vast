@@ -1,6 +1,6 @@
 # Archive
 
-Raw data of the test cycles C0–C4 (2026-10-12/13). The important data is extracted to [docs/test-results.md](../docs/test-results.md) and [shim/](../shim/README.md). Keep these files for evidence only.
+Raw data of the test cycles C0–C4 (2026-10-12/13). The important data is extracted to [docs/test-results.md](../docs/test-results.md) and [docs/shim.md](../docs/shim.md). Keep these files for evidence only. The C0–C2 scripts in `tests/manual/` used a top-level `shim/` directory; the shim is now only in `ray-vast-pypi/src/ray_vast/shim/`.
 
 - `results/2026-10-12/test-plan-c0-c4.md`: the plan that ran (old SSH design).
 - `results/2026-10-12/report-c0c1.md`: C0/C1 report.

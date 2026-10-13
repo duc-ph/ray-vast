@@ -2,7 +2,9 @@
 
 A Ray autoscaler NodeProvider for vast.ai workers with an AWS EC2 head. PyPI name `ray-vast`, import `ray_vast`. Package source in `ray-vast-pypi/`.
 
-Read first: `CONTEXT.md` (terms), `docs/design.md` (design), `ray-vast-pypi/docs/implementation-plan.md` (steps, decisions D1–D9, facts F1–F12), `ray-vast-pypi/docs/spikes.md`.
+Read first: `CONTEXT.md` (terms), `docs/design.md` (the spec, with the Ray facts F1–F12 and the worker ↔ head protocol), `docs/implementation-plan.md` (steps and status), `docs/decisions.md` (reasons, D1–D9).
+
+Docs layout: one topic in one file. `docs/` holds the project docs (design, decisions, plan, spikes, shim, tests, future work, agent instructions in `docs/agents/`). `ray-vast-pypi/` holds the user docs (README, CHANGELOG, `docs/security.md`). `archive/` holds raw test data.
 
 ## Principle
 Simplest implementation that works, with no compromise on reliability and no fragility. Fewer parts, fewer failure modes.
@@ -22,8 +24,8 @@ Prefer readable linear code when the operations are tightly coupled and
 best understood together.
 ```
 - Worker-side code (`src/ray_vast/worker/`) uses the Python stdlib only.
-- Never log `instance_api_key`, `CONTAINER_API_KEY`, the cluster token, private keys or the vast key.
-- Tests: fast run `pytest` (default; skips `slow`, `live`, `local_e2e`) in the TDD loop. Full run `pytest -o addopts="" -m "not live and not local_e2e"` once at the end. Mark a test `@pytest.mark.slow` if it starts processes, containers, TLS servers or wheel builds, or waits on real timers. Start every process in a new session and kill the group in a finalizer.
+- Never log `instance_api_key`, `CONTAINER_API_KEY`, join tokens, the cluster token, private keys or the vast key.
+- Tests: the fast run in the TDD loop, the full run once at the end. Commands and test rules: README "Tests".
 - Edit code on the laptop; run tests on the dev box (rsync `ray-vast-pypi/` to `~/ray-vast-pypi/` on the box).
 
 ## Docs

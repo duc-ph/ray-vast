@@ -1,4 +1,4 @@
-"""Head server: enrollment, heartbeat and reports (protocol: docs/protocol.md). Runs as threads inside the provider (D2).
+"""Head server: enrollment, heartbeat and reports (protocol: docs/design.md section 5). Runs as threads inside the provider (D2).
 
 Port A is plain TLS (no client cert); port B is mTLS with a client cert from the cluster CA (S5). The TLS handshake runs
 in the request thread with a timeout, so one stalled client cannot block the accept loop.

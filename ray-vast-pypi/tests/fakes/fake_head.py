@@ -1,4 +1,4 @@
-"""A fake head server for the worker tests: the endpoints of docs/protocol.md on ports A and B, in threads.
+"""A fake head server for the worker tests: the endpoints of docs/design.md section 5 on ports A and B, in threads.
 
 Behavior switches (plain attributes, change them while it runs): `refuse_enroll`, `answer_heartbeats`.
 Everything it receives is recorded in `events` as (monotonic time, port name, path, body).

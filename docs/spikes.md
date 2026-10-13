@@ -35,7 +35,7 @@ Ray 2.59.0, autoscaler v2, `rayproject/ray:2.59.0-py311-cpu` on EC2 `ray-vast-de
 
 ### Findings that change the plan
 
-- **A dead monitor stays dead.** With D2 the heartbeats then stop and the workers destroy themselves, but the head stays without autoscaling. Fix (decision): the head container runs `ray start --head --block` as its main process with `docker run --restart unless-stopped`. With `--block`, Ray stops the whole head when a child process dies unexpectedly (`scripts.py:1284-1317`); Docker then starts a new head, whose provider sweeps the old workers (D3) and scales again. The CA, token and head cert stay in the mounted directory, so a restarted head reuses them. To test in step 10/11.
+- **A dead monitor stays dead.** With D2 the heartbeats then stop and the workers destroy themselves, but the head stays without autoscaling. With `--block`, Ray stops the whole head when a child process dies unexpectedly (`scripts.py:1284-1317`). First decision: Docker restarts the head (`--restart unless-stopped`). Final decision: no self-healing; the head stays stopped until `down` and `up` (design.md 7.3, decisions.md).
 - **The worker bootstrap can rely on `ray start --block` exiting** (about 60 s after GCS loss, about 1 s after a raylet death). Then the bootstrap destroys the instance.
 
 ## S5 — CA pinning with stdlib Python (2026-10-13): PASS
