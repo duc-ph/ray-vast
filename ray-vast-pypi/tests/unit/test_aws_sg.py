@@ -10,7 +10,7 @@ from ray_vast.aws_sg import SecurityGroupRules, SgQuotaError
 @pytest.fixture
 def ec2():
     with mock_aws():
-        yield boto3.client("ec2", region_name="us-west-2", config=aws_sg.client_config())
+        yield boto3.client("ec2", region_name="us-west-2", config=aws_sg.ec2_client_config())
 
 
 @pytest.fixture
@@ -58,16 +58,40 @@ def test_revoke_ip_keeps_rule_of_other_cluster(ec2, group_id):
     assert rules(ec2, group_id) == [("1.2.3.4/32", "ray-vast:other")]
 
 
+def failing_with(code):
+    """A stand-in for a boto3 call that fails with the AWS error `code`."""
+    def fail(**kwargs):
+        raise botocore.exceptions.ClientError({"Error": {"Code": code, "Message": "x"}}, "op")
+    return fail
+
+
 def test_quota_error_when_aws_rule_limit_is_reached(ec2, group_id, monkeypatch):
-    err = botocore.exceptions.ClientError({"Error": {"Code": "RulesPerSecurityGroupLimitExceeded", "Message": "x"}}, "op")
-    monkeypatch.setattr(ec2, "authorize_security_group_ingress", lambda **kw: (_ for _ in ()).throw(err))
+    monkeypatch.setattr(ec2, "authorize_security_group_ingress", failing_with("RulesPerSecurityGroupLimitExceeded"))
     with pytest.raises(SgQuotaError):
+        SecurityGroupRules(ec2, group_id, "c1").allow_ip("1.2.3.4")
+
+
+def test_allow_ip_ignores_duplicate_error_from_aws(ec2, group_id, monkeypatch):
+    monkeypatch.setattr(ec2, "authorize_security_group_ingress", failing_with("InvalidPermission.Duplicate"))
+    SecurityGroupRules(ec2, group_id, "c1").allow_ip("1.2.3.4")
+
+
+def test_revoke_ip_ignores_not_found_error_from_aws(ec2, group_id, monkeypatch):
+    sg = SecurityGroupRules(ec2, group_id, "c1")
+    sg.allow_ip("1.2.3.4")  # the rule exists when we look, then vanishes before the revoke
+    monkeypatch.setattr(ec2, "revoke_security_group_ingress", failing_with("InvalidPermission.NotFound"))
+    sg.revoke_ip("1.2.3.4")
+
+
+def test_other_aws_errors_are_raised(ec2, group_id, monkeypatch):
+    monkeypatch.setattr(ec2, "authorize_security_group_ingress", failing_with("UnauthorizedOperation"))
+    with pytest.raises(botocore.exceptions.ClientError):
         SecurityGroupRules(ec2, group_id, "c1").allow_ip("1.2.3.4")
 
 
 @pytest.mark.live
 def test_live_allow_revoke_on_temporary_group():
-    ec2 = boto3.Session(profile_name="personal", region_name="us-west-2").client("ec2", config=aws_sg.client_config())
+    ec2 = boto3.Session(profile_name="personal", region_name="us-west-2").client("ec2", config=aws_sg.ec2_client_config())
     vpc = ec2.describe_vpcs(Filters=[{"Name": "isDefault", "Values": ["true"]}])["Vpcs"][0]["VpcId"]
     group_id = ec2.create_security_group(GroupName="ray-vast-st6-test", Description="ray-vast step 6 test", VpcId=vpc)["GroupId"]
     try:

@@ -6,7 +6,7 @@ class SgQuotaError(Exception):
     """The security group has no room for another worker IP."""
 
 
-def client_config():
+def ec2_client_config():
     """botocore Config for the ec2 client that the caller passes to SecurityGroupRules."""
     return botocore.config.Config(connect_timeout=5, read_timeout=30, retries={"max_attempts": 5, "mode": "standard"})
 
@@ -33,7 +33,7 @@ class SecurityGroupRules:
                 "IpRanges": [{"CidrIp": cidr, "Description": self._description}]}])
         except botocore.exceptions.ClientError as e:
             code = e.response["Error"]["Code"]
-            if code == "InvalidPermission.Duplicate":
+            if code == "InvalidPermission.Duplicate":  # success: each cluster has its own security group
                 return
             if code == "RulesPerSecurityGroupLimitExceeded":
                 raise SgQuotaError(f"security group {self._group_id}: the per-group rule quota is reached; "
