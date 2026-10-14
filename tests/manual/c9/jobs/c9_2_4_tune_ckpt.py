@@ -11,7 +11,7 @@ import ray
 from ray import tune
 from ray.tune import Checkpoint
 
-from c9common import SMALL, error_info, result, short, start, wait_for_nodes
+from c9common import SMALL, error_info, result, short, start, storage_settings, wait_for_nodes
 
 ID = "C9.2.4"
 start(ID, 1200)
@@ -28,10 +28,10 @@ def trainable(config):
             tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
 
 
-storage = os.environ.get("C9_STORAGE")
+storage, storage_fs = storage_settings()
 try:
     grid = tune.Tuner(tune.with_resources(trainable, {"cpu": 1}), param_space={"i": tune.grid_search(list(range(2 if SMALL else 4)))},
-                      run_config=tune.RunConfig(name="c9_2_4", storage_path=storage),
+                      run_config=tune.RunConfig(name="c9_2_4", storage_path=storage, storage_filesystem=storage_fs),
                       tune_config=tune.TuneConfig(metric="step", mode="max")).fit()
 except Exception as e:
     result(ID, "LIMIT", dict(error_info(e), storage=storage))

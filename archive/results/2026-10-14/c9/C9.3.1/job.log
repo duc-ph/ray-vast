@@ -1,0 +1,21 @@
+2026-10-14 10:30:22,855	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 10:30:22,871	INFO cli.py:569 -- 2026-10-14 03:26:01,250	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9-3-1-1791973560: python c9_3_1_train_1gpu.py
+C9_START C9.3.1 1791973671.9 small=False min_nodes=2
+2026-10-14 03:27:56,183	INFO worker.py:1686 -- Using address 54.184.99.234:6379 set in the environment variable RAY_ADDRESS
+2026-10-14 03:27:56,187	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.184.99.234:6379...
+2026-10-14 03:27:56,219	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(TrainController pid=15311)[0m Requesting resources: {'GPU': 1} * 1
+[36m(TrainController pid=15311)[0m Attempting to start training worker group of size 1 with the following resources: [{'GPU': 1}] * 1
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Setting up process group for: env:// [rank=0, world_size=1]
+[36m(TrainController pid=15311)[0m [2026-10-14 03:29:49,219 E 15311 15348] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: '865b6da5e76be7efa8df038427000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(TrainController pid=15311)[0m Started training worker group of size 1: 
+[36m(TrainController pid=15311)[0m - (ip=185.62.108.226, pid=56983) world_rank=0, local_rank=0, node_rank=0
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m C9_TRAIN rank=0 node=264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9 device=cuda:0 backend=nccl
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m C9_TRAIN rank=0 node=264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9 device=cuda:0 backend=nccl
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Moving model to device: cuda:0
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=py::fsspec+('s3', 's3a'), path=rvtest-c9-20261014-f3bf8b5c/c9/c9_C9.3.1_1791973676/checkpoint_2026-10-14_03-30-07.748882)
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Reporting training result 1: TrainingReport(checkpoint=Checkpoint(filesystem=py::fsspec+('s3', 's3a'), path=rvtest-c9-20261014-f3bf8b5c/c9/c9_C9.3.1_1791973676/checkpoint_2026-10-14_03-30-07.748882), metrics={'epoch': 0, 'loss': 5.582268170556244, 'epoch_s': 0.9569859504699707, 'rank_nodes': ['264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9'], 'device': 'cuda:0', 'backend': 'nccl'}, validation=False) from rank 0
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=py::fsspec+('s3', 's3a'), path=rvtest-c9-20261014-f3bf8b5c/c9/c9_C9.3.1_1791973676/checkpoint_2026-10-14_03-30-11.115383)
+[36m(RayTrainWorker pid=56983, ip=185.62.108.226)[0m Reporting training result 2: TrainingReport(checkpoint=Checkpoint(filesystem=py::fsspec+('s3', 's3a'), path=rvtest-c9-20261014-f3bf8b5c/c9/c9_C9.3.1_1791973676/checkpoint_2026-10-14_03-30-11.115383), metrics={'epoch': 1, 'loss': 0.18038213785205567, 'epoch_s': 0.7191264629364014, 'rank_nodes': ['264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9'], 'device': 'cuda:0', 'backend': 'nccl'}, validation=False) from rank 0
+C9_RESULT C9.3.1 PASS {"backend": ["nccl"], "checkpoint": "rvtest-c9-20261014-f3bf8b5c/c9/c9_C9.3.1_1791973676/checkpoint_2026-10-14_03-30-11.115383", "devices": ["cuda:0"], "elapsed_s": 145.8, "epoch_s": [0.72], "error": null, "loss_last": [0.1804], "num_workers": 1, "rank_nodes": ["264098d3"], "reports": 2, "seconds": 141.4, "storage": "s3anon://rvtest-c9-20261014-f3bf8b5c/c9", "strategy": "PACK"}

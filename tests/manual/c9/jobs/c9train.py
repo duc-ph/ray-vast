@@ -15,7 +15,7 @@ import ray.train.torch
 from ray.train import Checkpoint, FailureConfig, RunConfig, ScalingConfig
 from ray.train.torch import TorchConfig, TorchTrainer
 
-from c9common import SMALL, error_info, result, short
+from c9common import SMALL, error_info, result, short, storage_settings
 
 NETWORK_ERRORS = re.compile(r"(?i)timed? ?out|connect|DistNetworkError|DistStoreError|socket|NCCL|gloo|unreachable|refused")
 STORAGE_ERRORS = re.compile(r"(?i)storage|persistent|shared file ?system|checkpoint")
@@ -81,7 +81,7 @@ def run(test_id, num_workers, use_gpu, backend, strategy, checkpoint, limit_erro
             train_func, train_loop_config={"small": SMALL, "checkpoint": checkpoint, "collector": collector},
             scaling_config=ScalingConfig(num_workers=num_workers, use_gpu=use_gpu, placement_strategy=strategy),
             torch_config=TorchConfig(backend=backend, timeout_s=180),
-            run_config=RunConfig(name=f"c9_{test_id}_{int(t)}", storage_path=os.environ.get("C9_STORAGE"),
+            run_config=RunConfig(name=f"c9_{test_id}_{int(t)}", storage_path=storage_settings()[0], storage_filesystem=storage_settings()[1],
                                  failure_config=FailureConfig(max_failures=0)))
         res = trainer.fit()
     except Exception as e:

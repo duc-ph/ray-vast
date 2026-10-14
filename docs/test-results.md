@@ -464,3 +464,80 @@ Findings (details in `walkthrough.md`):
 - `ray-vast --version` does not exist.
 - `getting-started.md` uses `python -m venv`. Ubuntu 24.04 has only `python3` outside a venv.
 - The `up` progress lines show only at the end when stdout is a pipe or a file.
+
+## Live cycle C9: Ray libraries (2026-10-14)
+
+Setup: `ray-vast up` from commit 483cc52 (0.1.0rc1) on the dev box (the operator machine), EC2 `t3.large` head, us-west-2, image `rayproject/ray:2.59.0-py311-gpu`. Node type `gpu` `{CPU: 4, GPU: 1}`, `min_workers` 2; node type `gpu2` `{CPU: 4, GPU: 2}`, `min_workers` 0. `candidate_factor` 2, `max_dollars_per_hour: 2.5`, `compute_cap` 600–899. All jobs used `ray job submit` through the `dashboard` tunnel. Torch jobs got `torch==2.7.1` from `runtime_env` `pip`. Data: `archive/results/2026-10-14/` (`progress.md` "C9", `c9/`, `spend.md`, `resources.csv`). `c9/results.jsonl` has one row for each run.
+
+The first workers: a Tesla P100 host (24 Ray CPUs, machine 3969) and an RTX 3060 host (48 Ray CPUs, machine 32816). The autoscaler also added a `gpu2` node (2x CMP 170HX, 13 Ray CPUs) for the CPU demand of C9.1.1. It ended by the idle timeout at 10:22Z.
+
+### Main finding: the pids limit of vast containers
+
+The first Ray Data jobs killed 4 workers in 10 min. The cause is the pids (task) limit of the vast container:
+
+- `pids.max` is 1280 on the two 1-GPU hosts (cgroup v1, Docker `--pids-limit`). It is 3328 on the 2-GPU host (cgroup v2). `RLIMIT_NPROC` is unlimited.
+- Each Ray worker process has 45–50 threads (16 `event_engine`, 12–16 `nexting_thread`, 4 `client.poll0`, and others). The raylet has 64–75 threads. An idle node has about 300 threads.
+- ray-vast starts Ray with `--num-cpus` = the real core count (24 and 48 here). A job that uses all CPUs starts 24–48 worker processes, that is 1200–2400 threads.
+- Above 1280, `pthread_create` fails with `EAGAIN`. The logs show `RuntimeError: can't start new thread` (Ray Data `MemoryProfiler`), `pthread_create failed: Resource temporarily unavailable`, and a raylet abort (`terminate called after throwing an instance of 'std::system_error'`). The node dies. The bootstrap reports `ray start exited with code 1` and destroys the instance. v2 rents a replacement.
+- The bootstrap itself also fails: its `call()` runs each HTTP call in a thread. One worker reported `unexpected error: ... line 367, in main ... call(f"{base_b}/heartbeat", ...)`. `RuntimeError` is not in `NET_ERRORS`, so the bootstrap destroyed the worker.
+
+Evidence: `c9/limits/limits_*.log`, `c9/limits/threads_1.log`, `c9/C9.1.1-run1/`, `c9/C9.1.3-run1/`, `c9/C9.1.4-run1/`, `c9/head/monitor.log` (09:23Z–09:34Z).
+
+Workaround in the tests: `C9_DATA_CPU=12` sets the Ray Data `execution_options.resource_limits` (cpu 12) and `max_hash_shuffle_aggregators` 4. With it, all Data jobs except C9.1.6 passed. A product fix is necessary (see the summary below).
+
+### Results
+
+| ID | Result | Key numbers | Evidence |
+|---|---|---|---|
+| C9.0.1 | PASS | `up` 7 min 45 s. 2 workers 2 min 11 s after `up`. 4 rentals, 2 ended unused (7.7 s and 3.0 s after the slot fill). | `c9/up.log` |
+| C9.0.2 | PASS | 4 tasks pinned to each of 3 nodes read `data/hello.txt`. Same package path on all nodes. (First run: test error, SPREAD put all 8 tasks in one worker process.) | `c9/C9.0.2/` |
+| C9.0.3 | PASS | `torch 2.7.1+cu126` from pip on both workers and the head driver: 263.6 s for the first install. P100 and RTX 3060: CUDA available, 1 device. | `c9/C9.0.3/` |
+| C9.0.4 | PASS | `ray job list`, `logs --follow` (17 ticks in 30 s), `stop` (exit 0, `STOPPED`). | `c9/C9.0.4/job_cli.txt` |
+| C9.1.1 | PASS with workaround | 10M rows, 31.2 s, 640 728 rows/s, tasks on 3 nodes. Without `C9_DATA_CPU`: FAIL, pids limit, node A died. | `c9/C9.1.1/`, `c9/C9.1.1-run1/` |
+| C9.1.2 | PASS | 3.0 GB `range_tensor`: `materialize` 19.7 s, driver `iter_batches` 17.2 MB/s, no spill. | `c9/C9.1.2/` |
+| C9.1.3 | PASS with workaround | `random_shuffle` 186.2 s, `groupby().count()` 69.7 s on 3.0 GB. Without the workaround: FAIL (pids limit). | `c9/C9.1.3/`, `c9/C9.1.3-run1/` |
+| C9.1.4 | PASS with workaround | GPU inference, 2 actors on 2 nodes, 200 000 rows in 39.5 s (5059 rows/s), `cuda`. Without the workaround: FAIL (a `HashShuffleAggregator` died). | `c9/C9.1.4/`, `c9/C9.1.4-run1/` |
+| C9.1.5 | PASS | `write_parquet` to `/tmp/c9_out`: files on each worker (6/5/5). The read-back from the head finds no files. Public S3 parquet: 150 rows in 3.9 s. CSV from the working dir: 100 rows. | `c9/C9.1.5/` |
+| C9.1.6 | FAIL | 400 blocks with `num_cpus=0.05`. Without a limit: pids limit (`pthread_create failed`), 13/400 when stopped. With `C9_DATA_CPU=12`: no crash, but 96/400 in 12.5 min (ReadRange held the CPU budget). More than about 20 worker processes per node is not possible. | `c9/C9.1.6-run1/`, `c9/C9.1.6-run2/` |
+| C9.2.1 | PASS | 8 trials, 0 errors, 34.4 s, trials on 3 nodes (trial CPU = the smallest node's CPU count; first run with 1 CPU: all trials on 1 node, a test error). | `c9/C9.2.1/` |
+| C9.2.2 | PASS | ASHA: 7 of 8 trials stopped at iteration 2, 1 ran to 20. | `c9/C9.2.2/` |
+| C9.2.3 | PASS | 2 GPU trials on 2 nodes, 1 GPU each. | `c9/C9.2.3/` |
+| C9.2.4 | LIMIT (Ray), PASS with shared storage | Default `storage_path`: `RuntimeError: Unable to set up cluster storage ... A local path on the head node is not accessible by worker nodes.` With an S3 bucket: 4 trials, checkpoints readable on the driver. | `c9/C9.2.4-run1/`, `c9/C9.2.4/` |
+| C9.3.1 | LIMIT (Ray), PASS with shared storage | Same storage error at the first checkpoint. With the S3 bucket: 1 GPU, `nccl`, 2 epochs, checkpoint saved, 141.4 s. | `c9/C9.3.1-run1/`, `c9/C9.3.1/` |
+| C9.3.2 | LIMIT (design) | NCCL, 2 nodes: `DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (81.183.231.113, 57835)`. Error after 200.5 s. | `c9/C9.3.2/job.log` |
+| C9.3.3 | LIMIT (design) | gloo, 2 nodes: `DistStoreError: Timed out after 181 seconds waiting for clients. 1/2 clients joined.` Rank 1: `TCP client failed to connect ... 185.62.108.226:40929`. Error after 201 s. | `c9/C9.3.3/job.log` |
+| C9.3.5 (extra) | LIMIT (design) | TCPStore by hand on a free identity port (45084): rank 1 connected in 2.0 s. Then gloo: `Gloo connectFullMesh failed with [gloo/transport/tcp/pair.cc:144]`; the other rank hangs. | `c9/C9.3.5/` |
+| C9.3.4 | PASS | 2 GPUs on one `gpu2` node (2x CMP 170HX), `nccl`, `cuda:0` and `cuda:1`, 162.5 s incl. the rental. | `c9/C9.3.4/` |
+| C9.4.1 | PASS | 2 replicas on 2 nodes; 40 concurrent handle calls (28 + 12). (First run: test error, 20 sequential calls went to one replica.) | `c9/C9.4.1/` |
+| C9.4.2 | PASS | `curl http://127.0.0.1:8000/` on the head host: HTTP 200. | `c9/C9.4.2/curl_head.txt` |
+| C9.4.3 | PASS | `ssh -i <key> -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>`, then `http://127.0.0.1:18000/`: HTTP 200, 0.21 s. | `c9/C9.4.3/tunnel.txt` |
+| C9.4.4 | PASS | 2 GPU replicas on 2 nodes, `cuda`, 1 GPU id each. | `c9/C9.4.4/` |
+| C9.5.1 | PASS | `PACK` 4 CPU bundles on 1 node; `STRICT_SPREAD` 2 GPU bundles on 2 nodes. | `c9/C9.5.1/` |
+| C9.5.2 | PASS | `os._exit`: restart in 5.9 s; `ray.kill`: restart in 8.0 s (`max_restarts=1`). | `c9/C9.5.2/` |
+| C9.5.3 | PASS | 2.0 GB `ray.put` on the CZ host, `ray.get` on the TX host: 67.1 s, 29.8 MB/s, checksum ok. | `c9/C9.5.3/` |
+| Teardown | PASS | `down` 43.2 s, `left: nothing`, exit 0. Sweep `0 left`. `aws left: nothing`. S3 test bucket deleted (head-bucket 404). Secret scan with the cluster token and 15 join tokens: no output. | `c9/down.log`, `c9/sweep.log`, `c9/aws_check.log`, `c9/s3_bucket.log` |
+
+Cost: vast $2.6868 (credit 10.9682 → 8.2814, 0 top-ups; the poll estimate is $1.70, the rest is probably bandwidth and storage). 15 rentals, peak $2.211/h. EC2 about $0.12.
+
+Diagnosis of the LIMIT rows:
+- C9.3.2, C9.3.3, C9.3.5: ray-vast's design. Ray Train sets `MASTER_PORT` to a random free port (`get_address_and_port`, bind to port 0). vast maps only the 64 identity ports, and Ray uses all 64. Ray Train has no setting for this port. A store on an identity port works (C9.3.5), but gloo and NCCL then open more connections on random ports, and they advertise the container's private address (172.17.0.x). Multi-node collectives cannot work behind this NAT.
+- C9.2.4, C9.3.1 (default storage): Ray itself. Ray 2.59 refuses a local `storage_path` on a multi-node cluster. Shared storage fixes it.
+- C9.2.4 with `s3://anonymous@...` (pyarrow): S3 refuses multipart uploads from anonymous users. The test then used `s3fs` (`anon=True`) through `pyarrow.fs.FSSpecHandler`. The bucket policy allowed only the head and worker IPs. A real user gives the workers credentials (for example `env_vars` in `runtime_env`).
+
+Test script changes (`tests/manual/c9/`): C9.0.2 pins tasks to each node; C9.2.1 trial CPU = the smallest node's CPU count; C9.4.1 and C9.4.4 send 40 concurrent calls and check the replica actor nodes; new C9.3.5 (`c9_3_5_store_port.py`); `C9_DATA_CPU`, `C9_STORAGE=s3anon://...` (`storage_settings()` in `c9common.py`) and `C9_EXTRA_PIP` (`run_c9.py`).
+
+### Ray library support
+
+| Library | What works | What does not work | What the user must do |
+|---|---|---|---|
+| Jobs | `ray job submit/list/logs --follow/stop` through the `dashboard` tunnel; `--working-dir`; `runtime_env` `pip` (torch 2.7.1 with CUDA, about 4.5 min for the first install). | | Keep the tunnel open. The driver runs on the head, so pip also installs there. |
+| Ray Core | Tasks, actors, actor restarts, placement groups (`PACK`, `STRICT_SPREAD`), 2 GB objects between hosts (about 30 MB/s). | More than about 20 worker processes on one node (pids limit 1280). | Until ray-vast caps the CPUs: limit the parallel tasks or actors on each node. |
+| Ray Data | Pipelines, shuffles, groupby, GPU batch inference, `read_parquet` from S3, `read_csv` from the working dir, `write_parquet`. | Data with the default resources (it uses all CPUs and hits the pids limit). Output to a local path stays on the workers. | Set `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)` (N about 12 for 2 nodes). Write output to a cloud bucket. |
+| Ray Tune | Trials on many nodes, ASHA, GPU trials, checkpoints to shared storage. | Checkpoints with the default local `storage_path`. | Set `RunConfig(storage_path="s3://...")` and give the workers credentials. |
+| Ray Train | One node: 1 GPU, and 2 GPUs on one host (NCCL). Checkpoints to shared storage. | Training over 2 or more nodes (gloo and NCCL): the rendezvous and the collectives need ports that vast does not map. | Use one node with many GPUs. Set a shared `storage_path`. |
+| Ray Serve | Replicas on many nodes, GPU replicas, `DeploymentHandle` calls, HTTP on the head port 8000. | HTTP from outside without a tunnel (no new security group rule). | Open an SSH tunnel: `ssh -i <key> -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>`, then use `http://127.0.0.1:18000/`. |
+
+Product bugs from C9:
+1. `--num-cpus` = the real core count ignores the container's pids limit. On hosts with many cores, a normal Data job kills the node. A possible fix: cap `--num-cpus` (or the worker count) by `pids.max`, for example (pids.max − 400) / 50.
+2. The bootstrap destroys the worker when it cannot start a thread for a heartbeat call (`RuntimeError` is not in `NET_ERRORS`).
+3. The head log cuts a worker's destroy reason at 300 characters, so the traceback of bug 2 is cut before the error line.

@@ -1,0 +1,28 @@
+2026-10-14 10:33:26,515	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 10:33:26,532	INFO cli.py:569 -- 2026-10-14 03:30:34,513	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9-3-4-1791973833: python c9_3_4_train_2gpu_1node.py
+C9_START C9.3.4 1791973836.6 small=False min_nodes=2
+2026-10-14 03:30:39,979	INFO worker.py:1686 -- Using address 54.184.99.234:6379 set in the environment variable RAY_ADDRESS
+2026-10-14 03:30:39,982	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.184.99.234:6379...
+2026-10-14 03:30:40,019	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(TrainController pid=16116)[0m Requesting resources: {'GPU': 1} * 2
+[36m(TrainController pid=16116)[0m Attempting to start training worker group of size 2 with the following resources: [{'GPU': 1}] * 2
+[36m(autoscaler +11s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +11s)[0m Adding 1 node(s) of type gpu2.
+[36m(autoscaler +11s)[0m Resized to 76 CPUs, 4 GPUs.
+[33m(raylet)[0m There are tasks with infeasible resource requests that cannot be scheduled. See https://docs.ray.io/en/latest/ray-core/scheduling/index.html#ray-scheduling-resources for more details. Possible solutions: 1. Updating the ray cluster to include nodes with all required resources 2. To cause the tasks with infeasible requests to raise an error instead of hanging, set the 'RAY_enable_infeasible_task_early_exit=true'. This feature will be turned on by default in a future release of Ray.
+[36m(autoscaler +56s)[0m No available node types can fulfill resource requests {'GPU_group_171af7a5c41dab33ebaac24991b428000000': 1.0, 'bundle_group_171af7a5c41dab33ebaac24991b428000000': 0.001, 'GPU_group_1_171af7a5c41dab33ebaac24991b428000000': 1.0, 'bundle_group_1_171af7a5c41dab33ebaac24991b428000000': 0.001}*1, {'bundle_group_0_171af7a5c41dab33ebaac24991b428000000': 0.001, 'GPU_group_0_171af7a5c41dab33ebaac24991b428000000': 1.0, 'GPU_group_171af7a5c41dab33ebaac24991b428000000': 1.0, 'bundle_group_171af7a5c41dab33ebaac24991b428000000': 0.001}*1. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=81.183.231.113)[0m [2026-10-14 03:31:36,175 E 378 378] (raylet) worker_pool.cc:1903: Delete runtime env failed
+[36m(RayTrainWorker pid=1636, ip=81.183.231.113)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[33m(raylet, ip=81.183.231.113)[0m [2026-10-14 03:31:36,863 E 378 378] (raylet) worker_pool.cc:1903: Delete runtime env failed[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(TrainController pid=16116)[0m [2026-10-14 03:33:07,045 E 16116 16150] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: '56a30c501a92fc3f754e5f5928000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(RayTrainWorker pid=1636, ip=81.183.231.113)[0m C9_TRAIN rank=0 node=d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb device=cuda:0 backend=nccl
+[36m(TrainController pid=16116)[0m Started training worker group of size 2: 
+[36m(TrainController pid=16116)[0m - (ip=81.183.231.113, pid=1636) world_rank=0, local_rank=0, node_rank=0
+[36m(TrainController pid=16116)[0m - (ip=81.183.231.113, pid=1637) world_rank=1, local_rank=1, node_rank=0
+[36m(RayTrainWorker pid=1636, ip=81.183.231.113)[0m C9_TRAIN rank=0 node=d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb device=cuda:0 backend=nccl
+[36m(RayTrainWorker pid=1636, ip=81.183.231.113)[0m Moving model to device: cuda:0
+[36m(RayTrainWorker pid=1636, ip=81.183.231.113)[0m Wrapping provided model in DistributedDataParallel.
+[36m(RayTrainWorker pid=1637, ip=81.183.231.113)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'epoch': 0, 'loss': 10.95873692205974, 'epoch_s': 0.6476325988769531, 'rank_nodes': ['d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb', 'd993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb'], 'device': 'cuda:1', 'backend': 'nccl'}, validation=False) from rank 1
+[36m(RayTrainWorker pid=1637, ip=81.183.231.113)[0m C9_TRAIN rank=1 node=d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb device=cuda:1 backend=nccl
+C9_RESULT C9.3.4 PASS {"backend": ["nccl"], "checkpoint": null, "devices": ["cuda:0", "cuda:1"], "elapsed_s": 166.0, "epoch_s": [0.37, 0.37], "error": null, "loss_last": [0.2313, 0.2299], "num_workers": 2, "rank_nodes": ["d993b50f", "d993b50f"], "reports": 4, "seconds": 162.5, "storage": "default", "strategy": "STRICT_PACK"}

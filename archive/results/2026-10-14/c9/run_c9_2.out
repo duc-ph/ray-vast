@@ -1,0 +1,32 @@
+== C9.0.2 c9_0_2_hello.py (timeout 900 s) 09:36:06
+   PASS job=SUCCEEDED wall=22.9 s {"cwd_example": "/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_a376b592c2008bcd", "elapsed_s": 10.2, "file_ok": true, "ips": ["143.55.45.86", "185.62.108.226", "81.183.231.113"], "tasks_per_node": {"264098d3": 4, "97e70305": 4, "b0f753c3": 4}}
+== C9.2.1 c9_2_1_tune_basic.py (timeout 1500 s) 09:36:29
+   FAIL job=FAILED wall=32.2 s {"best_score": 8.332, "elapsed_s": 19.2, "errors": 0, "results": 8, "seconds": 19.1, "storage": "/home/ray/ray_results/trainable_2026-10-14_02-36-32", "trial_nodes": ["264098d3"]}
+== C9.2.2 c9_2_2_tune_asha.py (timeout 1500 s) 09:37:01
+   PASS job=SUCCEEDED wall=32.3 s {"elapsed_s": 19.3, "errors": 0, "iterations": [2, 2, 2, 2, 2, 2, 2, 20], "results": 8, "seconds": 19.2, "trial_nodes": ["264098d3"]}
+== C9.2.3 c9_2_3_tune_gpu.py (timeout 1500 s) 09:37:33
+   PASS job=SUCCEEDED wall=42.3 s {"elapsed_s": 33.3, "errors": 0, "results": 2, "trials": [{"gpu_ids": "0", "node": "b0f753c3"}, {"gpu_ids": "0", "node": "264098d3"}]}
+== C9.2.4 c9_2_4_tune_ckpt.py (timeout 1500 s) 09:38:15
+   LIMIT job=FAILED wall=22.2 s {"elapsed_s": 11.3, "errors": 4, "experiment_path": "/home/ray/ray_results/c9_2_4", "storage": "default", "trials": [{"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=9967, ip=185.62.108.226, actor_id=c18335afda1b0e1db33e8bab12000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anac
+== C9.3.1 c9_3_1_train_1gpu.py (timeout 2700 s) 09:38:38
+   LIMIT job=FAILED wall=42.3 s {"backend": null, "elapsed_s": 32.3, "epochs_reported": 1, "error_class": "WorkerGroupError", "error_head": ["Training failed due to worker errors:", "[Rank 0 Error Snippet]:", "Traceback (most recent call last):", "  File \"/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_12d4a7cc8edc55ee/c9train.py\", line 70, in train_func", "    ray.train.report(metric
+== C9.3.3 c9_3_3_train_gloo.py (timeout 1800 s) 09:39:20
+   LIMIT job=FAILED wall=212.6 s {"backend": "gloo", "elapsed_s": 204.7, "epochs_reported": 0, "error_class": "ControllerError", "error_head": ["Training failed due to controller error:", "\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=11047, ip=185.62.108.226, actor_id=9b966a52b7ce174729e563e714000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7fc846e64810>)", "    
+== C9.3.2 c9_3_2_train_nccl.py (timeout 1800 s) 09:42:52
+   LIMIT job=FAILED wall=212.6 s {"backend": "nccl", "elapsed_s": 203.9, "epochs_reported": 0, "error_class": "ControllerError", "error_head": ["Training failed due to controller error:", "\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=13605, ip=185.62.108.226, actor_id=39da1f3913144bf356a7c59815000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7fc985a40490>)", "    
+== C9.3.5 c9_3_5_store_port.py (timeout 1500 s) 09:46:25
+   FAIL job=FAILED wall=322.7 s {"error": "no C9_RESULT line", "log_tail": ["  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py\", line 22, in auto_init_wrapper", "    return fn(*args, **kwargs)", "           ^^^^^^^^^^^^^^^^^^^", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py\", line 134, in wrapper", "    return func(*args, **kwargs)", "        
+== C9.4.1 c9_4_1_serve_handle.py (timeout 1200 s) 09:51:48
+   FAIL job=FAILED wall=42.3 s {"answers": 20, "app_status": "ApplicationStatus.RUNNING", "elapsed_s": 33.9, "per_node": {"97e70305": 20}, "proxies": {"233378fb": "ProxyStatus.HEALTHY", "97e70305": "ProxyStatus.HEALTHY", "b0f753c3": "ProxyStatus.HEALTHY"}, "replica_ips": ["143.55.45.86"]}
+== C9.4.2 serve-http-head (timeout 120 s) 09:52:30
+   PASS job=None wall=1.4 s {"ssh_exit": 0, "http_code": "200", "body": "{\"hello\":\"c9\",\"node_id\":\"97e70305acfa9fde491bdcc62105416e2d48cb31826743db2cc38f59\",\"ip\":\"143.55.45.86\",\"pid\":13909}"}
+== C9.4.3 serve-http-tunnel (timeout 120 s) 09:52:31
+   PASS job=None wall=5.1 s {"command": "ssh -i <key> -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>", "http_code": 200, "body": "{\"hello\":\"c9\",\"node_id\":\"97e70305acfa9fde491bdcc62105416e2d48cb31826743db2cc38f59\",\"ip\":\"143.55.45.86\",\"pid\":13909}", "latency_s": 0.1, "tunnel_stderr": ""}
+== C9.4.4 c9_4_4_serve_gpu.py (timeout 2700 s) 09:52:36
+   FAIL job=FAILED wall=42.3 s {"answers": 20, "devices": ["cuda"], "elapsed_s": 34.1, "gpu_ids": ["0"], "per_node": {"97e70305": 20}}
+== C9.5.1 c9_5_1_placement.py (timeout 1200 s) 09:53:19
+   PASS job=SUCCEEDED wall=22.2 s {"elapsed_s": 17.8, "pack_bundles": {"0": "264098d3", "1": "264098d3", "2": "264098d3", "3": "264098d3"}, "pack_task_nodes": ["264098d3", "264098d3", "264098d3", "264098d3"], "spread_bundles": {"0": "b0f753c3", "1": "264098d3"}, "spread_task_nodes": ["b0f753c3", "264098d3"]}
+== C9.5.2 c9_5_2_actor_fault.py (timeout 1200 s) 09:53:41
+   PASS job=SUCCEEDED wall=32.2 s {"a_nodes": ["264098d3", "264098d3"], "a_pids": [21804, 22003], "a_restart_s": 5.9, "b_nodes": ["264098d3", "264098d3"], "b_pids": [21799, 22148], "b_restart_s": 8.0, "crash_error": "ActorUnavailableError", "elapsed_s": 24.0}
+== C9.5.3 c9_5_3_large_object.py (timeout 2100 s) 09:54:13
+   PASS job=SUCCEEDED wall=92.4 s {"bytes": 2000000000, "checksum_ok": true, "elapsed_s": 81.5, "gb": 2.0, "get_s": 67.1, "ip_a": "185.62.108.226", "ip_b": "143.55.45.86", "mb_per_s": 29.8, "node_a": "264098d3", "node_b": "97e70305", "put_s": 2.2}

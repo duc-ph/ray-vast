@@ -78,3 +78,17 @@
 | Peak sum of dph_total | $2.708/h (6 candidates, 08:25:42Z); $1.923/h with the 4 workers |
 | EC2 | t3.large head i-02e0828fe2dc560e2, about 08:16Z to 08:37Z (21 min) at $0.0832/h = about $0.03, plus 60 GiB gp3 (< $0.002). Budget about $0.15. |
 | Day total so far (vast) | credit 11.5658 → 10.9682 = $0.5976 (no top-up today). The day limit is $8. |
+
+## C9 (Ray libraries, HEAD 483cc52 + C9 script changes)
+
+| Item | Value |
+|---|---|
+| vast credit before | $10.9682 (09:05:22Z) |
+| vast credit after | $8.2814 (10:35:36Z; $8.2972 at 10:35:23Z, late booking). vast can book the last minutes later. |
+| Auto top-ups seen | 0 (the credit went down only; it stayed above $5) |
+| vast spend | credit before − credit after + $10 × top-ups = 10.9682 − 8.2814 + 0 = $2.6868 (budget about $5; allowed up to $15) |
+| vast spend (estimate from dph_total in the poll) | about $1.70. The difference (about $1.0) is probably vast bandwidth and storage charges: torch 2.7.1 with its CUDA wheels (about 2.5 GB) was downloaded on 5 workers, plus the 2 GB object transfer, the Data shuffles and the 60 GB disks of 15 rentals. |
+| Rentals | 15. 7 enrolled workers: 55900080 P100 $0.121/h, 55900093 RTX 3060 $0.287/h, 55901492 P100, 55902431 P100 (these 4 died from the pids limit), 55902441 RTX 3060 and 55902669 P100 (to `down`), 2 `gpu2` 2x CMP 170HX $1.089/h (55901477 09:23Z-10:22Z, added by the autoscaler for the CPU demand of C9.1.1 and ended by the idle timeout; 55910384 10:30Z-10:34Z for C9.3.4). 8 candidates ended unused. |
+| Peak sum of dph_total | $2.211/h (limit 2.5) |
+| EC2 | t3.large head i-065e7431df568f951, about 09:06Z to 10:35Z (89 min) at $0.0832/h = about $0.12, plus 60 GiB gp3 (< $0.01). S3 test bucket rvtest-c9-20261014-f3bf8b5c, 43 small objects for about 35 min (< $0.01; deleted). Budget about $0.30. |
+| Day total so far (vast) | credit 11.5658 → 8.2814 = $3.2844 (no top-up today). The day limit is $8. |

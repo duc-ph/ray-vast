@@ -1,0 +1,91 @@
+======== Autoscaler status: 2026-10-14 03:33:55.697514 ========
+Node status
+---------------------------------------------------------------
+Active:
+ 1 head
+Idle:
+ 2 gpu
+ 1 gpu2
+Pending:
+ (no pending nodes)
+Recent failures:
+ gpu: NodeTerminated (instance_id: slot-1-84903b)
+ gpu: NodeTerminated (instance_id: slot-2-f13dde)
+ gpu: NodeTerminated (instance_id: slot-4-f71238)
+ gpu: NodeTerminated (instance_id: slot-5-82e7e4)
+ gpu2: NodeTerminated (instance_id: slot-3-939bb0)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0.0/85.0 CPU
+ 0.0/4.0 GPU
+ 0B/203.64GiB memory
+ 0B/58.94GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)
+
+======== List: 2026-10-14 03:33:57.992351 ========
+Stats:
+------------------------------
+Total: 9
+
+Table:
+------------------------------
+    NODE_ID                                                   NODE_IP         IS_HEAD_NODE    STATE    STATE_MESSAGE                                                                                   NODE_NAME       RESOURCES_TOTAL                         LABELS
+ 0  233378fba623230f1c311feef8714760e91bd1d53db6b64bb0af2c53  54.184.99.234   True            ALIVE                                                                                                    54.184.99.234   memory: 4.960 GiB                       ray.io/node-group: head
+                                                                                                                                                                                                                       node:54.184.99.234: 1.0                 ray.io/node-id: 233378fba623230f1c311feef8714760e91bd1d53db6b64bb0af2c53
+                                                                                                                                                                                                                       node:__internal_head__: 1.0
+                                                                                                                                                                                                                       object_store_memory: 2.126 GiB
+ 1  264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9  185.62.108.226  False           ALIVE                                                                                                    185.62.108.226  CPU: 48.0                               ray.io/accelerator-type: GeForce-RTX-3060
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:GeForce-RTX-3060: 1.0  ray.io/node-id: 264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9
+                                                                                                                                                                                                                       memory: 33.229 GiB
+                                                                                                                                                                                                                       node:185.62.108.226: 1.0
+                                                                                                                                                                                                                       object_store_memory: 9.313 GiB
+ 2  4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0  143.55.45.86    False           DEAD     Unexpected termination: health check failed due to missing too many heartbeats                  143.55.45.86    CPU: 24.0                               ray.io/accelerator-type: P100
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:P100: 1.0              ray.io/node-id: 4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0
+                                                                                                                                                                                                                       memory: 34.008 GiB
+                                                                                                                                                                                                                       node:143.55.45.86: 1.0
+                                                                                                                                                                                                                       object_store_memory: 10.450 GiB
+ 3  532c827404ed9b3f529d5ae4c556600f026d9e54b60cfc2ed618ad43  143.55.45.86    False           DEAD     Unexpected termination: health check failed due to missing too many heartbeats                  143.55.45.86    CPU: 24.0                               ray.io/accelerator-type: P100
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:P100: 1.0              ray.io/node-id: 532c827404ed9b3f529d5ae4c556600f026d9e54b60cfc2ed618ad43
+                                                                                                                                                                                                                       memory: 34.009 GiB
+                                                                                                                                                                                                                       node:143.55.45.86: 1.0
+                                                                                                                                                                                                                       object_store_memory: 10.450 GiB
+ 4  941919143dc22a41e6eb65f0bef056d3c5e3b2d0a2d2bd2cc127a2f0  143.55.45.86    False           DEAD     Unexpected termination: health check failed due to missing too many heartbeats                  143.55.45.86    CPU: 24.0                               ray.io/accelerator-type: P100
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:P100: 1.0              ray.io/node-id: 941919143dc22a41e6eb65f0bef056d3c5e3b2d0a2d2bd2cc127a2f0
+                                                                                                                                                                                                                       memory: 34.009 GiB
+                                                                                                                                                                                                                       node:143.55.45.86: 1.0
+                                                                                                                                                                                                                       object_store_memory: 10.450 GiB
+ 5  97e70305acfa9fde491bdcc62105416e2d48cb31826743db2cc38f59  143.55.45.86    False           ALIVE                                                                                                    143.55.45.86    CPU: 24.0                               ray.io/accelerator-type: P100
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:P100: 1.0              ray.io/node-id: 97e70305acfa9fde491bdcc62105416e2d48cb31826743db2cc38f59
+                                                                                                                                                                                                                       memory: 34.009 GiB
+                                                                                                                                                                                                                       node:143.55.45.86: 1.0
+                                                                                                                                                                                                                       object_store_memory: 10.450 GiB
+ 6  b0f753c3f54a884b2a2de7f990e0ad3df1f66f196cf68d80f3e57de5  81.183.231.113  False           DEAD     Terminated due to idle (no Ray activity): Termination of node that's idle for 603.683 seconds.  81.183.231.113  CPU: 13.0                               ray.io/accelerator-type: CMP-170HX
+                                                                                                                                                                                                                       GPU: 2.0                                ray.io/node-group: gpu2
+                                                                                                                                                                                                                       accelerator_type:CMP-170HX: 1.0         ray.io/node-id: b0f753c3f54a884b2a2de7f990e0ad3df1f66f196cf68d80f3e57de5
+                                                                                                                                                                                                                       memory: 131.444 GiB
+                                                                                                                                                                                                                       node:81.183.231.113: 1.0
+                                                                                                                                                                                                                       object_store_memory: 37.050 GiB
+ 7  d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb  81.183.231.113  False           ALIVE                                                                                                    81.183.231.113  CPU: 13.0                               ray.io/accelerator-type: CMP-170HX
+                                                                                                                                                                                                                       GPU: 2.0                                ray.io/node-group: gpu2
+                                                                                                                                                                                                                       accelerator_type:CMP-170HX: 1.0         ray.io/node-id: d993b50fa1833256efeaeb5ea8547134fc4ebc4505bdb14e839694bb
+                                                                                                                                                                                                                       memory: 131.445 GiB
+                                                                                                                                                                                                                       node:81.183.231.113: 1.0
+                                                                                                                                                                                                                       object_store_memory: 37.050 GiB
+ 8  ea1ef67875760a274a2c0141511377b78714f3480bb302122f243815  185.62.108.226  False           DEAD     Unexpected termination: health check failed due to missing too many heartbeats                  185.62.108.226  CPU: 48.0                               ray.io/accelerator-type: GeForce-RTX-3060
+                                                                                                                                                                                                                       GPU: 1.0                                ray.io/node-group: gpu
+                                                                                                                                                                                                                       accelerator_type:GeForce-RTX-3060: 1.0  ray.io/node-id: ea1ef67875760a274a2c0141511377b78714f3480bb302122f243815
+                                                                                                                                                                                                                       memory: 33.228 GiB
+                                                                                                                                                                                                                       node:185.62.108.226: 1.0
+                                                                                                                                                                                                                       object_store_memory: 9.313 GiB
+

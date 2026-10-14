@@ -1,0 +1,12 @@
+== C9.2.1 c9_2_1_tune_basic.py (timeout 1500 s) 09:56:09
+   PASS job=SUCCEEDED wall=42.9 s {"best_score": 8.999, "elapsed_s": 34.5, "errors": 0, "results": 8, "seconds": 34.4, "storage": "/home/ray/ray_results/trainable_2026-10-14_02-56-13", "trial_cpu": 13.0, "trial_nodes": ["264098d3", "97e70305", "b0f753c3"]}
+== C9.3.5 c9_3_5_store_port.py (timeout 1500 s) 09:56:52
+   LIMIT job=FAILED wall=262.5 s {"elapsed_s": 253.6, "gloo": [{"error_class": "RuntimeError", "error_head": ["Gloo connectFullMesh failed with [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:144] no error"], "ok": false, "s": 0.0, "traceback_tail": ["  File \"/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed
+== C9.4.1 c9_4_1_serve_handle.py (timeout 1200 s) 10:01:14
+   PASS job=SUCCEEDED wall=42.3 s {"answers": 40, "app_status": "ApplicationStatus.RUNNING", "elapsed_s": 36.2, "per_node": {"264098d3": 28, "b0f753c3": 12}, "proxies": {"233378fb": "ProxyStatus.HEALTHY", "264098d3": "ProxyStatus.HEALTHY", "b0f753c3": "ProxyStatus.HEALTHY"}, "replica_ips": ["185.62.108.226", "81.183.231.113"], "replica_nodes": ["264098d3", "b0f753c3"]}
+== C9.4.2 serve-http-head (timeout 120 s) 10:01:57
+   PASS job=None wall=1.2 s {"ssh_exit": 0, "http_code": "200", "body": "{\"hello\":\"c9\",\"node_id\":\"264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9\",\"ip\":\"185.62.108.226\",\"pid\":27917}"}
+== C9.4.3 serve-http-tunnel (timeout 120 s) 10:01:58
+   PASS job=None wall=5.2 s {"command": "ssh -i <key> -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>", "http_code": 200, "body": "{\"hello\":\"c9\",\"node_id\":\"264098d3c4ef4bb2edf6be8d2eb07dec504f192029befd8a8fd68cc9\",\"ip\":\"185.62.108.226\",\"pid\":27917}", "latency_s": 0.21, "tunnel_stderr": ""}
+== C9.4.4 c9_4_4_serve_gpu.py (timeout 2700 s) 10:02:03
+   PASS job=SUCCEEDED wall=32.2 s {"answers": 40, "devices": ["cuda"], "elapsed_s": 26.1, "gpu_ids": ["0"], "per_node": {"97e70305": 35, "b0f753c3": 5}, "replica_nodes": ["97e70305", "b0f753c3"]}

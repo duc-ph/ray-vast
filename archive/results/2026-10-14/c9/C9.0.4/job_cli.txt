@@ -1,0 +1,50 @@
+== ray job submit (exit 0)
+2026-10-14 09:22:33,303	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:22:33,356	SUCC cli.py:66 -- [32m----------------------------------------------[39m
+2026-10-14 09:22:33,356	SUCC cli.py:67 -- [32mJob 'c9-0-4-1791969752' submitted successfully[39m
+2026-10-14 09:22:33,356	SUCC cli.py:68 -- [32m----------------------------------------------[39m
+2026-10-14 09:22:33,356	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-14 09:22:33,356	INFO cli.py:331 -- Query the logs of the job:
+2026-10-14 09:22:33,356	INFO cli.py:333 -- [1mray job logs c9-0-4-1791969752[22m
+2026-10-14 09:22:33,356	INFO cli.py:335 -- Query the status of the job:
+2026-10-14 09:22:33,356	INFO cli.py:337 -- [1mray job status c9-0-4-1791969752[22m
+2026-10-14 09:22:33,356	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-14 09:22:33,356	INFO cli.py:341 -- [1mray job stop c9-0-4-1791969752[22m
+2026-10-14 09:22:33,321	INFO dashboard_sdk.py:371 -- Uploading package gcs://_ray_pkg_f9843ec44cff8c4a.zip.
+2026-10-14 09:22:33,322	INFO packaging.py:734 -- Creating a file package for local module '/home/ubuntu/ray-vast/tests/manual/c9/jobs'.
+
+== ray job list (exit 0)
+2026-10-14 09:22:39,529	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:22:39,536	INFO cli.py:600 -- [JobDetails(type=<JobType.SUBMISSION: 'SUBMISSION'>, job_id='03000000', submission_id='c9-0-3-1791969379', driver_info=DriverInfo(id='03000000', node_ip_address='54.184.99.234', pid='1086'), status=<JobStatus.SUCCEEDED: 'SUCCEEDED'>, entrypoint='python c9_0_3_torch_cuda.py', message='Job finished successfully.', error_type=None, start_time=1791969380478, end_time=1791969750181, metadata={}, runtime_env={'working_dir': 'gcs://_ray_pkg_7953c1ca119daa88.zip', 'pip': {'packages': ['torch==2.7.1'], 'pip_check': False}, 'config': {'setup_timeout_seconds': 1800, 'eager_install': True, 'log_files': []}, '_ray_commit': 'dd83c3a703a5422d0b47f142cb380c6330817608'}, driver_agent_http_address='http://54.184.99.234:6384', driver_node_id='233378fba623230f1c311feef8714760e91bd1d53db6b64bb0af2c53', driver_exit_code=0),
+ JobDetails(type=<JobType.SUBMISSION: 'SUBMISSION'>, job_id='02000000', submission_id='c9-0-2-1791969356', driver_info=DriverInfo(id='02000000', node_ip_address='54.184.99.234', pid='858'), status=<JobStatus.FAILED: 'FAILED'>, entrypoint='python c9_0_2_hello.py', message='Job entrypoint command failed with exit code 1, last available logs (truncated to 20,000 chars):\n\x1b[36m(probe pid=1777, ip=143.55.45.86)\x1b[0m \n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 0, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 1, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1762, \'index\': 2, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 3, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 4, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 5, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 6, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\n{\'node_id\': \'4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0\', \'ip\': \'143.55.45.86\', \'container_id\': \'55900080\', \'node_type\': \'gpu\', \'pid\': 1771, \'index\': 7, \'file_ok\': True, \'cwd\': \'/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88\'}\nC9_RESULT C9.0.2 FAIL {"cwd_example": "/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88", "elapsed_s": 12.5, "file_ok": true, "ips": ["143.55.45.86"], "tasks_per_node": {"4caf1e3c": 8}}\n', error_type='JOB_ENTRYPOINT_COMMAND_ERROR', start_time=1791969357283, end_time=1791969372019, metadata={}, runtime_env={'working_dir': 'gcs://_ray_pkg_7953c1ca119daa88.zip'}, driver_agent_http_address='http://54.184.99.234:6384', driver_node_id='233378fba623230f1c311feef8714760e91bd1d53db6b64bb0af2c53', driver_exit_code=1),
+ JobDetails(type=<JobType.SUBMISSION: 'SUBMISSION'>, job_id=None, submission_id='c9-0-4-1791969752', driver_info=None, status=<JobStatus.RUNNING: 'RUNNING'>, entrypoint='python c9_0_4_sleeper.py', message='Job is currently running.', error_type=None, start_time=1791969753343, end_time=None, metadata={}, runtime_env={'working_dir': 'gcs://_ray_pkg_f9843ec44cff8c4a.zip'}, driver_agent_http_address='http://54.184.99.234:6384', driver_node_id='233378fba623230f1c311feef8714760e91bd1d53db6b64bb0af2c53', driver_exit_code=None)]
+
+== ray job logs --follow (30 s) (exit still streaming after 30 s (expected))
+2026-10-14 09:22:40,784	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 02:22:33,346	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9-0-4-1791969752: python c9_0_4_sleeper.py
+C9_SLEEPER tick 0 1791969754.8
+C9_SLEEPER tick 1 1791969756.8
+C9_SLEEPER tick 2 1791969758.8
+C9_SLEEPER tick 3 1791969760.8
+C9_SLEEPER tick 4 1791969762.8
+C9_SLEEPER tick 5 1791969764.8
+C9_SLEEPER tick 6 1791969766.8
+C9_SLEEPER tick 7 1791969768.8
+C9_SLEEPER tick 8 1791969770.8
+C9_SLEEPER tick 9 1791969772.8
+C9_SLEEPER tick 10 1791969774.8
+C9_SLEEPER tick 11 1791969776.8
+C9_SLEEPER tick 12 1791969778.8
+C9_SLEEPER tick 13 1791969780.8
+C9_SLEEPER tick 14 1791969782.8
+C9_SLEEPER tick 15 1791969784.8
+C9_SLEEPER tick 16 1791969786.8
+
+== ray job stop (exit 0)
+2026-10-14 09:23:10,682	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:23:10,683	INFO cli.py:449 -- Attempting to stop job 'c9-0-4-1791969752'
+2026-10-14 09:23:10,696	INFO cli.py:455 -- Waiting for job 'c9-0-4-1791969752' to exit (disable with --no-wait):
+2026-10-14 09:23:10,703	INFO cli.py:465 -- Job has not exited yet. Status: RUNNING
+2026-10-14 09:23:11,716	WARN cli.py:85 -- [33mJob 'c9-0-4-1791969752' was stopped[39m
+

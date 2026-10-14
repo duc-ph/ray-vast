@@ -1,0 +1,408 @@
+2026-10-14 09:23:44,109	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:23:44,125	INFO cli.py:569 -- 2026-10-14 02:23:12,880	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9-1-1-1791969791: python c9_1_1_data_cpu.py
+C9_START C9.1.1 1791969794.8 small=False min_nodes=2
+2026-10-14 02:23:14,774	INFO worker.py:1686 -- Using address 54.184.99.234:6379 set in the environment variable RAY_ADDRESS
+2026-10-14 02:23:14,779	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.184.99.234:6379...
+2026-10-14 02:23:14,810	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/dataset.py:2229: UserWarning: Use 'expr' instead of 'fn' when possible for performant filters.
+  warnings.warn(
+2026-10-14 02:23:15,940	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034fhO6OILtkqLHYPyVAfq_0. Full logs are in /tmp/ray/session_2026-10-14_02-13-25_629961_7/logs/ray-data
+2026-10-14 02:23:15,940	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034fhO6OILtkqLHYPyVAfq_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->MapBatches(double)->Filter(<lambda>)->Project] -> AggregateNumRows[AggregateNumRows]
+2026-10-14 02:23:16,321	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-14 02:23:16,478	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034fhO6OILtkqLHYPyVAfq_0 =======
+2026-10-14 02:23:16,478	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-14 02:23:16,478	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-14 02:23:16,478	INFO logging_progress.py:181 -- 
+2026-10-14 02:23:16,478	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>)->Project: 0/1
+2026-10-14 02:23:16,478	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 144 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-14 02:23:16,478	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-14 02:23:16,478	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-14 02:23:16,479	INFO logging_progress.py:192 -- =================================================================
+2026-10-14 02:23:26,502	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034fhO6OILtkqLHYPyVAfq_0 =======
+2026-10-14 02:23:26,502	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-14 02:23:26,502	INFO logging_progress.py:227 -- Active & requested resources: 72/72 CPU, 0.0B/9.9GiB object store
+2026-10-14 02:23:26,502	INFO logging_progress.py:181 -- 
+2026-10-14 02:23:26,502	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>)->Project: 0/1
+2026-10-14 02:23:26,502	INFO logging_progress.py:233 --   Tasks: 72 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 73 (0.0B); Resources: 72.0 CPU, 0.0B object store
+2026-10-14 02:23:26,502	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-14 02:23:26,502	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-14 02:23:26,502	INFO logging_progress.py:192 -- =================================================================
+[36m(pid=8288, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(pid=8288, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 266, in <module>
+[36m(pid=8288, ip=143.55.45.86)[0m     ray._private.worker.connect(
+[36m(pid=8288, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1173, in wrapper
+[36m(pid=8288, ip=143.55.45.86)[0m     return func(*args, **kwargs)
+[36m(pid=8288, ip=143.55.45.86)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8288, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 2724, in connect
+[36m(pid=8288, ip=143.55.45.86)[0m     worker.core_worker = ray._raylet.CoreWorker(
+[36m(pid=8288, ip=143.55.45.86)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8288, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 3316, in ray._raylet.CoreWorker.__cinit__
+[36m(pid=8288, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+[36m(pid=8288, ip=143.55.45.86)[0m     _start_new_thread(self._bootstrap, ())
+[36m(pid=8288, ip=143.55.45.86)[0m RuntimeError: can't start new thread
+[33m(raylet, ip=143.55.45.86)[0m [2026-10-14 02:23:31,312 C 277 277] (raylet) worker_pool.cc:731: Failed to start worker with return value system:11: Resource temporarily unavailable
+[33m(raylet, ip=143.55.45.86)[0m *** StackTrace Information ***
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xff597a) [0x5652370f397a] ray::operator<<()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xff7f99) [0x5652370f5f99] ray::RayLog::~RayLog()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x45fd77) [0x56523655dd77] ray::raylet::WorkerPool::StartProcess()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x46b0e3) [0x5652365690e3] ray::raylet::WorkerPool::StartWorkerProcess()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x46b9a2) [0x5652365699a2] ray::raylet::WorkerPool::StartNewWorker()::{lambda()#1}::operator()()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x46be62) [0x565236569e62] std::_Function_handler<>::_M_invoke()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x45c5a0) [0x56523655a5a0] ray::raylet::WorkerPool::GetOrCreateRuntimeEnv()::{lambda()#1}::operator()()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x479b62) [0x565236577b62] ray::raylet::(anonymous namespace)::HttpRuntimeEnvAgentClient::GetOrCreateRuntimeEnv()::{lambda()#2}::operator()()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x47b31a) [0x56523657931a] ray::raylet::(anonymous namespace)::Session::on_read()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48a9df) [0x5652365889df] boost::beast::http::detail::read_op<>::operator()<>()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4899a0) [0x5652365879a0] boost::beast::http::detail::read_some_op<>::operator()<>()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48b8cd) [0x5652365898cd] boost::beast::basic_stream<>::ops::transfer_op<>::operator()()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c409) [0x56523658a409] boost::asio::detail::executor_function::complete<>()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x2a91bb) [0x5652363a71bb] boost::asio::io_context::basic_executor_type<>::execute<>()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c1e5) [0x56523658a1e5] boost::asio::detail::reactive_socket_recv_op<>::do_complete()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbc82b) [0x5652370ba82b] boost::asio::detail::scheduler::do_run_one()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbedd9) [0x5652370bcdd9] boost::asio::detail::scheduler::run()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbf2e2) [0x5652370bd2e2] boost::asio::io_context::run()
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x23cad4) [0x56523633aad4] main
+[33m(raylet, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fd482b7bd90]
+[33m(raylet, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fd482b7be40] __libc_start_main
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x263a57) [0x565236361a57]
+[33m(raylet, ip=143.55.45.86)[0m 
+[33m(raylet)[0m Raylet is terminated. Termination is unexpected. Possible reasons include: (1) SIGKILL by the user or system OOM killer, (2) Invalid memory access from Raylet causing SIGSEGV or SIGBUS, (3) Other termination signals. Last 20 lines of the Raylet logs:
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x46be62) [0x565236569e62] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x45c5a0) [0x56523655a5a0] ray::raylet::WorkerPool::GetOrCreateRuntimeEnv()::{lambda()#1}::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x479b62) [0x565236577b62] ray::raylet::(anonymous namespace)::HttpRuntimeEnvAgentClient::GetOrCreateRuntimeEnv()::{lambda()#2}::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4b180b) [0x5652365af80b] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4b174c) [0x5652365af74c] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x47b31a) [0x56523657931a] ray::raylet::(anonymous namespace)::Session::on_read()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48a9df) [0x5652365889df] boost::beast::http::detail::read_op<>::operator()<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4899a0) [0x5652365879a0] boost::beast::http::detail::read_some_op<>::operator()<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48b8cd) [0x5652365898cd] boost::beast::basic_stream<>::ops::transfer_op<>::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c409) [0x56523658a409] boost::asio::detail::executor_function::complete<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x2a91bb) [0x5652363a71bb] boost::asio::io_context::basic_executor_type<>::execute<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c1e5) [0x56523658a1e5] boost::asio::detail::reactive_socket_recv_op<>::do_complete()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbc82b) [0x5652370ba82b] boost::asio::detail::scheduler::do_run_one()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbedd9) [0x5652370bcdd9] boost::asio::detail::scheduler::run()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbf2e2) [0x5652370bd2e2] boost::asio::io_context::run()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x23cad4) [0x56523633aad4] main
+    /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fd482b7bd90]
+    /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fd482b7be40] __libc_start_main
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x263a57) [0x565236361a57]
+    
+
+[36m(pid=8302, ip=143.55.45.86)[0m [2026-10-14 02:23:31,303 E 8302 8302] logging.cc:125: Stack trace: 
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x180753c) [0x7f715123753c] ray::RayLog::operator<< <>()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1809af8) [0x7f7151239af8] ray::TerminateHandler()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f714f835a1a] __cxxabiv1::__terminate()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(_ZSt10unexpectedv+0) [0x7f714f82284d] std::unexpected()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f71502d8b97]
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f7150bdd4f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f7150bc8451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f7150baa786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x114c90a) [0x7f7150b7c90a] ray::observability::OpenTelemetryMetricRecorder::Start()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core21CoreWorkerProcessImplC2ERKNS0_17CoreWorkerOptionsE+0x128d) [0x7f715055e74d] ray::core::CoreWorkerProcessImpl::CoreWorkerProcessImpl()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core17CoreWorkerProcess10InitializeERKNS0_17CoreWorkerOptionsE+0x34) [0x7f715055f3a4] ray::core::CoreWorkerProcess::Initialize()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f715040990e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8302, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f715040ab72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyObject_MakeTpCall+0x16f) [0x556758f1ad3f] _PyObject_MakeTpCall
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyEval_EvalFrameDefault+0x636) [0x556758f29716] _PyEval_EvalFrameDefault
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyFunction_Vectorcall+0x165) [0x556758f50da5] _PyFunction_Vectorcall
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(PyObject_Call+0x135) [0x556758f5bbd5] PyObject_Call
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyEval_EvalFrameDefault+0x4507) [0x556758f2d5e7] _PyEval_EvalFrameDefault
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(+0x2b3e3a) [0x556758fede3a] _PyEval_Vector
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(PyEval_EvalCode+0x97) [0x556758fed5a7] PyEval_EvalCode
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(+0x2d1919) [0x55675900b919] run_eval_code_obj
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(+0x2cd2d5) [0x5567590072d5] run_mod
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(+0x2e4090) [0x55675901e090] pyrun_file
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyRun_SimpleFileObject+0x1b1) [0x55675901d111] _PyRun_SimpleFileObject
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(_PyRun_AnyFileObject+0x44) [0x55675901ce24] _PyRun_AnyFileObject
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(Py_RunMain+0x277) [0x556759016cb7] Py_RunMain
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(Py_BytesMain+0x35) [0x556758fdd125] Py_BytesMain
+[36m(pid=8302, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f7151e6fd90]
+[36m(pid=8302, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x556758fdcfa1]
+[36m(pid=8302, ip=143.55.45.86)[0m 
+[36m(pid=8302, ip=143.55.45.86)[0m *** SIGABRT received at time=1791969811 on cpu 6 ***
+[36m(pid=8302, ip=143.55.45.86)[0m PC: @     0x7f7151edc9bc  (unknown)  pthread_kill
+[36m(pid=8302, ip=143.55.45.86)[0m     @     0x7f7151e88520  (unknown)  (unknown)
+[36m(pid=8302, ip=143.55.45.86)[0m [2026-10-14 02:23:31,304 E 8302 8302] logging.cc:474: *** SIGABRT received at time=1791969811 on cpu 6 ***
+[36m(pid=8302, ip=143.55.45.86)[0m [2026-10-14 02:23:31,304 E 8302 8302] logging.cc:474: PC: @     0x7f7151edc9bc  (unknown)  pthread_kill
+[36m(pid=8302, ip=143.55.45.86)[0m [2026-10-14 02:23:31,305 E 8302 8302] logging.cc:474:     @     0x7f7151e88520  (unknown)  (unknown)
+[36m(pid=8302, ip=143.55.45.86)[0m Fatal Python error: Aborted
+[36m(pid=8302, ip=143.55.45.86)[0m 
+[36m(pid=8302, ip=143.55.45.86)[0m Stack (most recent call first):
+[36m(pid=8302, ip=143.55.45.86)[0m 
+[36m(pid=8302, ip=143.55.45.86)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet (total: 13)
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f4deb67da1a] __cxxabiv1::__terminate()
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f4dec120b97]
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f4deca254f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f4deca10451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f4dec9f2786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f4dec25190e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8289, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f4dec252b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8289, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f4dedcb7d90]
+[36m(pid=8289, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x55ac5271afa1]
+[36m(pid=8289, ip=143.55.45.86)[0m 
+[36m(pid=8289, ip=143.55.45.86)[0m 
+[36m(pid=8289, ip=143.55.45.86)[0m 
+[33m(raylet)[0m Task _map_task failed. There are infinite retries remaining, so the task will be retried. Error: Task failed because the node it was running on is dead or unavailable. Node IP: 143.55.45.86, node ID: 4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0. This can happen if the node was preempted, had a hardware failure, or its raylet crashed unexpectedly. To see node death information, use `ray list nodes --filter node_id=4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0`, check the Ray dashboard cluster page, search the node ID in the GCS logs, or use `ray logs raylet.out -ip 143.55.45.86`.
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f749b48ba1a] __cxxabiv1::__terminate()
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f749bf2eb97]
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f749c8334f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f749c81e451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f749c800786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f749c05f90e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8306, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f749c060b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8306, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f749dac5d90]
+[36m(pid=8306, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x55bffe2e8fa1]
+[36m(pid=8306, ip=143.55.45.86)[0m 
+[36m(pid=8306, ip=143.55.45.86)[0m 
+[36m(pid=8306, ip=143.55.45.86)[0m 
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f2ab4d8fa1a] __cxxabiv1::__terminate()
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f2ab5832b97]
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f2ab61374f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f2ab6122451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f2ab6104786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f2ab596390e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8305, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f2ab5964b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8305, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f2ab73c9d90]
+[36m(pid=8305, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x555c7e4bafa1]
+[36m(pid=8305, ip=143.55.45.86)[0m 
+[36m(pid=8305, ip=143.55.45.86)[0m 
+[36m(pid=8305, ip=143.55.45.86)[0m 
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f16288dea1a] __cxxabiv1::__terminate()
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f1629381b97]
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f1629c864f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f1629c71451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f1629c53786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f16294b290e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8296, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f16294b3b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8296, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f162af18d90]
+[36m(pid=8296, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x55c424c1bfa1]
+[36m(pid=8296, ip=143.55.45.86)[0m 
+[36m(pid=8296, ip=143.55.45.86)[0m 
+[36m(pid=8296, ip=143.55.45.86)[0m 
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f05045d2a1a] __cxxabiv1::__terminate()
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f0505075b97]
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f050597a4f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f0505965451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f0505947786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f05051a690e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8283, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f05051a7b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8283, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f0506c0cd90]
+[36m(pid=8283, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x5612580befa1]
+[36m(pid=8283, ip=143.55.45.86)[0m 
+[36m(pid=8283, ip=143.55.45.86)[0m 
+[36m(pid=8283, ip=143.55.45.86)[0m 
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f042ac0da1a] __cxxabiv1::__terminate()
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7f042b6b0b97]
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7f042bfb54f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7f042bfa0451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7f042bf82786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7f042b7e190e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7f042b7e2b72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=8298, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f042d247d90]
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x5573d79d4fa1]
+[36m(pid=8298, ip=143.55.45.86)[0m 
+[36m(pid=8298, ip=143.55.45.86)[0m 
+[36m(pid=8298, ip=143.55.45.86)[0m 
+2026-10-14 02:23:36,514	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034fhO6OILtkqLHYPyVAfq_0 =======
+2026-10-14 02:23:36,514	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-14 02:23:36,514	INFO logging_progress.py:227 -- Active & requested resources: 72/72 CPU, 0.0B/9.9GiB object store
+2026-10-14 02:23:36,514	INFO logging_progress.py:181 -- 
+2026-10-14 02:23:36,514	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>)->Project: 0/1
+2026-10-14 02:23:36,514	INFO logging_progress.py:233 --   Tasks: 72 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 73 (0.0B); Resources: 72.0 CPU, 0.0B object store
+2026-10-14 02:23:36,514	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-14 02:23:36,514	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-14 02:23:36,514	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +22s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +22s)[0m Adding 1 node(s) of type gpu2.
+[36m(autoscaler +22s)[0m Resized to 76 CPUs, 4 GPUs.
+[36m(autoscaler +22s)[0m No available node types can fulfill cluster constraint: {'CPU': 24.0, 'memory': 36507222016.0, 'GPU': 1.0}*2, {'CPU': 48.0, 'memory': 35648228556.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=185.62.108.226)[0m E1014 02:23:41.831967143    8322 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=8285, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(pid=8298, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 266 in <module>[32m [repeated 8x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(pid=8285, ip=143.55.45.86)[0m     ray._private.worker.connect(
+[36m(pid=8298, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1173 in wrapper[32m [repeated 8x across cluster][0m
+[36m(pid=8285, ip=143.55.45.86)[0m     return func(*args, **kwargs)
+[36m(pid=8285, ip=143.55.45.86)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8298, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 2724 in connect[32m [repeated 8x across cluster][0m
+[36m(pid=8285, ip=143.55.45.86)[0m     worker.core_worker = ray._raylet.CoreWorker(
+[36m(pid=8285, ip=143.55.45.86)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8285, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 3316, in ray._raylet.CoreWorker.__cinit__
+[36m(pid=8285, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+[36m(pid=8285, ip=143.55.45.86)[0m     _start_new_thread(self._bootstrap, ())
+[36m(pid=8285, ip=143.55.45.86)[0m RuntimeError: can't start new thread
+[36m(pid=8298, ip=143.55.45.86)[0m  /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1806a8a) [0x7f042c60ea8a] ray::operator<<()[32m [repeated 7x across cluster][0m
+[33m(raylet, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4b174c) [0x5652365af74c] std::_Function_handler<>::_M_invoke()[32m [repeated 2x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7f042d247e40] __libc_start_main[32m [repeated 7x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m [2026-10-14 02:23:31,813 E 8298 8298] logging.cc:125: Stack trace: [32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x180753c) [0x7f042c60f53c] ray::RayLog::operator<< <>()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1809af8) [0x7f042c611af8] ray::TerminateHandler()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(_ZSt10unexpectedv+0) [0x7f042abfa84d] std::unexpected()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x114c90a) [0x7f042bf5490a] ray::observability::OpenTelemetryMetricRecorder::Start()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core21CoreWorkerProcessImplC2ERKNS0_17CoreWorkerOptionsE+0x128d) [0x7f042b93674d] ray::core::CoreWorkerProcessImpl::CoreWorkerProcessImpl()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core17CoreWorkerProcess10InitializeERKNS0_17CoreWorkerOptionsE+0x34) [0x7f042b9373a4] ray::core::CoreWorkerProcess::Initialize()[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(_PyObject_MakeTpCall+0x16f) [0x5573d7912d3f] _PyObject_MakeTpCall[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(_PyEval_EvalFrameDefault+0x4507) [0x5573d79255e7] _PyEval_EvalFrameDefault[32m [repeated 12x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(_PyFunction_Vectorcall+0x165) [0x5573d7948da5] _PyFunction_Vectorcall[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(PyObject_Call+0x135) [0x5573d7953bd5] PyObject_Call[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(+0x2b3e3a) [0x5573d79e5e3a] _PyEval_Vector[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(PyEval_EvalCode+0x97) [0x5573d79e55a7] PyEval_EvalCode[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(+0x2d1919) [0x5573d7a03919] run_eval_code_obj[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(+0x2cd2d5) [0x5573d79ff2d5] run_mod[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(+0x2e4090) [0x5573d7a16090] pyrun_file[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(_PyRun_SimpleFileObject+0x1b1) [0x5573d7a15111] _PyRun_SimpleFileObject[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(_PyRun_AnyFileObject+0x44) [0x5573d7a14e24] _PyRun_AnyFileObject[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(Py_RunMain+0x277) [0x5573d7a0ecb7] Py_RunMain[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m ray::IDLE(Py_BytesMain+0x35) [0x5573d79d5125] Py_BytesMain[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m *** SIGABRT received at time=1791969811 on cpu 20 ***[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m PC: @     0x7f042d2b49bc  (unknown)  pthread_kill[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m     @     0x7f042d260520  (unknown)  (unknown)[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m [2026-10-14 02:23:31,886 E 8298 8298] logging.cc:474: *** SIGABRT received at time=1791969811 on cpu 20 ***[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m [2026-10-14 02:23:31,886 E 8298 8298] logging.cc:474: PC: @     0x7f042d2b49bc  (unknown)  pthread_kill[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m [2026-10-14 02:23:31,886 E 8298 8298] logging.cc:474:     @     0x7f042d260520  (unknown)  (unknown)[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m Fatal Python error: Aborted[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m Stack (most recent call first):[32m [repeated 6x across cluster][0m
+[36m(pid=8298, ip=143.55.45.86)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet (total: 13)[32m [repeated 6x across cluster][0m
+[36m(autoscaler +27s)[0m Adding 1 node(s) of type gpu.
+[36m(autoscaler +27s)[0m Resized to 56 CPUs, 4 GPUs.
+[36m(autoscaler +27s)[0m No available node types can fulfill cluster constraint: {'CPU': 24.0, 'memory': 36507222016.0, 'GPU': 1.0}*2, {'CPU': 48.0, 'memory': 35648228556.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(pid=8251, ip=185.62.108.226)[0m Traceback (most recent call last):
+[36m(pid=8251, ip=185.62.108.226)[0m     ray._private.worker.connect(
+[36m(pid=8251, ip=185.62.108.226)[0m     return func(*args, **kwargs)
+[36m(pid=8251, ip=185.62.108.226)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8251, ip=185.62.108.226)[0m     worker.core_worker = ray._raylet.CoreWorker(
+[36m(pid=8251, ip=185.62.108.226)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=8251, ip=185.62.108.226)[0m   File "python/ray/_raylet.pyx", line 3316, in ray._raylet.CoreWorker.__cinit__
+[36m(pid=8251, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+[36m(pid=8251, ip=185.62.108.226)[0m     _start_new_thread(self._bootstrap, ())
+[36m(pid=8251, ip=185.62.108.226)[0m RuntimeError: can't start new thread
+[33m(raylet)[0m A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. Lease ID: 2900000004000000ffffffffffffffffffffffffffffffffffffffffffffffff Worker ID: 65d7b97c4c5b65b4e46e964ced14edaf4c34bfe488dc93a1a376c18f Node ID: ea1ef67875760a274a2c0141511377b78714f3480bb302122f243815 Worker IP address: 185.62.108.226 Worker port: 45189 Worker PID: 8251 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+[33m(raylet)[0m Raylet is terminated. Termination is unexpected. Possible reasons include: (1) SIGKILL by the user or system OOM killer, (2) Invalid memory access from Raylet causing SIGSEGV or SIGBUS, (3) Other termination signals. Last 20 lines of the Raylet logs:
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x46be62) [0x565236569e62] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x45c5a0) [0x56523655a5a0] ray::raylet::WorkerPool::GetOrCreateRuntimeEnv()::{lambda()#1}::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x479b62) [0x565236577b62] ray::raylet::(anonymous namespace)::HttpRuntimeEnvAgentClient::GetOrCreateRuntimeEnv()::{lambda()#2}::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4b180b) [0x5652365af80b] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4b174c) [0x5652365af74c] std::_Function_handler<>::_M_invoke()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x47b31a) [0x56523657931a] ray::raylet::(anonymous namespace)::Session::on_read()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48a9df) [0x5652365889df] boost::beast::http::detail::read_op<>::operator()<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x4899a0) [0x5652365879a0] boost::beast::http::detail::read_some_op<>::operator()<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48b8cd) [0x5652365898cd] boost::beast::basic_stream<>::ops::transfer_op<>::operator()()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c409) [0x56523658a409] boost::asio::detail::executor_function::complete<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x2a91bb) [0x5652363a71bb] boost::asio::io_context::basic_executor_type<>::execute<>()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x48c1e5) [0x56523658a1e5] boost::asio::detail::reactive_socket_recv_op<>::do_complete()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbc82b) [0x5652370ba82b] boost::asio::detail::scheduler::do_run_one()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbedd9) [0x5652370bcdd9] boost::asio::detail::scheduler::run()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0xfbf2e2) [0x5652370bd2e2] boost::asio::io_context::run()
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x23cad4) [0x56523633aad4] main
+    /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fd482b7bd90]
+    /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fd482b7be40] __libc_start_main
+    /home/ray/anaconda3/lib/python3.11/site-packages/ray/core/src/ray/raylet/raylet(+0x263a57) [0x565236361a57]
+    
+
+[33m(raylet)[0m Task _map_task failed. There are infinite retries remaining, so the task will be retried. Error: Task failed because the node it was running on is dead or unavailable. Node IP: 143.55.45.86, node ID: 4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0. This can happen if the node was preempted, had a hardware failure, or its raylet crashed unexpectedly. To see node death information, use `ray list nodes --filter node_id=4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0`, check the Ray dashboard cluster page, search the node ID in the GCS logs, or use `ray logs raylet.out -ip 143.55.45.86`.[32m [repeated 10x across cluster][0m
+[33m(raylet, ip=185.62.108.226)[0m terminate called after throwing an instance of 'std::system_error'
+[33m(raylet, ip=185.62.108.226)[0m   what():  Resource temporarily unavailable
+[33m(raylet, ip=185.62.108.226)[0m     node = ray._private.node.Node(
+[33m(raylet, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 448, in __init__
+[33m(raylet, ip=185.62.108.226)[0m     node_info = ray._private.services.get_node(
+[33m(raylet, ip=185.62.108.226)[0m                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/services.py", line 608, in get_node
+[33m(raylet, ip=185.62.108.226)[0m     return global_state.get_node(node_id)
+[33m(raylet, ip=185.62.108.226)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=185.62.108.226)[0m     accessor = self._connect_and_get_accessor()
+[33m(raylet, ip=185.62.108.226)[0m                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/state.py", line 156, in _connect_and_get_accessor
+[33m(raylet, ip=185.62.108.226)[0m     self._global_state_accessor = GlobalStateAccessor(self.gcs_options)
+[33m(raylet, ip=185.62.108.226)[0m                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=185.62.108.226)[0m   File "python/ray/includes/global_state_accessor.pxi", line 39, in ray._raylet.GlobalStateAccessor.__cinit__
+[33m(raylet, ip=185.62.108.226)[0m RuntimeError: Resource temporarily unavailable
+[33m(raylet)[0m Task _map_task failed. There are infinite retries remaining, so the task will be retried. Error: 
+2026-10-14 02:23:42,917	ERROR streaming_executor_state.py:696 -- An exception was raised from a task of operator "ReadRange->MapBatches(double)->Filter(<lambda>)->Project". Dataset execution will now abort. To ignore this exception and continue, set DataContext.max_errored_blocks.
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/interfaces/physical_operator.py", line 337, in on_data_ready
+    self._pending_meta_ref = self._streaming_gen._next_sync(
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/object_ref_generator.py", line 326, in _next_sync
+    raise StopIteration from None
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/interfaces/physical_operator.py", line 348, in on_data_ready
+    ray.get(self._pending_block_ref)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ReadRange->MapBatches(double)->Filter(<lambda>)->Project()[39m (pid=8210, ip=185.62.108.226)
+    with MemoryProfiler(data_context.memory_usage_poll_interval_s) as profiler:
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py", line 1732, in __enter__
+    ) = self._start_uss_poll_thread()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py", line 1780, in _start_uss_poll_thread
+    thread.start()
+  File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+    _start_new_thread(self._bootstrap, ())
+RuntimeError: can't start new thread
+2026-10-14 02:23:42,932	INFO streaming_executor.py:365 -- ⚠️  Dataset dataset_034fhO6OILtkqLHYPyVAfq_0 execution failed
+2026-10-14 02:23:42,947	ERROR exceptions.py:88 -- Exception occurred in Ray Data or Ray Core internal code. If you continue to see this error, please open an issue on the Ray project GitHub page with the full stack trace below: https://github.com/ray-project/ray/issues/new/choose
+2026-10-14 02:23:42,947	ERROR exceptions.py:111 -- Full stack trace:
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/exceptions.py", line 57, in handle_trace
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/dataset.py", line 8499, in _execute_to_iterator
+    bundle_iter = itertools.chain([next(gen)], gen)
+                                   ^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/interfaces/executor.py", line 37, in __next__
+    return self.get_next()
+           ^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/dataset.py", line 8745, in get_next
+    bundle = self._base_iterator.get_next(output_split_idx)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor.py", line 782, in get_next
+    bundle = state.get_output_blocking(output_split_idx)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor_state.py", line 504, in get_output_blocking
+    raise self._exception
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor.py", line 437, in run
+    continue_sched = self._scheduling_loop_step(self._topology)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor.py", line 518, in _scheduling_loop_step
+    num_errored_blocks = process_completed_tasks(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor_state.py", line 769, in process_completed_tasks
+    _record_errored_block(fetch_exc, failed_op_name)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/streaming_executor_state.py", line 697, in _record_errored_block
+    raise e from None
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/execution/interfaces/physical_operator.py", line 348, in on_data_ready
+    ray.get(self._pending_block_ref)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ReadRange->MapBatches(double)->Filter(<lambda>)->Project()[39m (pid=8210, ip=185.62.108.226)
+    with MemoryProfiler(data_context.memory_usage_poll_interval_s) as profiler:
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py", line 1732, in __enter__
+    ) = self._start_uss_poll_thread()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py", line 1780, in _start_uss_poll_thread
+    thread.start()
+  File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+    _start_new_thread(self._bootstrap, ())
+RuntimeError: can't start new thread
+C9_RESULT C9.1.1 FAIL {"elapsed_s": 28.2, "error_class": "RayTaskError(RuntimeError)", "error_head": ["\u001b[36mray::ReadRange->MapBatches(double)->Filter(<lambda>)->Project()\u001b[39m (pid=8210, ip=185.62.108.226)", "    with MemoryProfiler(data_context.memory_usage_poll_interval_s) as profiler:", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py\", line 1732, in __enter__", "    ) = self._start_uss_poll_thread()", "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py\", line 1780, in _start_uss_poll_thread", "    thread.start()", "  File \"/home/ray/anaconda3/lib/python3.11/threading.py\", line 964, in start", "    _start_new_thread(self._bootstrap, ())", "RuntimeError: can't start new thread"], "traceback_tail": ["  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/iterator/iterator_impl.py\", line 35, in _to_ref_bundle_iterator\n    ) = self._base_dataset._execute_to_iterator()\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/exceptions.py\", line 115, in handle_trace\n    raise e.with_traceback(None) from SystemException()\n", "ray.exceptions.RayTaskError(RuntimeError): \u001b[36mray::ReadRange->MapBatches(double)->Filter(<lambda>)->Project()\u001b[39m (pid=8210, ip=185.62.108.226)\n    with MemoryProfiler(data_context.memory_usage_poll_interval_s) as profiler:\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py\", line 1732, in __enter__\n    ) = self._start_uss_poll_thread()\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/_internal/util.py\", line 1780, in _start_uss_poll_thread\n    thread.start()\n  File \"/home/ray/anaconda3/lib/python3.11/threading.py\", line 964, in start\n    _start_new_thread(self._bootstrap, ())\nRuntimeError: can't start new thread\n"]}

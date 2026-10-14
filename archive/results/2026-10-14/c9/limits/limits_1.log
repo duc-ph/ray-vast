@@ -1,0 +1,68 @@
+2026-10-14 09:28:24,624	INFO dashboard_sdk.py:371 -- Uploading package gcs://_ray_pkg_1edd2e8d8dafa58b.zip.
+2026-10-14 09:28:24,625	INFO packaging.py:734 -- Creating a file package for local module '/tmp/claude-1000/-home-ubuntu-ray-vast/bcc17183-781a-4e78-98af-69702dc00fd7/scratchpad/probe'.
+2026-10-14 09:28:24,616	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:28:24,647	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-14 09:28:24,647	SUCC cli.py:67 -- [32mJob 'raysubmit_q9JNXAPwPTdmf2WR' submitted successfully[39m
+2026-10-14 09:28:24,647	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-14 09:28:24,647	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-14 09:28:24,647	INFO cli.py:331 -- Query the logs of the job:
+2026-10-14 09:28:24,647	INFO cli.py:333 -- [1mray job logs raysubmit_q9JNXAPwPTdmf2WR[22m
+2026-10-14 09:28:24,647	INFO cli.py:335 -- Query the status of the job:
+2026-10-14 09:28:24,647	INFO cli.py:337 -- [1mray job status raysubmit_q9JNXAPwPTdmf2WR[22m
+2026-10-14 09:28:24,647	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-14 09:28:24,647	INFO cli.py:341 -- [1mray job stop raysubmit_q9JNXAPwPTdmf2WR[22m
+2026-10-14 09:29:39,825	INFO sdk.py:520 -- WebSocket closed for job raysubmit_q9JNXAPwPTdmf2WR with close code 1000
+2026-10-14 09:28:24,653	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-14 02:28:24,640	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_q9JNXAPwPTdmf2WR: python limits_probe.py
+2026-10-14 02:28:26,577	INFO worker.py:1686 -- Using address 54.184.99.234:6379 set in the environment variable RAY_ADDRESS
+2026-10-14 02:28:26,583	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.184.99.234:6379...
+2026-10-14 02:28:26,615	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202332422   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202420057   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202451405   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202476021   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202498935   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202524106   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202547724   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202667678   17286 thd.cc:157]                           pthread_create failed: Resource temporarily unavailable
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202682665   17286 thread_manager.cc:44]                 Could not create grpc_sync_server worker-thread
+[36m(pid=17286, ip=185.62.108.226)[0m E1014 02:28:31.202691998   17286 thread_manager.cc:146]                ASSERTION FAILED: worker->created()
+[36m(pid=17286, ip=185.62.108.226)[0m *** SIGABRT received at time=1791970111 on cpu 3 ***
+[36m(pid=17286, ip=185.62.108.226)[0m PC: @     0x7fde525799bc  (unknown)  pthread_kill
+[36m(pid=17286, ip=185.62.108.226)[0m     @     0x7fde52525520  (unknown)  (unknown)
+[36m(pid=17286, ip=185.62.108.226)[0m [2026-10-14 02:28:31,204 E 17286 17286] logging.cc:474: *** SIGABRT received at time=1791970111 on cpu 3 ***
+[36m(pid=17286, ip=185.62.108.226)[0m [2026-10-14 02:28:31,204 E 17286 17286] logging.cc:474: PC: @     0x7fde525799bc  (unknown)  pthread_kill
+[36m(pid=17286, ip=185.62.108.226)[0m [2026-10-14 02:28:31,204 E 17286 17286] logging.cc:474:     @     0x7fde52525520  (unknown)  (unknown)
+[36m(pid=17286, ip=185.62.108.226)[0m Fatal Python error: Aborted
+[36m(pid=17286, ip=185.62.108.226)[0m 
+[36m(pid=17286, ip=185.62.108.226)[0m Stack (most recent call first):
+[36m(pid=17286, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 2724 in connect
+[36m(pid=17286, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1173 in wrapper
+[36m(pid=17286, ip=185.62.108.226)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 266 in <module>
+[36m(pid=17286, ip=185.62.108.226)[0m 
+[36m(pid=17286, ip=185.62.108.226)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet (total: 13)
+[33m(raylet, ip=143.55.45.86)[0m Traceback (most recent call last):
+[33m(raylet, ip=143.55.45.86)[0m     node = ray._private.node.Node(
+[33m(raylet, ip=143.55.45.86)[0m            ^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/node.py", line 448, in __init__
+[33m(raylet, ip=143.55.45.86)[0m     node_info = ray._private.services.get_node(
+[33m(raylet, ip=143.55.45.86)[0m                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/services.py", line 608, in get_node
+[33m(raylet, ip=143.55.45.86)[0m     return global_state.get_node(node_id)
+[33m(raylet, ip=143.55.45.86)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=143.55.45.86)[0m     accessor = self._connect_and_get_accessor()
+[33m(raylet, ip=143.55.45.86)[0m                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/state.py", line 156, in _connect_and_get_accessor
+[33m(raylet, ip=143.55.45.86)[0m     self._global_state_accessor = GlobalStateAccessor(self.gcs_options)
+[33m(raylet, ip=143.55.45.86)[0m                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[33m(raylet, ip=143.55.45.86)[0m   File "python/ray/includes/global_state_accessor.pxi", line 39, in ray._raylet.GlobalStateAccessor.__cinit__
+[33m(raylet, ip=143.55.45.86)[0m RuntimeError: Resource temporarily unavailable
+[33m(raylet, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 241, in <module>
+LIMITS {"ip": "185.62.108.226", "node_type": "gpu", "container_id": "55900093", "uid": 1000, "rlimit_nproc": [-1, -1], "rlimit_nofile": [1048576, 1048576], "pids_max": "ERR FileNotFoundError", "pids_current": "ERR FileNotFoundError", "pids_peak": "ERR FileNotFoundError", "pids_events": "ERR FileNotFoundError", "threads_max": "1029705", "pid_max": "4194304", "threads_in_container": "269", "procs_in_container": "10", "mem_max": "ERR FileNotFoundError", "mem_current": "ERR FileNotFoundError", "mem_events": "ERR FileNotFoundError", "cpu_count": 48, "nproc_affinity": 48}
+LIMITS {"ip": "81.183.231.113", "node_type": "gpu2", "container_id": "55901477", "uid": 1000, "rlimit_nproc": [-1, -1], "rlimit_nofile": [1024, 524288], "pids_max": "3328", "pids_current": "937", "pids_peak": "1246", "pids_events": "max 0", "threads_max": "3216729", "pid_max": "4194304", "threads_in_container": "939", "procs_in_container": "23", "mem_max": "181092220928", "mem_current": "11648942080", "mem_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0", "cpu_count": 72, "nproc_affinity": 72}
+LIMITS {"ip": "143.55.45.86", "node_type": "gpu", "container_id": "55901492", "uid": 1000, "rlimit_nproc": [-1, -1], "rlimit_nofile": [1048576, 1048576], "pids_max": "ERR FileNotFoundError", "pids_current": "ERR FileNotFoundError", "pids_peak": "ERR FileNotFoundError", "pids_events": "ERR FileNotFoundError", "threads_max": "760518", "pid_max": "4194304", "threads_in_container": "1203", "procs_in_container": "30", "mem_max": "ERR FileNotFoundError", "mem_current": "ERR FileNotFoundError", "mem_events": "ERR FileNotFoundError", "cpu_count": 24, "nproc_affinity": 24}
+[33m(raylet, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/state.py", line 971, in get_node
+2026-10-14 09:29:39,832	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-14 09:29:39,832	SUCC cli.py:67 -- [32mJob 'raysubmit_q9JNXAPwPTdmf2WR' succeeded[39m
+2026-10-14 09:29:39,832	SUCC cli.py:68 -- [32m------------------------------------------[39m

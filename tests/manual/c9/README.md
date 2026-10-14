@@ -29,6 +29,7 @@ Each job prints one last line: `C9_RESULT <id> PASS|FAIL|LIMIT <json>`. A wall-c
 | C9.3.1 | `c9_3_1_train_1gpu.py`: 1 worker, 1 GPU, a checkpoint | yes | PASS (a storage error is a LIMIT) |
 | C9.3.3 | `c9_3_3_train_gloo.py`: 2 nodes, gloo, CPU | yes | LIMIT (ports that Ray does not manage) |
 | C9.3.2 | `c9_3_2_train_nccl.py`: 2 nodes, NCCL | yes | LIMIT (ports that Ray does not manage) |
+| C9.3.5 | `c9_3_5_store_port.py` (added in phase 2): a TCPStore by hand on a free identity port, then gloo | yes | LIMIT (gloo uses random ports and the private address) |
 | C9.4.1 | `c9_4_1_serve_handle.py`: 2 replicas, `DeploymentHandle`. The app stays up for C9.4.2 and C9.4.3. | | PASS |
 | C9.4.2 | driver step: `curl http://127.0.0.1:8000/` on the head host, by SSH | | PASS |
 | C9.4.3 | driver step: SSH tunnel from local port 18000 to port 8000 of the head, then an HTTP GET | | PASS |
@@ -79,6 +80,10 @@ ray-vast attach tests/manual/c9/cluster.yaml --profile personal        # then: s
 # C9.0.2 to C9.5.3, then C9.3.4. Give ids to run only some of them, for example: ... $R C9.4.2 C9.4.3
 PATH=$(dirname $PY):$PATH $PY tests/manual/c9/run_c9.py $R
 ```
+
+Phase 2 additions (2026-10-14):
+- `C9_DATA_CPU=N`: Ray Data uses at most N CPUs of the cluster and 4 shuffle aggregators. vast containers have a pids limit (1280 on 1-GPU hosts). Each Ray worker process has about 50 threads, so a node with 24 or 48 Ray CPUs dies when Data uses all of them. Use `C9_DATA_CPU=12` for C9.1.1, C9.1.3, C9.1.4 and C9.1.6.
+- `C9_STORAGE=s3anon://<bucket>/<prefix>` with `C9_EXTRA_PIP=s3fs`: shared storage for C9.2.4 and Train through `s3fs` (`anon=True`), for a bucket whose policy allows only the cluster IPs. pyarrow's own anonymous S3 cannot write (S3 refuses anonymous multipart uploads).
 
 Optional settings for the jobs (`run_c9.py` passes every `C9_*` variable to the jobs as `env_vars`): `C9_MAX_GB` (C9.1.2 and C9.1.3), `C9_OBJECT_GB` (C9.5.3), `C9_STORAGE` (C9.2.4 and Train, for example an S3 URI). Never put credentials in a `C9_*` variable: `submit.txt` keeps it.
 

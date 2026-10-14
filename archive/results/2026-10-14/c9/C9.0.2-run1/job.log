@@ -1,0 +1,145 @@
+2026-10-14 09:16:19,322	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 09:16:19,337	INFO cli.py:569 -- 2026-10-14 02:15:57,287	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9-0-2-1791969356: python c9_0_2_hello.py
+C9_START C9.0.2 1791969359.4 small=False min_nodes=2
+2026-10-14 02:15:59,428	INFO worker.py:1686 -- Using address 54.184.99.234:6379 set in the environment variable RAY_ADDRESS
+2026-10-14 02:15:59,433	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.184.99.234:6379...
+2026-10-14 02:15:59,464	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(pid=1783, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(pid=1783, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/workers/default_worker.py", line 266, in <module>
+[36m(pid=1783, ip=143.55.45.86)[0m     ray._private.worker.connect(
+[36m(pid=1783, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1173, in wrapper
+[36m(pid=1783, ip=143.55.45.86)[0m     return func(*args, **kwargs)
+[36m(pid=1783, ip=143.55.45.86)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=1783, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 2724, in connect
+[36m(pid=1783, ip=143.55.45.86)[0m     worker.core_worker = ray._raylet.CoreWorker(
+[36m(pid=1783, ip=143.55.45.86)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^
+[36m(pid=1783, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 3316, in ray._raylet.CoreWorker.__cinit__
+[36m(pid=1783, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/threading.py", line 964, in start
+[36m(pid=1783, ip=143.55.45.86)[0m     _start_new_thread(self._bootstrap, ())
+[36m(pid=1783, ip=143.55.45.86)[0m RuntimeError: can't start new thread
+[36m(probe pid=1777, ip=143.55.45.86)[0m <jemalloc>: arena 0 background thread creation failed (11)
+[36m(pid=1768, ip=143.55.45.86)[0m [2026-10-14 02:16:10,902 E 1768 1768] logging.cc:125: Stack trace: 
+[36m(pid=1768, ip=143.55.45.86)[0m  /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1806a8a) [0x7fbcce40aa8a] ray::operator<<()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x180753c) [0x7fbcce40b53c] ray::RayLog::operator<< <>()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1809af8) [0x7fbcce40daf8] ray::TerminateHandler()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7fbccca09a1a] __cxxabiv1::__terminate()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(_ZSt10unexpectedv+0) [0x7fbccc9f684d] std::unexpected()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8a8b97) [0x7fbccd4acb97]
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11ad4f8) [0x7fbccddb14f8] opentelemetry::v1::sdk::metrics::MetricCollector::MetricCollector()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1198451) [0x7fbccdd9c451] opentelemetry::v1::sdk::metrics::MeterContext::AddMetricReader()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x117a786) [0x7fbccdd7e786] opentelemetry::v1::sdk::metrics::MeterProvider::AddMetricReader()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x114c90a) [0x7fbccdd5090a] ray::observability::OpenTelemetryMetricRecorder::Start()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core21CoreWorkerProcessImplC2ERKNS0_17CoreWorkerOptionsE+0x128d) [0x7fbccd73274d] ray::core::CoreWorkerProcessImpl::CoreWorkerProcessImpl()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core17CoreWorkerProcess10InitializeERKNS0_17CoreWorkerOptionsE+0x34) [0x7fbccd7333a4] ray::core::CoreWorkerProcess::Initialize()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9d990e) [0x7fbccd5dd90e] __pyx_pw_3ray_7_raylet_10CoreWorker_1__cinit__()
+[36m(pid=1768, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x9dab72) [0x7fbccd5deb72] __pyx_tp_new_3ray_7_raylet_CoreWorker()
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyObject_MakeTpCall+0x16f) [0x5597a8c1bd3f] _PyObject_MakeTpCall
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyEval_EvalFrameDefault+0x636) [0x5597a8c2a716] _PyEval_EvalFrameDefault
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyFunction_Vectorcall+0x165) [0x5597a8c51da5] _PyFunction_Vectorcall
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(PyObject_Call+0x135) [0x5597a8c5cbd5] PyObject_Call
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyEval_EvalFrameDefault+0x4507) [0x5597a8c2e5e7] _PyEval_EvalFrameDefault
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(+0x2b3e3a) [0x5597a8ceee3a] _PyEval_Vector
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(PyEval_EvalCode+0x97) [0x5597a8cee5a7] PyEval_EvalCode
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(+0x2d1919) [0x5597a8d0c919] run_eval_code_obj
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(+0x2cd2d5) [0x5597a8d082d5] run_mod
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(+0x2e4090) [0x5597a8d1f090] pyrun_file
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyRun_SimpleFileObject+0x1b1) [0x5597a8d1e111] _PyRun_SimpleFileObject
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(_PyRun_AnyFileObject+0x44) [0x5597a8d1de24] _PyRun_AnyFileObject
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(Py_RunMain+0x277) [0x5597a8d17cb7] Py_RunMain
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(Py_BytesMain+0x35) [0x5597a8cde125] Py_BytesMain
+[36m(pid=1768, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fbccf043d90]
+[36m(pid=1768, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0x7fbccf043e40] __libc_start_main
+[36m(pid=1768, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x5597a8cddfa1]
+[36m(pid=1768, ip=143.55.45.86)[0m 
+[36m(pid=1768, ip=143.55.45.86)[0m *** SIGABRT received at time=1791969370 on cpu 22 ***
+[36m(pid=1768, ip=143.55.45.86)[0m PC: @     0x7fbccf0b09bc  (unknown)  pthread_kill
+[36m(pid=1768, ip=143.55.45.86)[0m     @     0x7fbccf05c520  (unknown)  (unknown)
+[36m(pid=1768, ip=143.55.45.86)[0m [2026-10-14 02:16:10,902 E 1768 1768] logging.cc:474: *** SIGABRT received at time=1791969370 on cpu 22 ***
+[36m(pid=1768, ip=143.55.45.86)[0m [2026-10-14 02:16:10,902 E 1768 1768] logging.cc:474: PC: @     0x7fbccf0b09bc  (unknown)  pthread_kill
+[36m(pid=1768, ip=143.55.45.86)[0m [2026-10-14 02:16:10,902 E 1768 1768] logging.cc:474:     @     0x7fbccf05c520  (unknown)  (unknown)
+[36m(pid=1768, ip=143.55.45.86)[0m Fatal Python error: Aborted
+[36m(pid=1768, ip=143.55.45.86)[0m 
+[36m(pid=1768, ip=143.55.45.86)[0m Stack (most recent call first):
+[36m(pid=1768, ip=143.55.45.86)[0m 
+[36m(pid=1768, ip=143.55.45.86)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet (total: 13)
+[33m(raylet)[0m A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. Lease ID: 0d00000002000000ffffffffffffffffffffffffffffffffffffffffffffffff Worker ID: 922098d570869f4115a4bf71dd41f163948092db780df16773f6d332 Node ID: 4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0 Worker IP address: 143.55.45.86 Worker port: 42084 Worker PID: 1761 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+[36m(probe pid=1761, ip=143.55.45.86)[0m [2026-10-14 02:16:11,013 E 1761 1761] logging.cc:118: Unhandled exception: N5boost10wrapexceptINS_6system12system_errorEEE. what(): thread: Resource temporarily unavailable [system:11] /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1806a8a) [0x7fa5ef5aca8a] ray::operator<<()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7fa5edbaba1a] __cxxabiv1::__terminate()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5cb7) [0x7fa5edbabcb7]
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x88fb71) [0x7fa5ee635b71] boost::throw_exception<>()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a252b) [0x7fa5ef44852b] boost::asio::detail::do_throw_error()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a2f4b) [0x7fa5ef448f4b] boost::asio::detail::posix_thread::start_thread()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a342c) [0x7fa5ef44942c] boost::asio::thread_pool::thread_pool()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xd740d1) [0x7fa5eeb1a0d1] ray::rpc::(anonymous namespace)::_GetServerCallExecutor()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray3rpc21GetServerCallExecutorEv+0x9) [0x7fa5eeb1a179] ray::rpc::GetServerCallExecutor()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZNSt17_Function_handlerIFvN3ray6StatusESt8functionIFvvEES4_EZNS0_3rpc14ServerCallImplINS6_24CoreWorkerServiceHandlerENS6_15PushTaskRequestENS6_13PushTaskReplyELNS6_17ClusterIdAuthTypeE0ELb0EE17HandleRequestImplEbbbEUlS1_S4_S4_E0_E9_M_invokeERKSt9_Any_dataOS1_OS4_SJ_+0x12b) [0x7fa5ee90e1fb] std::_Function_handler<>::_M_invoke()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core12TaskReceiver25HandleTaskExecutionResultENS_6StatusERKNS_17TaskSpecificationERKNS0_19TaskExecutionResultERKSt8functionIFvS2_S9_IFvvEESB_EEPNS_3rpc13PushTaskReplyE+0x3c1) [0x7fa5ee9a3a71] ray::core::TaskReceiver::HandleTaskExecutionResult()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xbfef82) [0x7fa5ee9a4f82] ray::core::TaskReceiver::ExecuteTask()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xc03471) [0x7fa5ee9a9471] ray::core::NormalTaskExecutionQueue::ExecuteQueuedTasks()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x114307b) [0x7fa5eeee907b] EventTracker::RecordExecution()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11382eb) [0x7fa5eeede2eb] std::_Function_handler<>::_M_invoke()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xc2010b) [0x7fa5ee9c610b] boost::asio::detail::executor_op<>::do_complete()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x169fb9b) [0x7fa5ef445b9b] boost::asio::detail::scheduler::do_run_one()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a1539) [0x7fa5ef447539] boost::asio::detail::scheduler::run()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a1c42) [0x7fa5ef447c42] boost::asio::io_context::run()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core10CoreWorker20RunTaskExecutionLoopEv+0x132) [0x7fa5ee867912] ray::core::CoreWorker::RunTaskExecutionLoop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core21CoreWorkerProcessImpl26RunWorkerTaskExecutionLoopEv+0x41) [0x7fa5ee8bfce1] ray::core::CoreWorkerProcessImpl::RunWorkerTaskExecutionLoop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x91fc01) [0x7fa5ee6c5c01] __pyx_pw_3ray_7_raylet_10CoreWorker_5run_task_loop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m ray::IDLE(PyObject_Vectorcall+0x2c) [0x5646374c3bdc] PyObject_Vectorcall
+[36m(probe pid=1761, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fa5f01e5d90]
+[36m(probe pid=1761, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x56463756afa1]
+[36m(probe pid=1761, ip=143.55.45.86)[0m 
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7fa5edbaba1a] __cxxabiv1::__terminate()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5cb7) [0x7fa5edbabcb7]
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x88fb71) [0x7fa5ee635b71] boost::throw_exception<>()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a252b) [0x7fa5ef44852b] boost::asio::detail::do_throw_error()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a2f4b) [0x7fa5ef448f4b] boost::asio::detail::posix_thread::start_thread()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a342c) [0x7fa5ef44942c] boost::asio::thread_pool::thread_pool()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xd740d1) [0x7fa5eeb1a0d1] ray::rpc::(anonymous namespace)::_GetServerCallExecutor()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray3rpc21GetServerCallExecutorEv+0x9) [0x7fa5eeb1a179] ray::rpc::GetServerCallExecutor()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZNSt17_Function_handlerIFvN3ray6StatusESt8functionIFvvEES4_EZNS0_3rpc14ServerCallImplINS6_24CoreWorkerServiceHandlerENS6_15PushTaskRequestENS6_13PushTaskReplyELNS6_17ClusterIdAuthTypeE0ELb0EE17HandleRequestImplEbbbEUlS1_S4_S4_E0_E9_M_invokeERKSt9_Any_dataOS1_OS4_SJ_+0x12b) [0x7fa5ee90e1fb] std::_Function_handler<>::_M_invoke()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core12TaskReceiver25HandleTaskExecutionResultENS_6StatusERKNS_17TaskSpecificationERKNS0_19TaskExecutionResultERKSt8functionIFvS2_S9_IFvvEESB_EEPNS_3rpc13PushTaskReplyE+0x3c1) [0x7fa5ee9a3a71] ray::core::TaskReceiver::HandleTaskExecutionResult()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xbfef82) [0x7fa5ee9a4f82] ray::core::TaskReceiver::ExecuteTask()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xc03471) [0x7fa5ee9a9471] ray::core::NormalTaskExecutionQueue::ExecuteQueuedTasks()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x114307b) [0x7fa5eeee907b] EventTracker::RecordExecution()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x11382eb) [0x7fa5eeede2eb] std::_Function_handler<>::_M_invoke()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0xc2010b) [0x7fa5ee9c610b] boost::asio::detail::executor_op<>::do_complete()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x169fb9b) [0x7fa5ef445b9b] boost::asio::detail::scheduler::do_run_one()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a1539) [0x7fa5ef447539] boost::asio::detail::scheduler::run()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x16a1c42) [0x7fa5ef447c42] boost::asio::io_context::run()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core10CoreWorker20RunTaskExecutionLoopEv+0x132) [0x7fa5ee867912] ray::core::CoreWorker::RunTaskExecutionLoop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(_ZN3ray4core21CoreWorkerProcessImpl26RunWorkerTaskExecutionLoopEv+0x41) [0x7fa5ee8bfce1] ray::core::CoreWorkerProcessImpl::RunWorkerTaskExecutionLoop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x91fc01) [0x7fa5ee6c5c01] __pyx_pw_3ray_7_raylet_10CoreWorker_5run_task_loop()
+[36m(probe pid=1761, ip=143.55.45.86)[0m ray::IDLE(PyObject_Vectorcall+0x2c) [0x5646374c3bdc] PyObject_Vectorcall
+[36m(probe pid=1761, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7fa5f01e5d90]
+[36m(probe pid=1761, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x56463756afa1]
+[36m(probe pid=1761, ip=143.55.45.86)[0m 
+[36m(probe pid=1761, ip=143.55.45.86)[0m 
+[36m(probe pid=1761, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1069 in main_loop
+[36m(probe pid=1761, ip=143.55.45.86)[0m 
+[36m(probe pid=1761, ip=143.55.45.86)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, pyarrow.lib, pyarrow._json (total: 17)
+[33m(raylet)[0m Task probe failed. There are 3 retries remaining, so the task will be retried. Error: 
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f16c9d03a1a] __cxxabiv1::__terminate()
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5cb7) [0x7f16c9d03cb7]
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x91fc01) [0x7f16ca81dc01] __pyx_pw_3ray_7_raylet_10CoreWorker_5run_task_loop()
+[36m(probe pid=1777, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f16cc33dd90]
+[36m(probe pid=1777, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x55a5d23cafa1]
+[36m(probe pid=1777, ip=143.55.45.86)[0m 
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x7f16c9d03a1a] __cxxabiv1::__terminate()
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5cb7) [0x7f16c9d03cb7]
+[36m(probe pid=1777, ip=143.55.45.86)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x91fc01) [0x7f16ca81dc01] __pyx_pw_3ray_7_raylet_10CoreWorker_5run_task_loop()
+[36m(probe pid=1777, ip=143.55.45.86)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0x7f16cc33dd90]
+[36m(probe pid=1777, ip=143.55.45.86)[0m ray::IDLE(+0x2a2fa1) [0x55a5d23cafa1]
+[36m(probe pid=1777, ip=143.55.45.86)[0m 
+[36m(probe pid=1777, ip=143.55.45.86)[0m 
+[36m(probe pid=1777, ip=143.55.45.86)[0m 
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 0, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 1, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1762, 'index': 2, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 3, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 4, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 5, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 6, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+{'node_id': '4caf1e3c5c0388b6545949606716d63219a41b58a4af1093aca8d4c0', 'ip': '143.55.45.86', 'container_id': '55900080', 'node_type': 'gpu', 'pid': 1771, 'index': 7, 'file_ok': True, 'cwd': '/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88'}
+C9_RESULT C9.0.2 FAIL {"cwd_example": "/tmp/ray/session_2026-10-14_02-13-25_629961_7/runtime_resources/working_dir_files/_ray_pkg_7953c1ca119daa88", "elapsed_s": 12.5, "file_ok": true, "ips": ["143.55.45.86"], "tasks_per_node": {"4caf1e3c": 8}}

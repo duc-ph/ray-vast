@@ -7,6 +7,9 @@
 #   C9_LOCAL_CPUS=N   a local check only: ray.init(num_cpus=N, _temp_dir=C9_LOCAL_TMP) starts a small Ray in the process
 #   C9_GUARD_S=S      overrides the wall-clock guard of the job (each script has its own default)
 #   C9_GPU=0          a local dry run of the GPU scripts on CPU: they ask for 0 GPUs (the CUDA checks then FAIL)
+#   C9_DATA_CPU=N     Ray Data uses at most N CPUs of the cluster (DataContext execution_options.resource_limits). Phase 2
+#                     workaround: vast containers have a pids limit (1280 on 1-GPU hosts), and each Ray worker process has
+#                     about 50 threads, so a node with 24 or 48 Ray CPUs crashes (pthread_create EAGAIN) when Data uses all CPUs.
 import json
 import os
 import sys
@@ -38,6 +41,12 @@ def start(test_id, timeout_s):
         os.environ["RAY_API_SERVER_ADDRESS"] = f"http://{context.dashboard_url}"  # the state API ignores RAY_ADDRESS=local
     else:
         ray.init()
+    if os.environ.get("C9_DATA_CPU"):
+        from ray.data import DataContext, ExecutionResources
+        data_context = DataContext.get_current()
+        data_context.execution_options.resource_limits = ExecutionResources(cpu=float(os.environ["C9_DATA_CPU"]))
+        data_context.max_hash_shuffle_aggregators = 4  # each aggregator is one more worker process (about 50 threads)
+        print(f"C9_DATA_CPU {os.environ['C9_DATA_CPU']}", flush=True)
     return time.time()
 
 
@@ -108,3 +117,16 @@ def job_task_nodes():
         return dict(collections.Counter(short(t.node_id) for t in tasks if t.node_id))
     except Exception as e:
         return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+
+def storage_settings():
+    """(storage_path, storage_filesystem) from C9_STORAGE. Phase 2: `s3anon://bucket/prefix` is an S3 bucket that allows
+    only the cluster IPs (bucket policy), used without credentials through s3fs (anon=True; needs s3fs from runtime_env pip).
+    pyarrow's own anonymous S3 cannot write there: it always starts a multipart upload, and S3 refuses that to anonymous users."""
+    storage = os.environ.get("C9_STORAGE")
+    if storage and storage.startswith("s3anon://"):
+        import pyarrow.fs
+        import s3fs
+        fs = pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(s3fs.S3FileSystem(anon=True, client_kwargs={"region_name": "us-west-2"})))
+        return storage[len("s3anon://"):], fs
+    return storage, None

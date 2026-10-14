@@ -46,6 +46,7 @@ PLAN = [
     ("C9.3.1", "c9_3_1_train_1gpu.py", True, 2700),
     ("C9.3.3", "c9_3_3_train_gloo.py", True, 1800),
     ("C9.3.2", "c9_3_2_train_nccl.py", True, 1800),
+    ("C9.3.5", "c9_3_5_store_port.py", True, 1500),  # extra: a TCPStore on an identity port, then gloo, by hand
     ("C9.4.1", "c9_4_1_serve_handle.py", False, 1200),
     ("C9.4.2", "serve-http-head", False, 120),
     ("C9.4.3", "serve-http-tunnel", False, 120),
@@ -84,6 +85,10 @@ def submit(test_id, script, torch, timeout, out_dir):
     sid = f"{test_id.replace('.', '-').lower()}-{int(time.time())}"
     command = ["submit", "--submission-id", sid, "--working-dir", str(JOBS), "--no-wait"]
     runtime_env = dict(TORCH_ENV if torch else {}, **({"env_vars": JOB_ENV} if JOB_ENV else {}))
+    extra_pip = os.environ.get("C9_EXTRA_PIP", "").split()  # phase 2: for example s3fs for C9_STORAGE=s3anon://...
+    if extra_pip:
+        runtime_env["pip"] = {"packages": (TORCH_ENV["pip"]["packages"] if torch else []) + extra_pip, "pip_check": False}
+        runtime_env["config"] = TORCH_ENV["config"]
     if runtime_env:
         command += ["--runtime-env-json", json.dumps(runtime_env)]
     command += ["--", "python", script]
