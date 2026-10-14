@@ -16,4 +16,4 @@ available_node_types:
     resources: {CPU: 4, GPU: 1}      # offers.py found no CPU-only offer (num_gpus = 0) on 2026-10-14
     min_workers: 1
     max_workers: 1
-    node_config: {disk_gb: 30, offer_query: {inet_down: {gte: 500}}}
+    node_config: {disk_gb: 30, offer_query: {inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
