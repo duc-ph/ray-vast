@@ -1,0 +1,298 @@
+$ python3 -m venv ~/rvtest-venv; source ~/rvtest-venv/bin/activate (cwd ~/rvtest-l4rc1)
+$ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple ray-vast==0.1.0rc1
+Looking in indexes: https://test.pypi.org/simple/, https://pypi.org/simple
+Collecting ray-vast==0.1.0rc1
+  Downloading https://test-files.pythonhosted.org/packages/3b/f6/a8611fbd29bd883f43cb2026753c7b4578d6bac425e94d9479bea8b9e18e/ray_vast-0.1.0rc1-py3-none-any.whl.metadata (4.8 kB)
+Collecting boto3 (from ray-vast==0.1.0rc1)
+  Downloading boto3-1.43.113-py3-none-any.whl.metadata (6.6 kB)
+Collecting cryptography>=42 (from ray-vast==0.1.0rc1)
+  Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.4 kB)
+Collecting pyyaml (from ray-vast==0.1.0rc1)
+  Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+Collecting ray>=2.59 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading ray-2.59.0-cp312-cp312-manylinux2014_x86_64.whl.metadata (23 kB)
+Collecting requests (from ray-vast==0.1.0rc1)
+  Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting cffi>=2.0.0 (from cryptography>=42->ray-vast==0.1.0rc1)
+  Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+Collecting click>=7.0 (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting filelock (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading filelock-4.1.1-py3-none-any.whl.metadata (2.0 kB)
+Collecting jsonschema (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading jsonschema-4.26.0-py3-none-any.whl.metadata (7.6 kB)
+Collecting msgpack<2.0.0,>=1.0.0 (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading msgpack-1.2.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.3 kB)
+Collecting packaging>=24.2 (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting protobuf>=3.20.3 (from ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+Collecting aiohttp>=3.14.1 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading aiohttp-3.14.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.3 kB)
+Collecting aiohttp_cors (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading aiohttp_cors-0.8.1-py3-none-any.whl.metadata (20 kB)
+Collecting colorful (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading colorful-0.5.8-py2.py3-none-any.whl.metadata (17 kB)
+Collecting py-spy>=0.4.0 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading py_spy-0.4.2-py2.py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl.metadata (510 bytes)
+Collecting grpcio>=1.42.0 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading grpcio-1.84.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.8 kB)
+Collecting opencensus (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opencensus-0.11.4-py2.py3-none-any.whl.metadata (12 kB)
+Collecting opentelemetry-sdk>=1.30.0 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opentelemetry_sdk-1.45.1-py3-none-any.whl.metadata (1.6 kB)
+Collecting opentelemetry-exporter-prometheus (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading https://test-files.pythonhosted.org/packages/e9/ae/d44f958d61700daaaead0452d7d911170117863ab392d0741cf21aaec451/opentelemetry_exporter_prometheus-1.12.0rc1-py3-none-any.whl.metadata (1.8 kB)
+Collecting opentelemetry-proto (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opentelemetry_proto-1.45.1-py3-none-any.whl.metadata (2.3 kB)
+Collecting pydantic<3,>=2.5.0 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading pydantic-2.14.1-py3-none-any.whl.metadata (133 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 133.0/133.0 kB 7.7 MB/s eta 0:00:00
+Collecting prometheus_client>=0.7.1 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading prometheus_client-0.26.0-py3-none-any.whl.metadata (2.1 kB)
+Collecting smart_open (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading smart_open-8.0.3-py3-none-any.whl.metadata (25 kB)
+Collecting virtualenv!=20.21.1,>=20.0.24 (from ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading virtualenv-21.14.7-py3-none-any.whl.metadata (4.1 kB)
+Collecting botocore<1.44.0,>=1.43.113 (from boto3->ray-vast==0.1.0rc1)
+  Downloading botocore-1.43.113-py3-none-any.whl.metadata (5.6 kB)
+Collecting jmespath<2.0.0,>=0.7.1 (from boto3->ray-vast==0.1.0rc1)
+  Downloading jmespath-1.1.0-py3-none-any.whl.metadata (7.6 kB)
+Collecting s3transfer<0.20.0,>=0.19.0 (from boto3->ray-vast==0.1.0rc1)
+  Downloading s3transfer-0.19.2-py3-none-any.whl.metadata (1.7 kB)
+Collecting charset_normalizer<4,>=2 (from requests->ray-vast==0.1.0rc1)
+  Downloading charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (46 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.4/46.4 kB 4.3 MB/s eta 0:00:00
+Collecting idna<4,>=2.5 (from requests->ray-vast==0.1.0rc1)
+  Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting urllib3<3,>=1.26 (from requests->ray-vast==0.1.0rc1)
+  Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting certifi>=2023.5.7 (from requests->ray-vast==0.1.0rc1)
+  Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Collecting aiohappyeyeballs>=2.5.0 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading aiohappyeyeballs-2.7.1-py3-none-any.whl.metadata (5.9 kB)
+Collecting aiosignal>=1.4.0 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting attrs>=17.3.0 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))': /packages/6a/bd/d91c5e39f490a49df14320f4e8c80161cfcce09f1e2cde1edd16a551abb3/frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata
+  Downloading frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+Collecting multidict<8.0,>=4.5 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading multidict-7.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (6.2 kB)
+Collecting propcache>=0.2.0 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading propcache-0.5.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (25 kB)
+Collecting typing_extensions>=4.4 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting yarl<2.0,>=1.25.1 (from aiohttp>=3.14.1->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (111 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 111.6/111.6 kB 6.2 MB/s eta 0:00:00
+Collecting python-dateutil<3.0.0,>=2.1 (from botocore<1.44.0,>=1.43.113->boto3->ray-vast==0.1.0rc1)
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=42->ray-vast==0.1.0rc1)
+  Downloading pycparser-3.11-py3-none-any.whl.metadata (8.2 kB)
+Collecting opentelemetry-api==1.45.1 (from opentelemetry-sdk>=1.30.0->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opentelemetry_api-1.45.1-py3-none-any.whl.metadata (1.4 kB)
+Collecting opentelemetry-semantic-conventions==0.66b1 (from opentelemetry-sdk>=1.30.0->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opentelemetry_semantic_conventions-0.66b1-py3-none-any.whl.metadata (2.4 kB)
+Collecting annotated-types>=0.6.0 (from pydantic<3,>=2.5.0->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.50.1 (from pydantic<3,>=2.5.0->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.5 kB)
+Collecting typing-inspection>=0.4.4 (from pydantic<3,>=2.5.0->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+Collecting distlib<1,>=0.4.3 (from virtualenv!=20.21.1,>=20.0.24->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading distlib-0.4.3-py2.py3-none-any.whl.metadata (5.3 kB)
+Collecting platformdirs<5,>=4.4 (from virtualenv!=20.21.1,>=20.0.24->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading platformdirs-4.13.0-py3-none-any.whl.metadata (5.5 kB)
+Collecting python-discovery>=1.6.1 (from virtualenv!=20.21.1,>=20.0.24->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading python_discovery-1.6.2-py3-none-any.whl.metadata (5.1 kB)
+Collecting jsonschema-specifications>=2023.03.6 (from jsonschema->ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting referencing>=0.28.4 (from jsonschema->ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+Collecting rpds-py>=0.25.0 (from jsonschema->ray>=2.59->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+Collecting opencensus-context>=0.1.3 (from opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading opencensus_context-0.1.3-py2.py3-none-any.whl.metadata (3.3 kB)
+Collecting six~=1.16 (from opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting google-api-core<3.0.0,>=1.0.0 (from opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading google_api_core-2.42.0-py3-none-any.whl.metadata (3.2 kB)
+Collecting wrapt (from smart_open->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading wrapt-2.5.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (7.6 kB)
+Collecting googleapis-common-protos<2.0.0,>=1.69.2 (from google-api-core<3.0.0,>=1.0.0->opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading googleapis_common_protos-1.75.5-py3-none-any.whl.metadata (8.5 kB)
+Collecting proto-plus<2.0.0,>=1.26.1 (from google-api-core<3.0.0,>=1.0.0->opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading proto_plus-1.29.0-py3-none-any.whl.metadata (2.2 kB)
+Collecting google-auth<3.0.0,>=2.14.1 (from google-api-core<3.0.0,>=1.0.0->opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading google_auth-2.62.0-py3-none-any.whl.metadata (6.0 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth<3.0.0,>=2.14.1->google-api-core<3.0.0,>=1.0.0->opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.14.1->google-api-core<3.0.0,>=1.0.0->opencensus->ray[default]>=2.59->ray-vast==0.1.0rc1)
+  Downloading pyasn1-0.6.4-py3-none-any.whl.metadata (8.4 kB)
+Downloading https://test-files.pythonhosted.org/packages/3b/f6/a8611fbd29bd883f43cb2026753c7b4578d6bac425e94d9479bea8b9e18e/ray_vast-0.1.0rc1-py3-none-any.whl (54 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.1/54.1 kB 2.4 MB/s eta 0:00:00
+Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl (4.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.8/4.8 MB 94.6 MB/s eta 0:00:00
+Downloading ray-2.59.0-cp312-cp312-manylinux2014_x86_64.whl (78.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.9/78.9 MB 31.8 MB/s eta 0:00:00
+Downloading boto3-1.43.113-py3-none-any.whl (140 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 140.0/140.0 kB 20.8 MB/s eta 0:00:00
+Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 807.9/807.9 kB 75.2 MB/s eta 0:00:00
+Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.1/73.1 kB 10.6 MB/s eta 0:00:00
+Downloading aiohttp-3.14.5-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 90.2 MB/s eta 0:00:00
+Downloading botocore-1.43.113-py3-none-any.whl (16.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.1/16.1 MB 127.4 MB/s eta 0:00:00
+Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 137.0/137.0 kB 15.6 MB/s eta 0:00:00
+Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 221.8/221.8 kB 34.4 MB/s eta 0:00:00
+Downloading charset_normalizer-3.5.2-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (257 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 257.6/257.6 kB 37.4 MB/s eta 0:00:00
+Downloading click-8.5.0-py3-none-any.whl (125 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 125.3/125.3 kB 19.6 MB/s eta 0:00:00
+Downloading grpcio-1.84.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (7.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.2/7.2 MB 135.2 MB/s eta 0:00:00
+Downloading idna-3.20-py3-none-any.whl (69 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 69.6/69.6 kB 11.6 MB/s eta 0:00:00
+Downloading jmespath-1.1.0-py3-none-any.whl (20 kB)
+Downloading msgpack-1.2.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (472 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 473.0/473.0 kB 53.7 MB/s eta 0:00:00
+Downloading opentelemetry_sdk-1.45.1-py3-none-any.whl (140 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 140.1/140.1 kB 22.4 MB/s eta 0:00:00
+Downloading opentelemetry_api-1.45.1-py3-none-any.whl (60 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.3/60.3 kB 9.3 MB/s eta 0:00:00
+Downloading opentelemetry_semantic_conventions-0.66b1-py3-none-any.whl (206 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 206.3/206.3 kB 30.3 MB/s eta 0:00:00
+Using cached packaging-26.3-py3-none-any.whl (129 kB)
+Downloading prometheus_client-0.26.0-py3-none-any.whl (64 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.5/64.5 kB 10.5 MB/s eta 0:00:00
+Downloading protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 343.2/343.2 kB 44.0 MB/s eta 0:00:00
+Downloading py_spy-0.4.2-py2.py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl (2.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.9/2.9 MB 99.4 MB/s eta 0:00:00
+Downloading pydantic-2.14.1-py3-none-any.whl (488 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 488.1/488.1 kB 57.0 MB/s eta 0:00:00
+Downloading pydantic_core-2.50.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 74.1 MB/s eta 0:00:00
+Downloading s3transfer-0.19.2-py3-none-any.whl (90 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.2/90.2 kB 14.8 MB/s eta 0:00:00
+Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 135.7/135.7 kB 19.8 MB/s eta 0:00:00
+Downloading virtualenv-21.14.7-py3-none-any.whl (5.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.5/5.5 MB 124.6 MB/s eta 0:00:00
+Downloading filelock-4.1.1-py3-none-any.whl (132 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 132.5/132.5 kB 20.7 MB/s eta 0:00:00
+Downloading aiohttp_cors-0.8.1-py3-none-any.whl (25 kB)
+Downloading colorful-0.5.8-py2.py3-none-any.whl (201 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 201.3/201.3 kB 27.0 MB/s eta 0:00:00
+Downloading jsonschema-4.26.0-py3-none-any.whl (90 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 14.4 MB/s eta 0:00:00
+Downloading opencensus-0.11.4-py2.py3-none-any.whl (128 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 128.2/128.2 kB 20.6 MB/s eta 0:00:00
+Downloading https://test-files.pythonhosted.org/packages/e9/ae/d44f958d61700daaaead0452d7d911170117863ab392d0741cf21aaec451/opentelemetry_exporter_prometheus-1.12.0rc1-py3-none-any.whl (10 kB)
+Downloading opentelemetry_proto-1.45.1-py3-none-any.whl (72 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 72.5/72.5 kB 7.9 MB/s eta 0:00:00
+Downloading smart_open-8.0.3-py3-none-any.whl (73 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.5/73.5 kB 11.7 MB/s eta 0:00:00
+Downloading aiohappyeyeballs-2.7.1-py3-none-any.whl (15 kB)
+Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 9.8 MB/s eta 0:00:00
+Downloading distlib-0.4.3-py2.py3-none-any.whl (470 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 470.6/470.6 kB 55.3 MB/s eta 0:00:00
+Downloading frozenlist-1.8.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (242 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 242.4/242.4 kB 34.2 MB/s eta 0:00:00
+Downloading google_api_core-2.42.0-py3-none-any.whl (221 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 221.4/221.4 kB 30.6 MB/s eta 0:00:00
+Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl (18 kB)
+Downloading multidict-7.1.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (483 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 483.0/483.0 kB 53.3 MB/s eta 0:00:00
+Downloading opencensus_context-0.1.3-py2.py3-none-any.whl (5.1 kB)
+Downloading platformdirs-4.13.0-py3-none-any.whl (32 kB)
+Downloading propcache-0.5.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (250 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.4/250.4 kB 35.0 MB/s eta 0:00:00
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 kB 28.8 MB/s eta 0:00:00
+Downloading python_discovery-1.6.2-py3-none-any.whl (38 kB)
+Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+Downloading rpds_py-2026.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (371 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 371.3/371.3 kB 47.9 MB/s eta 0:00:00
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 5.5 MB/s eta 0:00:00
+Downloading typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+Downloading yarl-1.25.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (117 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 117.0/117.0 kB 19.0 MB/s eta 0:00:00
+Downloading pycparser-3.11-py3-none-any.whl (51 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 51.2/51.2 kB 8.0 MB/s eta 0:00:00
+Downloading wrapt-2.5.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (250 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.4/250.4 kB 35.8 MB/s eta 0:00:00
+Downloading google_auth-2.62.0-py3-none-any.whl (267 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 267.9/267.9 kB 37.8 MB/s eta 0:00:00
+Downloading googleapis_common_protos-1.75.5-py3-none-any.whl (307 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 307.7/307.7 kB 37.1 MB/s eta 0:00:00
+Downloading proto_plus-1.29.0-py3-none-any.whl (50 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.8/50.8 kB 7.4 MB/s eta 0:00:00
+Downloading pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 26.4 MB/s eta 0:00:00
+Downloading pyasn1-0.6.4-py3-none-any.whl (84 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.4/84.4 kB 12.3 MB/s eta 0:00:00
+Installing collected packages: py-spy, opencensus-context, distlib, colorful, wrapt, urllib3, typing_extensions, six, rpds-py, pyyaml, pycparser, pyasn1, protobuf, propcache, prometheus_client, platformdirs, packaging, multidict, msgpack, jmespath, idna, frozenlist, filelock, click, charset_normalizer, certifi, attrs, annotated-types, aiohappyeyeballs, yarl, typing-inspection, smart_open, requests, referencing, python-discovery, python-dateutil, pydantic-core, pyasn1-modules, proto-plus, opentelemetry-proto, opentelemetry-api, grpcio, googleapis-common-protos, cffi, aiosignal, virtualenv, pydantic, opentelemetry-semantic-conventions, jsonschema-specifications, cryptography, botocore, aiohttp, s3transfer, opentelemetry-sdk, jsonschema, google-auth, aiohttp_cors, ray, opentelemetry-exporter-prometheus, google-api-core, boto3, opencensus, ray-vast
+Successfully installed aiohappyeyeballs-2.7.1 aiohttp-3.14.5 aiohttp_cors-0.8.1 aiosignal-1.4.0 annotated-types-0.8.0 attrs-26.1.0 boto3-1.43.113 botocore-1.43.113 certifi-2026.7.22 cffi-2.1.1 charset_normalizer-3.5.2 click-8.5.0 colorful-0.5.8 cryptography-50.0.2 distlib-0.4.3 filelock-4.1.1 frozenlist-1.8.0 google-api-core-2.42.0 google-auth-2.62.0 googleapis-common-protos-1.75.5 grpcio-1.84.0 idna-3.20 jmespath-1.1.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 msgpack-1.2.3 multidict-7.1.0 opencensus-0.11.4 opencensus-context-0.1.3 opentelemetry-api-1.45.1 opentelemetry-exporter-prometheus-1.12.0rc1 opentelemetry-proto-1.45.1 opentelemetry-sdk-1.45.1 opentelemetry-semantic-conventions-0.66b1 packaging-26.3 platformdirs-4.13.0 prometheus_client-0.26.0 propcache-0.5.4 proto-plus-1.29.0 protobuf-7.36.2 py-spy-0.4.2 pyasn1-0.6.4 pyasn1-modules-0.4.2 pycparser-3.11 pydantic-2.14.1 pydantic-core-2.50.1 python-dateutil-2.9.0.post0 python-discovery-1.6.2 pyyaml-6.0.3 ray-2.59.0 ray-vast-0.1.0rc1 referencing-0.37.0 requests-2.34.2 rpds-py-2026.9.1 s3transfer-0.19.2 six-1.17.0 smart_open-8.0.3 typing-inspection-0.4.4 typing_extensions-4.16.0 urllib3-2.8.0 virtualenv-21.14.7 wrapt-2.5.1 yarl-1.25.1
+
+real	0m36.647s
+user	0m27.056s
+sys	0m1.858s
+$ which ray-vast ray
+/home/ubuntu/rvtest-venv/bin/ray-vast
+/home/ubuntu/rvtest-venv/bin/ray
+$ ray-vast --help
+usage: ray-vast [-h] {up,down,attach,dashboard} ...
+
+Ray clusters on vast.ai workers with an AWS EC2 head.
+
+positional arguments:
+  {up,down,attach,dashboard}
+    up                  create the head and start the cluster
+    down                destroy all workers and the head
+    attach              open a shell on the head
+    dashboard           open an SSH tunnel to the Ray dashboard
+
+options:
+  -h, --help            show this help message and exit
+exit 0
+$ ray-vast --version
+usage: ray-vast [-h] {up,down,attach,dashboard} ...
+ray-vast: error: the following arguments are required: command
+exit 2
+$ ray-vast up --help
+usage: ray-vast up [-h] [--profile PROFILE] [--key-file KEY_FILE]
+                   [--key-name KEY_NAME] [--wheel WHEEL]
+                   [--index-url INDEX_URL]
+                   cluster_yaml
+
+positional arguments:
+  cluster_yaml
+
+options:
+  -h, --help            show this help message and exit
+  --profile PROFILE     AWS profile (default: AWS_PROFILE or the default
+                        credentials)
+  --key-file KEY_FILE   SSH private key of the head (or provider.key_file)
+  --key-name KEY_NAME   EC2 key pair name (or provider.key_name)
+  --wheel WHEEL         ray-vast wheel to install on the head, for development
+                        (default: in a source tree, build the wheel; else
+                        install this CLI's own version from PyPI)
+  --index-url INDEX_URL
+                        install ray-vast on the head from this package index
+                        (to test a release on TestPyPI); the dependencies
+                        still come from PyPI
+$ python -c import ray_vast
+0.1.0rc1 /home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray_vast/__init__.py
+ray, version 2.59.0

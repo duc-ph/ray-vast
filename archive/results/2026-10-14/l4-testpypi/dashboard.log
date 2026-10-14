@@ -1,0 +1,33 @@
+$ ray-vast dashboard cluster.yaml --profile personal
+for `ray job submit` set:
+  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/home/ubuntu/.ray-vast/rvtest-l4rc1/token
+dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265
+Traceback (most recent call last):
+  File "/home/ubuntu/rvtest-venv/bin/ray-vast", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray_vast/cli.py", line 29, in main
+    return run(args)
+           ^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray_vast/commands.py", line 447, in run
+    return dashboard(ssh, ip, state_dir, cluster)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray_vast/commands.py", line 383, in dashboard
+    return ssh.interactive(ip, "-N", "-L", "8265:127.0.0.1:8265")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray_vast/commands.py", line 112, in interactive
+    return subprocess.call(["ssh", *self._options, *args, f"{SSH_USER}@{ip}"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 391, in call
+    return p.wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1264, in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2053, in _wait
+    (pid, sts) = self._try_wait(0)
+                 ^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2011, in _try_wait
+    (pid, sts) = os.waitpid(self.pid, wait_flags)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -441,3 +441,26 @@ Differences from the plan and other findings:
 - The plan does not check PID 1 in C8. An extra job with `num_gpus=1` (`c8-rerun/pid1/pid1_probe.py`) rented 2 candidates (1 enrolled in 29.4 s: the image was in the host cache). PID 1 was `/home/ray/anaconda3/bin/python3 /tmp/rayvast-bootstrap.py`. Its child was `ray start --block`. No `nvidia_entrypoint.sh` or shell was left. uid 1000. `/dev/nvidia1` only. `CUDA_VISIBLE_DEVICES` 0.
 - vast did not stop a new candidate by itself in this cycle.
 - `monitor.log` has 0 `ERROR` lines and 0 `unknown vast actual_status` lines. It has 286 `Dropping the empty legacy field` warnings (not errors).
+
+## TestPyPI release test 0.1.0rc1 (2026-10-14)
+
+Release: https://test.pypi.org/project/ray-vast/0.1.0rc1/ (wheel and sdist, built from `9aa4576`). Data: `archive/results/2026-10-14/l4-testpypi/`.
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| Build | Pass | `twine check --strict`: 2 of 2 passed | The wheel has `shim/librayvast_shim.so` (SHA-256 `79055dea…17fd`, the recorded value), `worker/*` and the 3 example YAMLs. Packaging tests: 7 passed. `build_listing.txt`, `twine_check.txt` |
+| Scan | Pass | Wheel: no output | The sdist matches only fake fixture values in 4 test files (`Bearer ACCOUNTKEY`, `PRIVATE KEY` checks). The real vast key is in no file. The IP addresses are loopback, private ranges and TEST-NET only. |
+| Upload | Pass | 08:40:57 UTC | The name was free on TestPyPI. `upload.txt` |
+| Install | Pass | 37 s, new venv `~/rvtest-venv` | The command of `reference/cli.md`. `ray_vast` imports from site-packages. `install.log` |
+| Up | Pass | 550 s, exit 0 | GPU image. First line `installing ray-vast==0.1.0rc1 from https://test.pypi.org/simple/`. The head container has `0.1.0rc1` in site-packages. `up.log`, `head_check.log` |
+| Job | Pass | 8.7 s | `ray job submit --working-dir . -- python -c "print(1)"` through the tunnel. The head has CPU 0. `job.log` |
+| Down | Pass | 35 s, `left: nothing`, exit 0 | `aws left: nothing`. vast count 0. No vast rental. `down.log`, `teardown_check.log` |
+
+Cost: EC2 only, `t3.large` for about 12 min (less than $0.02). vast $0.
+
+Findings (details in `walkthrough.md`):
+- `--extra-index-url` mixes the two indexes. On the laptop, pip took `opentelemetry-exporter-prometheus 1.12.0rc1` from TestPyPI (PyPI has `0.66b1`). The docs say that the dependencies come from PyPI. The head was not affected.
+- Ctrl-C on `ray-vast dashboard` prints a `KeyboardInterrupt` traceback.
+- `ray-vast --version` does not exist.
+- `getting-started.md` uses `python -m venv`. Ubuntu 24.04 has only `python3` outside a venv.
+- The `up` progress lines show only at the end when stdout is a pipe or a file.

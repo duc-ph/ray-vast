@@ -1,0 +1,65 @@
+$ export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/home/ubuntu/.ray-vast/rvtest-l4rc1/token
+$ ray job submit --address http://127.0.0.1:8265 --working-dir . -- python -c "print(1)"
+2026-10-14 08:51:56,529	INFO dashboard_sdk.py:371 -- Uploading package gcs://_ray_pkg_ea393e9dec343c94.zip.
+2026-10-14 08:51:56,529	INFO packaging.py:734 -- Creating a file package for local module '.'.
+2026-10-14 08:51:56,519	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 08:51:57,009	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-14 08:51:57,009	SUCC cli.py:67 -- [32mJob 'raysubmit_hhmde3g96XEVfymd' submitted successfully[39m
+2026-10-14 08:51:57,009	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-14 08:51:57,009	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-14 08:51:57,009	INFO cli.py:331 -- Query the logs of the job:
+2026-10-14 08:51:57,009	INFO cli.py:333 -- [1mray job logs raysubmit_hhmde3g96XEVfymd[22m
+2026-10-14 08:51:57,009	INFO cli.py:335 -- Query the status of the job:
+2026-10-14 08:51:57,009	INFO cli.py:337 -- [1mray job status raysubmit_hhmde3g96XEVfymd[22m
+2026-10-14 08:51:57,009	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-14 08:51:57,009	INFO cli.py:341 -- [1mray job stop raysubmit_hhmde3g96XEVfymd[22m
+2026-10-14 08:52:04,102	INFO sdk.py:520 -- WebSocket closed for job raysubmit_hhmde3g96XEVfymd with close code 1000
+2026-10-14 08:51:57,024	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-14 01:51:56,747	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_hhmde3g96XEVfymd: python -c 'print(1)'
+1
+2026-10-14 08:52:04,113	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-14 08:52:04,113	SUCC cli.py:67 -- [32mJob 'raysubmit_hhmde3g96XEVfymd' succeeded[39m
+2026-10-14 08:52:04,114	SUCC cli.py:68 -- [32m------------------------------------------[39m
+
+real	0m8.693s
+user	0m1.016s
+sys	0m0.092s
+exit 0
+$ ray status --address 127.0.0.1:8265
+[2026-10-14 08:52:10,251 W 858626 858626] rpc_client.h:153: Failed to connect to GCS at address 172.31.17.228:8265 within 5 seconds.
+[2026-10-14 08:52:15,256 W 858626 858626] rpc_client.h:638: Failed to connect to the observability pubsub at address 172.31.17.228:8265 within 5 seconds.
+[2026-10-14 08:52:45,259 W 858626 858626] gcs_client.cc:210: Failed to get cluster ID from GCS server: TimedOut: Timed out while waiting for GCS to become available.
+Traceback (most recent call last):
+  File "/home/ubuntu/rvtest-venv/bin/ray", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray/scripts/scripts.py", line 3013, in main
+    return cli()
+           ^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/rvtest-venv/lib/python3.12/site-packages/ray/scripts/scripts.py", line 2392, in status
+    gcs_client = ray._raylet.GcsClient(address=address)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "python/ray/_raylet.pyx", line 3200, in ray._raylet.GcsClient.__cinit__
+  File "python/ray/includes/gcs_client.pxi", line 74, in ray._raylet.InnerGcsClient.standalone
+  File "python/ray/includes/common.pxi", line 144, in ray._raylet.check_status_timeout_as_rpc_error
+ray.exceptions.RpcError: Timed out while waiting for GCS to become available.
+exit 1
+$ ray job list --address http://127.0.0.1:8265
+2026-10-14 08:52:46,352	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-14 08:52:46,369	INFO cli.py:600 -- [JobDetails(type=<JobType.SUBMISSION: 'SUBMISSION'>, job_id=None, submission_id='raysubmit_hhmde3g96XEVfymd', driver_info=None, status=<JobStatus.SUCCEEDED: 'SUCCEEDED'>, entrypoint="python -c 'print(1)'", message='Job finished successfully.', error_type=None, start_time=1791967916741, end_time=1791967918758, metadata={}, runtime_env={'working_dir': 'gcs://_ray_pkg_ea393e9dec343c94.zip'}, driver_agent_http_address='http://100.23.130.5:6384', driver_node_id='b88313283b8e290ccae311842032523be5543db53b124fa4bd85c585', driver_exit_code=0)]

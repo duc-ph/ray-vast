@@ -1,0 +1,28 @@
+# A 24 GB GPU tier. Workers are vast.ai instances, the head is an EC2 instance.
+cluster_name: rvtest-l4rc1
+max_workers: 0
+idle_timeout_minutes: 5
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 0.5
+  key_name: ray-vast-devbox
+  key_file: ~/ray-vast-devbox.pem
+auth:
+  ssh_user: ray
+head_node_type: head
+available_node_types:
+  head:
+    resources: {CPU: 0}
+    node_config: {}
+    max_workers: 0
+  gpu24:
+    resources: {CPU: 8, GPU: 1}
+    min_workers: 0
+    max_workers: 0
+    node_config:
+      disk_gb: 80
+      offer_query:
+        gpu_ram: {gte: 24000, lte: 32000}   # MB
+        dlperf: {gte: 40}
+        inet_down: {gte: 500}
