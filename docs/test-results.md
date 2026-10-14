@@ -381,3 +381,26 @@ Differences from the first run:
 - Both wave-1 candidates reached `/enroll` within 0.13 s. The head refused one with `no free slot`. The worker also sent a destroy report.
 - A field fetch right after a rental gives `actual_status`, `status_msg` and `ports` as `null` (`c5-rerun/instance_fields_early.json`).
 - The 86 `Dropping the empty legacy field` warnings are still in `monitor.log`.
+
+## Live cycle C6 re-run (2026-10-14)
+
+Setup: as the first C6 run, from commit 622c7c1 (one ending function `VastNodeProvider._end` for the provider and the head server, one `vast_api.sweep`, the `RAYVAST_IMAGE_INFO` marker line). Data: `archive/results/2026-10-14/` (`progress.md` "C6 re-run", `c6-rerun/`, `spend.md`, `resources.csv`).
+
+Workers: A = 55888563 (RTX A5000, 5.2.174.20), B = 55888582 (RTX 3090, 185.62.108.226), C = 55888774 (P100, 143.55.45.86). B had the only IP of its host. The order was C6.1, C6.2, C6.3.
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| T13 | Pass | Five signals: no effect after 120 s. `SIGTERM`: report 0.52 s after the signal, gone from vast ≤ 5.7 s after the signal (limit 20 s). Ray node DEAD 28.5 s after the signal. | The same PID 1 before and after. 50 orphans went to PID 1. Zombies of PID 1: 0. vast never showed `exited`. The provider logged `instance is gone from vast` through `_end`. v2 rented a replacement. `c6-rerun/signals.out`, `c6-rerun/sigterm.out` |
+| T14 | Pass | Provider destroy at `t_last` + 307.4 s (limit 270–330 s). | `t_last` comes from a header-only SYN capture on `ens5`. After the cut, B made 10 heartbeat attempts. The provider acted first (`no heartbeat for 5 min`). The watchdog would act about 3 s later. B's Ray node was ALIVE in all 18 checks. `c6-rerun/b_syn_capture.txt`, `c6-rerun/b_watch.txt`, `c6-rerun/logloop_B/` |
+| Restart | Pass | Reboot → refusal 12.8 s; refusal → gone from vast ≤ 2.0 s | Head log: `enroll refused … already enrolled`, no ending by the head for it. The worker's report reached port A. The worker log of the second run: `head refused enrollment: already enrolled`, then `vast accepted the delete`. `c6-rerun/t_r.txt`, `c6-rerun/logloop_C/` |
+| GPU count | Pass | GPU 1.0 on each of the 6 Ray workers | `c6-rerun/ray_nodes_end.json` |
+| Head shm | Pass | `/dev/shm` 2.6 GB | `c6-rerun/head_shm.txt` |
+| Teardown | Pass | `down` 26 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | `down` used the new sweep line for the 3 instances. Secret scan with the cluster token and all 7 join tokens: no output. |
+| Cost | | vast $0.1805 (credit 11.3561 → 11.1756, 0 top-ups); EC2 about $0.035 | 7 rentals, peak $0.672/h. `spend.md` |
+
+Differences from the first run:
+- `up` took 6 min 19 s. The first run took 2 min 27 s. `up` still ended with exit code 0.
+- The provider logged `unknown vast actual_status 'rebooting' (treated as pending)` once during C6.3. The first run did not sample `rebooting`. This is the expected behavior.
+- The log of the rebooted container was fetched this time (fetches 2–13 s after the reboot call). It shows a new fact: the vast reboot sends `SIGTERM` to PID 1. The old bootstrap logged `destroying this instance: received SIGTERM`. Its report and its delete did not complete: vast killed the container about 10 s later. The second run then destroyed the instance. The first run's log has the same `SIGTERM` line. The result is the same: the instance is destroyed.
+- The log of A after the `SIGTERM` was not caught (`log download: not ready after 60 s`). The head log proves the report.
+- vast stopped one new candidate (55888548) by itself again (`intended_status` `stopped`). The provider ended it through `_end` (`instance status 'exited'`), and v2 rented a replacement.
