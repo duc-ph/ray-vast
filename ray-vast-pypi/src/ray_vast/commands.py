@@ -154,7 +154,10 @@ def _mask_userinfo(text, url):
 
 
 def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
-    config, warnings = config_module.load_and_bootstrap(config_path)
+    try:
+        config, warnings = config_module.load_and_bootstrap(config_path)
+    except ValueError as e:  # a field check failed: a user error, so one line and no traceback
+        raise CliError(f"{config_path}: {e}") from None
     cluster, provider = config["cluster_name"], config["provider"]
     if not NAME_RE.match(cluster):
         raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
@@ -396,8 +399,16 @@ def _public_ip():
 def run(args):
     """Run the command in `args` (from cli.py) and return the exit code."""
     try:
-        with open(args.cluster_yaml) as f:
-            raw = yaml.safe_load(f)
+        # A missing file and bad YAML are user errors: one line, no traceback.
+        try:
+            with open(args.cluster_yaml) as f:
+                raw = yaml.safe_load(f)
+        except OSError as e:
+            raise CliError(f"cannot read {args.cluster_yaml}: {e.strerror or e}") from None
+        except yaml.YAMLError as e:
+            raise CliError(f"bad YAML in {args.cluster_yaml}: {' '.join(str(e).split())}") from None
+        if not isinstance(raw, dict):
+            raise CliError(f"{args.cluster_yaml}: the YAML must be a mapping (cluster_name:, provider:, ...)")
         cluster, provider = raw.get("cluster_name"), raw.get("provider") or {}
         if not cluster or not provider.get("region"):
             raise CliError("the YAML needs cluster_name and provider.region")

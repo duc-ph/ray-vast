@@ -8,6 +8,7 @@ Changes since 0.1.0rc1:
 - The commands write each output line at once, also when stdout is a pipe or a file.
 - The watchdog retries a heartbeat when a thread cannot start (`can't start new thread`). Only the heartbeat time limit ends the worker.
 - The head log keeps the last line (the error) of a long destroy reason.
+- A missing YAML file, bad YAML syntax or a bad YAML field value prints one line `ray-vast <command>: <message>` and exits with code 1, with no traceback.
 
 ## 0.1.0rc1 (2026-10-14, TestPyPI)
 

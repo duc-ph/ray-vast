@@ -39,9 +39,10 @@ If you give an option and the YAML field, ray-vast uses the option.
 
 ## Errors
 
-- Most errors print one line on stderr: `ray-vast <command>: <message>`.
+- A user error prints one line on stderr: `ray-vast <command>: <message>`. The exit code is 1.
+- User errors include a missing YAML file, bad YAML syntax and a bad YAML field value. The message names the file or the field.
 - An AWS error adds more lines: a hint about missing permissions, and for `up`, the `ray-vast down` command.
-- An error in the checks of the YAML fields, and an unexpected error, print a Python traceback. The last line of the traceback has the message.
+- An unexpected error (a bug) prints a Python traceback. The last line of the traceback has the message.
 
 ## `ray-vast up`
 

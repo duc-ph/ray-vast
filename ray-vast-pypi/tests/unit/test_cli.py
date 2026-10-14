@@ -525,6 +525,35 @@ def test_main_up_without_a_key_fails_before_creating_anything(aws, home, fake_ss
     assert what_is_left(aws, FakeVast()) == []
 
 
+def test_main_up_with_a_bad_field_value_prints_one_line_and_creates_nothing(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
+    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "max_dollars_per_hour": -1})
+    cluster_yaml.write_text(yaml.safe_dump(raw))
+    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
+    err = capsys.readouterr().err
+    assert err.startswith("ray-vast up: ") and "max_dollars_per_hour" in err and err.count("\n") == 1
+    assert VAST_KEY not in err
+    assert what_is_left(aws, FakeVast()) == []
+
+
+@pytest.mark.parametrize("command", ["up", "down", "attach", "dashboard"])
+def test_main_with_a_missing_yaml_file_prints_one_line(home, tmp_path, capsys, command):
+    assert cli.main([command, str(tmp_path / "nope.yaml")]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith(f"ray-vast {command}: ") and "nope.yaml" in err and err.count("\n") == 1
+
+
+@pytest.mark.parametrize("text, problem", [
+    ("cluster_name: x\nprovider: {region: us-west-2\n", "line"),  # an unclosed flow mapping: a YAML syntax error
+    ("- just\n- a list\n", "mapping"),
+])
+def test_main_with_a_bad_yaml_prints_one_line(home, tmp_path, capsys, text, problem):
+    path = tmp_path / "bad.yaml"
+    path.write_text(text)
+    assert cli.main(["down", str(path)]) == 1
+    err = capsys.readouterr().err
+    assert err.startswith("ray-vast down: ") and "bad.yaml" in err and problem in err and err.count("\n") == 1
+
+
 def test_main_up_that_fails_on_the_head_exits_1_and_points_to_down(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
     fake_ssh.fake = FakeSsh(fail_at=2)  # the scp of the wheel
     assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
