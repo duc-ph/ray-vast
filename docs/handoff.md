@@ -18,13 +18,13 @@ These are the user's rules from the earlier sessions. Follow them.
 - **Language:** write all docs and chat answers in ASD-STE100 (short sentences, active voice, one idea per sentence).
 - **Decisions:** make technical decisions yourself with the principle above. Write each one as a line in `docs/decisions.md`. Ask the user only for decisions that change the system design.
 - **Subagents:**
-  - Use subagents for implementation, tests and reviews, with model **Sonnet** (`model: "sonnet"`).
+  - Use subagents for implementation, tests and reviews.
   - Give each subagent `docs/agents/implementer.md` (implementation) or `docs/agents/review.md` (review). It must also load the `mattpocock-skills:tdd` skill with the Skill tool, if the skill is installed; `docs/agents/tdd.md` holds the same rules.
   - When a subagent has a large context, do not give it more work. Start a new one.
   - Stop agents at once when the user asks.
 - **TDD with proof:** red before green. Each new behavior needs a test that the agent saw fail for the right reason; the report lists the failure line. After a step, run a mutation audit (change the code, check that a test fails) on the new behaviors.
 - **Tests:** the fast run in the TDD loop, the full run once at the end of a step (commands in `ray-vast-pypi/README.md`, "Tests").
-- **Review:** after each step, run the `mattpocock-skills:code-review` skill (Standards and Spec axes) with Sonnet subagents, as in `docs/agents/review.md`. Fix the HARD findings.
+- **Review:** after each step, run the `mattpocock-skills:code-review` skill (Standards and Spec axes) with subagents, as in `docs/agents/review.md`. Fix the HARD findings.
 - **Git:** commit to `main` and push after each step. No branches. Author: Duc Pham <thiel.pham@gmail.com>. End each commit message with the session line that the harness gives you.
 - **Money and safety:**
   - Never publish to PyPI without the user.
