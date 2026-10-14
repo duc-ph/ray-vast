@@ -16,7 +16,7 @@ Before a cycle runs, it must be written here with: setup, steps, expected output
 | L6 Live scale | C8 | EC2 head + vast | ~$3 | step 12, before release |
 | L7 Ray libraries | C9 | EC2 head + vast | ~$2 | step 12, before the docs of step 13 |
 
-The commands for the fast and the full run are in the [README](../ray-vast-pypi/README.md) ("Tests").
+The commands for the fast and the full run are in [CONTRIBUTING.md](../ray-vast-pypi/CONTRIBUTING.md).
 
 ## Not tested live (decided with the user, 2026-10-13)
 
@@ -239,7 +239,7 @@ Record: `T_submit`, first rental, first `running`, first and 4th node ALIVE, `C8
 3. **All-to-all:** `random_shuffle` and `groupby(...).count()` on that dataset. Blocks move between the workers.
 4. **GPU batch inference:** `map_batches` with a callable class, `concurrency=2`, `num_gpus=1`, a small PyTorch model on the GPU (for example a linear layer or `torchvision` resnet18 with random weights). Each worker runs one actor; record the rows per second.
 5. **Write and read:** `write_parquet` to `/tmp/c9_out` (local to each worker; record where the files land) and `ray.data.read_parquet` with a public dataset URL or a file from the working directory. Record what a user needs for shared output (a cloud bucket).
-6. **Many tasks:** a pipeline with more parallel tasks than 58 per node (for example 400 small blocks). It must finish; record whether tasks wait for a port (README "Limits").
+6. **Many tasks:** a pipeline with more parallel tasks than 58 per node (for example 400 small blocks). It must finish; record whether tasks wait for a port (user docs, Reference → Limits).
 
 ### C9.2 Ray Tune
 1. **Function trainable:** `tune.Tuner` with 8 trials (`num_samples=8`), 1 CPU each, a short loop that reports a metric. Trials run on both workers. `ResultGrid` has 8 results.

@@ -1,0 +1,79 @@
+site_name: ray-vast
+site_description: Ray clusters with the head on AWS EC2 and GPU workers on vast.ai.
+site_url: https://duc-ph.github.io/ray-vast/
+repo_url: https://github.com/duc-ph/ray-vast
+repo_name: duc-ph/ray-vast
+edit_uri: edit/main/ray-vast-pypi/docs/
+copyright: Copyright &copy; 2026 Duc Pham. MIT License.
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - How-to guides:
+      - Run your Ray workload: how-to/run-your-workload.md
+      - Choose node types and offer queries: how-to/node-types.md
+      - Use GPU images: how-to/gpu-images.md
+      - Control cost: how-to/control-cost.md
+      - Find logs and troubleshoot: how-to/troubleshoot.md
+      - Clean up after a failure: how-to/clean-up.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration: reference/configuration.md
+      - Ray library support: reference/ray-libraries.md
+      - Limits: reference/limits.md
+      - IAM permissions: reference/iam.md
+      - Changelog: reference/changelog.md
+  - Explanation:
+      - Architecture: explanation/architecture.md
+      - Enrollment and the join token: explanation/enrollment.md
+      - Worker life cycle and the watchdog: explanation/worker-lifecycle.md
+      - Security model: security.md
+      - Design decisions: explanation/design-decisions.md

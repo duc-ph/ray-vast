@@ -1,6 +1,9 @@
-# ray-vast security model
+# Security model
 
-This document tells what ray-vast protects, from whom, and what it does not protect. Read the known gaps before you run a cluster with private data or valuable credentials. The mechanisms (enrollment, PKI, security groups, watchdog) are specified in [design.md](../../docs/design.md); this file links to them.
+This page tells what ray-vast protects, from whom, and what it does not protect.
+Read the known gaps before you run a cluster with private data or valuable credentials.
+
+The mechanisms (enrollment, PKI, security groups, watchdog) are specified in [design.md](https://github.com/duc-ph/ray-vast/blob/main/docs/design.md) on GitHub. The "Spec" column below gives the section of design.md. For a short explanation, read [Enrollment and the join token](explanation/enrollment.md) and [Worker life cycle and the watchdog](explanation/worker-lifecycle.md).
 
 ## Summary
 
@@ -23,7 +26,7 @@ This document tells what ray-vast protects, from whom, and what it does not prot
 
 ## Threats and defenses
 
-| Threat | Defense | Spec |
+| Threat | Defense | Spec (design.md) |
 |---|---|---|
 | Someone reads the rental request or the container log on vast | The command and the log hold no secrets. The env holds only public values and the one-time join token. `instance_api_key` in the create answer is never logged. | design 5.1, 5.2 |
 | A fake head, or a man in the middle, sends a changed bootstrap or CA | The bootloader checks the bootstrap's SHA-256. The bootstrap pins the CA by its SHA-256, refuses a PEM with more than one cert, and builds the PEM again from the hashed DER. All later calls verify the head (chain and IP SAN). | design 5.3, 5.4 |
@@ -88,8 +91,10 @@ vast puts the SSH keys of your account into `/root/.ssh/authorized_keys` of ever
 
 ### No automatic certificate renewal
 
-Certs live `cert_max_age_days` (default 365). Plan a `down` and an `up` before the CA expires; `up` and the head log warn 14 days before (design 7.2).
+Certs live `cert_max_age_days` (default 365). Plan a `down` and an `up` before the CA expires; `up` and the head log warn 14 days before (design.md 7.2).
 
 ## Reporting a problem
 
-TODO: add a contact or an issue link before release. The contact is not decided yet.
+Report a problem in the [GitHub issues](https://github.com/duc-ph/ray-vast/issues).
+Do not put a key, a token or another secret in an issue.
+<!-- TODO: a private contact for vulnerabilities is not decided yet. -->

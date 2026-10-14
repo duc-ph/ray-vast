@@ -1,6 +1,6 @@
 # ray-vast design
 
-This file is the spec of the system: what each part does, and how the parts work together. Terms are in [CONTEXT.md](../CONTEXT.md). The security model is in [security.md](../ray-vast-pypi/docs/security.md). The reasons for the decisions are in [decisions.md](decisions.md). The user guide (config, CLI, limits) is in the [README](../ray-vast-pypi/README.md). The parts of this spec that are not in the code yet are in [implementation-plan.md](implementation-plan.md).
+This file is the spec of the system: what each part does, and how the parts work together. Terms are in [CONTEXT.md](../CONTEXT.md). The security model is in [security.md](../ray-vast-pypi/docs/security.md). The reasons for the decisions are in [decisions.md](decisions.md). The user guide (config, CLI, limits) is the docs site, with its source in [ray-vast-pypi/docs/](../ray-vast-pypi/docs/index.md). The parts of this spec that are not in the code yet are in [implementation-plan.md](implementation-plan.md).
 
 Contents:
 1. Overview
@@ -295,7 +295,7 @@ Reason: without it, the runtime-env agent and the dashboard agent bind to the ad
 
 ## 9. Node types
 
-This section is about how the provider uses a node type. How to write one is in the [README](../ray-vast-pypi/README.md) ("Config reference").
+This section is about how the provider uses a node type. How to write one is in the user docs: [node types](../ray-vast-pypi/docs/how-to/node-types.md) and [configuration](../ray-vast-pypi/docs/reference/configuration.md).
 
 - A node type has declared resources (`CPU`, `GPU`) and an `offer_query` in the vast API JSON form (a YAML mapping, MB units). There is no parser for the vast CLI syntax.
 - The provider adds these filters: `num_gpus = GPU`, `cpu_cores_effective >= CPU`, `direct_port_count >= 64`, `verified = true`, `rentable = true`, `datacenter = true` (unless `allow_non_datacenter`). A user filter on an added field must be at least as strict, and is merged.
@@ -304,7 +304,7 @@ This section is about how the provider uses a node type. How to write one is in 
 
 ## 10. CLI
 
-`ray-vast up`, `down`, `attach` (SSH to the head), `dashboard` (copies the token to the laptop and opens an SSH tunnel to port 8265). The options and the state files are in the README.
+`ray-vast up`, `down`, `attach` (SSH to the head), `dashboard` (copies the token to the laptop and opens an SSH tunnel to port 8265). The options and the state files are in the user docs ([CLI](../ray-vast-pypi/docs/reference/cli.md)).
 
 - `up`: 7.1.
 - `down`: terminate the EC2 head first (so its autoscaler cannot rent new workers); then destroy every vast instance with the cluster label (list again until 0, retried on rate limits); then delete the 5 security groups (with their rules), the role and the instance profile. It finds everything by tag, name and label, so it works after a failed `up`, when the head is gone, and when the local state file is missing. It needs no SSH key. Without a vast key, it cleans AWS and warns that the vast instances were not swept. It prints `left: nothing`, or lists what is left and exits with code 1.

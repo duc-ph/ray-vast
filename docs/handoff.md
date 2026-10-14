@@ -23,7 +23,7 @@ These are the user's rules from the earlier sessions. Follow them.
   - When a subagent has a large context, do not give it more work. Start a new one.
   - Stop agents at once when the user asks.
 - **TDD with proof:** red before green. Each new behavior needs a test that the agent saw fail for the right reason; the report lists the failure line. After a step, run a mutation audit (change the code, check that a test fails) on the new behaviors.
-- **Tests:** the fast run in the TDD loop, the full run once at the end of a step (commands in `ray-vast-pypi/README.md`, "Tests").
+- **Tests:** the fast run in the TDD loop, the full run once at the end of a step (commands in `ray-vast-pypi/CONTRIBUTING.md`).
 - **Review:** after each step, run the `mattpocock-skills:code-review` skill (Standards and Spec axes) with subagents, as in `docs/agents/review.md`. Fix the HARD findings.
 - **Git:** commit to `main` and push after each step. No branches. Author: Duc Pham <thiel.pham@gmail.com>. End each commit message with the session line that the harness gives you.
 - **Money and safety:**

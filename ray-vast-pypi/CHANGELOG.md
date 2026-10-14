@@ -35,6 +35,6 @@ First version.
 - Warnings: untested Ray version, `CPU` above the 58 worker ports, `allow_non_datacenter`, and certificate expiry in 14 days.
 - Documented risks: the head holds the full vast account key; Ray tasks can read `CONTAINER_API_KEY` from `/proc/1/environ`. See `docs/security.md`.
 - Tests: a fast default run (`pytest`, about 30 s) and a full run (`pytest -o addopts="" -m "not live and not local_e2e"`).
-- Documents: README, security model (`docs/security.md`).
+- Documents: the user docs site (`docs/`, MkDocs Material, published to https://duc-ph.github.io/ray-vast/), README, security model (`docs/security.md`), `CONTRIBUTING.md`.
 - Tested with Ray 2.59.
 - Not published to PyPI yet.

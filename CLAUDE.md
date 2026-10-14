@@ -6,7 +6,7 @@ To continue the work: read `docs/handoff.md` first.
 
 Read first: `CONTEXT.md` (terms), `docs/design.md` (the spec, with the Ray facts F1–F12 and the worker ↔ head protocol), `docs/implementation-plan.md` (steps and status), `docs/decisions.md` (reasons, D1–D9).
 
-Docs layout: one topic in one file. `docs/` holds the project docs (design, decisions, plan, spikes, shim, tests, future work, agent instructions in `docs/agents/`). `ray-vast-pypi/` holds the user docs (README, CHANGELOG, `docs/security.md`). `archive/` holds raw test data.
+Docs layout: one topic in one file. `docs/` holds the project docs (design, decisions, plan, spikes, shim, tests, future work, agent instructions in `docs/agents/`). `ray-vast-pypi/` holds the user docs (README, CHANGELOG, CONTRIBUTING, the MkDocs site in `docs/` with `mkdocs.yml`). `archive/` holds raw test data.
 
 ## Principle
 Simplest implementation that works, with no compromise on reliability and no fragility. Fewer parts, fewer failure modes.
@@ -27,7 +27,7 @@ best understood together.
 ```
 - Worker-side code (`src/ray_vast/worker/`) uses the Python stdlib only.
 - Never log `instance_api_key`, `CONTAINER_API_KEY`, join tokens, the cluster token, private keys or the vast key.
-- Tests: the fast run in the TDD loop, the full run once at the end. Commands and test rules: README "Tests".
+- Tests: the fast run in the TDD loop, the full run once at the end. Commands and test rules: `ray-vast-pypi/CONTRIBUTING.md`.
 - Run the tests on the dev box. Work there in a git clone, or edit on the laptop and rsync `ray-vast-pypi/` to the box.
 
 ## Docs
