@@ -261,6 +261,8 @@ The dev box runs the head and each worker as a local Docker container. A fake va
 | 2 | 8 passed | 715 s |
 | 3 | 8 passed | 716 s |
 
+Re-run after the one-ending-path refactor (9078c6e): 3 runs, 8 passed each, 723 s, 720 s, 719 s.
+
 The 8 scenarios:
 1. Scale up 3 workers with k=2: 6 rentals, 3 workers enroll, the provider destroys the 3 unused candidates. The battery runs. Idle scale-down goes to 0.
 2. Two workers with the same public IP both join. Scale-down removes the idle one (F3).
