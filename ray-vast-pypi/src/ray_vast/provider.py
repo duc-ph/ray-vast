@@ -40,11 +40,11 @@ from ray.autoscaler.tags import (
     TAG_RAY_USER_NODE_TYPE,
 )
 
-from . import pki
+from . import pki, state as cluster_state
 from .aws_sg import SecurityGroupRules, SgQuotaError, ec2_client_config
 from .config import PROVIDER_DEFAULTS, build_offer_query
 from .head_server import HeadServer
-from .state import BREAKER_FAILED_SLOTS, BREAKER_PAUSE_S, Candidate, ClusterState, Slot
+from .state import BREAKER_FAILED_SLOTS, Candidate, ClusterState, Slot
 from .vast_api import VastClient, VastError
 
 log = logging.getLogger(__name__)
@@ -392,7 +392,7 @@ class VastNodeProvider(NodeProvider):
                     self.state.remove_slot(slot.id)
                     if self.state.slot_failed(slot.node_type, now):  # rent-loop breaker
                         log.error("node type %r: %d slots in a row ended with no enrolled worker; no new launches of "
-                                  "this type for %d s", slot.node_type, BREAKER_FAILED_SLOTS, BREAKER_PAUSE_S)
+                                  "this type for %d s", slot.node_type, BREAKER_FAILED_SLOTS, cluster_state.BREAKER_PAUSE_S)
             in_use = set(self.state.slots) | {c.slot_id for c in self.state.candidates.values()}
             for slot_id in [i for i in self._request_of_slot if i not in in_use and i not in self._creating]:
                 del self._request_of_slot[slot_id]

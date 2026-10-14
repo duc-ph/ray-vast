@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import ray
 from ray.util.placement_group import placement_group
-from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
+from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy, PlacementGroupSchedulingStrategy
 
 n_workers = int(sys.argv[1])
 ray.init(address="auto")
@@ -24,7 +24,10 @@ def where():
     return ray.get_runtime_context().get_node_id()
 
 
-ran_on = ray.get([where.options(scheduling_strategy="SPREAD").remote() for _ in range(40)], timeout=300)
+# One task in each bundle of the STRICT_SPREAD group, so on each worker. Ray's "SPREAD" is only a best effort: the owner
+# reuses a granted worker lease for the next queued tasks, so 40 short tasks could all run on one node.
+ran_on = ray.get([where.options(scheduling_strategy=PlacementGroupSchedulingStrategy(pg, placement_group_bundle_index=i))
+                  .remote() for i in range(n_workers)], timeout=300)
 result["tasks_on_nodes"] = len(set(ran_on) & set(workers))
 
 
@@ -46,8 +49,10 @@ result["actors_ping"] = ray.get([a.ping.remote() for a in actors], timeout=300)
 nbytes = 50 * 1024 * 1024
 result["head_to_worker"] = [ray.get(a.fetch.remote([ray.put(np.random.bytes(nbytes))]), timeout=300) == nbytes for a in actors]
 result["worker_to_head"] = [len(ray.get(ray.get(a.make.remote(nbytes), timeout=300)[0], timeout=300)) == nbytes for a in actors]
-if len(actors) == 2:
-    result["worker_to_worker"] = ray.get(actors[1].fetch.remote(ray.get(actors[0].make.remote(nbytes), timeout=300)), timeout=300) == nbytes
+# Each worker fetches an object that the next worker made (a ring over all the workers).
+result["worker_to_worker"] = [
+    ray.get(actors[(i + 1) % len(actors)].fetch.remote(ray.get(actors[i].make.remote(nbytes), timeout=300)), timeout=300)
+    == nbytes for i in range(len(actors))]
 
 job = subprocess.run(
     ["ray", "job", "submit", "--address", "http://127.0.0.1:8265", "--", "python", "-c",

@@ -1,13 +1,17 @@
 """Step 11 harness and fixtures (not a conftest.py: tests/unit has one and imports it by name): a fake vast (containers on the box), moto as the AWS endpoint, and a Ray head in a container.
 
-Run on the dev box: `pytest -m local_e2e tests/local_e2e`. Container names start with `st11-`.
+Run on the dev box: `pytest -o addopts="" -m local_e2e tests/local_e2e`. Container names start with `st11-<pid>-`, so
+a run sees only its own containers.
 """
 import json
+import os
 import shutil
 import socket
 import ssl
 import subprocess
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import boto3
@@ -22,7 +26,8 @@ from fake_vast_server import FakeVast, make_offers
 PYPI_DIR = Path(__file__).resolve().parents[2]
 RAY_IMAGE = "rayproject/ray:2.59.0-py311-cpu"
 HEAD_IMAGE = "st11-head"
-HEAD = "st11-head"
+PREFIX = f"st11-{os.getpid()}-"
+HEAD = PREFIX + "head"
 REGION = "us-west-2"
 
 def docker(*args, check=True):
@@ -66,11 +71,15 @@ def moto_url(box_ip):
 
 
 @pytest.fixture(autouse=True)
-def no_leftover_containers():
+def teardown_removes_every_container():
+    """A cleanup guard, not a leak check: the teardown removes every container, so a container that is still here is a
+    harness fault (for example a rental that started while the fake vast stopped). It fails the test and removes the
+    container. The leak check of the provider is `Cluster.assert_live`, which a scenario calls before the teardown."""
     yield
-    names = docker("ps", "-aq", "--filter", "name=^st11-", check=False).stdout.split()
+    names = docker("ps", "-a", "--format", "{{.Names}}", "--filter", f"name=^{PREFIX}", check=False).stdout.split()
     if names:
         docker("rm", "-f", *names, check=False)
+    assert not names, f"the teardown left containers behind: {names}"
 
 
 class Cluster:
@@ -85,7 +94,8 @@ class Cluster:
         shutil.copy(PYPI_DIR / "src/ray_vast/shim/librayvast_shim.so", self.work / "librayvast_shim.so")
         self.config = None
 
-    def write_config(self, cpu=2, max_workers=4, idle_timeout_minutes=1, **provider):
+    def write_config(self, cpu=2, max_workers=4, idle_timeout_minutes=1, provider_module=None, **provider):
+        """`provider_module` replaces the provider class that Ray loads (a module in tests/local_e2e)."""
         config, _ = ray_vast_config.bootstrap_config({
             "cluster_name": "st11",
             "max_workers": max_workers,
@@ -102,10 +112,13 @@ class Cluster:
                         "node_config": {"offer_query": {"inet_down": {"gte": 100}}}},
             },
         })
+        if provider_module:
+            config["provider"]["module"] = provider_module
         (self.work / "autoscaling.yaml").write_text(yaml.safe_dump(config))
 
-    def start_head(self):
-        """`docker run` the head like step 10 does: ray start --head --block, v2, TLS, token, shim."""
+    def start_head(self, **extra_env):
+        """`docker run` the head like step 10 does (ray start --head --block, v2, TLS, token, shim, no restart policy).
+        `extra_env` is added to the head env. /e2e is on PYTHONPATH, for `write_config(provider_module=...)`."""
         ip = self.box_ip
         env = {
             "RAY_enable_autoscaler_v2": "1", "RAY_CLOUD_INSTANCE_ID": "head", "RAY_NODE_TYPE_NAME": "head",
@@ -115,7 +128,7 @@ class Cluster:
             "LD_PRELOAD": "/work/librayvast_shim.so", "RAYVAST_PUBLIC_IP": ip, "RAYVAST_PRIVATE_IP": ip,
             "RAYVAST_LOCALHOST_PORTS": "6384,6385",
             "AWS_ENDPOINT_URL": self.moto_url, "AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x",
-            "AWS_DEFAULT_REGION": REGION,
+            "AWS_DEFAULT_REGION": REGION, "PYTHONPATH": "/e2e", **extra_env,
         }
         docker(
             "run", "-d", "--init", "--network", "host", "--name", HEAD,
@@ -129,6 +142,26 @@ class Cluster:
         )
         self.wait_for(self.head_server_answers, 90, "the head server answers on port A")
         self.wait_for(lambda: docker("exec", HEAD, "ray", "status", check=False).returncode == 0, 90, "ray status works")
+
+    def assert_live(self, expected):
+        """The leak check, before the teardown: the fake vast has only the `expected` instances (so the provider
+        destroyed every other one), and no container is left of a destroyed instance."""
+        assert self.fake.live_ids() == sorted(expected), self.diagnostics()
+        names = docker("ps", "-a", "--format", "{{.Names}}", "--filter", f"name=^{PREFIX}w-").stdout.split()
+        assert sorted(names) == sorted(self.fake.name_of(i) for i in expected), names
+
+    def agents_refuse_without_token(self, instance_id):
+        """True when both Ray agent ports of the worker answer 401 without a token: the worker's token check passes."""
+        block = self.fake.instances[instance_id]["block"]
+        statuses = []
+        for port in (block + 4, block + 5):  # identity ports 70004 and 70005
+            try:
+                statuses.append(urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2).status)
+            except urllib.error.HTTPError as e:
+                statuses.append(e.code)
+            except OSError:
+                statuses.append(None)
+        return statuses == [401, 401]
 
     def sg_cidrs(self):
         """The ingress rules that ray-vast made (the security group only has those)."""
@@ -163,7 +196,7 @@ class Cluster:
 
     def diagnostics(self):
         head_log = docker("logs", "--tail", "40", HEAD, check=False)
-        state = docker("ps", "-a", "--filter", "name=^st11-", "--format", "{{.Names}} {{.Status}}", check=False).stdout
+        state = docker("ps", "-a", "--filter", f"name=^{PREFIX}", "--format", "{{.Names}} {{.Status}}", check=False).stdout
         monitor = docker("exec", HEAD, "sh", "-c", "tail -n 80 /tmp/ray/session_latest/logs/monitor.log", check=False)
         return (f"fake vast: live={self.fake.live_ids()} rentals={self.fake.rentals} "
                 f"destroys={[d[:2] for d in self.fake.destroys]}\ncontainers: {state}--- head container log\n"
@@ -172,16 +205,19 @@ class Cluster:
 
 @pytest.fixture
 def make_cluster(tmp_path, box_ip, moto_url, head_image):
-    """`make_cluster(offers=6, docker_args=(), worker_env={})` returns a Cluster whose head has not started yet."""
+    """`make_cluster(offers=6, docker_args=(), worker_env={}, failing_hosts=0, silent_hosts=0)` returns a Cluster whose
+    head has not started yet. `failing_hosts` and `silent_hosts`: see FakeVast."""
     fakes = []
 
-    def make(offers=6, docker_args=(), worker_env=None):
-        fake = FakeVast(box_ip, make_offers(offers), docker_args=docker_args,
-                        extra_env={"RAYVAST_SKIP_HOST_CHECKS": "1", **(worker_env or {})})
+    def make(offers=6, docker_args=(), worker_env=None, failing_hosts=0, silent_hosts=0):
+        fake = FakeVast(box_ip, make_offers(offers), PREFIX, docker_args=docker_args,
+                        extra_env={"RAYVAST_SKIP_HOST_CHECKS": "1", **(worker_env or {})}, failing_hosts=failing_hosts,
+                        silent_hosts=silent_hosts)
         fake.start()
         fakes.append(fake)
         return Cluster(tmp_path, box_ip, moto_url, fake)
 
     yield make
+    docker("rm", "-f", HEAD, check=False)  # first the head: its provider must not rent while the fake vast stops
     for fake in fakes:
         fake.stop()

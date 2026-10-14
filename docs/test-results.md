@@ -250,3 +250,33 @@ Why the 2 survivors are acceptable (both are equivalent mutants; no test can see
 - `errno-save-removed-in-init`: `init()` runs in the library constructor, before `main`. No caller can read errno at that time.
 
 Run it again: `cd ray-vast-pypi && .venv/bin/python scripts/shim_mutants.py` (Docker is necessary).
+
+## Local end-to-end (step 11, 2026-10-14)
+
+The dev box runs the head and each worker as a local Docker container. A fake vast server rents the containers. The cost is $0. Command: `pytest -o addopts="" -m local_e2e tests/local_e2e`.
+
+| Run | Result | Time |
+|---|---|---|
+| 1 | 8 passed | 716 s |
+| 2 | 8 passed | 715 s |
+| 3 | 8 passed | 716 s |
+
+The 8 scenarios:
+1. Scale up 3 workers with k=2: 6 rentals, 3 workers enroll, the provider destroys the 3 unused candidates. The battery runs. Idle scale-down goes to 0.
+2. Two workers with the same public IP both join. Scale-down removes the idle one (F3).
+3. A host with more cores than declared: Ray uses the real count (F4).
+4. A candidate that never enrolls: the provider destroys it after the 1-min enrollment limit and rents again. The second candidate joins.
+5. The head goes silent: each worker tries to report, then destroys itself.
+6. A container restart: the head refuses the second enrollment, and the worker destroys itself.
+7. The monitor stops: the head stops (no restart), and every worker destroys itself.
+8. Three failed enrollments in a row: the breaker stops the node type for the pause (scaled to 60 s), then the node type launches again.
+
+Proof: each new or changed scenario failed against a temporary mutant (for example, the Docker restart policy put back, the enrollment limit set to 6000 s, the breaker turned off, a fake vast that keeps the container on DELETE). Each scenario checks through the fake vast, before the teardown, that no instance is left that the provider must destroy.
+
+Root causes of the flaky results before step 10b:
+- **A container left after the k=2 scenario.** The old session leak check matched every `st7b-` container, so it saw the containers of a parallel run. Also, the harness stopped the fake vast before the head, and the fake did not wait for its request threads, so a rental in progress could leave a container. Fix: per-run container prefixes, the head is removed first, the fake waits for its threads. The provider does not leak.
+- **`tasks_on_nodes == 1`, expected 2.** The test was wrong. Ray's SPREAD strategy is only a best effort: Ray reuses a worker lease for the next queued tasks, so 40 short tasks can all run on one node. Fix: one task in each bundle of a STRICT_SPREAD placement group.
+
+Facts:
+- Ray 2.59 shows a launch refusal in `ray status` as `<node type>: LaunchFailed` under "Recent failures". It does not show the exception text. The breaker reason is only in `monitor.log`.
+- The 4-vCPU dev box runs a head and 3 Ray workers without trouble.

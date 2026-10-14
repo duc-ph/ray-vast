@@ -52,7 +52,7 @@ ray-vast-pypi/
 | 10 | CLI (`up`, `down`, `attach`, `dashboard`) | Done; live AWS cycle passed before 10b (5 groups and no restart policy in 10b) |
 | 10b | Spec changes of 2026-10-13 | Done (full suite 362 passed; mutation audit 33 mutants, survivors fixed) |
 | 10c | Shim tests and mutation evaluation | Done (14 tests; 23 of 25 mutants killed, 2 equivalent) |
-| 11 | Local end-to-end on the dev box | Started with the old enrollment; next |
+| 11 | Local end-to-end on the dev box | Done (8 scenarios, 3 runs in a row; no product bug) |
 | 12 | Live tests on vast (paid) | C5a/C5d ran (enrollment failed, the reason for step 10b) |
 | 13 | Docs and release | To do |
 
@@ -114,14 +114,14 @@ Scenarios:
 - Two workers with the same public IP: both are seen, and scale-down removes the correct one (F3).
 - A host with more cores than declared: Ray uses the real core count (F4).
 - A candidate that never enrolls: the slot is removed and asked for again.
-- Stop the head server for 6 min: both workers destroy themselves, and the report endpoint gets the reasons first.
+- Stop the head server for 6 min: both workers destroy themselves, and each worker tries to send its reason to the report endpoint first (the endpoint is down with the head, so the test checks the attempt in the worker log).
 - Container restart: the second enrollment is refused, and the worker destroys itself.
 - Three enrollment failures in a row: the breaker stops the node type for 10 min (scaled time).
 
-State: the harness and 7 scenarios exist in `tests/local_e2e/` with the old enrollment. Before 10b: run 1 passed 7/7; run 2 left a container behind after the k=2 scenario (leak check error); run 3 failed the battery scenario (`tasks_on_nodes` 1, expected 2, with both workers up). The monitor-crash scenario tests the old restart policy and must change to "the head stops, and the workers destroy themselves".
+State: done on 2026-10-14. 8 scenarios passed 3 runs in a row (about 715 s each). The results and the root causes of the earlier flaky results are in [test-results.md](test-results.md).
 
 Done when:
-- [ ] All scenarios pass 3 times in a row.
+- [x] All scenarios pass 3 times in a row.
 
 ## Step 12 — Live tests on vast (paid)
 

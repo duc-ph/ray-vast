@@ -9,6 +9,7 @@ import requests
 from ray.autoscaler.node_launch_exception import NodeLaunchException
 from ray.autoscaler.tags import TAG_RAY_NODE_KIND, TAG_RAY_NODE_STATUS, TAG_RAY_USER_NODE_TYPE
 
+import ray_vast.state
 from conftest import offer  # noqa: E402
 
 LABEL = "ray-vast:c1"
@@ -561,6 +562,15 @@ def test_three_failed_slots_in_a_row_stop_launches_of_that_node_type_for_10_min(
         create(p)
     env.clock.now += 2
     assert len(create(p)) == 1
+
+
+def test_the_breaker_log_names_the_pause_in_force(env, caplog, monkeypatch):
+    monkeypatch.setattr(ray_vast.state, "BREAKER_PAUSE_S", 60)  # what a scaled test provider sets
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 10)]
+    p = env.make(candidate_factor=1)
+    for _ in range(3):
+        fail_one_slot(env, p)
+    assert "no new launches of this type for 60 s" in caplog.text
 
 
 def test_after_the_pause_one_more_failed_slot_does_not_stop_launches_again(env):

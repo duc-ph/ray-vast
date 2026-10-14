@@ -1,4 +1,4 @@
-# Handoff: continue ray-vast on the dev box (2026-10-13)
+# Handoff: continue ray-vast on the dev box (2026-10-14)
 
 You are the lead agent. Read this file first, then do the work in "Next work". The user moved the work from the laptop to the dev box `ray-vast-dev`.
 
@@ -42,21 +42,17 @@ These are the user's rules from the earlier sessions. Follow them.
 
 ## State at handoff
 
-- Steps 0–10 are done and committed. The C5a/C5d live run showed that enrollment fails on real vast (vast answers 401 when the head uses a worker's `CONTAINER_API_KEY`). The design was changed to a one-time join token and other items: this is step 10b. The spec (`docs/design.md`) is already updated; the code is not.
-- Step 11 (local end-to-end) work in progress is committed in `ray-vast-pypi/tests/local_e2e/` (deselected by default with the `local_e2e` marker). It uses the OLD enrollment. Before the spec change, it ran 3 times on the box with the old code:
-  - Run 1: 7 of 7 passed.
-  - Run 2: 7 passed, 1 error: the session leak check found a container left behind (`tests/conftest.py:68`) after `test_k_2_rents_four_candidates_for_two_nodes_and_destroys_the_two_unused`.
-  - Run 3: `test_scale_up_two_workers_run_the_battery_then_idle_scale_down_to_zero` failed: `tasks_on_nodes == 1`, expected 2 (`cpus: [0, 4.0, 4.0]`, so both workers were up; the task spread was not even).
-  - `test_monitor_crash_stops_the_head_and_the_restarted_head_sweeps_and_scales_again` tests the old Docker restart policy. The spec now has no self-healing (design 7.3), so this test must change.
-- The shim has no automated behavior test. It was tested only by hand (C0 `tests/manual/c0_1_shim_unit.sh`) and in the live cycles C0–C4.
+- Steps 0–11 are done and committed (2026-10-14).
+  - Step 10b: the one-time join token, 5 security groups, no head restart policy, the rent-loop breaker, the CA expiry warning.
+  - Step 10c: 14 shim tests and a mutation script (23 of 25 mutants killed, 2 equivalent).
+  - Step 11: 8 local end-to-end scenarios passed 3 runs in a row (about 12 min each). No product bug.
+- Test counts: the fast run has about 308 tests; the full run (`-m "not live and not local_e2e"`) has 363.
+- The dev box has the clone at `/home/ubuntu/ray-vast` and a venv made with `uv` (`ray-vast-pypi/.venv`, no pip inside; use `VIRTUAL_ENV=.venv uv pip install`). The box has `python3.12-venv` for the packaging test.
+- The box has **no** AWS credentials for the profile `personal` and no `aws` CLI. Step 12 needs them.
 
 ## Next work
 
-Steps 10b and 10c have no shared files. Run them in parallel, each with its own subagent. Then do step 11. The details are in `docs/implementation-plan.md`.
-
-1. **Step 10b — spec changes:** join token, 5 security groups, no restart policy, rent-loop breaker, the CA expiry warning in the head log, the log names "port check" and "orphan sweep", `pytest-timeout`, the bootloader container test.
-2. **Step 10c — shim tests and mutation evaluation.**
-3. **Step 11 — local end-to-end**, after 10b. Bring the 7 scenarios to the new spec, add the breaker scenario, fix the two flaky results above, and pass all scenarios 3 times in a row.
-4. Then step 12 (paid live cycles, `docs/test-plan.md`) and step 13 (release). Ask the user before step 12.
+1. Step 12 (paid live cycles C5, C6, C8 in `docs/test-plan.md`). Ask the user before the first paid run. Add AWS credentials on the box first.
+2. Step 13 (docs and release). Never publish to PyPI without the user.
 
 When a step is done: update the status table in `docs/implementation-plan.md`, add the results to `docs/test-results.md` if it ran a cycle, commit, push, and give the user a short report.
