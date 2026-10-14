@@ -23,12 +23,7 @@ pip install ray-vast
 ```
 
 This installs the `ray-vast` command and the `ray` command.
-
-`ray-vast up` installs ray-vast on the head from a wheel file. Download the wheel:
-
-```bash
-pip download ray-vast==0.1.0 --no-deps -d wheels
-```
+`ray-vast up` installs the same ray-vast version on the head, from PyPI.
 
 ## 2. Write a cluster YAML
 
@@ -77,12 +72,16 @@ To choose other GPUs, read [Choose node types and offer queries](how-to/node-typ
 ## 3. Start the cluster
 
 ```bash
-ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
+ray-vast up cluster.yaml --profile my-aws-profile
 ```
+
+`--profile` is your AWS profile. Give it to every `ray-vast` command, or set `AWS_PROFILE` once.
+The commands below do not show it.
 
 The output looks like this:
 
 ```text
+installing ray-vast==<version> from PyPI
 head instance <instance id> starting
 head IP <head ip>
 cluster gpu-24gb is up. Head IP <head ip>.

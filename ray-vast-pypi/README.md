@@ -31,9 +31,8 @@ Copy an example cluster YAML (`gpu-24gb.yaml`, `gpu-80gb.yaml` or `cpu-heavy.yam
 Set the region, the budget (`max_dollars_per_hour`) and your EC2 key pair (`key_name`, `key_file`).
 
 ```
-pip download ray-vast==0.1.0 --no-deps -d wheels       # the wheel for the head
-ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
-ray-vast dashboard cluster.yaml                        # keep this terminal open
+ray-vast up cluster.yaml --profile my-aws-profile
+ray-vast dashboard cluster.yaml --profile my-aws-profile   # keep this terminal open
 ```
 
 In a second terminal, run the `export` line that `dashboard` printed, and submit a job:
@@ -46,7 +45,7 @@ ray job submit --address http://127.0.0.1:8265 --working-dir . -- python train.p
 When you finish:
 
 ```
-ray-vast down cluster.yaml
+ray-vast down cluster.yaml --profile my-aws-profile
 ```
 
 | Plain Ray | ray-vast |
@@ -67,7 +66,7 @@ ray-vast down cluster.yaml
 
 ## Status
 
-Version 0.1.0. Tested with Ray 2.59.
+Version 0.1.0rc1, a release candidate of 0.1.0. Tested with Ray 2.59.
 
 ## Contributing
 

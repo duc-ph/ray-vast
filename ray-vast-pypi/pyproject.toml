@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ray-vast"
-version = "0.1.0.dev0"
+dynamic = ["version"]
 description = "A Ray autoscaler node provider for vast.ai workers with an AWS EC2 head."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{ name = "Duc Pham", email = "thiel.pham@gmail.com" }]
 dependencies = ["ray[default]>=2.59", "boto3", "cryptography>=42", "pyyaml", "requests"]
 
@@ -24,6 +24,9 @@ test = ["pytest", "pytest-timeout", "moto[server]", "responses", "freezegun", "b
 
 [project.scripts]
 ray-vast = "ray_vast.cli:main"
+
+[tool.hatch.version]
+path = "src/ray_vast/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ray_vast"]

@@ -2,14 +2,15 @@
 arguments and calls `run`; the split keeps `ray-vast --help` free of boto3, yaml and the other dependencies.
 
 `up` makes, in this order: an IAM role, 5 security groups, the role's policy, an instance profile, and the EC2 head
-(all tagged `ray-vast-cluster=<name>`). On the head it builds a derived image (`provider.image` plus the ray-vast
-wheel), makes the secrets inside a container, and starts the Ray head as the main process of a container.
+(all tagged `ray-vast-cluster=<name>`). On the head it builds a derived image (`provider.image` plus ray-vast), makes the secrets inside a container, and starts the Ray head as the main process of a container.
 `down` finds everything by tag or by name, so it works when `up` failed half way, when the head is gone, and
 when `~/.ray-vast/<cluster>.json` is missing.
 
 Decisions:
-- ray-vast is not on PyPI yet, so `up` builds the wheel on the laptop (`python -m build`, from the source tree, or
-  `--wheel FILE`), copies it to the head and installs it in the derived image.
+- The derived image gets ray-vast from, in this order: `--wheel FILE` (copied to the head); `--index-url URL` (pip
+  installs `ray-vast==<this CLI's version>` from that index, with the dependencies from PyPI); the source tree, when
+  the CLI runs from a git checkout (`python -m build` on the laptop, for development); else `ray-vast==<this CLI's
+  version>` from PyPI. Without `--wheel`, the head runs the same code as the CLI.
 - `down` terminates the head first, so its autoscaler cannot rent new workers while the vast sweep runs.
 """
 import argparse
@@ -29,6 +30,7 @@ import boto3
 import botocore.exceptions
 import yaml
 
+from . import __version__
 from . import config as config_module
 from . import pki
 from .aws_sg import ec2_client_config
@@ -37,6 +39,7 @@ from .vast_api import VastClient, label, sweep
 TAG_KEY = "ray-vast-cluster"
 SECURITY_GROUPS = 5
 BUILD_TIMEOUT = 600  # seconds for `python -m build` on the laptop
+SOURCE_TREE = Path(__file__).resolve().parents[2]  # holds pyproject.toml when ray-vast runs from a git checkout
 TESTED_RAY_VERSIONS = ("2.59",)
 UBUNTU_OWNER = "099720109477"
 UBUNTU_AMI_NAME = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
@@ -63,6 +66,9 @@ systemctl enable --now docker
 DOCKERFILE = """FROM {image}
 COPY {wheel} /tmp/{wheel}
 RUN pip install --no-cache-dir /tmp/{wheel}
+"""
+DOCKERFILE_INDEX = """FROM {image}
+RUN pip install --no-cache-dir {requirement}
 """
 # Prints one line `RAYVAST_IMAGE_INFO <Ray version> <shim path>` inside the derived image. `up` keeps the image's
 # ENTRYPOINT (NVIDIA's prepares CUDA), and an ENTRYPOINT can print to stdout first, so `up` reads only the marker line.
@@ -138,7 +144,7 @@ def _read_vast_key():
     return key.strip()
 
 
-def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
+def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
     config, warnings = config_module.load_and_bootstrap(config_path)
     cluster, provider = config["cluster_name"], config["provider"]
     if not NAME_RE.match(cluster):
@@ -207,13 +213,26 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
                 raise
             sleep(5)
 
-    # 3. Derived image: provider.image + the ray-vast wheel. Read the Ray version and the shim path from it.
+    # 3. Derived image: provider.image + ray-vast (the wheel, or this CLI's own version from the package index).
+    # Read the Ray version and the shim path from it.
     work = f"/home/{SSH_USER}/{name}"
     secrets, build, image_tag = f"{work}/secrets", f"{work}/build", f"{name}:head"
     ssh.run(head_ip, f"mkdir -p -m 700 {secrets} {build}")
-    ssh.copy(head_ip, wheel, f"{build}/{wheel.name}")
-    ssh.run(head_ip, f"cat > {build}/Dockerfile", stdin=DOCKERFILE.format(image=provider["image"], wheel=wheel.name))
-    ssh.run(head_ip, f"sudo docker build -t {image_tag} {build}", timeout=1800)
+    if wheel:
+        ssh.copy(head_ip, wheel, f"{build}/{wheel.name}")
+        dockerfile = DOCKERFILE.format(image=provider["image"], wheel=wheel.name)
+    else:
+        # TestPyPI does not hold ray-vast's dependencies, so pip takes them from PyPI.
+        index = f"--index-url {shlex.quote(index_url)} --extra-index-url https://pypi.org/simple " if index_url else ""
+        dockerfile = DOCKERFILE_INDEX.format(image=provider["image"], requirement=f"{index}ray-vast=={__version__}")
+    ssh.run(head_ip, f"cat > {build}/Dockerfile", stdin=dockerfile)
+    try:
+        ssh.run(head_ip, f"sudo docker build -t {image_tag} {build}", timeout=1800)
+    except SshError as e:
+        if wheel:
+            raise
+        raise CliError(f"could not install ray-vast=={__version__} from {index_url or 'PyPI'} in the head image. Check that "
+                       f"this version is on that index. Run `ray-vast down {config_path}` to remove what was created.\n{e}") from None
     stdout = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}")
     info = [line.split() for line in stdout.splitlines() if line.startswith(IMAGE_INFO_MARKER + " ")]
     if len(info) != 1 or len(info[0]) != 3:
@@ -381,16 +400,21 @@ def run(args):
             key_name = args.key_name or provider.get("key_name")
             if not key_name:
                 raise CliError("no EC2 key pair: pass --key-name or set provider.key_name")
+            if args.wheel and args.index_url:
+                raise CliError("--wheel and --index-url do not go together: pass one of them")
+            # Where the head image gets ray-vast: --wheel, else --index-url, else the source tree (development), else PyPI.
             wheel = Path(args.wheel).expanduser() if args.wheel else None
             with tempfile.TemporaryDirectory() as tmp:
-                if wheel is None:
-                    source = Path(__file__).resolve().parents[2]
-                    if not (source / "pyproject.toml").exists():
-                        raise CliError("not running from a source tree: pass --wheel")
-                    subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", tmp, str(source)],
+                if wheel is None and not args.index_url and (SOURCE_TREE / "pyproject.toml").exists():
+                    subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", tmp, str(SOURCE_TREE)],
                                    check=True, capture_output=True, timeout=BUILD_TIMEOUT)
                     wheel = next(Path(tmp).glob("ray_vast-*.whl"))
-                up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, vast_key=_read_vast_key(),
+                    print(f"installing ray-vast from a wheel built from the source tree {SOURCE_TREE}")
+                elif wheel:
+                    print(f"installing ray-vast from the wheel {wheel}")
+                else:
+                    print(f"installing ray-vast=={__version__} from {args.index_url or 'PyPI'}")
+                up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, index_url=args.index_url, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":
             try:

@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import shlex
 import subprocess
@@ -735,3 +736,83 @@ def test_down_goes_on_after_a_failed_destroy_and_tries_again(aws, tmp_path, capl
     left = commands.down(CLUSTER, REGION, aws, vast, tmp_path / "state", sleep=lambda s: None, out=lambda m: None)
     assert left == [] and vast.instances == []
     assert "HTTP 500: busy" in caplog.text
+
+
+# --- where the head image gets ray-vast: `--wheel` > the source tree > the package index ---------------------------------
+
+@pytest.fixture
+def installed(monkeypatch, tmp_path):
+    """ray-vast runs as an installed package (`pip install ray-vast`): no pyproject.toml above the package."""
+    monkeypatch.setattr(commands, "SOURCE_TREE", tmp_path / "site-packages")
+
+
+def dockerfile_of(ssh):
+    [text] = [c[3] for c in ssh.calls if c[2].endswith("/Dockerfile")]
+    return text
+
+
+def test_main_up_from_an_installed_package_installs_its_own_version_from_pypi(aws, home, fake_ssh, cluster_yaml, installed, capsys):
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k"]) == 0
+    pin = f"ray-vast=={importlib.metadata.version('ray-vast')}"  # the installed package's own version
+    assert dockerfile_of(fake_ssh.fake).splitlines() == [
+        f"FROM {CLUSTER_YAML['provider']['image']}", f"RUN pip install --no-cache-dir {pin}"]
+    assert [c for c in fake_ssh.fake.calls if c[0] == "copy"] == []
+    assert f"installing {pin} from PyPI" in capsys.readouterr().out
+
+
+def test_main_up_with_an_index_url_installs_from_that_index_and_takes_the_dependencies_from_pypi(
+        aws, home, fake_ssh, cluster_yaml, installed, capsys):
+    test_pypi = "https://test.pypi.org/simple/"
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", test_pypi]) == 0
+    pin = f"ray-vast=={importlib.metadata.version('ray-vast')}"
+    run_line = dockerfile_of(fake_ssh.fake).splitlines()[1]
+    assert run_line == f"RUN pip install --no-cache-dir --index-url {test_pypi} --extra-index-url https://pypi.org/simple {pin}"
+    assert f"installing {pin} from {test_pypi}" in capsys.readouterr().out
+
+
+def test_main_up_with_an_index_url_in_a_source_tree_still_installs_from_the_index(aws, home, fake_ssh, cluster_yaml, monkeypatch):
+    def no_build(argv, **kwargs):
+        raise AssertionError(f"`up` built a wheel: {argv}")
+    monkeypatch.setattr(subprocess, "run", no_build)
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", "https://test.pypi.org/simple/"]) == 0
+    assert "--index-url https://test.pypi.org/simple/" in dockerfile_of(fake_ssh.fake)
+
+
+def test_main_up_with_a_wheel_copies_it_and_says_so(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
+    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 0
+    assert f"COPY {wheel.name} " in dockerfile_of(fake_ssh.fake)
+    assert f"installing ray-vast from the wheel {wheel}" in capsys.readouterr().out
+
+
+def test_main_up_in_a_source_tree_builds_the_wheel_there_and_says_so(aws, home, fake_ssh, cluster_yaml, monkeypatch, capsys):
+    def fake_build(argv, **kwargs):
+        outdir = Path(argv[argv.index("--outdir") + 1])
+        (outdir / "ray_vast-9.9.9-py3-none-any.whl").write_bytes(b"wheel")
+        return subprocess.CompletedProcess(argv, 0)
+    monkeypatch.setattr(subprocess, "run", fake_build)
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k"]) == 0
+    assert "COPY ray_vast-9.9.9-py3-none-any.whl " in dockerfile_of(fake_ssh.fake)
+    assert f"installing ray-vast from a wheel built from the source tree {commands.SOURCE_TREE}" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("extra, index", [([], "PyPI"), (["--index-url", "https://test.pypi.org/simple/"], "https://test.pypi.org/simple/")])
+def test_main_up_that_cannot_install_its_version_on_the_head_names_the_version_and_the_index(
+        aws, home, fake_ssh, cluster_yaml, installed, capsys, extra, index):
+    class PipFails(FakeSsh):
+        def run(self, ip, command, stdin=None, timeout=900):
+            if "docker build" in command:
+                self._record("run", ip, command, stdin)
+                raise commands.SshError("ssh: exit 1: sudo docker build\nERROR: No matching distribution found for ray-vast==0.1.0rc1")
+            return super().run(ip, command, stdin, timeout)
+    fake_ssh.fake = PipFails()
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", *extra]) == 1
+    err = capsys.readouterr().err
+    assert f"could not install ray-vast=={importlib.metadata.version('ray-vast')} from {index}" in err
+    assert "No matching distribution found" in err  # pip's own words stay in the message
+    assert f"ray-vast down {cluster_yaml}" in err
+
+
+def test_main_up_with_both_a_wheel_and_an_index_url_fails_before_creating_anything(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
+    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k", "--index-url", "https://test.pypi.org/simple/") == 1
+    assert "--wheel and --index-url do not go together" in capsys.readouterr().err
+    assert what_is_left(aws, FakeVast()) == []

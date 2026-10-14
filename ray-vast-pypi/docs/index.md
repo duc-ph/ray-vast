@@ -54,9 +54,8 @@ The full steps are in [Getting started](getting-started.md).
 
 ```bash
 pip install ray-vast
-pip download ray-vast==0.1.0 --no-deps -d wheels      # the wheel for the head
-ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
-ray-vast dashboard cluster.yaml                       # terminal 1: keep it open
+ray-vast up cluster.yaml --profile my-aws-profile
+ray-vast dashboard cluster.yaml --profile my-aws-profile   # terminal 1: keep it open
 ```
 
 In a second terminal:
@@ -69,7 +68,7 @@ ray job submit --address http://127.0.0.1:8265 --working-dir . -- python train.p
 When you finish:
 
 ```bash
-ray-vast down cluster.yaml
+ray-vast down cluster.yaml --profile my-aws-profile
 ```
 
 ## Links
