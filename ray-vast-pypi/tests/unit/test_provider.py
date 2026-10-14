@@ -1,3 +1,5 @@
+import logging
+import re
 import socket
 import threading
 
@@ -355,12 +357,13 @@ def test_worker_destroyed_by_head_server_loses_its_slot_and_its_rule(env):
     assert p.is_terminated(slot_id)
 
 
-def test_unknown_labelled_instance_is_destroyed_and_other_labels_are_not(env):
+def test_orphan_sweep_destroys_an_unknown_labelled_instance_and_not_other_labels(env, caplog):
     p = env.make()
     env.vast.instances[7] = {"id": 7, "label": LABEL, "actual_status": "running", "public_ipaddr": "1.1.1.1"}
     env.vast.instances[8] = {"id": 8, "label": "someone-else", "actual_status": "running", "public_ipaddr": "1.1.1.2"}
     p.reconcile_once()
     assert instance_ids(env) == [8]
+    assert any(r.message.startswith("orphan sweep: destroying unknown instance 7") for r in caplog.records)
 
 
 def test_two_workers_on_one_ip_share_one_rule(env):
@@ -499,8 +502,131 @@ def test_vast_api_url_in_the_provider_config_points_the_vast_client_at_it(env, t
     monkeypatch.setattr(ray_vast.provider, "VastClient", RecordingVast)
     pki.write_head_files(tmp_path / "s", "9.9.9.9")
     (tmp_path / "s" / "vast_api_key").write_text("k\n")
-    config = {"head_ip": "9.9.9.9", "secrets_dir": str(tmp_path / "s"), "security_group_id": env.group_id,
+    config = {"head_ip": "9.9.9.9", "secrets_dir": str(tmp_path / "s"), "security_group_ids": env.group_ids,
               "region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10,
               "vast_api_url": "http://127.0.0.1:1/api/v0"}
     ray_vast.provider.VastNodeProvider(config, "c2", ec2=env.ec2, start_threads=False)
     assert seen["base_url"] == "http://127.0.0.1:1/api/v0"
+
+
+def test_each_candidate_gets_its_own_join_token_in_the_create_env(env):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make()
+    create(p)
+    tokens = [r["env"]["RAYVAST_JOIN_TOKEN"] for r in env.vast.requests]
+    assert len(tokens) == 2 and tokens[0] != tokens[1]
+    assert all(re.fullmatch("[0-9a-f]{64}", t) for t in tokens)
+    assert [p.state.candidates[i].join_token for i in (101, 102)] == tokens
+
+
+def test_a_worker_ip_rule_goes_into_the_second_group_when_the_first_is_full(env):
+    for n in range(60):  # group 0 is full of rules of this cluster
+        env.ec2.authorize_security_group_ingress(GroupId=env.group_ids[0], IpPermissions=[{
+            "IpProtocol": "tcp", "FromPort": 0, "ToPort": 65535,
+            "IpRanges": [{"CidrIp": f"10.1.0.{n + 1}/32", "Description": "other"}]}])
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.run(101, "5.5.5.5")
+    p.reconcile_once()
+    group_1 = env.ec2.describe_security_groups(GroupIds=[env.group_ids[1]])["SecurityGroups"][0]["IpPermissions"]
+    assert [r["CidrIp"] for perm in group_1 for r in perm["IpRanges"]] == ["5.5.5.5/32"]
+    assert instance_ids(env) == [101]
+
+
+def fail_one_slot(env, p, tags=TAGS):
+    """Rent one candidate for one slot; it exits before enrollment, so the slot ends with no worker."""
+    p.create_node_with_resources_and_labels(NODE_CONFIG, dict(tags), 1, RESOURCES, {})
+    iid = max(p.state.candidates)  # the newest rental
+    env.vast.instances[iid]["actual_status"] = "exited"
+    p.reconcile_once()
+    assert iid not in p.state.candidates
+
+
+def test_three_failed_slots_in_a_row_stop_launches_of_that_node_type_for_10_min(env, caplog):
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 10)]
+    p = env.make(candidate_factor=1)
+    for _ in range(3):
+        fail_one_slot(env, p)
+    rentals = len(env.vast.requests)
+    with pytest.raises(NodeLaunchException) as e:
+        create(p)
+    assert e.value.category == "repeated enrollment failures" and len(env.vast.requests) == rentals
+    assert any(r.levelname == "ERROR" and "gpu" in r.message for r in caplog.records)
+    assert p.non_terminated_nodes({}) == ["head"]
+    cpu_tags = {**TAGS, TAG_RAY_USER_NODE_TYPE: "cpu"}
+    assert len(p.create_node_with_resources_and_labels(NODE_CONFIG, cpu_tags, 1, RESOURCES, {})) == 1  # other types go on
+    env.clock.now += 599
+    with pytest.raises(NodeLaunchException):
+        create(p)
+    env.clock.now += 2
+    assert len(create(p)) == 1
+
+
+def test_after_the_pause_one_more_failed_slot_does_not_stop_launches_again(env):
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 10)]
+    p = env.make(candidate_factor=1)
+    for _ in range(3):
+        fail_one_slot(env, p)
+    env.clock.now += 601
+    fail_one_slot(env, p)
+    assert len(create(p)) == 1  # the trip set the count to 0: 1 failure is not 3
+
+
+def test_the_provider_log_never_holds_a_join_token(env, caplog):
+    caplog.set_level(logging.DEBUG)
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make()
+    create(p)
+    env.vast.run(101, "5.5.5.5")
+    env.vast.instances[102]["actual_status"] = "exited"
+    p.reconcile_once()
+    env.clock.now += 120  # 101 does not enroll in time
+    p.reconcile_once()
+    tokens = [r["env"]["RAYVAST_JOIN_TOKEN"] for r in env.vast.requests]
+    assert len(tokens) == 2 and "ending instance 101" in caplog.text  # the log is not empty
+    assert not any(t in caplog.text for t in tokens)
+
+
+@pytest.fixture
+def identity_listeners():
+    """64 listeners on 127.0.0.1, for the head's port check of a candidate whose public IP is 127.0.0.1."""
+    socks = []
+    for _ in range(64):
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
+        socks.append(s)
+    yield {str(70000 + i): s.getsockname()[1] for i, s in enumerate(socks)}
+    for s in socks:
+        s.close()
+
+
+def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identity_listeners):
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 10)]
+    p = env.make(candidate_factor=1)
+    fail_one_slot(env, p)
+    fail_one_slot(env, p)
+    create(p)
+    (iid,) = list(p.state.candidates)
+    env.vast.run(iid, "127.0.0.1")
+    p.reconcile_once()
+    checks = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True, "details": ""}
+    body = {"instance_id": iid, "join_token": env.vast.requests[-1]["env"]["RAYVAST_JOIN_TOKEN"], "checks": checks,
+            "ports": identity_listeners, "cpu_count": 4, "gpu_count": 1}
+    status, answer = p.head_server.enroll(body, "127.0.0.1")
+    assert status == 200, answer
+    fail_one_slot(env, p)
+    fail_one_slot(env, p)
+    assert len(create(p)) == 1  # 2 failures since the enrollment: no stop
+
+
+@pytest.mark.parametrize("ca_days, warns", [(10, True), (365, False)])
+def test_provider_start_logs_a_warning_when_the_ca_expires_within_14_days(env, tmp_path, caplog, ca_days, warns):
+    from ray_vast import pki
+
+    pki.write_head_files(tmp_path / "short", "9.9.9.9", ca_days)
+    (tmp_path / "short" / "vast_api_key").write_text("k\n")
+    env.make(secrets_dir=str(tmp_path / "short"))
+    warnings = [r for r in caplog.records if r.levelname == "WARNING" and "expire" in r.message]
+    assert len(warnings) == (1 if warns else 0)

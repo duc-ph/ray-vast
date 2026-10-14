@@ -45,14 +45,14 @@ ray-vast-pypi/
 | 3 | vast API client (`vast_api.py`) | Done |
 | 4 | PKI and token (`pki.py`) | Done |
 | 5 | In-memory state and blocklist (`state.py`) | Done |
-| 6 | Security group rules (`aws_sg.py`) | Done for one group; 5 groups in step 10b |
-| 7 | Worker side: bootloader and bootstrap | Done with the old identity proof; join token in step 10b |
-| 8 | Head server | Done with the old identity proof; join token in step 10b |
-| 9 | `VastNodeProvider` | Done; join token and breaker in step 10b |
-| 10 | CLI (`up`, `down`, `attach`, `dashboard`) | Done; live AWS cycle passed; 5 groups and no restart policy in step 10b |
-| 10b | Spec changes of 2026-10-13 | To do |
-| 10c | Shim tests and mutation evaluation | To do (parallel with 10b) |
-| 11 | Local end-to-end on the dev box | Started with the old enrollment; continue after 10b |
+| 6 | Security group rules (`aws_sg.py`) | Done (5 groups in step 10b) |
+| 7 | Worker side: bootloader and bootstrap | Done (join token in step 10b) |
+| 8 | Head server | Done (join token in step 10b) |
+| 9 | `VastNodeProvider` | Done (join token and breaker in step 10b) |
+| 10 | CLI (`up`, `down`, `attach`, `dashboard`) | Done; live AWS cycle passed before 10b (5 groups and no restart policy in 10b) |
+| 10b | Spec changes of 2026-10-13 | Done (full suite 362 passed; mutation audit 33 mutants, survivors fixed) |
+| 10c | Shim tests and mutation evaluation | Done (14 tests; 23 of 25 mutants killed, 2 equivalent) |
+| 11 | Local end-to-end on the dev box | Started with the old enrollment; next |
 | 12 | Live tests on vast (paid) | C5a/C5d ran (enrollment failed, the reason for step 10b) |
 | 13 | Docs and release | To do |
 
@@ -75,9 +75,9 @@ The design changed after the C5a/C5d live run and the design review. Bring the c
 7. **Test fixes:** add `pytest-timeout` (a `down` test can hang); fix or explain the failing bootloader container integration test.
 
 Done when:
-- [ ] The full suite passes.
-- [ ] No code path sends `CONTAINER_API_KEY` to the head (grep and a test).
-- [ ] A review on both axes finds no HARD item.
+- [x] The full suite passes.
+- [x] No code path sends `CONTAINER_API_KEY` to the head (grep and a test).
+- [x] A review on both axes finds no HARD item.
 
 ## Step 10c — Shim tests and mutation evaluation
 
@@ -101,9 +101,9 @@ Mutation evaluation:
 - Write the result (mutants, killed, survived, and why each survivor is acceptable or which test was added) into `test-results.md`.
 
 Done when:
-- [ ] Every rule of `shim.md` has a test that fails when the rule is removed.
-- [ ] The mutation run kills every mutant, or each survivor is explained.
-- [ ] The committed `.so` still has the recorded SHA-256 (no source change without a new recorded build).
+- [x] Every rule of `shim.md` has a test that fails when the rule is removed.
+- [x] The mutation run kills every mutant, or each survivor is explained.
+- [x] The committed `.so` still has the recorded SHA-256 (no source change without a new recorded build).
 
 ## Step 11 — Local end-to-end on the dev box ($0)
 

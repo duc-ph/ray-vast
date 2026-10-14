@@ -27,6 +27,7 @@ First version.
 - Wall-clock limit on every HTTP call of the worker. Vast calls do not follow redirects.
 - Blocklist of bad hosts, in memory for each cluster.
 - Security group rules for each worker IP, with reference counts for shared IPs, in up to 5 groups (about 299 worker IPs).
+- `down` finds only the 5 group names `ray-vast-<cluster>-0` … `-4`. A cluster that an older development build made has other group names. Clean up such a cluster by hand.
 - Start-up sweep: a new provider destroys every instance with the cluster label and removes the cluster's security group rules. The orphan sweep destroys instances that the provider does not know.
 - Rent-loop breaker: after 3 failed slots in a row of one node type, the provider stops that type for 10 minutes.
 - The head container runs `ray start --head --block` with no restart policy. If Ray's monitor dies, the head stops, and the workers destroy themselves within 5 minutes.

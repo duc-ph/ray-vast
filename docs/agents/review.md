@@ -1,6 +1,6 @@
 # Instructions for review subagents
 
-Repo: `/Users/ducpham/Desktop/workspace/Onedrive/Home/projects/ray-vast`. The lead gives you the axis (Standards or Spec), the fixed point and the plan steps under review.
+Repo: the checkout that the lead names (on the dev box: `/home/ubuntu/ray-vast`). The lead gives you the axis (Standards or Spec), the fixed point and the plan steps under review.
 
 Diff: `git diff <fixed-point>...HEAD -- ray-vast-pypi/` and commits `git log <fixed-point>..HEAD --oneline`. Read only; do not edit files. You may run read-only commands (git, grep, reading files). You may run the tests on the dev box (see `CLAUDE.md`) if you need evidence, but do not change anything there.
 

@@ -49,38 +49,6 @@ def test_create_instance_returns_id_and_adds_identity_ports(client):
 
 
 @responses.activate
-def test_get_instance_returns_dict_with_optional_key_and_none_when_gone(client):
-    responses.get(f"{BASE_URL}/instances/7/", json={"instances": {"id": 7, "actual_status": "running"}})
-    responses.get(f"{BASE_URL}/instances/8/", status=404, json={"error": "not found"})
-    responses.get(f"{BASE_URL}/instances/9/", json={"instances": None})
-    assert client.get_instance(7, key="CONTAINERKEY")["actual_status"] == "running"
-    assert responses.calls[0].request.headers["Authorization"] == "Bearer CONTAINERKEY"
-    assert client.get_instance(8) is None
-    assert client.get_instance(9) is None
-    responses.get(f"{BASE_URL}/instances/10/", json={"instances": {}})
-    assert client.get_instance(10) is None
-
-
-@responses.activate
-@pytest.mark.parametrize("bad_key", ["", "  ", "\n", 5])
-def test_empty_or_blank_instance_key_raises_without_http_call(client, bad_key):
-    with pytest.raises(ValueError):
-        client.get_instance(7, key=bad_key)
-    with pytest.raises(ValueError):
-        client.destroy_instance(7, key=bad_key)
-    assert len(responses.calls) == 0
-
-
-@responses.activate
-def test_instance_key_is_sent_never_the_account_key(client):
-    responses.get(f"{BASE_URL}/instances/7/", json={"instances": {"id": 7}})
-    responses.delete(f"{BASE_URL}/instances/7/", json={"success": True})
-    client.get_instance(7, key="abc")
-    client.destroy_instance(7, key="abc")
-    assert [c.request.headers["Authorization"] for c in responses.calls] == ["Bearer abc", "Bearer abc"]
-
-
-@responses.activate
 def test_list_instances_returns_all(client):
     responses.get(f"{BASE_URL}/instances/", json={"instances": [{"id": 1, "label": "a"}, {"id": 2, "label": "b"}]})
     assert [i["id"] for i in client.list_instances()] == [1, 2]
@@ -90,9 +58,9 @@ def test_list_instances_returns_all(client):
 def test_destroy_instance_success_and_already_gone(client):
     responses.delete(f"{BASE_URL}/instances/1/", json={"success": True})
     responses.delete(f"{BASE_URL}/instances/2/", status=404, json={"error": "gone"})
-    client.destroy_instance(1, key="CONTAINERKEY")
+    client.destroy_instance(1)
     client.destroy_instance(2)
-    assert responses.calls[0].request.headers["Authorization"] == "Bearer CONTAINERKEY"
+    assert len(responses.calls) == 2
 
 
 @responses.activate
@@ -197,15 +165,13 @@ def test_every_call_has_a_timeout(client):
     responses.post(f"{BASE_URL}/bundles/", json={"offers": []})
     responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
     responses.get(f"{BASE_URL}/instances/", json={"instances": []})
-    responses.get(f"{BASE_URL}/instances/1/", json={"instances": {"id": 1}})
     responses.delete(f"{BASE_URL}/instances/1/", json={"success": True})
     client.search_offers({})
     client.create_instance(1, "img", {}, [], "l", 20)
     client.list_instances()
-    client.get_instance(1)
     client.destroy_instance(1)
-    assert len(responses.calls) == 5
-    assert [c.request.req_kwargs["timeout"] for c in responses.calls] == [30] * 5
+    assert len(responses.calls) == 4
+    assert [c.request.req_kwargs["timeout"] for c in responses.calls] == [30] * 4
 
 
 FIXTURES = pathlib.Path(__file__).resolve().parents[1] / "fixtures"
@@ -219,9 +185,9 @@ def test_real_archived_shapes(client):
     instance = {"id": 55448911, "machine_id": offer["machine_id"], "public_ipaddr": "85.10.218.46\n",
                 "ports": {"70040/tcp": [{"HostIp": "0.0.0.0", "HostPort": "70040"}]}, **poll}
     responses.post(f"{BASE_URL}/bundles/", json={"offers": [offer]})
-    responses.get(f"{BASE_URL}/instances/55448911/", json={"instances": instance})
+    responses.get(f"{BASE_URL}/instances/", json={"instances": [instance]})
     got_offer = client.search_offers({})[0]
-    got = client.get_instance(55448911)
+    (got,) = client.list_instances()
     assert (got_offer["id"], got_offer["machine_id"], got_offer["dph_total"]) == (48743418, 3969, 0.09703703703703705)
     assert got["actual_status"] == "running" and got["dph_total"] == pytest.approx(0.1025925925925926)
     assert got["machine_id"] == 3969 and got["public_ipaddr"].strip() == "85.10.218.46" and "70040/tcp" in got["ports"]
@@ -301,26 +267,27 @@ def test_base_url_with_trailing_slash_is_accepted(sleeps):
 
 
 @responses.activate
-@pytest.mark.parametrize("status, body, expected", [
-    (200, {"instances": [], "x": 1}, "HTTP 200 keys=['instances', 'x'] instances=list"),
-    (200, {"instances": None}, "HTTP 200 keys=['instances'] instances=NoneType"),
-    (200, {"instances": {"id": 7, "actual_status": "loading", "ssh_key": SECRET}}, None),
-    (404, {"error": "no"}, "HTTP 404"),
-])
-def test_empty_instance_answer_is_logged_without_secrets(client, caplog, status, body, expected):
+def test_create_error_that_echoes_the_env_does_not_show_the_join_token(client, caplog):
     caplog.set_level(logging.DEBUG)
-    responses.get(f"{BASE_URL}/instances/7/", status=status, json=body)
-    client.get_instance(7, key="CONTAINERKEY-SECRET")
-    if expected:
-        assert expected in caplog.text
-    assert "CONTAINERKEY-SECRET" not in caplog.text and SECRET not in caplog.text
+    token = "c3" * 32
+    echo = json.dumps({"error": "invalid_args", "env": {"RAYVAST_JOIN_TOKEN": token, "RAYVAST_CLUSTER": "c1"}})
+    responses.put(f"{BASE_URL}/asks/1/", status=400, body=echo)
+    with pytest.raises(VastError) as e:
+        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token}, [], "l", 20)
+    assert "invalid_args" in str(e.value)
+    assert token not in str(e.value) + repr(e.value) + caplog.text
 
 
 @responses.activate
-def test_instance_dict_without_content_logs_its_id_and_status(client, caplog):
+@pytest.mark.parametrize("status, answer", [
+    (400, lambda t: {"body": f"bad env line RAYVAST_JOIN_TOKEN={t} rejected"}),
+    (200, lambda t: {"json": {"success": False, "msg": f"bad env line RAYVAST_JOIN_TOKEN={t} rejected"}}),
+])
+def test_create_error_in_plain_text_does_not_show_the_join_token(client, caplog, status, answer):
     caplog.set_level(logging.DEBUG)
-    responses.get(f"{BASE_URL}/instances/7/", json={"instances": {"id": 7}, "k": 1})
-    assert client.get_instance(7, key="K") == {"id": 7}
-    responses.get(f"{BASE_URL}/instances/8/", json={"instances": {}})
-    client.get_instance(8, key="K")
-    assert "instances=dict" in caplog.text
+    token = "d4" * 32
+    responses.put(f"{BASE_URL}/asks/1/", status=status, **answer(token))
+    with pytest.raises(VastError) as e:
+        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token, "RAYVAST_CLUSTER": "c1"}, [], "l", 20)
+    assert "rejected" in str(e.value)
+    assert token not in str(e.value) + repr(e.value) + caplog.text

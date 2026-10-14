@@ -6,7 +6,7 @@ Ray loads it from `provider: {type: external, module: ray_vast.provider.VastNode
 `provider_config` keys (`ray-vast up` writes them, step 10):
 - `head_ip`: the head public IP (required).
 - `secrets_dir`: directory with `ca.pem`, `ca.key`, `head.pem`, `head.key`, `token` and `vast_api_key` (required).
-- `security_group_id`, `region`, `image`, `max_dollars_per_hour`: required.
+- `security_group_ids` (the cluster's 5 groups, in order), `region`, `image`, `max_dollars_per_hour`: required.
 - `candidate_factor`, `order_by`, `port_a`, `port_b`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
 - `vast_api_url` (optional, tests only): the vast API base URL; the local end-to-end tests point it at a fake vast.
 - `image_size_gb` (optional): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min. Without it, 15 min.
@@ -22,6 +22,7 @@ Every path that ends a candidate or worker goes through `_end` or the head serve
 Unknown node IDs: `node_tags` returns `{}` (v2 then skips the node as unmanaged), `is_running` returns False.
 """
 import logging
+import secrets
 import threading
 import time
 import uuid
@@ -43,7 +44,7 @@ from . import pki
 from .aws_sg import SecurityGroupRules, SgQuotaError, ec2_client_config
 from .config import PROVIDER_DEFAULTS, build_offer_query
 from .head_server import HeadServer
-from .state import Candidate, ClusterState, Slot
+from .state import BREAKER_FAILED_SLOTS, BREAKER_PAUSE_S, Candidate, ClusterState, Slot
 from .vast_api import VastClient, VastError
 
 log = logging.getLogger(__name__)
@@ -82,11 +83,14 @@ class VastNodeProvider(NodeProvider):
         read = lambda name: (secrets_dir / name).read_bytes()
         ca_cert, ca_key = read("ca.pem"), read("ca.key")
         self._ca_fingerprint = pki.ca_fingerprint(ca_cert)
+        expiry = pki.expiry_warning(ca_cert)  # in the head log too, not only in `up` (design 7.2)
+        if expiry:
+            log.warning(expiry)
         self._vast = vast or VastClient(read("vast_api_key").decode().strip(), **(
             {"base_url": cfg["vast_api_url"]} if cfg.get("vast_api_url") else {}))
         self._sg = SecurityGroupRules(
             ec2 or boto3.client("ec2", region_name=cfg["region"], config=ec2_client_config()),
-            cfg["security_group_id"], cluster_name)
+            cfg["security_group_ids"], cluster_name)
         package = Path(__file__).parent
         self._bootloader = (package / "worker" / "bootloader.sh").read_text()
 
@@ -164,6 +168,11 @@ class VastNodeProvider(NodeProvider):
 
     def create_node_with_resources_and_labels(self, node_config, tags, count, resources, labels):
         node_type = tags[TAG_RAY_USER_NODE_TYPE]
+        pause_left = self.state.launch_pause_left(node_type, self._clock())
+        if pause_left:
+            raise NodeLaunchException("repeated enrollment failures", f"node type {node_type!r}: {BREAKER_FAILED_SLOTS} slots "
+                                      f"in a row ended with no enrolled worker; no launches for {pause_left:.0f} s more",
+                                      None)
         query = build_offer_query({"resources": {"GPU": 0, **resources}, "node_config": node_config},
                                   self._cfg["allow_non_datacenter"], node_type)
         request_id = uuid.uuid4().hex
@@ -201,9 +210,11 @@ class VastNodeProvider(NodeProvider):
                 if size_gb and inet_down:  # inet_down is in Mb/s, the image in GB
                     pull_limit = min(max(2 * size_gb * 8000 / inet_down, PULL_LIMIT_MIN_S), PULL_LIMIT_MAX_S)
                 instance_id = None
+                join_token = secrets.token_hex(32)  # one per candidate; it shows it once in /enroll (design 5.2)
                 try:
                     instance_id = self._vast.create_instance(
-                        offer["id"], self._cfg["image"], env, ["sh", "-c", self._bootloader], self._label,
+                        offer["id"], self._cfg["image"], {**env, "RAYVAST_JOIN_TOKEN": join_token},
+                        ["sh", "-c", self._bootloader], self._label,
                         node_config.get("disk_gb", 50))
                 except VastError as e:
                     log.warning("renting offer %s failed: %s", offer["id"], e)
@@ -214,7 +225,7 @@ class VastNodeProvider(NodeProvider):
                             self.state.add_candidate(Candidate(
                                 instance_id, slots[rented % count].id, offer["id"], offer["machine_id"],
                                 status="rented", rented_at=self._clock(), dph_total=dph, node_type=node_type,
-                                pull_limit_s=pull_limit))
+                                pull_limit_s=pull_limit, join_token=join_token))
                 if instance_id is None:
                     continue
                 rented += 1
@@ -346,7 +357,7 @@ class VastNodeProvider(NodeProvider):
             self._end(instance_id, reason, block)
             ended_ids.add(instance_id)
 
-        # 3. Candidates of a finished request; instances that are not ours to keep (outside check).
+        # 3. Candidates of a finished request; instances that are not ours to keep (orphan sweep).
         request_ends, strays = [], []
         with self.state.lock:
             open_requests = {self._request_of_slot.get(s.id) for s in self.state.slots.values() if s.instance_id is None}
@@ -358,7 +369,7 @@ class VastNodeProvider(NodeProvider):
         for instance_id in request_ends:
             self._end(instance_id, "its request has no free slot left")
         for instance_id in strays:
-            log.warning("outside check: destroying unknown instance %s", instance_id)
+            log.warning("orphan sweep: destroying unknown instance %s", instance_id)
             try:
                 self._vast.destroy_instance(instance_id)
             except VastError as e:
@@ -379,6 +390,9 @@ class VastNodeProvider(NodeProvider):
                 elif not any(c.node_type == slot.node_type and c.instance_id not in self.state.enrolled
                              for c in self.state.candidates.values()):
                     self.state.remove_slot(slot.id)
+                    if self.state.slot_failed(slot.node_type, now):  # rent-loop breaker
+                        log.error("node type %r: %d slots in a row ended with no enrolled worker; no new launches of "
+                                  "this type for %d s", slot.node_type, BREAKER_FAILED_SLOTS, BREAKER_PAUSE_S)
             in_use = set(self.state.slots) | {c.slot_id for c in self.state.candidates.values()}
             for slot_id in [i for i in self._request_of_slot if i not in in_use and i not in self._creating]:
                 del self._request_of_slot[slot_id]

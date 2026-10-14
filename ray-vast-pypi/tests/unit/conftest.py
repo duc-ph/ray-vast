@@ -47,14 +47,11 @@ class FakeVast:
             raise VastError("GET /instances/: HTTP 500")
         return [dict(i) for i in self.instances.values()]
 
-    def destroy_instance(self, instance_id, key=None):
+    def destroy_instance(self, instance_id):
         self._call("destroy_instance")
         if self.fail_destroy:
             raise VastError("DELETE: HTTP 500")
         self.instances.pop(instance_id, None)
-
-    def get_instance(self, instance_id, key=None):
-        return self.instances.get(instance_id)
 
     def run(self, instance_id, ip):
         self.instances[instance_id].update(actual_status="running", public_ipaddr=ip)
@@ -87,9 +84,10 @@ def env(tmp_path, head_files):
     (secrets / "vast_api_key").write_text("vast-key\n")
     with mock_aws():
         ec2 = boto3.client("ec2", region_name="us-west-2", config=aws_sg.ec2_client_config())
-        group_id = ec2.create_security_group(GroupName="head", Description="t")["GroupId"]
+        group_ids = [ec2.create_security_group(GroupName=f"head-{i}", Description="t")["GroupId"] for i in range(5)]
+        group_id = group_ids[0]
         vast, clock = FakeVast(), Clock()
-        config = {"head_ip": "9.9.9.9", "secrets_dir": str(secrets), "security_group_id": group_id,
+        config = {"head_ip": "9.9.9.9", "secrets_dir": str(secrets), "security_group_ids": group_ids,
                   "region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10, "candidate_factor": 2}
         providers = []
 
@@ -100,11 +98,11 @@ def env(tmp_path, head_files):
             return p
 
         def rules():
-            perms = ec2.describe_security_groups(GroupIds=[group_id])["SecurityGroups"][0]["IpPermissions"]
-            return sorted(r["CidrIp"] for p in perms for r in p["IpRanges"])
+            groups = ec2.describe_security_groups(GroupIds=group_ids)["SecurityGroups"]
+            return sorted(r["CidrIp"] for g in groups for p in g["IpPermissions"] for r in p["IpRanges"])
 
         yield type("Env", (), dict(vast=vast, clock=clock, make=staticmethod(make), rules=staticmethod(rules),
-                                   ec2=ec2, group_id=group_id))
+                                   ec2=ec2, group_id=group_id, group_ids=group_ids))
         for p in providers:
             p.close()
 

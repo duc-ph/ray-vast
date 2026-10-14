@@ -278,7 +278,7 @@ Full run, once before you finish. It adds the slow tests (bootstrap subprocesses
 pytest -o addopts="" -m "not live and not local_e2e"
 ```
 
-A slow test has `@pytest.mark.slow`. Every test that starts a process starts it in a new session and kills the whole process group in a finalizer. A session check fails the run if a test leaves a process or a container behind. The bootstrap tests set `RAYVAST_DIR` to a temp directory, so runs can overlap.
+A slow test has `@pytest.mark.slow`. A test that runs longer than 300 s fails (`pytest-timeout`). Every test that starts a process starts it in a new session and kills the whole process group in a finalizer. A session check fails the run if a test leaves a process or a container behind. The bootstrap tests set `RAYVAST_DIR` to a temp directory, so runs can overlap.
 
 ## More documents
 

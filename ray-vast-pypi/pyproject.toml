@@ -14,7 +14,7 @@ authors = [{ name = "Duc Pham", email = "thiel.pham@gmail.com" }]
 dependencies = ["ray[default]>=2.59", "boto3", "cryptography>=42", "pyyaml", "requests"]
 
 [project.optional-dependencies]
-test = ["pytest", "moto[server]", "responses", "freezegun", "build", "hatchling"]
+test = ["pytest", "pytest-timeout", "moto[server]", "responses", "freezegun", "build", "hatchling"]
 
 [project.scripts]
 ray-vast = "ray_vast.cli:main"
@@ -33,6 +33,8 @@ markers = [
     "local_e2e: runs a Ray head and workers in Docker on the dev box (step 11; skipped by default)",
 ]
 addopts = "-m 'not slow and not live and not local_e2e'"
+# A hung test (for example a `down` wait loop) fails after this many seconds instead of stopping the run.
+timeout = 300
 
 [tool.ruff]
 line-length = 120

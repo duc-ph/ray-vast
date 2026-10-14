@@ -36,9 +36,12 @@ class VastClient:
         self._jitter = jitter
         self._session = requests.Session()
 
-    def _request(self, method, path, key=None, json=None, retry_unsafe=True):
-        """Return the response, or None for HTTP 404. Retries 429, 5xx and connection errors with backoff."""
-        headers = {"Authorization": f"Bearer {key if key is not None else self._api_key}"}
+    def _request(self, method, path, json=None, retry_unsafe=True, secrets=()):
+        """Return the response, or None for HTTP 404. Retries 429, 5xx and connection errors with backoff.
+
+        `secrets`: literal values to remove from an error body.
+        """
+        headers = {"Authorization": f"Bearer {self._api_key}"}
         for attempt in range(1, TRIES + 1):
             error = None
             try:
@@ -57,6 +60,8 @@ class VastClient:
                     body = resp.text
                     for pattern in _SECRET_RES:
                         body = pattern.sub(lambda m: (m.group(1) + '"<redacted>"') if m.lastindex else "Bearer <redacted>", body)
+                    for secret in secrets:
+                        body = body.replace(secret, "<redacted>")
                     body = body[:300]
                     raise VastError(f"{method} {path}: HTTP {status}: {body}", status=status)
             delay = min(BACKOFF_BASE_S * 2 ** (attempt - 1), BACKOFF_MAX_S) * (1 + self._jitter())
@@ -83,33 +88,22 @@ class VastClient:
             "label": label,
             "disk": disk_gb,
         }
+        # vast may echo the env in an error, in any form: remove the literal secret values (the join token).
+        secrets = [v for k, v in env.items() if v and re.search("token|key", k, re.IGNORECASE)]
         # A 5xx or a lost connection may still have rented the offer, so only 429 retries (no duplicate rentals).
-        resp = self._request("PUT", f"/asks/{offer_id}/", json=body, retry_unsafe=False)
+        resp = self._request("PUT", f"/asks/{offer_id}/", json=body, retry_unsafe=False, secrets=secrets)
         if resp is None:
             raise VastError(f"PUT /asks/{offer_id}/: offer not found", status=404)
         result = resp.json()
         result.pop("instance_api_key", None)
         if not result.get("success", True) or "new_contract" not in result:
             reason = {k: result.get(k) for k in ("success", "error", "msg") if k in result}
-            raise VastError(f"PUT /asks/{offer_id}/: {reason}"[:300])
+            message = f"PUT /asks/{offer_id}/: {reason}"
+            for secret in secrets:
+                message = message.replace(secret, "<redacted>")
+            raise VastError(message[:300])
         log.info("rented offer %s as instance %s", offer_id, result["new_contract"])
         return int(result["new_contract"])
-
-    def get_instance(self, instance_id, key=None):
-        """Return the instance dict, or None when it is gone. `key` is a per-instance key (CONTAINER_API_KEY)."""
-        if key is not None and not (isinstance(key, str) and key.strip()):
-            raise ValueError("key must be a non-empty string when given")
-        resp = self._request("GET", f"/instances/{instance_id}/", key=key)
-        if resp is None:
-            log.warning("GET /instances/%s/: HTTP 404", instance_id)
-            return None
-        answer = resp.json()
-        instance = answer.get("instances")
-        if not instance:
-            # Shape only, never values: this explains a refused key check without leaking a key or a header.
-            log.warning("GET /instances/%s/: HTTP %s keys=%s instances=%s", instance_id, resp.status_code,
-                        sorted(answer), type(instance).__name__)
-        return instance or None
 
     def list_instances(self):
         """Return all instances of the account."""
@@ -118,10 +112,8 @@ class VastClient:
             raise VastError("GET /instances/: HTTP 404", status=404)
         return resp.json()["instances"]
 
-    def destroy_instance(self, instance_id, key=None):
+    def destroy_instance(self, instance_id):
         """Destroy the instance. An instance that is already gone counts as success."""
-        if key is not None and not (isinstance(key, str) and key.strip()):
-            raise ValueError("key must be a non-empty string when given")
-        resp = self._request("DELETE", f"/instances/{instance_id}/", key=key)
+        resp = self._request("DELETE", f"/instances/{instance_id}/")
         if resp is not None and resp.json().get("success") is False:
             raise VastError(f"DELETE /instances/{instance_id}/: success false")

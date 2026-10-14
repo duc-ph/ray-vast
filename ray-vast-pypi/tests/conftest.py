@@ -6,6 +6,8 @@ import subprocess
 
 import pytest
 
+from fakes.worker_world import CONTAINER_PREFIX
+
 # moto loads about 1300 default AMIs on every `mock_aws()` start (1.5 s). No test needs them: the CLI test makes its own image.
 os.environ.setdefault("MOTO_EC2_LOAD_DEFAULT_AMIS", "false")
 
@@ -60,7 +62,7 @@ def no_leaked_processes():
                 pass
     if shutil.which("docker"):
         names = subprocess.run(
-            ["docker", "ps", "-aq", "--filter", "name=^st7b-"], capture_output=True, text=True
+            ["docker", "ps", "-aq", "--filter", f"name=^{CONTAINER_PREFIX}"], capture_output=True, text=True
         ).stdout.split()
         if names:
             subprocess.run(["docker", "rm", "-f", *names], capture_output=True)

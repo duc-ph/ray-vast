@@ -16,7 +16,7 @@ from ray_vast import pki
 
 class FakeHead:
     def __init__(self, pki_dir, head_ip, port_a, port_b, bootstrap_bytes, shim_path, *, gcs_address,
-                 expected_api_key=None, listen_host="0.0.0.0"):
+                 expected_join_token=None, listen_host="0.0.0.0"):
         """`pki_dir` holds ca.pem, ca.key, head.pem, head.key and token (from `pki.write_head_files`)."""
         self.pki_dir = Path(pki_dir)
         self.head_ip = head_ip
@@ -24,7 +24,7 @@ class FakeHead:
         self.bootstrap_bytes = bootstrap_bytes
         self.shim_b64 = base64.b64encode(Path(shim_path).read_bytes()).decode()
         self.gcs_address = gcs_address
-        self.expected_api_key = expected_api_key
+        self.expected_join_token = expected_join_token
         self.listen_host = listen_host
         self.tls_dir = self.pki_dir  # where the TLS cert and key of the two ports come from
         self.served_ca = None  # bytes to serve at /ca.pem instead of the real CA cert
@@ -106,7 +106,7 @@ class FakeHead:
                         head.enroll_503s -= 1
                         return self._send(503, json.dumps({"reason": "vast unreachable"}).encode())
                     if head.refuse_enroll or (
-                        head.expected_api_key is not None and body.get("container_api_key") != head.expected_api_key
+                        head.expected_join_token is not None and body.get("join_token") != head.expected_join_token
                     ):
                         return self._send(403, json.dumps({"reason": "refused by the fake head"}).encode())
                     worker_ip = self.client_address[0]

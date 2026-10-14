@@ -52,7 +52,7 @@ ray-vast cannot stop this. Do not send secrets to a cluster that you cannot affo
 
 ### The join token in the env
 
-vast shows the env in the instance metadata. So the join token can be read by your vast account key, by any `CONTAINER_API_KEY` of your account (that is, your own workers, which already hold the cluster token), and by the candidate's host (root there anyway). Co-tenants and the internet cannot read it. The token is valid for one instance, from one IP, for one enrollment.
+vast shows the env in the instance metadata. So the join token can be read by your vast account key, by any `CONTAINER_API_KEY` of your account (that is, your own workers, which already hold the cluster token), and by the candidate's host (root there anyway). Co-tenants and the internet cannot read it. The token is valid for one instance, from one IP, for one enrollment. The token stays readable in `/proc/1/environ` of the worker. This is harmless, because the head accepts the token only once.
 
 ### Full vast account key on the head
 

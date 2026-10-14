@@ -2,7 +2,8 @@
 
 The bootloader downloads this file from the head and runs it. Rules for this file:
 - It never ends without a destroy of its vast instance (`destroy`).
-- Secrets (CONTAINER_API_KEY, token, node key) are never printed and never put in an error message.
+- Secrets (CONTAINER_API_KEY, the join token, the cluster token, the node key) are never printed and never put in an
+  error message. CONTAINER_API_KEY never leaves this instance: only vast sees it, in our own DELETE.
 """
 import base64
 import glob
@@ -128,9 +129,7 @@ def destroy(state, reason):
     log(f"destroying this instance: {reason}")
     if state.report_ctx is not None:
         body = {"instance_id": state.instance_id, "kind": "destroy", "reason": reason[:2000]}
-        if state.node_ctx is None:
-            body["container_api_key"] = state.api_key
-        else:
+        if state.node_ctx is not None:
             body["ok"] = False
         try:
             call(state.report_url, state.report_ctx, body, timeout=DESTROY_REPORT_TIMEOUT_S)
@@ -157,7 +156,8 @@ def main():
     env = os.environ
     state = SimpleNamespace(
         instance_id=int(env["CONTAINER_ID"]),
-        api_key=env.pop("CONTAINER_API_KEY"),  # kept in memory only; the Ray child must not inherit it (D7)
+        api_key=env.pop("CONTAINER_API_KEY"),  # in memory only, only for our own DELETE; never sent to the head (D7)
+        join_token=env.pop("RAYVAST_JOIN_TOKEN", ""),  # in memory only; sent only inside /enroll (design 5.2)
         vast_api=env.get("RAYVAST_VAST_API", "https://console.vast.ai/api/v0").rstrip("/"),
         scale=float(env.get("RAYVAST_TIME_SCALE", "1")),
         report_url=None, report_ctx=None, node_ctx=None,
@@ -221,7 +221,7 @@ def main():
             checks["details"] += f" SKIPPED (these failed: {failed})"
         log(f"host checks: {checks}")
 
-        # 3. Open a listener on every host port, so the head can connect to each one from outside.
+        # 3. Open a listener on every host port, for the head's port check.
         ports = {str(70000 + i): int(env[f"VAST_TCP_PORT_{70000 + i}"]) for i in range(64)}
         listeners = []
         for port in ports.values():
@@ -242,7 +242,7 @@ def main():
             cpu_count = min(cpu_count, max(1, math.floor(quota_cores)))
         gpu_count = len(glob.glob("/proc/driver/nvidia/gpus/*"))
         enroll_body = {
-            "instance_id": state.instance_id, "container_api_key": state.api_key, "checks": checks, "ports": ports,
+            "instance_id": state.instance_id, "join_token": state.join_token, "checks": checks, "ports": ports,
             "cpu_count": cpu_count, "gpu_count": gpu_count,
         }
         while True:

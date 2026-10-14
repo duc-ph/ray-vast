@@ -1,6 +1,7 @@
 """One test world for the worker: PKI, fake head, fake vast, and the container env that vast would set."""
 import ctypes
 import hashlib
+import os
 import random
 import signal
 import socket
@@ -18,6 +19,9 @@ BOOTSTRAP_PATH = PACKAGE / "worker" / "bootstrap.py"
 BOOTLOADER_PATH = PACKAGE / "worker" / "bootloader.sh"
 SHIM_PATH = PACKAGE / "shim" / "librayvast_shim.so"
 FAKE_RAY_DIR = Path(__file__).parent / "fake_ray_pkg"
+# Test container names start with this. The pid makes it unique for one pytest run: the session leak check removes only
+# this run's containers, never those of a parallel run on the same box.
+CONTAINER_PREFIX = f"st10b-{os.getpid()}-"
 
 
 def die_with_parent():
@@ -48,11 +52,13 @@ class World:
     """Ports (all in 19000-19999, chosen free): head A and B, vast, and the 64 worker host ports in one block."""
 
     def __init__(self, tmp_path, *, head_ip="127.0.0.1", public_ip="127.0.0.1", gcs_address=None,
-                 api_key="FAKEKEY-vast-container-api-key", instance_id=424242, bootstrap_bytes=None):
+                 api_key="FAKEKEY-vast-container-api-key", join_token="FAKEJOINTOKEN" + "ab" * 26, instance_id=424242,
+                 bootstrap_bytes=None):
         self.pki_dir = Path(tmp_path) / "pki"
         self.ca_pem, self.token = pki.write_head_files(self.pki_dir, head_ip)
         self.started = False
         self.api_key = api_key
+        self.join_token = join_token
         self.instance_id = instance_id
         self.head_ip = head_ip
         self.public_ip = public_ip
@@ -63,7 +69,7 @@ class World:
         self.bootstrap_bytes = bootstrap_bytes if bootstrap_bytes is not None else BOOTSTRAP_PATH.read_bytes()
         self.head = FakeHead(
             self.pki_dir, head_ip, head_ports, head_ports + 1, self.bootstrap_bytes, SHIM_PATH,
-            gcs_address=gcs_address or f"{head_ip}:6379", expected_api_key=api_key,
+            gcs_address=gcs_address or f"{head_ip}:6379", expected_join_token=join_token,
         )
         self.vast = FakeVast(self.vast_port, api_key)
 
@@ -76,6 +82,7 @@ class World:
             "RAYVAST_BOOTSTRAP_SHA256": hashlib.sha256(self.bootstrap_bytes).hexdigest(),
             "RAYVAST_CA_SHA256": pki.ca_fingerprint(self.ca_pem),
             "RAYVAST_CLUSTER": "st7",
+            "RAYVAST_JOIN_TOKEN": self.join_token,
             "CONTAINER_ID": str(self.instance_id),
             "CONTAINER_API_KEY": self.api_key,
             "PUBLIC_IPADDR": self.public_ip,

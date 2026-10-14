@@ -125,7 +125,8 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat") and run.ray_out.exists()), run.stdout
     enroll = world.head.bodies("A", "/enroll")[0]
     assert enroll["instance_id"] == 424242
-    assert enroll["container_api_key"] == world.api_key
+    assert enroll["join_token"] == world.join_token
+    assert "container_api_key" not in enroll and world.api_key not in json.dumps(enroll)
     assert enroll["ports"] == {str(70000 + i): world.port_base + i for i in range(64)}
     assert set(enroll["checks"]) == {"egress_ip_ok", "no_net_raw_admin", "own_netns", "shm_empty", "details"}
     assert enroll["cpu_count"] >= 1 and enroll["gpu_count"] == 0
@@ -150,7 +151,8 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert env["RAYVAST_PUBLIC_IP"] == "127.0.0.1" and env["RAYVAST_PRIVATE_IP"] == "127.0.0.1"
     assert env["RAYVAST_LOCALHOST_PORTS"] == f"{p + 4},{p + 5}"
     assert env["RAY_num_workers_soft_limit"] == "10"
-    assert "CONTAINER_API_KEY" not in env
+    assert "CONTAINER_API_KEY" not in env and "RAYVAST_JOIN_TOKEN" not in env
+    assert world.api_key not in env.values() and world.join_token not in env.values()
 
     assert oct(os.stat(run.dir).st_mode & 0o777) == "0o700"
     for name in ("ca.pem", "node.pem", "node.key", "token", "librayvast_shim.so"):
@@ -182,7 +184,7 @@ def test_head_refusing_enrollment_destroys_at_once_without_starting_ray(world, t
     assert world.vast.bad_auth == 0
     report = world.head.bodies("A", "/report")[0]
     assert report["kind"] == "destroy" and "refused" in report["reason"]
-    assert report["container_api_key"] == world.api_key
+    assert "container_api_key" not in report and world.api_key not in json.dumps(report)
     assert not run.ray_out.exists()
 
 
@@ -269,7 +271,7 @@ def test_stdout_has_no_secret(world, tmp_path):
     run.proc.send_signal(signal.SIGTERM)
     assert wait_for(lambda: world.vast.destroys)
     node_key = Path(run.dir / "node.key").read_text()
-    for secret in (world.api_key, world.token, node_key.splitlines()[1]):
+    for secret in (world.api_key, world.join_token, world.token, node_key.splitlines()[1]):
         assert secret not in run.stdout
     assert "destroying this instance" in run.stdout
 
@@ -440,14 +442,13 @@ def run_destroy(monkeypatch, state, answers):
     return calls, sleeps
 
 
-def test_destroy_before_enrollment_reports_with_the_container_key_then_deletes(monkeypatch):
+def test_destroy_before_enrollment_reports_without_the_container_key_then_deletes(monkeypatch):
     state = bootstrap.SimpleNamespace(
         instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=30.0, report_url="https://head/report",
         report_ctx=object(), node_ctx=None,
     )
     calls, _ = run_destroy(monkeypatch, state, [(200, b""), (200, b"{}")])
-    assert calls[0] == ("https://head/report", {"instance_id": 7, "kind": "destroy", "reason": "the reason",
-                                                "container_api_key": "k"}, None)
+    assert calls[0] == ("https://head/report", {"instance_id": 7, "kind": "destroy", "reason": "the reason"}, None)
     assert calls[1][0] == "http://vast.invalid/instances/7/" and calls[1][2] == "DELETE"
 
 

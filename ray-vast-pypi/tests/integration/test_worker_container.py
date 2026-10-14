@@ -1,7 +1,7 @@
 """Worker bootloader and bootstrap in real containers on the dev box (Docker), against the fake head and fake vast.
 
 Fake parts: the head, vast, and (except in the full-stack test) the `ray` CLI, which is tests/fakes/fake_ray_pkg
-mounted on PYTHONPATH so `import ray` works and `ray start` is a stand-in. Container names start with `st7b-`.
+mounted on PYTHONPATH so `import ray` works and `ray start` is a stand-in. Container names start with `CONTAINER_PREFIX` (unique for each run).
 """
 import json
 import shutil
@@ -16,13 +16,14 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fakes.worker_world import BOOTLOADER_PATH, FAKE_RAY_DIR, World  # noqa: E402
+from fakes.worker_world import BOOTLOADER_PATH, CONTAINER_PREFIX, FAKE_RAY_DIR, World  # noqa: E402
 
 pytestmark = [pytest.mark.slow, pytest.mark.skipif(shutil.which("docker") is None, reason="needs Docker")]
 
 RAY_IMAGE = "rayproject/ray:2.59.0-py311-cpu"
 BOOTLOADER = BOOTLOADER_PATH.read_text()
 FAST = {"RAYVAST_TIME_SCALE": "30"}
+W = CONTAINER_PREFIX + "w"  # the name of the worker container in most tests
 
 
 def docker(*args, check=True):
@@ -65,7 +66,7 @@ def gateway():
 @pytest.fixture(autouse=True)
 def clean_containers():
     yield
-    names = docker("ps", "-aq", "--filter", "name=^st7b-", check=False).stdout.split()
+    names = docker("ps", "-aq", "--filter", f"name=^{CONTAINER_PREFIX}", check=False).stdout.split()
     if names:
         docker("rm", "-f", *names, check=False)
 
@@ -111,27 +112,27 @@ def test_bootloader_downloads_checks_and_execs_bootstrap_which_enrolls_and_heart
 ):
     """On the Ray image (Python 3.11, user ray) and on a plain python:3.9-slim (root). All four host checks are real."""
     world = bridge_world
-    start_worker("st7b-w", world, tmp_path, image=image)
-    assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), logs("st7b-w")
+    start_worker(W, world, tmp_path, image=image)
+    assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), logs(W)
     enroll = world.head.bodies("A", "/enroll")[0]
     assert enroll["checks"]["details"].count("SKIPPED") == 0
     expected = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True}
     assert {k: enroll["checks"][k] for k in expected} == expected, enroll["checks"]["details"]
-    assert wait_for(lambda: world.head.bodies("B", "/report")), logs("st7b-w")
+    assert wait_for(lambda: world.head.bodies("B", "/report")), logs(W)
     assert world.head.bodies("B", "/report")[0]["kind"] == "token_check" and world.head.bodies("B", "/report")[0]["ok"]
-    assert docker("exec", "st7b-w", "cat", "/proc/1/cmdline").stdout.split("\0")[1:2] == ["/tmp/rayvast-bootstrap.py"]
+    assert docker("exec", W, "cat", "/proc/1/cmdline").stdout.split("\0")[1:2] == ["/tmp/rayvast-bootstrap.py"]
 
 
 def test_net_raw_cap_and_host_network_fail_the_matching_host_checks(bridge_world, tmp_path):
     """The cap check reads the bounding set, so it works for the non-root user `ray` (its CapEff is always empty)."""
     world = bridge_world
-    start_worker("st7b-w1", world, tmp_path, cap_args=("--cap-add", "NET_RAW"))
+    start_worker(f"{CONTAINER_PREFIX}w1", world, tmp_path, cap_args=("--cap-add", "NET_RAW"))
     assert wait_for(lambda: world.head.bodies("A", "/enroll"))
     checks = world.head.bodies("A", "/enroll")[0]["checks"]
     assert (checks["no_net_raw_admin"], checks["own_netns"]) == (False, True)
-    docker("rm", "-f", "st7b-w1")
+    docker("rm", "-f", f"{CONTAINER_PREFIX}w1")
     world.head.events.clear()
-    start_worker("st7b-w2", world, tmp_path, network="host")
+    start_worker(f"{CONTAINER_PREFIX}w2", world, tmp_path, network="host")
     assert wait_for(lambda: world.head.bodies("A", "/enroll"))
     checks = world.head.bodies("A", "/enroll")[0]["checks"]
     assert (checks["no_net_raw_admin"], checks["own_netns"]) == (True, False)
@@ -143,18 +144,18 @@ def test_bootstrap_with_one_changed_byte_is_refused_by_the_bootloader_which_dest
     world = bridge_world
     good = world.bootstrap_bytes
     world.head.bootstrap_bytes = good[:-1] + bytes([good[-1] ^ 1])
-    start_worker("st7b-w", world, tmp_path)
-    assert wait_for(lambda: world.vast.destroys), logs("st7b-w")
-    assert docker("inspect", "-f", "{{.State.Running}}", "st7b-w").stdout.strip() == "true"  # it waits for vast
+    start_worker(W, world, tmp_path)
+    assert wait_for(lambda: world.vast.destroys), logs(W)
+    assert docker("inspect", "-f", "{{.State.Running}}", W).stdout.strip() == "true"  # it waits for vast
     assert [e for e in world.head.events if e[2] == "/bootstrap"]  # it was downloaded
     assert [e for e in world.head.events if e[2] == "/ca.pem"] == []  # the changed bootstrap never ran
 
 
 def test_image_without_ray_python_prints_a_clear_error_and_waits(bridge_world, tmp_path):
-    start_worker("st7b-w", bridge_world, tmp_path, image="alpine:3.19", fake_ray=False)
-    assert wait_for(lambda: "no Python with ray" in logs("st7b-w"), timeout=30)
+    start_worker(W, bridge_world, tmp_path, image="alpine:3.19", fake_ray=False)
+    assert wait_for(lambda: "no Python with ray" in logs(W), timeout=30)
     time.sleep(1)
-    assert docker("inspect", "-f", "{{.State.Running}}", "st7b-w").stdout.strip() == "true"
+    assert docker("inspect", "-f", "{{.State.Running}}", W).stdout.strip() == "true"
     assert bridge_world.head.events == []
 
 
@@ -162,17 +163,17 @@ def test_image_with_an_entrypoint_fails_clearly(bridge_world, tmp_path):
     """vast `args` become the arguments of the ENTRYPOINT, so `sh -c <script>` is not run as a command."""
     dockerfile = tmp_path / "Dockerfile"
     dockerfile.write_text(f'FROM {RAY_IMAGE}\nENTRYPOINT ["python"]\n')
-    docker("build", "-q", "-t", "st7b-entrypoint-image", "-f", str(dockerfile), str(tmp_path))
+    docker("build", "-q", "-t", f"{CONTAINER_PREFIX}entrypoint-image", "-f", str(dockerfile), str(tmp_path))
     try:
-        start_worker("st7b-w", bridge_world, tmp_path, image="st7b-entrypoint-image")
-        assert wait_for(lambda: docker("inspect", "-f", "{{.State.Running}}", "st7b-w").stdout.strip() == "false")
-        output = logs("st7b-w")
+        start_worker(W, bridge_world, tmp_path, image=f"{CONTAINER_PREFIX}entrypoint-image")
+        assert wait_for(lambda: docker("inspect", "-f", "{{.State.Running}}", W).stdout.strip() == "false")
+        output = logs(W)
         print("ENTRYPOINT image output:", output.strip())
-        assert docker("inspect", "-f", "{{.State.ExitCode}}", "st7b-w").stdout.strip() != "0"
+        assert docker("inspect", "-f", "{{.State.ExitCode}}", W).stdout.strip() != "0"
         assert "can't open file" in output and "/sh'" in output
         assert bridge_world.head.events == []
     finally:
-        docker("rmi", "-f", "st7b-entrypoint-image", check=False)
+        docker("rmi", "-f", f"{CONTAINER_PREFIX}entrypoint-image", check=False)
 
 
 @pytest.mark.parametrize("sig", ["TERM", "INT", "HUP"])
@@ -180,24 +181,24 @@ def test_signal_to_pid_1_from_the_ray_user_reports_then_destroys_and_the_contain
     bridge_world, tmp_path, sig
 ):
     world = bridge_world
-    start_worker("st7b-w", world, tmp_path)
-    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs("st7b-w")
-    assert docker("exec", "st7b-w", "id", "-u").stdout.strip() == "1000"
-    docker("exec", "st7b-w", "kill", f"-{sig}", "1")
-    assert wait_for(lambda: world.vast.destroys), logs("st7b-w")
+    start_worker(W, world, tmp_path)
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs(W)
+    assert docker("exec", W, "id", "-u").stdout.strip() == "1000"
+    docker("exec", W, "kill", f"-{sig}", "1")
+    assert wait_for(lambda: world.vast.destroys), logs(W)
     report = [r for r in destroy_reports(world)][0]
     assert f"SIG{sig}" in report["reason"]
     report_time = [e[0] for e in world.head.events if e[3] and e[3].get("kind") == "destroy"][0]
     assert report_time < world.vast.destroys[0][0]
     assert world.vast.bad_auth == 0 and world.vast.destroys[0][1] == world.instance_id
     time.sleep(2)
-    assert docker("inspect", "-f", "{{.State.Running}}", "st7b-w").stdout.strip() == "true"
+    assert docker("inspect", "-f", "{{.State.Running}}", W).stdout.strip() == "true"
 
 
 def test_heartbeats_stop_then_destroy_after_heartbeat_timeout(bridge_world, tmp_path):
     world = bridge_world
-    start_worker("st7b-w", world, tmp_path)  # time scale 30: timeout 300 s -> 10 s
-    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs("st7b-w")
+    start_worker(W, world, tmp_path)  # time scale 30: timeout 300 s -> 10 s
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs(W)
     world.head.answer_heartbeats = False
     stopped = time.monotonic()
     assert wait_for(lambda: world.vast.destroys, timeout=30)
@@ -209,8 +210,8 @@ def test_head_refusing_enrollment_destroys_at_once(bridge_world, tmp_path):
     world = bridge_world
     world.head.refuse_enroll = True
     started = time.monotonic()
-    start_worker("st7b-w", world, tmp_path)
-    assert wait_for(lambda: world.vast.destroys, timeout=30), logs("st7b-w")
+    start_worker(W, world, tmp_path)
+    assert wait_for(lambda: world.vast.destroys, timeout=30), logs(W)
     assert world.vast.destroys[0][0] - started < 15
     assert "refused" in destroy_reports(world)[0]["reason"]
     assert world.head.bodies("B", "/heartbeat") == []
@@ -220,32 +221,36 @@ def test_no_zombies_after_50_short_orphan_children(bridge_world, tmp_path):
     spawn = "i=0; while [ $i -lt 50 ]; do (sleep 0.2 &); i=$((i+1)); done"
     count_zombies = "cat /proc/[0-9]*/status 2>/dev/null | grep -c '^State:.*zombie'"
     world = bridge_world
-    start_worker("st7b-w", world, tmp_path)
-    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs("st7b-w")
-    docker("exec", "st7b-w", "sh", "-c", spawn)
+    start_worker(W, world, tmp_path)
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), logs(W)
+    docker("exec", W, "sh", "-c", spawn)
     time.sleep(4)
-    assert docker("exec", "st7b-w", "sh", "-c", count_zombies, check=False).stdout.strip() == "0"
+    assert docker("exec", W, "sh", "-c", count_zombies, check=False).stdout.strip() == "0"
     # Control: with a PID 1 that does not reap, the same commands leave zombies, so the count above means something.
-    docker("run", "-d", "--name", "st7b-control", RAY_IMAGE, "sleep", "3600")
-    docker("exec", "st7b-control", "sh", "-c", spawn)
+    docker("run", "-d", "--name", f"{CONTAINER_PREFIX}control", RAY_IMAGE, "sleep", "3600")
+    docker("exec", f"{CONTAINER_PREFIX}control", "sh", "-c", spawn)
     time.sleep(2)
-    assert int(docker("exec", "st7b-control", "sh", "-c", count_zombies, check=False).stdout.strip()) >= 40
+    assert int(docker("exec", f"{CONTAINER_PREFIX}control", "sh", "-c", count_zombies, check=False).stdout.strip()) >= 40
 
 
 def test_container_output_and_ray_env_hold_no_secret(bridge_world, tmp_path):
     world = bridge_world
-    start_worker("st7b-w", world, tmp_path)
-    assert wait_for(lambda: world.head.bodies("B", "/report")), logs("st7b-w")
-    docker("exec", "st7b-w", "kill", "-TERM", "1")
+    start_worker(W, world, tmp_path)
+    assert wait_for(lambda: world.head.bodies("B", "/report")), logs(W)
+    docker("exec", W, "kill", "-TERM", "1")
     assert wait_for(lambda: world.vast.destroys)
-    output = logs("st7b-w")
-    node_key = docker("exec", "st7b-w", "cat", "/tmp/rayvast/node.key").stdout
-    for secret in (world.api_key, world.token, node_key.splitlines()[1]):
+    output = logs(W)
+    node_key = docker("exec", W, "cat", "/tmp/rayvast/node.key").stdout
+    for secret in (world.api_key, world.join_token, world.token, node_key.splitlines()[1]):
         assert secret not in output
-    ray = json.loads(docker("exec", "st7b-w", "cat", "/tmp/fakeray.json").stdout)
+    ray = json.loads(docker("exec", W, "cat", "/tmp/fakeray.json").stdout)
     assert "CONTAINER_API_KEY" not in ray["env"] and world.api_key not in ray["env"].values()
+    assert "RAYVAST_JOIN_TOKEN" not in ray["env"] and world.join_token not in ray["env"].values()
+    sent = json.dumps([e[3] for e in world.head.events])  # everything the worker sent to the head
+    assert world.api_key not in sent and "container_api_key" not in sent
 
 
+@pytest.mark.timeout(900)  # a real Ray head and worker start; the waits below add up to more than 300 s
 def test_full_stack_real_ray_worker_joins_real_tls_token_head_and_a_task_runs_without_the_key(tmp_path):
     """Host networking on both containers (one box): worker public IP = private IP = the box's private IP.
 
@@ -262,7 +267,7 @@ def test_full_stack_real_ray_worker_joins_real_tls_token_head_and_a_task_runs_wi
         }
         env_args = [arg for k, v in tls.items() for arg in ("-e", f"{k}={v}")]
         docker(
-            "run", "-d", "--name", "st7b-head", "--network", "host", "-v", f"{world.pki_dir}:/pki:ro", *env_args,
+            "run", "-d", "--name", f"{CONTAINER_PREFIX}head", "--network", "host", "-v", f"{world.pki_dir}:/pki:ro", *env_args,
             RAY_IMAGE, "ray", "start", "--head", "--block", f"--node-ip-address={ip}", "--port=19990",
             "--num-cpus=0", "--dashboard-host=127.0.0.1", "--dashboard-port=19991", "--node-manager-port=19992",
             "--object-manager-port=19993", "--metrics-export-port=19994", "--dashboard-agent-grpc-port=19995",
@@ -270,16 +275,16 @@ def test_full_stack_real_ray_worker_joins_real_tls_token_head_and_a_task_runs_wi
             "--min-worker-port=19900", "--max-worker-port=19949",
         )
         ray_status = lambda: docker(  # noqa: E731
-            "exec", "st7b-head", "ray", "status", "--address", f"{ip}:19990", check=False
+            "exec", f"{CONTAINER_PREFIX}head", "ray", "status", "--address", f"{ip}:19990", check=False
         ).stdout
-        assert wait_for(lambda: "Active:" in ray_status(), timeout=90), logs("st7b-head")
+        assert wait_for(lambda: "Active:" in ray_status(), timeout=90), logs(f"{CONTAINER_PREFIX}head")
         start_worker(
-            "st7b-w", world, tmp_path, network="host", fake_ray=False,
+            W, world, tmp_path, network="host", fake_ray=False,
             env={"RAYVAST_SKIP_HOST_CHECKS": "1", "RAYVAST_TIME_SCALE": "10"},
         )
         nodes = lambda: ray_status().count(" node_")  # noqa: E731
-        assert wait_for(lambda: nodes() == 2, timeout=120), logs("st7b-w") + ray_status()
-        assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=60), logs("st7b-w")
+        assert wait_for(lambda: nodes() == 2, timeout=120), logs(W) + ray_status()
+        assert wait_for(lambda: world.head.bodies("B", "/report"), timeout=60), logs(W)
         assert world.head.bodies("B", "/report")[0]["ok"] is True
         assert len(world.head.bodies("B", "/heartbeat")) >= 1
         task = (
@@ -287,8 +292,8 @@ def test_full_stack_real_ray_worker_joins_real_tls_token_head_and_a_task_runs_wi
             "f = ray.remote(num_cpus=1)(lambda: (os.environ.get('CONTAINER_API_KEY'), os.getpid())); "
             "print('TASK', ray.get(f.remote()))" % ip
         )
-        output = docker("exec", "st7b-head", "python", "-c", task).stdout
+        output = docker("exec", f"{CONTAINER_PREFIX}head", "python", "-c", task).stdout
         assert "TASK (None," in output, output
-        assert world.api_key not in logs("st7b-w")
+        assert world.api_key not in logs(W)
     finally:
         world.stop()

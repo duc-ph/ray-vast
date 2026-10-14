@@ -122,7 +122,8 @@ def what_is_left(aws, vast):
     left = [i["InstanceId"] for r in ec2.describe_instances(Filters=[
         {"Name": f"tag:{commands.TAG_KEY}", "Values": [CLUSTER]}, {"Name": "instance-state-name", "Values": live}])["Reservations"]
         for i in r["Instances"]]
-    left += [g["GroupId"] for g in ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": [name]}])["SecurityGroups"]]
+    group_names = [f"{name}-{i}" for i in range(5)]
+    left += [g["GroupId"] for g in ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": group_names}])["SecurityGroups"]]
     for get, kwargs in ((iam.get_instance_profile, {"InstanceProfileName": name}), (iam.get_role, {"RoleName": name})):
         try:
             get(**kwargs)
@@ -148,9 +149,13 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
     assert (volume["Size"], volume["VolumeType"]) == (60, "gp3")
     assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in volume["Tags"]
 
-    [group] = ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": [name]}])["SecurityGroups"]
-    assert head["SecurityGroups"][0]["GroupId"] == group["GroupId"]
-    assert [(p["FromPort"], p["ToPort"], [r["CidrIp"] for r in p["IpRanges"]]) for p in group["IpPermissions"]] == [(22, 22, ["203.0.113.7/32"])]
+    groups = ec2.describe_security_groups(Filters=[{"Name": f"tag:{commands.TAG_KEY}", "Values": [CLUSTER]}])["SecurityGroups"]
+    groups.sort(key=lambda g: g["GroupName"])
+    assert [g["GroupName"] for g in groups] == [f"{name}-{i}" for i in range(5)]
+    group_ids = [g["GroupId"] for g in groups]
+    assert sorted(g["GroupId"] for g in head["SecurityGroups"]) == sorted(group_ids)  # all 5 on the head's interface
+    assert [(p["FromPort"], p["ToPort"], [r["CidrIp"] for r in p["IpRanges"]]) for p in groups[0]["IpPermissions"]] == [(22, 22, ["203.0.113.7/32"])]
+    assert all(g["IpPermissions"] == [] for g in groups[1:])
 
     assert iam.get_instance_profile(InstanceProfileName=name)["InstanceProfile"]["Roles"][0]["RoleName"] == name
     assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in iam.get_role(RoleName=name)["Role"]["Tags"]
@@ -159,9 +164,9 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
     assert policy["Statement"] == [
         {"Effect": "Allow", "Action": ["ec2:DescribeSecurityGroups", "ec2:DescribeInstances"], "Resource": "*"},
         {"Effect": "Allow", "Action": ["ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress"],
-         "Resource": f"arn:aws:ec2:{REGION}:123456789012:security-group/{group['GroupId']}"}]  # 123456789012 is moto's account
+         "Resource": [f"arn:aws:ec2:{REGION}:123456789012:security-group/{g}" for g in group_ids]}]  # moto's account
 
-    assert (json.loads((tmp_path / "state" / f"{CLUSTER}.json").read_text()))["security_group_id"] == group["GroupId"]
+    assert (json.loads((tmp_path / "state" / f"{CLUSTER}.json").read_text()))["security_group_ids"] == group_ids
     assert ssh.calls[0][2].startswith("cloud-init status")  # waited for SSH and Docker first
 
 
@@ -169,12 +174,12 @@ def test_up_starts_the_head_container_and_keeps_secrets_off_command_lines(aws, c
     ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
     lines = [c[2] for c in ssh.calls]
 
-    # The head container: Ray's head is the main process (Docker restarts the whole head if it dies), on the host network.
+    # The head container: Ray's head is the main process, on the host network, with no restart policy (design 7.3).
     [start] = [shlex.split(c) for c in lines if "docker run -d" in c]
     image = start.index(f"ray-vast-{CLUSTER}:head")
     options, container_command = start[:image], start[image + 1:]
     assert container_command[:4] == ["ray", "start", "--head", "--block"]
-    assert "--restart" in options and options[options.index("--restart") + 1] == "unless-stopped"
+    assert not any(o.startswith("--restart") for o in options)
     assert "--network" in options and options[options.index("--network") + 1] == "host"
     env = dict(o.split("=", 1) for flag, o in zip(options, options[1:]) if flag == "-e")
     secrets_dir = f"/home/ubuntu/ray-vast-{CLUSTER}/secrets"
@@ -201,7 +206,7 @@ def test_up_starts_the_head_container_and_keeps_secrets_off_command_lines(aws, c
     assert VAST_KEY not in config_text
     assert provider["module"] == "ray_vast.provider.VastNodeProvider"
     assert provider["secrets_dir"] == secrets_dir and provider["head_ip"] == env["RAYVAST_PUBLIC_IP"]
-    assert provider["security_group_id"].startswith("sg-")
+    assert len(provider["security_group_ids"]) == 5 and all(g.startswith("sg-") for g in provider["security_group_ids"])
 
     # The wheel is the only file copied; the CA is made on the head (inside a container), not copied.
     assert [c[2] for c in ssh.calls if c[0] == "copy"] == [f"/home/ubuntu/ray-vast-{CLUSTER}/build/{wheel.name}"]
@@ -260,7 +265,7 @@ def test_down_reports_a_role_that_could_not_be_deleted_even_with_many_roles(aws,
 
 def test_down_never_deletes_a_same_named_group_without_our_tag(aws, tmp_path):
     ec2 = aws.client("ec2")
-    foreign = ec2.create_security_group(GroupName=f"ray-vast-{CLUSTER}", Description="not ours")["GroupId"]
+    foreign = ec2.create_security_group(GroupName=f"ray-vast-{CLUSTER}-0", Description="not ours")["GroupId"]
     left = commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path, sleep=lambda s: None, out=lambda m: None)
     assert [g["GroupId"] for g in ec2.describe_security_groups(GroupIds=[foreign])["SecurityGroups"]] == [foreign]
     assert left == []  # it is not ours, so it is not "left"
@@ -629,7 +634,7 @@ def test_down_reports_each_kind_of_resource_that_could_not_be_removed(aws, clust
     monkeypatch.setattr(botocore.waiter.Waiter, "wait", lambda self, **kwargs: None)  # the head never terminates; do not wait for it
     aws.events.register(f"before-call.{hook}", no_op_response)
     left = commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path / "state", sleep=lambda s: None, out=lambda m: None)
-    assert len(left) == 1 and left[0].startswith(kind + " ")
+    assert len(left) == (5 if kind == "security group" else 1) and all(item.startswith(kind + " ") for item in left)
 
 
 def test_down_removes_the_known_hosts_file(aws, tmp_path):

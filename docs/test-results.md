@@ -204,3 +204,49 @@ Setup: `ray-vast up` from a clean copy of commit 207c74b (EC2 `t3.large` head, u
 Changes from these findings:
 - Enrollment no longer uses `CONTAINER_API_KEY` on the head. The provider gives each candidate a one-time join token in the env, and `/enroll` carries it (design.md 5.2; decisions.md).
 - The rent-loop breaker: after 3 failed slots in a row of one node type, the provider stops that type for 10 min (design.md 4).
+
+## Step 10b (2026-10-14)
+
+The bootloader container test failed once. Cause: the session leak check removed every container with the name prefix `st7b-`. It also removed the containers of a parallel test run. Fix: each run uses its own name prefix `<step>-<pid>-`. The leak check removes only the containers of its own run.
+
+## Shim tests and mutation run (step 10c, 2026-10-14)
+
+The test `ray-vast-pypi/tests/integration/test_shim.py` (14 tests, `slow`, Linux only) loads the shim with `LD_PRELOAD` into small Python processes on the dev box. `RAYVAST_PUBLIC_IP` is `203.0.113.10` (TEST-NET-3, not owned). `RAYVAST_PRIVATE_IP` is `127.0.0.2` (on the loopback interface without setup). The tests use the committed `.so`, or the `.so` in `RAYVAST_TEST_SHIM_SO`. They replace the hand test C0.1 (`tests/manual/c0_1_shim_unit.sh`), except the setproctitle check in the Ray image: the test clears the `RAYVAST_SHIM_LOG` value in the environment memory with `ctypes` instead.
+
+The script `ray-vast-pypi/scripts/shim_mutants.py` makes 25 mutants of `rayvast_shim.c`. It builds the unchanged source and each mutant in `quay.io/pypa/manylinux2014_x86_64`, and runs the test against each `.so`. The unchanged source builds to the committed `.so` (sha256 `79055dea…17fd`). The build is reproducible only when the source file has the name `rayvast_shim.c`, because the file name goes into the `.so`. The run takes about 2.5 min.
+
+Result: 23 killed, 2 survived.
+
+| Mutant | Result | Tests that fail |
+|---|---|---|
+| `rule1-removed` | killed | bind any on a localhost port; second bind; `::` bind |
+| `rule1-target-private` | killed | rule 1 and rule 3 tests |
+| `rule3-removed` | killed | connect on a localhost port (IPv4 and `::ffff:`) |
+| `rules2-4-removed` | killed | rule 2 and rule 4 tests, errno, log |
+| `rule2-removed` | killed | bind to the public IP, `::ffff:` bind, log |
+| `rule4-removed` | killed | connect to the public IP, `::ffff:` connect, errno, log |
+| `port-compare-flipped` | killed | pass-through, rule 2 and rule 4 tests |
+| `public-compare-flipped` | killed | pass-through, rules 2–4 |
+| `same-target-compare-flipped` | killed | 11 tests |
+| `port-range-flipped` | killed | rule 1 and rule 3 tests |
+| `port-list-first-only` | killed | rule 1 and rule 3 tests (the test port is the second in the list) |
+| `inet-length-check-flipped` | killed | all IPv4 rewrite tests |
+| `inet6-family-check-wrong` | killed | `::` bind, `::ffff:` tests |
+| `inet6-v4mapped-check-removed` | killed | plain IPv6 (`::1`) passes through |
+| `inet6-any-not-detected` | killed | `::` bind |
+| `inet6-any-no-ffff-prefix` | killed | `::` bind |
+| `inet6-length-wrong` | killed | `::` bind, `::ffff:` tests |
+| `reuseport-removed` | killed | second bind in the same process (the v2 bug) |
+| `connect-uses-old-address` | killed | all connect tests |
+| `errno-save-removed-in-log` | killed | errno after a good bind when the log open fails |
+| `errno-save-removed-in-bind` | survived | see below |
+| `errno-save-removed-in-init` | survived | see below |
+| `env-copy-removed` | killed | log after the environment memory is cleared (the v3 bug) |
+| `log-bind-removed` | killed | log tests |
+| `log-connect-removed` | killed | one log line for each rewrite |
+
+Why the 2 survivors are acceptable (both are equivalent mutants; no test can see them):
+- `errno-save-removed-in-bind`: the save is around `setsockopt(SO_REUSEPORT)`. `setsockopt` fails only on a bad or non-socket fd. Then the `bind` that follows also fails and sets errno again.
+- `errno-save-removed-in-init`: `init()` runs in the library constructor, before `main`. No caller can read errno at that time.
+
+Run it again: `cd ray-vast-pypi && .venv/bin/python scripts/shim_mutants.py` (Docker is necessary).

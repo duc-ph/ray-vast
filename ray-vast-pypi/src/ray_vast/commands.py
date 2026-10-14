@@ -1,7 +1,7 @@
 """The work of the `ray-vast` commands (plan step 10): `up`, `down`, `attach`, `dashboard`. `cli.py` parses the
 arguments and calls `run`; the split keeps `ray-vast --help` free of boto3, yaml and the other dependencies.
 
-`up` makes, in this order: an IAM role, a security group, the role's policy, an instance profile, and the EC2 head
+`up` makes, in this order: an IAM role, 5 security groups, the role's policy, an instance profile, and the EC2 head
 (all tagged `ray-vast-cluster=<name>`). On the head it builds a derived image (`provider.image` plus the ray-vast
 wheel), makes the secrets inside a container, and starts the Ray head as the main process of a container.
 `down` finds everything by tag or by name, so it works when `up` failed half way, when the head is gone, and
@@ -35,6 +35,7 @@ from .aws_sg import ec2_client_config
 from .vast_api import VastClient
 
 TAG_KEY = "ray-vast-cluster"
+SECURITY_GROUPS = 5
 BUILD_TIMEOUT = 600  # seconds for `python -m build` on the laptop
 TESTED_RAY_VERSIONS = ("2.59",)
 UBUNTU_OWNER = "099720109477"
@@ -117,7 +118,8 @@ def _head_instances(ec2, cluster):
 def _our_groups(ec2, cluster):
     """Security groups of the cluster: by name AND tag, so a same-named group of someone else is never touched."""
     return ec2.describe_security_groups(Filters=[
-        {"Name": "group-name", "Values": [f"ray-vast-{cluster}"]}, {"Name": f"tag:{TAG_KEY}", "Values": [cluster]}])["SecurityGroups"]
+        {"Name": "group-name", "Values": [f"ray-vast-{cluster}-{i}" for i in range(SECURITY_GROUPS)]},
+        {"Name": f"tag:{TAG_KEY}", "Values": [cluster]}])["SecurityGroups"]
 
 
 def _vast_instances(vast, cluster):
@@ -151,14 +153,15 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     # 1. AWS resources. The role comes first: if the user lacks IAM permissions, nothing else exists yet.
     iam.create_role(RoleName=name, Tags=tags, AssumeRolePolicyDocument=json.dumps({
         "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
-    group_id = ec2.create_security_group(GroupName=name, Description=f"ray-vast head {cluster}", TagSpecifications=[
-        {"ResourceType": "security-group", "Tags": tags}])["GroupId"]
-    ec2.authorize_security_group_ingress(GroupId=group_id, IpPermissions=[{
+    # 5 groups: the AWS default limit for one network interface. Worker IP rules fill them in order (design 8.3).
+    group_ids = [ec2.create_security_group(GroupName=f"{name}-{i}", Description=f"ray-vast head {cluster}", TagSpecifications=[
+        {"ResourceType": "security-group", "Tags": tags}])["GroupId"] for i in range(SECURITY_GROUPS)]
+    ec2.authorize_security_group_ingress(GroupId=group_ids[0], IpPermissions=[{
         "IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": f"{operator_ip}/32", "Description": "operator ssh"}]}])
     iam.put_role_policy(RoleName=name, PolicyName="head", PolicyDocument=json.dumps({"Version": "2012-10-17", "Statement": [
         {"Effect": "Allow", "Action": ["ec2:DescribeSecurityGroups", "ec2:DescribeInstances"], "Resource": "*"},
         {"Effect": "Allow", "Action": ["ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress"],
-         "Resource": f"arn:aws:ec2:{region}:{account}:security-group/{group_id}"}]}))
+         "Resource": [f"arn:aws:ec2:{region}:{account}:security-group/{g}" for g in group_ids]}]}))
     iam.create_instance_profile(InstanceProfileName=name, Tags=tags)
     iam.add_role_to_instance_profile(InstanceProfileName=name, RoleName=name)
 
@@ -171,7 +174,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
         try:
             launched = ec2.run_instances(
                 ImageId=ami, InstanceType=provider["head_instance_type"], MinCount=1, MaxCount=1, KeyName=key_name,
-                SecurityGroupIds=[group_id], IamInstanceProfile={"Name": name}, UserData=USER_DATA,
+                SecurityGroupIds=group_ids, IamInstanceProfile={"Name": name}, UserData=USER_DATA,
                 MetadataOptions={"HttpTokens": "required", "HttpEndpoint": "enabled"},
                 BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 60, "VolumeType": "gp3", "DeleteOnTermination": True}}],
                 TagSpecifications=[{"ResourceType": rt, "Tags": tags} for rt in ("instance", "volume")])
@@ -190,7 +193,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state_file.write_text(json.dumps({
         "cluster": cluster, "region": region, "head_instance_id": instance_id, "head_ip": head_ip,
-        "security_group_id": group_id, "role_name": name, "instance_profile_name": name}, indent=2))
+        "security_group_ids": group_ids, "role_name": name, "instance_profile_name": name}, indent=2))
 
     # 2. On the head: wait for SSH and Docker.
     for attempt in range(60):
@@ -215,7 +218,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
 
     # 4. Config and secrets on the head. The CA key is made inside a container and never leaves the head.
     head_provider = {k: v for k, v in provider.items() if k not in ("key_name", "key_file")}
-    head_provider.update(head_ip=head_ip, secrets_dir=secrets, security_group_id=group_id)
+    head_provider.update(head_ip=head_ip, secrets_dir=secrets, security_group_ids=group_ids)
     # The build pulled provider.image; its size sets the workers' pull time limit (provider.image_size_gb), unless the user set it.
     size_bytes = ssh.run(head_ip, f"sudo docker image inspect --format '{{{{.Size}}}}' {shlex.quote(provider['image'])}").strip()
     if size_bytes.isdigit() and "image_size_gb" not in head_provider:
@@ -226,7 +229,8 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     ssh.run(head_ip, f"sudo docker run --rm -v {secrets}:{secrets} {image_tag} python -c "
                      + shlex.quote(f"from ray_vast import pki; pki.write_head_files({secrets!r}, {head_ip!r}, {provider['cert_max_age_days']})"))
 
-    # 5. The head: `ray start --head --block` is the main process, so Docker restarts the whole head if Ray's monitor dies (S2).
+    # 5. The head: `ray start --head --block` is the main process, with no restart policy (no self-healing, design 7.3):
+    # if Ray's monitor dies, Ray stops the head, and the workers destroy themselves.
     env = {
         "RAY_enable_autoscaler_v2": "1", "RAY_CLOUD_INSTANCE_ID": "head", "RAY_NODE_TYPE_NAME": config["head_node_type"],
         "RAY_USE_TLS": "1", "RAY_TLS_SERVER_CERT": f"{secrets}/head.pem", "RAY_TLS_SERVER_KEY": f"{secrets}/head.key",
@@ -238,7 +242,7 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
                  "--dashboard-host=127.0.0.1", *(f"--{k}={v}" for k, v in HEAD_PORTS.items()), f"--autoscaling-config={work}/cluster.yaml"]
     ssh.run(head_ip, " ".join([
         f"sudo docker rm -f {CONTAINER} >/dev/null 2>&1;", "sudo docker run -d", f"--name {CONTAINER}", "--init",
-        "--restart unless-stopped", "--network host", f"-v {work}:{work}",
+        "--network host", f"-v {work}:{work}",
         *(f"-e {k}={shlex.quote(v)}" for k, v in env.items()), image_tag, *map(shlex.quote, ray_start)]))
 
     # 6. Wait until Ray answers.

@@ -16,6 +16,7 @@ from typing import Optional
 
 # Blocklist lifetime by failure kind (D4), in seconds.
 BLOCK_TTL = {"security": 30 * 86400, "network": 86400, "timeout": 86400}
+BREAKER_FAILED_SLOTS, BREAKER_PAUSE_S = 3, 600  # rent-loop breaker (design 4)
 
 
 @dataclass
@@ -41,6 +42,7 @@ class Candidate:
     node_type: Optional[str] = None  # set by the provider at rent time; used when the candidate's own slot is gone
     last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
     pull_limit_s: float = 900.0  # the provider's limit for "rented, not yet running" (image pull)
+    join_token: Optional[str] = field(default=None, repr=False)  # secret; valid until the candidate enrolls or ends
 
 
 @dataclass
@@ -58,6 +60,8 @@ class ClusterState:
         self.enrolled = set()  # instance IDs; never removed while the provider lives
         self.ip_refs = {}  # public ip -> number of candidates and workers on it
         self.blocklist = {}  # machine id -> BlockEntry
+        self._failed_slots = {}  # node type -> slots in a row that ended with no enrolled worker (rent-loop breaker)
+        self._paused_until = {}  # node type -> time until which the rent-loop breaker refuses launches
         self._slot_count = 0
 
     def new_slot_id(self):
@@ -116,6 +120,27 @@ class ClusterState:
                 del self.blocklist[machine_id]
                 return False
             return True
+
+    def slot_failed(self, node_type, now):
+        """Count a slot of `node_type` that ended with no enrolled worker. Returns True when the breaker trips: the
+        launches of the type pause for BREAKER_PAUSE_S, and the count starts again at 0."""
+        with self.lock:
+            failed = self._failed_slots.get(node_type, 0) + 1
+            tripped = failed >= BREAKER_FAILED_SLOTS
+            self._failed_slots[node_type] = 0 if tripped else failed
+            if tripped:
+                self._paused_until[node_type] = now + BREAKER_PAUSE_S
+            return tripped
+
+    def slot_enrolled(self, node_type):
+        """A worker of `node_type` enrolled: the failures are no longer in a row."""
+        with self.lock:
+            self._failed_slots.pop(node_type, None)
+
+    def launch_pause_left(self, node_type, now):
+        """Seconds until the breaker allows launches of `node_type` again; 0 when it allows them now."""
+        with self.lock:
+            return max(self._paused_until.get(node_type, 0) - now, 0)
 
     def total_dph(self):
         """Dollars per hour of all candidates and workers (a worker stays in `candidates` until its instance is destroyed)."""

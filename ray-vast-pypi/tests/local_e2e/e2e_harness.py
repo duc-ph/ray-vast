@@ -92,7 +92,7 @@ class Cluster:
             "idle_timeout_minutes": idle_timeout_minutes,
             "provider": {
                 "region": REGION, "image": RAY_IMAGE, "max_dollars_per_hour": 10, "head_ip": self.box_ip,
-                "secrets_dir": "/work/secrets", "security_group_id": self.sg_id, "vast_api_url": self.fake.url,
+                "secrets_dir": "/work/secrets", "security_group_ids": [self.sg_id], "vast_api_url": self.fake.url,
                 "candidate_factor": 1, **provider,
             },
             "head_node_type": "head",

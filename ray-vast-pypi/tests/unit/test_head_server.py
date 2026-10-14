@@ -10,35 +10,20 @@ import requests
 from ray_vast import pki
 from ray_vast.head_server import HeadServer
 from ray_vast.state import Candidate, ClusterState, Slot
-from ray_vast.vast_api import VastError
 
-CONTAINER_KEY = "container-key-SECRET-1111"
+JOIN_TOKEN = "a1" * 32  # the provider makes 64 lowercase hex characters
 BAD_CHECKS = {"egress_ip_ok": True, "no_net_raw_admin": False, "own_netns": True, "shm_empty": True, "details": ""}
 TOKEN = "cluster-token-SECRET-2222"
 
 
 class StubVast:
-    """The vast boundary: `keys` maps instance id -> its container key; a wrong key is HTTP 401, an unknown id None."""
+    """The vast boundary. The head server only destroys; it has no `get_instance`, so a lookup would raise."""
 
     def __init__(self):
-        self.keys, self.get_calls, self.destroyed = {}, [], []
-        self.get_barrier = None  # when set, get_instance waits there, so parallel requests overlap
+        self.destroyed = []
         self.destroy_error = None
-        self.get_error = None
 
-    def get_instance(self, instance_id, key=None):
-        self.get_calls.append(instance_id)
-        if self.get_barrier:
-            self.get_barrier.wait(timeout=10)
-        if self.get_error:
-            raise self.get_error
-        if instance_id not in self.keys:
-            return None
-        if self.keys[instance_id] != key:
-            raise VastError("GET: HTTP 401", status=401)
-        return {"id": instance_id}
-
-    def destroy_instance(self, instance_id, key=None):
+    def destroy_instance(self, instance_id):
         self.destroyed.append(instance_id)
         if self.destroy_error:
             raise self.destroy_error
@@ -84,18 +69,19 @@ def env(tmp_path, listeners):
     server.stop()
 
 
-def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", key=CONTAINER_KEY, node_type="gpu", machine_id=7):
+def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN_TOKEN, node_type="gpu", machine_id=7):
+    """A candidate that the provider has seen `running` with `ip` (ip None: not seen running yet)."""
     with env.state.lock:
         if slot_id not in env.state.slots:
             env.state.add_slot(Slot(slot_id, node_type))
-        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, public_ip=ip))
-        env.state.ip_ref_add(ip)
-    env.vast.keys[instance_id] = key
+        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, public_ip=ip, join_token=token))
+        if ip:
+            env.state.ip_ref_add(ip)
 
 
-def enroll(env, instance_id, key=CONTAINER_KEY, checks=None, ports=None):
+def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None):
     body = {
-        "instance_id": instance_id, "container_api_key": key,
+        "instance_id": instance_id, "join_token": token,
         "checks": checks or {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True,
                              "details": ""},
         "ports": ports or env.ports, "cpu_count": 8, "gpu_count": 1,
@@ -126,23 +112,44 @@ def test_ca_and_bootstrap_are_served_on_port_a(env):
     assert env.server.bootstrap_sha256 == "fa8196cd37ef904decb437400646a1d984feaf5c050efee114f8a8d619008ba0"
 
 
-def test_another_instances_key_is_refused_without_a_destroy(env):
+def test_another_instances_join_token_is_refused_without_a_destroy(env):
     add_candidate(env, 11)
-    assert enroll(env, 11, key="some-other-instances-key").status_code == 403
-    assert env.vast.destroyed == [] and 11 in env.state.candidates and env.state.ip_refs == {"127.0.0.1": 1}
-
-
-def test_vast_server_error_during_the_key_check_gives_503_without_a_destroy(env):
-    add_candidate(env, 11)
-    env.vast.get_error = VastError("GET: HTTP 502", status=502)
-    assert enroll(env, 11).status_code == 503
+    add_candidate(env, 12, token="b2" * 32)
+    resp = enroll(env, 11, token="b2" * 32)
+    assert resp.status_code == 403 and resp.json()["reason"] == "join token is not valid for this instance"
     assert env.vast.destroyed == [] and 11 in env.state.candidates and 11 not in env.state.enrolled
+    assert env.state.ip_refs == {"127.0.0.1": 2}
+
+
+@pytest.mark.parametrize("token", ["", None, 12345])
+def test_missing_or_empty_join_token_is_refused_without_a_destroy(env, token):
+    add_candidate(env, 11)
+    assert enroll(env, 11, token=token).status_code == 403
+    assert env.vast.destroyed == [] and 11 in env.state.candidates
+
+
+def test_body_without_the_join_token_field_is_refused_without_a_destroy(env):
+    add_candidate(env, 11)
+    body = {"instance_id": 11, "checks": {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True,
+                                          "shm_empty": True, "details": ""},
+            "ports": env.ports, "cpu_count": 8, "gpu_count": 1}
+    resp = requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
+    assert resp.status_code == 403 and env.vast.destroyed == [] and 11 in env.state.candidates
+
+
+def test_candidate_not_seen_running_yet_gets_503_and_can_enroll_later(env):
+    add_candidate(env, 11, ip=None)
+    resp = enroll(env, 11)
+    assert resp.status_code == 503 and env.vast.destroyed == [] and 11 not in env.state.enrolled
+    with env.state.lock:  # the provider's next reconcile pass sees it running
+        env.state.candidates[11].public_ip = "127.0.0.1"
+        env.state.ip_ref_add("127.0.0.1")
+    assert enroll(env, 11).status_code == 200
 
 
 def test_two_parallel_failing_enrollments_lower_the_ip_ref_once(env):
     add_candidate(env, 11)
     add_candidate(env, 12)  # same IP: the ref count is 2
-    env.vast.get_barrier = threading.Barrier(2)
     results = []
     threads = [threading.Thread(target=lambda: results.append(enroll(env, 11, checks=BAD_CHECKS).status_code))
                for _ in range(2)]
@@ -178,24 +185,16 @@ def test_wrong_source_ip_is_refused(env):
     assert env.state.ip_refs == {"10.9.9.9": 1}
 
 
-@pytest.mark.parametrize("key", ["", "   "])
-def test_empty_container_key_is_refused_without_a_vast_call(env, key):
-    add_candidate(env, 11)
-    assert enroll(env, 11, key=key).status_code == 403
-    assert env.vast.get_calls == [] and env.state.ip_refs == {"127.0.0.1": 1}
-
-
 def test_duplicate_ports_are_a_400(env):
     add_candidate(env, 11)
     ports = {**env.ports, "70001": env.ports["70000"]}
     assert enroll(env, 11, ports=ports).status_code == 400
-    assert env.vast.get_calls == []
 
 
 @pytest.mark.parametrize("cpu, gpu", [(0, 1), (5000, 1), (8, -1), (8, 65)])
 def test_out_of_range_cpu_or_gpu_count_is_a_400(env, cpu, gpu):
     add_candidate(env, 11)
-    body = {"instance_id": 11, "container_api_key": CONTAINER_KEY, "checks": {}, "ports": env.ports,
+    body = {"instance_id": 11, "join_token": JOIN_TOKEN, "checks": {}, "ports": env.ports,
             "cpu_count": cpu, "gpu_count": gpu}
     assert requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file).status_code == 400
 
@@ -209,9 +208,9 @@ def test_candidate_whose_slot_is_gone_takes_a_free_slot_of_its_node_type(env):
     assert enroll(env, 11).json()["slot_id"] == "slot-2"
 
 
-def test_unknown_instance_is_refused_without_a_vast_call(env):
+def test_unknown_instance_is_refused_without_a_destroy(env):
     assert enroll(env, 99).status_code == 403
-    assert env.vast.get_calls == [] and env.state.ip_refs == {}
+    assert env.vast.destroyed == [] and env.state.ip_refs == {}
 
 
 def test_two_candidates_for_one_slot_first_wins(env):
@@ -245,13 +244,14 @@ def test_failed_egress_check_blocks_the_machine_as_network(env):
     assert env.state.blocklist[7].kind == "network"
 
 
-def test_outside_check_failure_is_refused_and_blocked_as_network(env):
+def test_port_check_failure_is_refused_and_blocked_as_network(env):
     add_candidate(env, 11)
     dead = socket.socket()
     dead.bind(("127.0.0.1", 0))
     ports = {**env.ports, "70005": dead.getsockname()[1]}
     dead.close()  # nothing listens on it now
-    assert enroll(env, 11, ports=ports).status_code == 403
+    resp = enroll(env, 11, ports=ports)
+    assert resp.status_code == 403 and resp.json()["reason"] == "port check failed: 1 of 64 ports unreachable"
     assert env.state.blocklist[7].kind == "network" and env.vast.destroyed == [11]
 
 
@@ -353,7 +353,7 @@ def test_passing_token_check_and_destroy_report_do_not_destroy(env):
 
 def test_report_before_enrollment_is_accepted(env):
     resp = requests.post(f"https://127.0.0.1:{env.port_a}/report", verify=env.ca_file, timeout=30,
-                         json={"instance_id": 11, "container_api_key": CONTAINER_KEY, "kind": "destroy", "reason": "r"})
+                         json={"instance_id": 11, "kind": "destroy", "reason": "r"})
     assert resp.status_code == 200 and resp.json() == {}
 
 
@@ -362,11 +362,36 @@ def test_no_secret_reaches_the_log(env, caplog):
     add_candidate(env, 11)
     add_candidate(env, 12)
     answer = enroll(env, 11).json()
-    enroll(env, 12, key="wrong-key-SECRET-3333")
+    enroll(env, 12, token="wrong-token-SECRET-3333")
     requests.post(f"https://127.0.0.1:{env.port_a}/report", verify=env.ca_file, timeout=30,
-                  json={"instance_id": 11, "container_api_key": CONTAINER_KEY, "kind": "destroy", "reason": "r"})
+                  json={"instance_id": 11, "kind": "destroy", "reason": "r"})
     text = caplog.text
     assert "enrolled instance 11" in text  # the log is not empty
     key_body = answer["key_pem"].split("\n")[1]
-    for secret in (CONTAINER_KEY, "wrong-key-SECRET-3333", TOKEN, key_body, answer["cert_pem"].split("\n")[1]):
+    for secret in (JOIN_TOKEN, "wrong-token-SECRET-3333", TOKEN, key_body, answer["cert_pem"].split("\n")[1]):
         assert secret not in text
+
+
+@pytest.mark.parametrize("bad", ["checks", "ports"])
+def test_second_enroll_of_an_enrolled_instance_with_failing_checks_is_refused_without_a_destroy(env, bad):
+    add_candidate(env, 11)
+    assert enroll(env, 11).status_code == 200
+    dead = socket.socket()
+    dead.bind(("127.0.0.1", 0))
+    closed_ports = {**env.ports, "70005": dead.getsockname()[1]}
+    dead.close()
+    resp = enroll(env, 11, checks=BAD_CHECKS) if bad == "checks" else enroll(env, 11, ports=closed_ports)
+    assert resp.status_code == 403 and resp.json()["reason"] == "already enrolled"
+    assert env.vast.destroyed == [] and env.state.blocklist == {} and 11 in env.state.candidates
+
+
+def test_join_token_is_cleared_when_the_instance_enrolls(env):
+    add_candidate(env, 11)
+    assert enroll(env, 11).status_code == 200
+    assert env.state.candidates[11].join_token is None
+
+
+def test_wrong_source_ip_and_wrong_token_gives_the_source_ip_reason(env):
+    add_candidate(env, 11, ip="10.9.9.9")
+    resp = enroll(env, 11, token="b2" * 32)
+    assert resp.status_code == 403 and resp.json()["reason"] == "source IP does not match the instance public IP"
