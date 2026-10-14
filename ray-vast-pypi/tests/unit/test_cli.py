@@ -1,7 +1,10 @@
 import importlib.metadata
 import json
+import os
+import select
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 import boto3
@@ -560,6 +563,30 @@ def test_main_up_builds_the_wheel_with_a_timeout(aws, home, fake_ssh, cluster_ya
     assert what_is_left(aws, FakeVast()) == []
 
 
+UP_THAT_BLOCKS = """
+import sys, threading
+from ray_vast import cli, commands
+commands._public_ip = lambda: "203.0.113.7"
+commands.up = lambda *a, **kw: threading.Event().wait()  # the AWS and SSH work; it blocks so that the test sees the stream mid-run
+cli.main(sys.argv[1:])
+"""
+
+
+@pytest.mark.slow  # starts a Python process
+def test_main_up_progress_lines_reach_a_pipe_at_once(cluster_yaml, wheel, tmp_path):
+    env = {**os.environ, "HOME": str(tmp_path), "VAST_API_KEY": VAST_KEY, "AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x"}
+    env.pop("AWS_PROFILE", None)
+    proc = subprocess.Popen([sys.executable, "-c", UP_THAT_BLOCKS, "up", str(cluster_yaml), "--wheel", str(wheel),
+                             "--key-file", "/k.pem", "--key-name", "k"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    try:
+        ready, _, _ = select.select([proc.stdout], [], [], 15)
+        assert ready, f"no stdout line while `up` runs; stderr: {proc.stderr.read1().decode() if proc.poll() is not None else ''}"
+        assert proc.stdout.readline().decode().startswith(f"installing ray-vast from the wheel {wheel}")
+    finally:
+        proc.kill()
+        proc.wait()
+
+
 @pytest.fixture
 def running_cluster(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
     assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 0
@@ -586,6 +613,17 @@ def test_main_dashboard_copies_the_token_and_opens_the_tunnel(running_cluster, h
     [tunnel] = called
     assert tunnel[tunnel.index("-L") + 1] == "8265:127.0.0.1:8265" and "-N" in tunnel and tunnel[-1] == f"ubuntu@{running_cluster}"
     assert "tok-abc" not in capsys.readouterr().out
+
+
+def test_main_dashboard_ctrl_c_closes_the_tunnel_with_one_line_and_exit_0(running_cluster, cluster_yaml, monkeypatch, capsys):
+    monkeypatch.setattr(subprocess, "run", lambda argv, **kw: subprocess.CompletedProcess(argv, 0, "tok-abc\n", ""))
+
+    def ctrl_c(argv):  # subprocess.call kills the ssh child before it raises
+        raise KeyboardInterrupt
+    monkeypatch.setattr(subprocess, "call", ctrl_c)
+    assert cli.main(["dashboard", str(cluster_yaml), "--key-file", "/keys/a.pem"]) == 0
+    captured = capsys.readouterr()
+    assert captured.out.splitlines()[-1] == "tunnel closed" and "Traceback" not in captured.err + captured.out
 
 
 @pytest.mark.parametrize("command", ["attach", "dashboard"])

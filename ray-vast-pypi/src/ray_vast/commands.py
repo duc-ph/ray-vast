@@ -8,7 +8,7 @@ when `~/.ray-vast/<cluster>.json` is missing.
 
 Decisions:
 - The derived image gets ray-vast from, in this order: `--wheel FILE` (copied to the head); `--index-url URL` (pip
-  installs `ray-vast==<this CLI's version>` from that index, with the dependencies from PyPI); the source tree, when
+  installs `ray-vast==<this CLI's version>` from that index, with PyPI as an extra index); the source tree, when
   the CLI runs from a git checkout (`python -m build` on the laptop, for development); else `ray-vast==<this CLI's
   version>` from PyPI. Without `--wheel`, the head runs the same code as the CLI.
 - `down` terminates the head first, so its autoscaler cannot rent new workers while the vast sweep runs.
@@ -231,7 +231,8 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
         ssh.copy(head_ip, wheel, f"{build}/{wheel.name}")
         dockerfile = DOCKERFILE.format(image=provider["image"], wheel=wheel.name)
     else:
-        # TestPyPI does not hold ray-vast's dependencies, so pip takes them from PyPI.
+        # TestPyPI does not hold all of ray-vast's dependencies, so PyPI is an extra index. pip takes the highest version
+        # of each package from either index: this is for release tests only.
         index = f"--index-url {shlex.quote(index_url)} --extra-index-url https://pypi.org/simple " if index_url else ""
         dockerfile = DOCKERFILE_INDEX.format(image=provider["image"], requirement=f"{index}ray-vast=={__version__}")
     ssh.run(head_ip, f"cat > {build}/Dockerfile", stdin=dockerfile)
@@ -380,7 +381,11 @@ def dashboard(ssh, ip, state_dir, cluster, out=print):
     out("for `ray job submit` set:")
     out(f"  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH={token_file}")
     out("dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265")
-    return ssh.interactive(ip, "-N", "-L", "8265:127.0.0.1:8265")
+    try:
+        return ssh.interactive(ip, "-N", "-L", "8265:127.0.0.1:8265")
+    except KeyboardInterrupt:  # Ctrl-C is the normal way to close the tunnel; subprocess.call has already killed ssh
+        out("tunnel closed")
+        return 0
 
 
 def _public_ip():
