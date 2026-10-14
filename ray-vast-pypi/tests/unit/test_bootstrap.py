@@ -304,25 +304,24 @@ def test_a_ca_pem_with_a_second_cert_behind_the_real_one_is_not_trusted(new_worl
     from datetime import datetime, timedelta, timezone
 
     from cryptography import x509
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
     from cryptography.x509.oid import NameOID
     from ray_vast import pki
 
-    # The cluster CA of ray_vast.pki always has a DER length that is a multiple of 3 (no base64 padding), so build a
-    # CA with a padded encoding here.
-    key = ec.generate_private_key(ec.SECP256R1())
-    for cn_length in (1, 2, 3):
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "c" * cn_length)])
-        now = datetime.now(timezone.utc)
-        cert = (
-            x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
-            .serial_number(1).not_valid_before(now - timedelta(days=1)).not_valid_after(now + timedelta(days=1))
-            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True).sign(key, hashes.SHA256())
-        )
-        padded_ca = cert.public_bytes(serialization.Encoding.PEM)
-        if len(cert.public_bytes(serialization.Encoding.DER)) % 3 != 0:
-            break
+    # The forgery needs a real CA whose base64 ends in padding. An ECDSA signature has a random DER length, so an ECDSA
+    # CA is unpadded by chance (the test then failed about 3 runs in 100). An Ed25519 signature is always 64 bytes, so
+    # this CA has the same DER length (223 bytes, 2 padding chars) in every run.
+    key = ed25519.Ed25519PrivateKey.generate()
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "c")])
+    now = datetime.now(timezone.utc)
+    cert = (
+        x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
+        .serial_number(1).not_valid_before(now - timedelta(days=1)).not_valid_after(now + timedelta(days=1))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True).sign(key, None)
+    )
+    padded_ca = cert.public_bytes(serialization.Encoding.PEM)
+    assert len(cert.public_bytes(serialization.Encoding.DER)) % 3 != 0
     world = new_world()
     world.ca_pem = padded_ca
     rogue_dir = world.pki_dir.parent / "rogue"
