@@ -64,3 +64,17 @@
 | Peak sum of dph_total | $0.672/h |
 | EC2 | t3.large head i-05b75dc8e51be411d, about 07:38Z to 08:03Z (25 min) at $0.0832/h = about $0.035, plus 60 GiB gp3 (< $0.002). Budget about $0.15. |
 | Day total so far (vast) | credit 11.5658 → 11.1756 = $0.3902 (no top-up today). The day limit is $8. |
+
+## C8 re-run (full scale test, HEAD 7dd15c2, 0.1.0rc1)
+
+| Item | Value |
+|---|---|
+| vast credit before | $11.1756 (08:13:45Z) |
+| vast credit after | $10.9682 (08:38:33Z; $10.9709 at 08:37:11Z, late booking). vast can book the last minutes later. |
+| Auto top-ups seen | 0 (the credit went down only; it stayed above $5) |
+| vast spend | credit before − credit after + $10 × top-ups = 11.1756 − 10.9682 + 0 = $0.2074 (budget $3.00) |
+| vast spend (estimate from dph_total in the poll) | about $0.213 |
+| Rentals | 8. C8.1: 6 (55894123 P100 $0.112/h, 55894124 A5000 $0.236/h unused, 55894125 RTX 3090 $0.327/h, 55894128 CMP 170HX $0.548/h unused, 55894139 RTX 4090 $0.870/h, 55894153 CMP 170HX $0.615/h), 08:24:55Z to 08:31:08Z. PID 1 probe: 2 (55894989 P100 $0.112/h, 08:32:32Z-08:35:22Z; 55894991 A5000 $0.236/h unused, 33 s) |
+| Peak sum of dph_total | $2.708/h (6 candidates, 08:25:42Z); $1.923/h with the 4 workers |
+| EC2 | t3.large head i-02e0828fe2dc560e2, about 08:16Z to 08:37Z (21 min) at $0.0832/h = about $0.03, plus 60 GiB gp3 (< $0.002). Budget about $0.15. |
+| Day total so far (vast) | credit 11.5658 → 10.9682 = $0.5976 (no top-up today). The day limit is $8. |

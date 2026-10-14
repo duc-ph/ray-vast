@@ -404,3 +404,40 @@ Differences from the first run:
 - The log of the rebooted container was fetched this time (fetches 2–13 s after the reboot call). It shows a new fact: the vast reboot sends `SIGTERM` to PID 1. The old bootstrap logged `destroying this instance: received SIGTERM`. Its report and its delete did not complete: vast killed the container about 10 s later. The second run then destroyed the instance. The first run's log has the same `SIGTERM` line. The result is the same: the instance is destroyed.
 - The log of A after the `SIGTERM` was not caught (`log download: not ready after 60 s`). The head log proves the report.
 - vast stopped one new candidate (55888548) by itself again (`intended_status` `stopped`). The provider ended it through `_end` (`instance status 'exited'`), and v2 rented a replacement.
+
+## Live cycle C8 re-run (2026-10-14)
+
+Setup: `ray-vast up` from commit 7dd15c2 (0.1.0rc1) on the dev box (the operator machine), EC2 `t3.large` head, us-west-2, image `rayproject/ray:2.59.0-py311-gpu`, node types `gpu-a` and `gpu-b` `{CPU: 4, GPU: 1}`, `max_workers` 2 each, `candidate_factor` 2, `max_dollars_per_hour: 3.0`, `idle_timeout_minutes: 2`. `up` installed ray-vast on the head from a wheel of the source tree. Data: `archive/results/2026-10-14/` (`progress.md` "C8 re-run", `c8-rerun/`, `spend.md`, `resources.csv`).
+
+Node types. The YAML did not change. At 08:14Z, `gpu-a` had only 4 offers. One minute later, it had 6 offers again. The market changes quickly.
+
+| Type | `gpu_ram` (MB) | Offers | Machines | Cheapest 4 ($/h) |
+|---|---|---|---|---|
+| `gpu-a` | ≥ 8000, < 24570 | 6 | 6 | P100 0.097, A5000 0.233, A5000 0.233, RTX 5070 Ti 0.671 |
+| `gpu-b` | ≥ 24570, < 70000 | 6 | 6 | RTX 3090 0.324, CMP 170HX 0.536, CMP 170HX 0.603, RTX 5090 1.403 |
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| Up | Pass | `up` 8 min 14 s, exit 0 | The head container keeps the NVIDIA ENTRYPOINT. Its log starts with the CUDA banner. The marker line works. `c8-rerun/up.log`, `c8-rerun/head/docker_logs.txt` |
+| L6 | Pass | Submit → all 4 placed: 3 min 33.6 s. Rentals 6, enrolled 4, ended unused 2. Peak $2.708/h (limit 3.0). Idle scale-down to 0: 2 min 11 s after the job end (rules 0 at ≤ 2 min 14 s). GPU 1.0 on each worker. Cost: vast $0.2074 for C8 and the PID 1 probe (credit 11.1756 → 10.9682, 0 top-ups), EC2 about $0.03. | See below. `c8-rerun/c8_job.out`, `c8-rerun/head/monitor.log`, `c8-rerun/c8_poll.jsonl` |
+| GPU image | Pass | 4 of 4 workers enrolled. PID 1 is the bootstrap. | Each worker log starts with the CUDA banner, then `bootstrap: host checks` (all `True`). An extra probe found PID 1 `python3 /tmp/rayvast-bootstrap.py`. `c8-rerun/workers/`, `c8-rerun/pid1/` |
+| Teardown | Pass | `down` 50.4 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | Secret scan with the cluster token and all 8 join tokens: no output. |
+
+C8.1 timeline (UTC). `T_submit` 08:24:45.8. First rental 08:24:55.1 (+9.3 s). Sixth rental 08:25:08.7. First `running` 08:25:29. First node ALIVE 08:25:50.0. `C8_ALL_PLACED` 08:28:19.4. Fourth node ALIVE 08:28:20.7. Job end 08:28:57.8, `SUCCEEDED`.
+
+| Worker | Type | GPU | Create → enroll | `nvidia-smi -L` | `ray.get_gpu_ids()` |
+|---|---|---|---|---|---|
+| 55894125 | `gpu-b` | RTX 3090 | 46.4 s | 1 GPU | `[0]` |
+| 55894123 | `gpu-a` | Tesla P100 | 83.9 s | 1 GPU | `[0]` |
+| 55894139 | `gpu-a` | RTX 4090 | 79.9 s | 1 GPU | `[0]` |
+| 55894153 | `gpu-b` | CMP 170HX | 179.8 s | 1 GPU | `[0]` |
+
+Extra candidates: 55894128 ended 4.3 s after its slot was filled. 55894124 ended 8.8 s after its slot was filled. Both were still `loading`. Both ended before the last slot was filled. There were no refusals at `/enroll`.
+
+Differences from the plan and other findings:
+- The plan expects up to 4 candidates for each type. The provider rented 3 for each type. Ray asked for 2 slots of each type in 2 create calls. The first call of each type rented 2 candidates. The second call rented 1. Then the next offer would pass `max_dollars_per_hour` (sum $2.708/h after 6 rentals). The plan allows this limit.
+- The second create calls got `no_such_ask` (HTTP 400) 5 times. 4 of these offers were the offers that the first calls had just rented, so the search was stale. The provider took the next offer. Also 3 HTTP 429 retries. The two pollers of the operator use the same key.
+- Ray uses the real core count: CPU 24, 30, 7 and 6 (4 declared). This is the same as in C5.
+- The plan does not check PID 1 in C8. An extra job with `num_gpus=1` (`c8-rerun/pid1/pid1_probe.py`) rented 2 candidates (1 enrolled in 29.4 s: the image was in the host cache). PID 1 was `/home/ray/anaconda3/bin/python3 /tmp/rayvast-bootstrap.py`. Its child was `ray start --block`. No `nvidia_entrypoint.sh` or shell was left. uid 1000. `/dev/nvidia1` only. `CUDA_VISIBLE_DEVICES` 0.
+- vast did not stop a new candidate by itself in this cycle.
+- `monitor.log` has 0 `ERROR` lines and 0 `unknown vast actual_status` lines. It has 286 `Dropping the empty legacy field` warnings (not errors).
