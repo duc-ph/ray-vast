@@ -41,8 +41,8 @@ flowchart LR
 
 1. `ray-vast up` makes the EC2 head and starts Ray on it.
 2. Your job asks for resources. The autoscaler asks the ray-vast provider for a worker.
-3. The provider rents vast instances. Each instance downloads a small program from the head, checks its host, and enrolls.
-4. The worker joins Ray and runs your tasks.
+3. The provider rents vast instances. Each instance is a candidate. It downloads the bootstrap (a small program) from the head. The bootstrap checks the host and enrolls the candidate.
+4. The enrolled candidate is now a worker. It joins Ray and runs your tasks.
 5. Ray removes an idle worker after `idle_timeout_minutes`. A worker that loses the head destroys itself.
 
 Read [Architecture](explanation/architecture.md) for the full picture.
@@ -52,8 +52,14 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 You need an AWS profile, an EC2 key pair, and a vast API key in `~/.config/vastai/vast_api_key`.
 The full steps are in [Getting started](getting-started.md).
 
+<!-- PRE-RELEASE: remove at the PyPI release -->
+!!! note
+    ray-vast is not on PyPI yet. Until the first release, install the release candidate from TestPyPI:
+    `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ray-vast==0.1.0rc1`.
+    Then pass `--index-url https://test.pypi.org/simple/` to `ray-vast up`.
+
 ```bash
-pip install ray-vast
+pip install ray-vast "ray[default]==2.59.*"
 ray-vast up cluster.yaml --profile my-aws-profile
 ray-vast dashboard cluster.yaml --profile my-aws-profile   # terminal 1: keep it open
 ```

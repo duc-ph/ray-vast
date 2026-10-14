@@ -1,37 +1,29 @@
 # Clean up after a failure
 
-`ray-vast down` removes everything of a cluster. Use it after a failed `up`, after a lost head, and when you finish.
+Do these steps after a failed `up`, after a lost head, or when `down` reports that something is left.
 
-## Run `down`
+## 1. Run `down`
 
 ```bash
 ray-vast down cluster.yaml
 ```
 
-`down` needs only the cluster YAML (`cluster_name` and `provider.region`), your AWS credentials and the vast key. It does not need an SSH key.
+`down` finds the resources of the cluster by tag, name and label. So it works in these cases:
 
-`down` finds everything by tag, name and label. So it works:
+- `up` failed half way;
+- the head is gone;
+- the local state file `~/.ray-vast/<cluster_name>.json` is missing.
 
-- when `up` failed half way;
-- when the head is gone;
-- when the local state file `~/.ray-vast/<cluster_name>.json` is missing.
+`down` does not need an SSH key. You can run `down` again with no risk.
+The steps of `down` are in [CLI](../reference/cli.md#ray-vast-down).
 
-It is safe to run `down` again.
+## 2. Run `down` again if something is left
 
-## What `down` does
+`down` lists what is left and exits with code 1. Most leftovers are slow AWS or vast deletes. Run `down` again.
 
-1. It terminates the EC2 head first. So the autoscaler cannot rent new workers.
-2. It destroys every vast instance with the label `ray-vast:<cluster_name>`. It lists the instances again until none is left.
-3. It deletes the 5 security groups `ray-vast-<cluster_name>-0` … `-4`.
-4. It deletes the instance profile and the role `ray-vast-<cluster_name>`.
-5. It deletes the local state files in `~/.ray-vast/`.
-6. It prints `left: nothing`, or it lists what is left and exits with code 1.
+## 3. Remove the leftovers by hand
 
-## Something is left
-
-Run `down` again. Most leftovers are slow AWS or vast deletes.
-
-If something is still left, remove it by hand. After `down`, nothing of the cluster must exist:
+If something is still left after the second `down`, remove it by hand. Check each resource in this table:
 
 | Resource | Name or marker | How to check |
 |---|---|---|
@@ -40,14 +32,15 @@ If something is still left, remove it by hand. After `down`, nothing of the clus
 | Security groups | `ray-vast-<cluster_name>-0` … `-4` | EC2 console |
 | IAM instance profile and role | `ray-vast-<cluster_name>` | IAM console |
 
-Destroy a vast instance with `vastai destroy instance <instance id>`.
+To destroy a vast instance, run `vastai destroy instance <instance id>`.
 
 ## `down` without a vast key
 
-Without a vast key, `down` cleans AWS and prints a warning: the vast instances were not swept. It exits with code 0.
-Then do one of these:
+Without a vast key, `down` cleans AWS only. It prints a warning that it did not sweep the vast instances. It exits with code 0.
+Then do one of these steps:
 
 - Set `VAST_API_KEY`, and run `down` again.
-- List the instances with `vastai show instances`. Destroy those with the label `ray-vast:<cluster_name>`.
+- Run `vastai show instances`. Destroy the instances with the label `ray-vast:<cluster_name>`.
 
 The instances also destroy themselves after the head is gone: a worker within 5 minutes, a candidate within 10 minutes.
+Read [Worker life cycle and the watchdog](../explanation/worker-lifecycle.md).

@@ -35,20 +35,19 @@ A short timeout saves money. A long timeout keeps warm workers for the next job.
 - `max_workers` in each node type limits the workers of that type.
 - `min_workers` in a node type keeps that many workers running at all times. They cost money while they are idle. Use `min_workers: 0` to pay only when jobs run.
 
-## Candidates
+## Rent fewer candidates
 
-For each worker, the provider rents up to `candidate_factor` instances (default 2). These are candidates.
-The first candidate that enrolls becomes the worker. The provider destroys the other candidates as soon as every slot of the request has a worker.
-A candidate that is not needed costs a few cents at most. In a test, the provider destroyed the extra candidate 8.6 seconds after the first one enrolled.
+For each slot, the provider rents up to `candidate_factor` candidates (default 2). The provider destroys the extra candidates soon after the slots are full. So an extra candidate costs a few cents at most.
+Read [Worker life cycle and the watchdog](../explanation/worker-lifecycle.md) for how candidates work.
 
-Candidates make a worker arrive sooner, and one bad host does not delay it.
-Set `candidate_factor: 1` to rent no extra candidates. Then one bad host costs a retry.
+To rent no extra candidates, set `candidate_factor` to 1:
 
-## The watchdog
+```yaml
+provider:
+  candidate_factor: 1
+```
 
-A worker that loses the head destroys its own instance after 5 minutes.
-It destroys the instance, and does not only stop it. A stopped vast container still costs money.
-Read [Worker life cycle and the watchdog](../explanation/worker-lifecycle.md).
+Then a bad host costs a retry, and a worker can arrive later.
 
 ## The EC2 head
 
@@ -67,5 +66,7 @@ Change the type with `provider.head_instance_type`.
 ray-vast down cluster.yaml
 ```
 
-`down` removes the head and every vast instance with the cluster label. It prints `left: nothing` when nothing is left.
+`down` removes the head and every vast instance of the cluster. Read [CLI](../reference/cli.md#ray-vast-down).
 If `up` failed, run `down` too. Read [Clean up after a failure](clean-up.md).
+
+If the head stops, the workers destroy themselves. Read [When the head dies](../explanation/worker-lifecycle.md#when-the-head-dies).

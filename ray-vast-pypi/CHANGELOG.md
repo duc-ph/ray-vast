@@ -2,14 +2,22 @@
 
 ## 0.1.0 (unreleased)
 
-First version.
+Changes since 0.1.0rc1:
+
+- `dashboard`: Ctrl-C closes the tunnel, prints `tunnel closed` and exits with code 0, with no traceback.
+- The commands write each output line at once, also when stdout is a pipe or a file.
+- The watchdog retries a heartbeat when a thread cannot start (`can't start new thread`). Only the heartbeat time limit ends the worker.
+- The head log keeps the last line (the error) of a long destroy reason.
+
+## 0.1.0rc1 (2026-10-14, TestPyPI)
+
+First version. A release candidate on TestPyPI.
 
 - Ray autoscaler v2 node provider (`VastNodeProvider`) for vast.ai workers. The head runs on AWS EC2 (`head_instance_type`, default `t3.large`).
 - Commands: `ray-vast up`, `down`, `attach` and `dashboard`. Options: `--profile`, `--key-file`, `--key-name`, `--wheel`, `--index-url`.
 - `up` makes an IAM role, 5 security groups, an instance profile and the head. It builds a derived image with ray-vast. By default, `pip` installs the CLI's own version (`ray-vast==<version>`) from PyPI. `--index-url URL` installs it from another index, for example TestPyPI. `--wheel FILE` installs a wheel file, and a source tree builds its own wheel (both for development). It stops if the cluster already exists. It measures the image size and sets `image_size_gb`.
 - `down` ends the head first, then destroys the vast instances, then deletes the AWS resources. It finds everything by tag and label, so it works after a failed `up` and when the head is gone. It reports what is left (exit code 1 if anything). Without a vast key it cleans AWS and warns that vast instances were not swept.
-- `dashboard` copies the token to `~/.ray-vast/<cluster>/token`, prints the `RAY_AUTH_MODE` and `RAY_AUTH_TOKEN_PATH` export line, and opens the SSH tunnel, so `ray job submit` works from the laptop. Ctrl-C closes the tunnel, prints `tunnel closed` and exits with code 0.
-- The commands write each output line at once, also when stdout is a pipe or a file.
+- `dashboard` copies the token to `~/.ray-vast/<cluster>/token`, prints the `RAY_AUTH_MODE` and `RAY_AUTH_TOKEN_PATH` export line, and opens the SSH tunnel, so `ray job submit` works from the laptop.
 - State files in `~/.ray-vast/`: `<cluster>.json`, `<cluster>.known_hosts`, `<cluster>/token`.
 - Cluster names match `[A-Za-z0-9][A-Za-z0-9_-]{0,39}`.
 - Cluster YAML with node types. Each type has declared resources (`CPU` minimum, `GPU` exact), `node_config.disk_gb` (default 50) and an `offer_query` in the vast API JSON form (MB units). ray-vast adds the filters `num_gpus`, `cpu_cores_effective`, `direct_port_count`, `verified`, `rentable` and `datacenter`. A stricter user filter on `cpu_cores_effective` or `direct_port_count` is allowed.
@@ -38,4 +46,4 @@ First version.
 - Tests: a fast default run (`pytest`, about 30 s) and a full run (`pytest -o addopts="" -m "not live and not local_e2e"`).
 - Documents: the user docs site (`docs/`, MkDocs Material, published to https://duc-ph.github.io/ray-vast/), README, security model (`docs/security.md`), `CONTRIBUTING.md`.
 - Tested with Ray 2.59.
-- Not published to PyPI yet.
+- Published to TestPyPI only.

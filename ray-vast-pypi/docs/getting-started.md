@@ -12,17 +12,25 @@ You need these on your laptop (the operator machine):
 - **An AWS account and a profile.** The AWS user must be able to make an IAM role, security groups and an EC2 instance. The full list is in [IAM permissions](reference/iam.md).
 - **An EC2 key pair** in the region of the head, and its private key file. ray-vast uses it for SSH to the head.
 - **A vast.ai account with credit, and an API key.** Get the key in the vast console. Put it in `~/.config/vastai/vast_api_key`, or in the `VAST_API_KEY` environment variable. Never put the key in the cluster YAML.
-- **Ray 2.59.** The `ray-vast` package installs Ray on the laptop. Use the same Ray version as in the cluster image.
+- **Ray 2.59.** Step 1 installs it on the laptop.
 
 ## 1. Install
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install ray-vast
+pip install ray-vast "ray[default]==2.59.*"
 ```
 
+<!-- PRE-RELEASE: remove at the PyPI release -->
+!!! note
+    ray-vast is not on PyPI yet. Until the first release, install the release candidate from TestPyPI:
+    `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ray-vast==0.1.0rc1`.
+    Then pass `--index-url https://test.pypi.org/simple/` to `ray-vast up`.
+
 This installs the `ray-vast` command and the `ray` command.
+The pin `ray[default]==2.59.*` keeps Ray on the laptop at the same version as Ray in the cluster image (`rayproject/ray:2.59.0-...`).
+Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59 only.
 `ray-vast up` installs the same ray-vast version on the head, from PyPI.
 
 ## 2. Write a cluster YAML
@@ -34,7 +42,7 @@ Copy one:
 cp "$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/examples/gpu-24gb.yaml" cluster.yaml
 ```
 
-Edit `cluster.yaml`. Set your region, your EC2 key pair and your budget:
+Edit `cluster.yaml`. Set your region and your budget. Add the `key_name` and `key_file` lines for your EC2 key pair:
 
 ```yaml
 cluster_name: gpu-24gb
@@ -125,7 +133,6 @@ Write a small job, `hello.py`.
 This job needs a GPU worker. The autoscaler rents one on vast.ai, so this step costs money.
 The cluster YAML must allow at least 1 worker of a GPU type (`max_workers` 1 or more).
 
-
 ```python
 import ray
 
@@ -146,9 +153,7 @@ Submit it:
 ray job submit --address http://127.0.0.1:8265 --working-dir . -- python hello.py
 ```
 
-The task needs a GPU, and the head has none. So the autoscaler rents a worker.
-The provider rents up to 2 candidates for each worker (`candidate_factor`). The first one that enrolls becomes the worker. The provider destroys the other one.
-In a test, a host with the image in its cache joined Ray about 35 seconds after the rental. A host without the image must pull it first. For the 18 GB GPU image, this can take several minutes.
+The task needs a GPU, and the head has none. So the autoscaler rents a worker. This takes from less than 1 minute to several minutes. Read [Worker life cycle and the watchdog](explanation/worker-lifecycle.md).
 The job then prints the host name and the GPU ID.
 
 To see the cluster state, open a shell on the head:
@@ -186,7 +191,7 @@ deleted role ray-vast-gpu-24gb
 left: nothing
 ```
 
-`down` takes about 40 seconds. It removes the head, every vast instance with the cluster label, the 5 security groups, the instance profile and the role.
+`down` takes about 40 seconds. It removes all resources of the cluster. The full list is in [CLI](reference/cli.md#ray-vast-down).
 If something is left, `down` lists it and exits with code 1. Run `down` again.
 
 !!! warning

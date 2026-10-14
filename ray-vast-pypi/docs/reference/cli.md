@@ -26,16 +26,22 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 | `--wheel FILE` | `up` | For development. Install this ray-vast wheel on the head. |
 | `--index-url URL` | `up` | To test a release on TestPyPI. Not for normal use. Install ray-vast on the head from this package index, with PyPI as an extra index. |
 
-An option wins over the YAML field.
+If you give an option and the YAML field, ray-vast uses the option.
 
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | 0 | Success. |
-| 1 | An error. The message is on stderr, in the form `ray-vast <command>: <message>`. For `down`: something is left. |
+| 1 | An error. For `down`: something is left. |
 
 `attach` and `dashboard` return the exit code of `ssh`.
+
+## Errors
+
+- Most errors print one line on stderr: `ray-vast <command>: <message>`.
+- An AWS error adds more lines: a hint about missing permissions, and for `up`, the `ray-vast down` command.
+- An error in the checks of the YAML fields, and an unexpected error, print a Python traceback. The last line of the traceback has the message.
 
 ## `ray-vast up`
 
@@ -49,7 +55,7 @@ ray-vast up cluster.yaml --profile my-aws-profile
 2. It makes the IAM role `ray-vast-<cluster_name>`, the 5 security groups `ray-vast-<cluster_name>-0` … `-4`, the role policy and the instance profile. Group 0 gets one SSH rule for the public IP of your laptop.
 3. It starts the EC2 head: Ubuntu 24.04, `head_instance_type`, 60 GB gp3 disk, IMDSv2 required, no Elastic IP. User data installs Docker.
 4. It builds a derived image on the head: `provider.image` plus ray-vast. Read [Where the head gets ray-vast](#where-the-head-gets-ray-vast). It reads the Ray version of the image, and warns if it is not 2.59.
-5. It measures the image size and sets `image_size_gb`. A value in your YAML wins.
+5. It measures the image size and sets `image_size_gb`. If your YAML has a value, `up` uses your value.
 6. It copies the vast key to the head. It makes the CA, the cluster token and the head certificate on the head. The CA key never leaves the head.
 7. It starts the head container `ray-vast-head` and waits until `ray status` answers.
 
@@ -64,7 +70,11 @@ cluster <cluster_name> is up. Head IP <head ip>.
   shell:     ray-vast attach cluster.yaml
 ```
 
-Lines that start with `warning:` come before, when they apply: an untested Ray version, `CPU` above 58, `allow_non_datacenter`, or a CA that expires within 14 days.
+`up` adds lines that start with `warning:` when they apply. They come in this order:
+
+1. After the `installing` line: the warnings of the YAML checks (`CPU` above 58, `allow_non_datacenter`).
+2. After the `head IP` line: an untested Ray version in the image.
+3. Just before the `cluster ... is up` line: a CA that expires within 14 days.
 
 Rules:
 
@@ -88,8 +98,8 @@ Rules:
 - `--wheel` and `--index-url` do not go together.
 - With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have all the dependencies of ray-vast, so PyPI is an extra index.
 - `pip` does not prefer one of the two indexes. For each package, it takes the highest version from either index. So a dependency can come from TestPyPI, for example a pre-release that is not on PyPI. In a test, `pip` took `opentelemetry-exporter-prometheus 1.12.0rc1` from TestPyPI.
-- Thus use `--index-url` only to test a release. For normal use, install from PyPI without `--index-url`.
-- `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. Else `up` stops before it makes anything.
+- So use `--index-url` only to test a release. For normal use, install from PyPI without `--index-url`.
+- `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. If it does not obey these rules, `up` stops before it makes anything.
 - Do not put a user name or a password in `URL`. `URL` goes into the Dockerfile, so the head image keeps it in its build history. `up` replaces a user name and a password in its output with `***`.
 - If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from <index>; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
 
@@ -169,9 +179,9 @@ ray-vast keeps these files on your laptop, in `~/.ray-vast/`:
 
 | File | Content |
 |---|---|
-| `<cluster_name>.json` | Region, head instance ID and IP, security groups, role and instance profile names. Written by `up`. |
+| `<cluster_name>.json` | Region, head instance ID and IP, security groups, role and instance profile names. `up` writes it. |
 | `<cluster_name>.known_hosts` | SSH host keys of the head (`StrictHostKeyChecking=accept-new`). |
-| `<cluster_name>/token` | The cluster token. Written by `dashboard`. Mode 600. |
+| `<cluster_name>/token` | The cluster token. `dashboard` writes it. Mode 600. |
 
 `down` deletes all three.
 
@@ -188,5 +198,4 @@ The cluster name must match `[A-Za-z0-9][A-Za-z0-9_-]{0,39}`: 1 to 40 letters, d
 
 ## Ray commands that do not work
 
-`ray up`, `ray down`, `ray attach`, `ray exec` and `ray rsync-*` do not work with this provider. Use the `ray-vast` commands.
-`ray job submit` (through the tunnel), `ray status` on the head, and the Ray Python API work as usual.
+Some `ray` cluster commands do not work with this provider. The list is in [Limits](limits.md#some-ray-commands-do-not-work).

@@ -58,9 +58,9 @@ ray-vast does not use the Ray fields `file_mounts`, `setup_commands`, `initializ
 | `image` | string | required | Docker image for the head and the workers. Read [Use GPU images](../how-to/gpu-images.md). |
 | `max_dollars_per_hour` | number above 0 | required | Limit for the sum of `dph_total` over all workers and candidates. The provider does not rent above it. A missing value is an error, not "no limit". |
 | `key_name` | string | none | EC2 key pair name. `up` needs it, here or in `--key-name`. |
-| `key_file` | path | none | Private key file for SSH to the head. `up`, `attach` and `dashboard` need it, here or in `--key-file`. `~` is expanded. |
+| `key_file` | path | none | Private key file for SSH to the head. `up`, `attach` and `dashboard` need it, here or in `--key-file`. ray-vast expands `~`. |
 | `candidate_factor` | integer | `2` | The provider rents up to this many candidates for each slot. It destroys the extra candidates when the slots are full. |
-| `image_size_gb` | number | measured by `up` | Size of the image in GB. It sets the pull limit of a candidate: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 minutes. Without a value, the limit is 15 minutes. A value in your YAML wins over the measured value. |
+| `image_size_gb` | number | measured by `up` | Size of the image in GB. It sets the pull limit of a candidate: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 minutes. Without a value, the limit is 15 minutes. If your YAML has a value, ray-vast uses it and not the measured value. |
 | `cert_max_age_days` | integer | `365` | Life of the CA and of every node certificate. |
 | `allow_non_datacenter` | boolean | `false` | If true, ray-vast does not add the `datacenter = true` filter, and `up` shows a warning. Read [Security model](../security.md). |
 | `order_by` | string | `dph_total` | The vast offer field to sort by, in ascending order. The default puts the cheapest offers first. |
@@ -97,16 +97,18 @@ So Ray schedules no task with resources on the head.
 | `node_config.offer_query` | mapping | required | Which vast offers the type can rent. |
 | `node_config.disk_gb` | number | `50` | Disk size of the instance, in GB. |
 
-`up` warns if `CPU` is above 58. Read [Limits](limits.md).
+`up` warns if `CPU` is above 58. Read [Limits](limits.md#58-worker-ports-for-each-worker).
 
 ## `offer_query`
 
 A YAML mapping in the vast API JSON form. Each key is a vast offer field. Each value is a mapping from an operator to a value.
 
-| Operator | Value |
-|---|---|
-| `eq`, `neq`, `gt`, `gte`, `lt`, `lte` | one value (not a list or a mapping) |
-| `in`, `notin` | a list |
+| Operator | Meaning | Value |
+|---|---|---|
+| `eq`, `neq` | equal, not equal | one value (not a list or a mapping) |
+| `gt`, `gte` | greater than, greater than or equal | one value |
+| `lt`, `lte` | less than, less than or equal | one value |
+| `in`, `notin` | in the list, not in the list | a list |
 
 Checks:
 

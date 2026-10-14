@@ -13,8 +13,7 @@ You use the normal Ray workflow. Only the cluster commands change.
 | `ray exec`, `ray rsync-up`, `ray rsync-down` | Not available. Use `--working-dir` and `runtime_env`. |
 | `ray job submit`, `ray job list`, `ray job logs`, `ray job stop` | The same, through the dashboard tunnel. |
 
-`ray up`, `ray down`, `ray attach`, `ray exec` and `ray rsync-*` do not work with this provider.
-They use the provider and SSH to find the head, and the ray-vast provider does not make the head.
+Other `ray` cluster commands do not work. Read [Limits](../reference/limits.md#some-ray-commands-do-not-work).
 
 ## Connect to the cluster
 
@@ -38,7 +37,8 @@ They use the provider and SSH to find the head, and the ray-vast provider does n
 
 Every Ray call needs the cluster token. Without the `export` line, `ray job submit` fails with an authentication error.
 
-Use the Job API (`ray job submit` or `JobSubmissionClient`). ray-vast does not open the Ray client port (10001) to your laptop, so `ray.init("ray://...")` from the laptop does not connect.
+Use the Job API: `ray job submit` or `JobSubmissionClient`.
+Do not use `ray.init("ray://...")` on the laptop. ray-vast does not open the Ray client port (10001) to your laptop.
 
 ## Send your code with `--working-dir`
 
@@ -107,7 +107,7 @@ The sections below show only what is different on ray-vast.
 
 ### Ray Data: limit the CPUs
 
-A vast container has a limit on processes and threads. A Ray Data job that uses all CPUs of a node can pass this limit, and the node dies. Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
+A vast container has a limit on processes and threads. A Ray Data job that uses all CPUs of a worker can pass this limit. Then the worker dies. Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 
 Limit the CPUs that Ray Data uses. Put this code in your driver script, after `ray.init()`:
 
@@ -119,8 +119,8 @@ data_context.execution_options.resource_limits = ExecutionResources(cpu=12)
 data_context.max_hash_shuffle_aggregators = 4  # for hash shuffles, for example groupby
 ```
 
-The limit is for the full cluster. In our test, 12 CPUs worked on 2 to 3 nodes.
-Each hash shuffle aggregator is one more worker process, so also limit `max_hash_shuffle_aggregators`.
+The limit is for the full cluster. In a live test on 2026-10-14, a limit of 12 CPUs worked on 2 to 3 workers.
+Each hash shuffle aggregator is one more worker process. So also limit `max_hash_shuffle_aggregators`.
 
 A local output path (for example `write_parquet("/tmp/out")`) writes the files to the disk of each worker. Write shared output to a cloud bucket.
 
@@ -141,11 +141,11 @@ The vast host can read these credentials. Use credentials that can only write to
 
 Anonymous S3 access through pyarrow (`s3://anonymous@...`) cannot write checkpoints. S3 refuses its uploads.
 
-### Ray Train: use one node
+### Ray Train: use one worker
 
-Ray Train over 2 or more nodes does not work on ray-vast. Read [Limits](../reference/limits.md#no-multi-node-ray-train).
+Ray Train over 2 or more workers does not work on ray-vast. Read [Limits](../reference/limits.md#no-multi-node-ray-train).
 
-Train on one node with many GPUs. Make a node type with `GPU: 2` or more (read [Choose node types and offer queries](node-types.md)). Then put all Ray Train workers on that node:
+Train on one worker with many GPUs. Make a node type with `GPU: 2` or more. Read [Choose node types and offer queries](node-types.md). Then put all Ray Train workers (`num_workers`) on that one vast worker:
 
 ```python
 from ray.train import ScalingConfig
