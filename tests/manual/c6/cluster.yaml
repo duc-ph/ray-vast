@@ -1,0 +1,20 @@
+# C6 (docs/test-plan.md): self-destroy paths. 3 workers, k = 1.
+cluster_name: rvtest-c6
+max_workers: 3
+idle_timeout_minutes: 60
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-cpu
+  max_dollars_per_hour: 1.5
+  candidate_factor: 1
+  key_name: ray-vast-devbox
+  key_file: ~/ray-vast-devbox.pem
+auth: {ssh_user: ray}
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  w:
+    resources: {CPU: 4, GPU: 1}      # as C5: no CPU-only offer on 2026-10-14
+    min_workers: 3
+    max_workers: 3
+    node_config: {disk_gb: 30, offer_query: {inet_down: {gte: 500}}}

@@ -1,0 +1,29 @@
+# C8 (docs/test-plan.md): full scale test. 2 GPU node types, 2 workers each, k = 2.
+cluster_name: rvtest-c8
+max_workers: 4
+idle_timeout_minutes: 2
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu
+  image_size_gb: 20          # the pull limit; the GPU image pulls slowly
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+  key_name: ray-vast-devbox
+  key_file: ~/ray-vast-devbox.pem
+auth: {ssh_user: ray}
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  # The plan's ranges (8000-16000 and 16000-32000 MB) matched 0 offers for gpu-a on 2026-10-14: vast gives a 16 GB card
+  # as 16384 MB. These ranges matched gpu-a: P100 + 3 A5000 (4 machines); gpu-b: 2 RTX 3090 + 4 RTX 5090 (6 machines).
+  # Check them again with offers.py at the C8 setup.
+  gpu-a:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 2
+    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 16000, lt: 24570}, inet_down: {gte: 500}}}
+  gpu-b:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 2
+    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 24570, lt: 33000}, inet_down: {gte: 500}}}
