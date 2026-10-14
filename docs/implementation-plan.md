@@ -125,7 +125,7 @@ Done when:
 
 ## Step 12 — Live tests on vast (paid)
 
-Run the cycles C5, C6 and C8 of [test-plan.md](test-plan.md).
+Run the cycles C5, C6, C8 and C9 (Ray libraries) of [test-plan.md](test-plan.md).
 
 Done when:
 - [ ] Each test has a row in `test-results.md` with key numbers and log links.

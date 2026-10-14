@@ -14,6 +14,7 @@ Before a cycle runs, it must be written here with: setup, steps, expected output
 | L4 AWS only | `up`/`down` with no workers | `us-west-2` | ~$0.10 | steps 10, 13 |
 | L5 Live vast | C5, C6 | EC2 head + vast | ~$1 | step 12 |
 | L6 Live scale | C8 | EC2 head + vast | ~$3 | step 12, before release |
+| L7 Ray libraries | C9 | EC2 head + vast | ~$2 | step 12, before the docs of step 13 |
 
 The commands for the fast and the full run are in the [README](../ray-vast-pypi/README.md) ("Tests").
 
@@ -217,6 +218,57 @@ Record: `T_submit`, first rental, first `running`, first and 4th node ALIVE, `C8
 
 ---
 
+## Cycle C9: Ray libraries (L7)
+
+**Goal:** prove which Ray libraries work on a ray-vast cluster when the user keeps the normal Ray workflow. ray-vast changes only the cluster commands (`ray-vast up`, `dashboard`, `down`). Everything else is the user's normal workflow: `ray job submit --working-dir <dir> --runtime-env-json <json> -- python <script>` from the operator machine, through the `dashboard` tunnel. The scripts follow the examples in Ray's own docs for Ray 2.59, made small.
+**Machines:** one EC2 head; 2 GPU workers of one node type (`GPU: 1`, `CPU: 4`, the cheapest offers with `inet_down`/`inet_up` ≥ 500), `candidate_factor: 2`; for C9.3c, a third worker type with 2 GPUs on one host if offers exist.
+**Image:** `rayproject/ray:2.59.0-py311-gpu` (it has CUDA, not PyTorch). Jobs that need PyTorch install it with `runtime_env` `pip` (this also tests pip downloads on the workers).
+**Budget:** vast $3.00 (more is allowed; the user can add credit); EC2 about $0.30.
+**Data:** `archive/results/$DATE/c9/`, one directory for each sub-test with the job script, the submit command, the job log (`ray job logs`), the result and the timing.
+**Rule for each sub-test:** record PASS, FAIL or LIMIT (fails for a reason that ray-vast's design causes, for example NAT or the 64 ports). For a FAIL or a LIMIT, keep the exact error, the place (driver log, worker log, head log) and the probable cause. Do not fix product code during the cycle; report.
+
+### C9.0 Workflow
+1. `ray-vast up`, `ray-vast dashboard`, the export line, as in C8. Wait for 2 workers (`min_workers: 2`).
+2. `ray job submit --working-dir c9/jobs -- python hello.py`: the working directory is uploaded and reaches both workers (each task prints its node and a file from the working directory).
+3. `--runtime-env-json '{"pip": ["torch==<version for CUDA of the image>"]}'`: pip installs on both workers; `torch.cuda.is_available()` is True on each worker, and `torch.cuda.device_count()` is 1.
+4. `ray job list`, `ray job stop`, `ray job logs --follow` work through the tunnel.
+
+### C9.1 Ray Data
+1. **CPU pipeline:** `ray.data.range(10_000_000)` → `map_batches` (numpy) → `filter` → `count` / `take`. Tasks run on both workers.
+2. **Cross-node transfer and the object store:** a dataset about 1.5 × the object store of one worker (`ray.data.range_tensor`), `map_batches`, `materialize`, then `iter_batches` in the driver. Record spilling, if any, and the time.
+3. **All-to-all:** `random_shuffle` and `groupby(...).count()` on that dataset. Blocks move between the workers.
+4. **GPU batch inference:** `map_batches` with a callable class, `concurrency=2`, `num_gpus=1`, a small PyTorch model on the GPU (for example a linear layer or `torchvision` resnet18 with random weights). Each worker runs one actor; record the rows per second.
+5. **Write and read:** `write_parquet` to `/tmp/c9_out` (local to each worker; record where the files land) and `ray.data.read_parquet` with a public dataset URL or a file from the working directory. Record what a user needs for shared output (a cloud bucket).
+6. **Many tasks:** a pipeline with more parallel tasks than 58 per node (for example 400 small blocks). It must finish; record whether tasks wait for a port (README "Limits").
+
+### C9.2 Ray Tune
+1. **Function trainable:** `tune.Tuner` with 8 trials (`num_samples=8`), 1 CPU each, a short loop that reports a metric. Trials run on both workers. `ResultGrid` has 8 results.
+2. **Scheduler:** the same with `ASHAScheduler`; some trials stop early.
+3. **GPU trials:** 2 trials with `resources={"gpu": 1}`; each gets its own GPU on a different worker.
+4. **Checkpoints and storage:** trials that save a checkpoint with `RunConfig(storage_path=...)` set to a local path on the head (the default). Record what Ray 2.59 does on a multi-node cluster without shared storage (error, warning, or checkpoints that stay on the workers). This sets the docs text about storage.
+
+### C9.3 Ray Train (PyTorch)
+1. **One worker, one GPU:** `TorchTrainer` with `ScalingConfig(num_workers=1, use_gpu=True)`, a small model, 2 epochs, a checkpoint. PASS expected.
+2. **Two nodes, NCCL (DDP):** `num_workers=2, use_gpu=True`, one worker on each node. Expected: LIMIT (PyTorch and NCCL open their own connections between nodes, on ports that Ray does not manage; vast maps only the 64 identity ports). Record the exact error, the time to the error, and which side fails. Then try once with `NCCL_SOCKET_IFNAME` and `MASTER_PORT`-style settings only if Ray Train exposes them without code changes; record the result.
+3. **Two nodes, Gloo (CPU):** `num_workers=2, use_gpu=False`, backend `gloo`. Same records as C9.3.2.
+4. **One node, two GPUs:** only if an offer with 2 GPUs on one host (a second node type, `GPU: 2`) costs less than $1/h: `num_workers=2, use_gpu=True` on that node. PASS expected (NCCL inside one host).
+
+### C9.4 Ray Serve
+1. **Deploy and call by handle:** `serve.run` of a deployment with `num_replicas=2` (replicas on both workers), called from a driver job through a `DeploymentHandle`. PASS expected.
+2. **HTTP on the head:** `curl http://127.0.0.1:8000/` on the head host (through `ray-vast attach` or SSH). Record the result.
+3. **HTTP from the operator machine:** record what works with the existing tools (for example an SSH tunnel to port 8000 of the head). This sets the docs text for Serve. Do not open a new port in the security groups.
+4. **GPU replica:** a deployment with `ray_actor_options={"num_gpus": 1}`; one replica on each worker.
+
+### C9.5 Ray Core under the normal workflow
+1. **Placement groups:** `STRICT_SPREAD` of 2 GPU bundles, and `PACK` of CPU bundles.
+2. **Actor fault:** kill an actor process on a worker (`ray.kill` and `os._exit` in the actor); the actor restarts with `max_restarts=1`.
+3. **Large object:** `ray.put` of 2 GB on one worker, `ray.get` on the other worker. Record the time (transfer between two vast hosts over the internet).
+
+### Pass criteria and outputs
+- Each sub-test has a row in the Results table of `test-results.md`: PASS, FAIL or LIMIT, the key numbers, the evidence path.
+- A "Ray library support" table for the user docs: library, what works, what does not, what the user must do (for example shared storage for Tune and Train checkpoints, a tunnel for Serve HTTP).
+- Teardown as for all cycles: `down`, sweep to 0, AWS check, secret scan.
+
 ## Results
 
 Fill one row for each test after its cycle, with a link to the data in `archive/results/<date>/`.
@@ -231,3 +283,4 @@ Fill one row for each test after its cycle, with a link to the data in `archive/
 | T14 | Timing passed (C4, test watchdog) | destroy at t0 + 5:11 | Repeat with the real bootstrap (C6.2). |
 | Restart | | | C6.3 |
 | L6 | | submit → all workers running; peak $/h; scale-down time; cost | C8 |
+| L7 | | each C9 sub-test: PASS / FAIL / LIMIT, key numbers | C9 |
