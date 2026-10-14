@@ -96,7 +96,7 @@ if __name__ == "__main__":
             print(json.dumps(row), flush=True)
             time.sleep(period)
     elif command == "logs":
-        result = call("PUT", f"/instances/request_logs/{args[0]}/", {"tail": "100000"})
+        result = call("PUT", f"/instances/request_logs/{args[0]}/", {"tail": "20000"})  # vast limit: tail <= 20000 (HTTP 400 above)
         url = result.get("result_url")  # an unauthenticated S3 URL: do not print it
         if not url:
             raise SystemExit(f"request_logs: no result_url (keys {sorted(result)})")

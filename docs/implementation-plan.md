@@ -53,7 +53,7 @@ ray-vast-pypi/
 | 10b | Spec changes of 2026-10-13 | Done (full suite 362 passed; mutation audit 33 mutants, survivors fixed) |
 | 10c | Shim tests and mutation evaluation | Done (14 tests; 23 of 25 mutants killed, 2 equivalent) |
 | 11 | Local end-to-end on the dev box | Done (8 scenarios, 3 runs in a row; no product bug) |
-| 12 | Live tests on vast (paid) | C5a/C5d ran (enrollment failed, the reason for step 10b) |
+| 12 | Live tests on vast (paid) | C5 passed on 2026-10-14 (found the GPU count bug); C6, C8 to do |
 | 13 | Docs and release | To do |
 
 

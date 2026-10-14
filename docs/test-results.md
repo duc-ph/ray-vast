@@ -280,3 +280,30 @@ Root causes of the flaky results before step 10b:
 Facts:
 - Ray 2.59 shows a launch refusal in `ray status` as `<node type>: LaunchFailed` under "Recent failures". It does not show the exception text. The breaker reason is only in `monitor.log`.
 - The 4-vCPU dev box runs a head and 3 Ray workers without trouble.
+
+## Live cycle C5 (2026-10-14)
+
+Setup: `ray-vast up` from commit e270070 on the dev box (the operator machine), EC2 `t3.large` head, us-west-2, image `rayproject/ray:2.59.0-py311-cpu`, one worker type `w` `{CPU: 4, GPU: 1}`, `min_workers: 1`, `candidate_factor` 2, `max_dollars_per_hour: 1.0`. Data: `archive/results/2026-10-14/` (`progress.md`, `c5/`, `spend.md`, `resources.csv`).
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| T15 | Pass | `up` 2 min 28 s (exit 0). Create → `running` ≤ 24 s → enrolled 26.7 s after the create → Ray node running 7.9 s later. `bootloader.sh` 1456 B, accepted in `args`. | The P100 host (machine 3969) had the image in its cache from C2–C4. A host without the image takes longer. `c5/head/monitor.log`, `c5/vast_timeline.jsonl` |
+| Join | Pass | 2 rentals, 1 enrollment, 0 refusals. The provider ended the extra candidate 8.6 s after the enrollment (limit 60 s). | The extra candidate was still `loading`. It never called `/enroll`. Log line: `ending instance 55866629 … its request has no free slot left`. |
+| Fields | Pass | `actual_status` values: `null`, `loading`, `running`. | All 10 names exist. `public_ipaddr` equals the worker's public IP (143.55.45.86). `ports` has 64 entries: `"P/tcp": [{"HostIp": "0.0.0.0", "HostPort": "P"}, {"HostIp": "::", "HostPort": "P"}]`. No `unknown vast actual_status` line. `c5/instance_fields.json` |
+| CapBnd | Pass | `00000000a80405fb` (bit 12 and bit 13 clear) | Host checks all `True` (`c5/worker.log`). |
+| Task (C5.3) | Pass | Job `SUCCEEDED` in 14 s | uid 1000; Ray 2.59.0; `CONTAINER_API_KEY` and `RAYVAST_JOIN_TOKEN` not in `os.environ`; PID 1 is the bootstrap; `/tmp/rayvast` 700, all files 600. Ray uses the real core count: 24 CPU (4 declared). `c5/task_probe.out` |
+| GPU count | **Fail (product bug)** | Ray shows GPU 4.0 on a 1-GPU rental | See below. `c5/gpu_probe.out` |
+| Teardown | Pass | `down` 40 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | |
+| Cost | | vast $0.0074 (credit 11.5658 → 11.5584); EC2 about $0.01 | `spend.md` |
+
+**Product bug: the worker counts the GPUs of the host.** `bootstrap.py` counts the entries in `/proc/driver/nvidia/gpus/`. This directory is not in the container namespace. It shows all the GPUs of the host. On instance 55866627 (1 rented GPU), the directory had 4 entries. The container had only `/dev/nvidia3`, and `nvidia-smi -L` showed 1 GPU. The head sent `num_gpus` 4, and Ray started with `--num-gpus=4`. A test task with `num_gpus=4` ran on this worker with `CUDA_VISIBLE_DEVICES=0,1,2,3`. Effect: Ray can put up to 4 GPU tasks on a worker that has 1 GPU. A fix must count only the GPUs that the container can use (for example, the `/dev/nvidia<N>` device files, or `nvidia-smi -L`). The provider can also limit the count to the `num_gpus` of the offer.
+
+Other findings:
+- `vast_tool.py logs` failed with HTTP 400: vast limits `tail` to 20000. The script now sends `"20000"`.
+- The extra candidate ended before `vast_tool.py env-secret` ran, so its join token was not in the secret scan. vast keeps no data after a destroy, and no kept file had its token in the head log format. For C6 and C8, read the join tokens while the poll shows `loading`.
+- The scan finds the word `Bearer`, a space and the byte `z` in `tests/manual/__pycache__/vast_tool.cpython-312.pyc` (a constant in the bytecode, not a secret). `resources.sh` makes this file. Delete `__pycache__` before the scan.
+- `up` took 2.5 min, not 8–12 min as in the plan.
+- The head container has a 64 MB `/dev/shm`, so the Ray object store on the head uses `/tmp/ray` (a Ray warning in `c5/head/docker_logs.txt`).
+- `monitor.log` has two Ray warnings every 5 s: `Dropping the empty legacy field head_node` and `worker_nodes`. They are not errors.
+- The head container logs in local time (UTC−7), not UTC.
+- The provider got one HTTP 429 from vast and retried. The operator's poller used the same key every 5 s.
