@@ -144,6 +144,15 @@ def _read_vast_key():
     return key.strip()
 
 
+def _mask_userinfo(text, url):
+    """Replace the user and password of `url` (`https://user:token@host/...`) in `text` with `***`. The pattern
+    also masks the end of them when `text` starts in the middle (an stderr tail)."""
+    _, at, host = (url or "").partition("://")[2].partition("/")[0].rpartition("@")
+    if not at:
+        return text
+    return re.sub(r"[^\s/]*@" + re.escape(host), lambda m: "***@" + host, text)
+
+
 def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
     config, warnings = config_module.load_and_bootstrap(config_path)
     cluster, provider = config["cluster_name"], config["provider"]
@@ -231,8 +240,9 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
     except SshError as e:
         if wheel:
             raise
-        raise CliError(f"could not install ray-vast=={__version__} from {index_url or 'PyPI'} in the head image. Check that "
-                       f"this version is on that index. Run `ray-vast down {config_path}` to remove what was created.\n{e}") from None
+        raise CliError(_mask_userinfo(
+            f"the head image build failed while installing ray-vast=={__version__} from {index_url or 'PyPI'}; see the "
+            f"build output below. Run `ray-vast down {config_path}` to remove what was created.\n{e}", index_url)) from None
     stdout = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}")
     info = [line.split() for line in stdout.splitlines() if line.startswith(IMAGE_INFO_MARKER + " ")]
     if len(info) != 1 or len(info[0]) != 3:
@@ -402,6 +412,9 @@ def run(args):
                 raise CliError("no EC2 key pair: pass --key-name or set provider.key_name")
             if args.wheel and args.index_url:
                 raise CliError("--wheel and --index-url do not go together: pass one of them")
+            # The URL goes into a Dockerfile RUN line: a space or a newline there would change the instruction.
+            if args.index_url and not re.fullmatch(r"https?://\S+", args.index_url):
+                raise CliError("--index-url must be a plain http:// or https:// URL without spaces")
             # Where the head image gets ray-vast: --wheel, else --index-url, else the source tree (development), else PyPI.
             wheel = Path(args.wheel).expanduser() if args.wheel else None
             with tempfile.TemporaryDirectory() as tmp:
@@ -413,7 +426,7 @@ def run(args):
                 elif wheel:
                     print(f"installing ray-vast from the wheel {wheel}")
                 else:
-                    print(f"installing ray-vast=={__version__} from {args.index_url or 'PyPI'}")
+                    print(f"installing ray-vast=={__version__} from {_mask_userinfo(args.index_url or 'PyPI', args.index_url)}")
                 up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, index_url=args.index_url, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":

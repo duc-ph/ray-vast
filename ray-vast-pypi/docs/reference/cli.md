@@ -87,7 +87,9 @@ Rules:
 - `<version>` is the version of the `ray-vast` package on your laptop. So the head runs the same version as the CLI.
 - `--wheel` and `--index-url` do not go together.
 - With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have the dependencies of ray-vast, so they come from PyPI.
-- If `pip` cannot install the version, `up` stops with `could not install ray-vast==<version> from <index> in the head image`. The head exists then. Run `ray-vast down`.
+- `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. Else `up` stops before it makes anything.
+- Do not put a user name or a password in `URL`. `URL` goes into the Dockerfile, so the head image keeps it in its build history. `up` replaces a user name and a password in its output with `***`.
+- If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from <index>; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
 
 To test a release on TestPyPI:
 

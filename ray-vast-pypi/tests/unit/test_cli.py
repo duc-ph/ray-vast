@@ -448,14 +448,14 @@ def test_up_prints_the_ca_expiry_warning(aws, cluster_yaml, wheel, tmp_path, ca_
 
 def test_dashboard_fetches_the_token_and_opens_the_tunnel(tmp_path):
     ssh, messages = FakeSsh(), []
-    code = commands.dashboard(ssh, "1.2.3.4", tmp_path, CLUSTER, out=messages.append)
+    code = commands.dashboard(ssh, "192.0.2.4", tmp_path, CLUSTER, out=messages.append)
     token_file = tmp_path / CLUSTER / "token"
     assert token_file.read_text() == "tok-0123456789abcdef"
     assert oct(token_file.stat().st_mode & 0o777) == "0o600" and oct(token_file.parent.stat().st_mode & 0o777) == "0o700"
     assert ssh.calls[0][2] == f"cat /home/ubuntu/ray-vast-{CLUSTER}/secrets/token"
     text = "\n".join(messages)
     assert f"RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH={token_file}" in text and "tok-0123456789abcdef" not in text
-    assert ssh.interactive_calls == [("1.2.3.4", ("-N", "-L", "8265:127.0.0.1:8265"))] and code == 0
+    assert ssh.interactive_calls == [("192.0.2.4", ("-N", "-L", "8265:127.0.0.1:8265"))] and code == 0
 
 
 def test_down_removes_the_cluster_directory(aws, tmp_path):
@@ -635,11 +635,11 @@ def test_ssh_run_has_a_timeout_and_sends_secrets_on_stdin(monkeypatch, tmp_path)
         raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
     monkeypatch.setattr(subprocess, "run", fake_run)
     ssh = commands.Ssh(tmp_path / "k.pem", tmp_path / "known_hosts")
-    with pytest.raises(commands.SshError, match=r"ssh 1\.2\.3\.4: timed out after 900 s: true"):
-        ssh.run("1.2.3.4", "true", stdin="secret-on-stdin")
+    with pytest.raises(commands.SshError, match=r"ssh 192\.0\.2\.4: timed out after 900 s: true"):
+        ssh.run("192.0.2.4", "true", stdin="secret-on-stdin")
     assert seen["timeout"] == 900 and seen["input"] == "secret-on-stdin" and "secret-on-stdin" not in seen["argv"]
     with pytest.raises(commands.SshError, match="timed out after 5 s"):
-        ssh.run("1.2.3.4", "true", timeout=5)
+        ssh.run("192.0.2.4", "true", timeout=5)
     assert seen["timeout"] == 5
 
 
@@ -680,7 +680,7 @@ def test_down_reports_each_kind_of_resource_that_could_not_be_removed(aws, clust
 
 
 def test_down_removes_the_known_hosts_file(aws, tmp_path):
-    (tmp_path / f"{CLUSTER}.known_hosts").write_text("1.2.3.4 ssh-ed25519 AAAA")
+    (tmp_path / f"{CLUSTER}.known_hosts").write_text("192.0.2.4 ssh-ed25519 AAAA")
     commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path, sleep=lambda s: None, out=lambda m: None)
     assert not (tmp_path / f"{CLUSTER}.known_hosts").exists()
 
@@ -690,7 +690,7 @@ def test_dashboard_fixes_the_modes_of_an_old_token_file_and_directory(tmp_path):
     (tmp_path / CLUSTER).chmod(0o755)
     (tmp_path / CLUSTER / "token").write_text("old-token")
     (tmp_path / CLUSTER / "token").chmod(0o644)
-    commands.dashboard(FakeSsh(), "1.2.3.4", tmp_path, CLUSTER, out=lambda m: None)
+    commands.dashboard(FakeSsh(), "192.0.2.4", tmp_path, CLUSTER, out=lambda m: None)
     token_file = tmp_path / CLUSTER / "token"
     assert token_file.read_text() == "tok-0123456789abcdef"
     assert oct(token_file.stat().st_mode & 0o777) == "0o600" and oct(token_file.parent.stat().st_mode & 0o777) == "0o700"
@@ -738,11 +738,12 @@ def test_down_goes_on_after_a_failed_destroy_and_tries_again(aws, tmp_path, capl
     assert "HTTP 500: busy" in caplog.text
 
 
-# --- where the head image gets ray-vast: `--wheel` > the source tree > the package index ---------------------------------
+# --- where the head image gets ray-vast: `--wheel` > `--index-url` > the source tree > PyPI ---------------------------------
 
 @pytest.fixture
 def installed(monkeypatch, tmp_path):
     """ray-vast runs as an installed package (`pip install ray-vast`): no pyproject.toml above the package."""
+    # A patch, not a boundary fake: the other way is to install the package into a fresh venv per test (slow).
     monkeypatch.setattr(commands, "SOURCE_TREE", tmp_path / "site-packages")
 
 
@@ -796,7 +797,7 @@ def test_main_up_in_a_source_tree_builds_the_wheel_there_and_says_so(aws, home, 
 
 
 @pytest.mark.parametrize("extra, index", [([], "PyPI"), (["--index-url", "https://test.pypi.org/simple/"], "https://test.pypi.org/simple/")])
-def test_main_up_that_cannot_install_its_version_on_the_head_names_the_version_and_the_index(
+def test_main_up_with_a_failed_head_image_build_names_the_version_and_the_index(
         aws, home, fake_ssh, cluster_yaml, installed, capsys, extra, index):
     class PipFails(FakeSsh):
         def run(self, ip, command, stdin=None, timeout=900):
@@ -807,8 +808,9 @@ def test_main_up_that_cannot_install_its_version_on_the_head_names_the_version_a
     fake_ssh.fake = PipFails()
     assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", *extra]) == 1
     err = capsys.readouterr().err
-    assert f"could not install ray-vast=={importlib.metadata.version('ray-vast')} from {index}" in err
-    assert "No matching distribution found" in err  # pip's own words stay in the message
+    assert (f"the head image build failed while installing ray-vast=={importlib.metadata.version('ray-vast')} from {index}; "
+            "see the build output below") in err
+    assert "No matching distribution found" in err  # the build output stays in the message
     assert f"ray-vast down {cluster_yaml}" in err
 
 
@@ -816,3 +818,30 @@ def test_main_up_with_both_a_wheel_and_an_index_url_fails_before_creating_anythi
     assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k", "--index-url", "https://test.pypi.org/simple/") == 1
     assert "--wheel and --index-url do not go together" in capsys.readouterr().err
     assert what_is_left(aws, FakeVast()) == []
+
+
+@pytest.mark.parametrize("url", ["ftp://test.pypi.org/simple/", "test.pypi.org/simple/", "https://test.pypi.org/simple/ x",
+                                 "https://test.pypi.org/simple/\nRUN echo injected", "https://"])
+def test_main_up_with_an_index_url_that_is_not_a_plain_http_url_fails_before_creating_anything(
+        aws, home, fake_ssh, cluster_yaml, installed, capsys, url):
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", url]) == 1
+    assert "--index-url must be a plain http:// or https:// URL without spaces" in capsys.readouterr().err
+    assert what_is_left(aws, FakeVast()) == [] and fake_ssh.fake.calls == []
+
+
+def test_main_up_never_prints_the_user_and_password_of_the_index_url(aws, home, fake_ssh, cluster_yaml, installed, capsys):
+    url = "https://alice:s3cr3t-token@pypi.example.com/simple/"
+
+    class BuildFails(FakeSsh):
+        def run(self, ip, command, stdin=None, timeout=900):
+            if "docker build" in command:
+                # The kept stderr tail can start in the middle of the URL; the RUN line repeats it in full.
+                raise commands.SshError("ssh: exit 1: sudo docker build\ncr3t-token@pypi.example.com/simple/ --extra-index-url x\n"
+                                        f"#5 [2/2] RUN pip install --no-cache-dir --index-url {url} ray-vast\nERROR: failed")
+            return super().run(ip, command, stdin, timeout)
+    fake_ssh.fake = BuildFails()
+    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", url]) == 1
+    out, err = capsys.readouterr()
+    assert "from https://***@pypi.example.com/simple/" in out and "from https://***@pypi.example.com/simple/" in err
+    assert "#5 [2/2] RUN pip install --no-cache-dir --index-url https://***@pypi.example.com/simple/ ray-vast" in err
+    assert "cr3t" not in out + err and "alice" not in out + err

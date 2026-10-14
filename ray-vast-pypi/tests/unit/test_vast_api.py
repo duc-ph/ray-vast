@@ -12,7 +12,7 @@ import ray_vast
 from ray_vast.vast_api import BASE_URL, VastClient, VastError
 
 SECRET = "SECRET123"
-CREATE_OK = {"success": True, "new_contract": 48743418, "instance_api_key": SECRET}
+CREATE_OK = {"success": True, "new_contract": 12345678, "instance_api_key": SECRET}
 
 
 @pytest.fixture
@@ -37,10 +37,10 @@ def test_search_offers_sends_query_and_returns_offers(client):
 
 @responses.activate
 def test_create_instance_returns_id_and_adds_identity_ports(client):
-    responses.put(f"{BASE_URL}/asks/48743418/", json=CREATE_OK)
-    iid = client.create_instance(48743418, "img:1", {"A": "b"}, ["bash", "-c", "x"], "lbl", 20)
+    responses.put(f"{BASE_URL}/asks/12345678/", json=CREATE_OK)
+    iid = client.create_instance(12345678, "img:1", {"A": "b"}, ["bash", "-c", "x"], "lbl", 20)
     sent = json.loads(responses.calls[0].request.body)
-    assert iid == 48743418
+    assert iid == 12345678
     assert sent["client_id"] == "me" and sent["runtype"] == "args" and sent["disk"] == 20
     assert sent["image"] == "img:1" and sent["label"] == "lbl" and sent["args"] == ["bash", "-c", "x"]
     assert sent["env"]["A"] == "b"
@@ -95,7 +95,7 @@ def test_4xx_does_not_retry(client, sleeps):
 def test_create_retries_429_but_not_5xx(client, sleeps):
     responses.put(f"{BASE_URL}/asks/1/", status=429)
     responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
-    assert client.create_instance(1, "img", {}, [], "l", 20) == 48743418
+    assert client.create_instance(1, "img", {}, [], "l", 20) == 12345678
     assert len(sleeps) == 1
     responses.put(f"{BASE_URL}/asks/2/", status=502)
     with pytest.raises(VastError):
@@ -182,15 +182,15 @@ def test_real_archived_shapes(client):
     offer = json.loads((FIXTURES / "vast_offer.json").read_text())
     poll = json.loads((FIXTURES / "vast_instance_poll.json").read_text())
     # The poll output keeps only some fields; public_ipaddr and ports (keyed "<port>/tcp") follow tests/manual/c4_rent.py.
-    instance = {"id": 55448911, "machine_id": offer["machine_id"], "public_ipaddr": "85.10.218.46\n",
+    instance = {"id": 87654321, "machine_id": offer["machine_id"], "public_ipaddr": "203.0.113.46\n",
                 "ports": {"70040/tcp": [{"HostIp": "0.0.0.0", "HostPort": "70040"}]}, **poll}
     responses.post(f"{BASE_URL}/bundles/", json={"offers": [offer]})
     responses.get(f"{BASE_URL}/instances/", json={"instances": [instance]})
     got_offer = client.search_offers({})[0]
     (got,) = client.list_instances()
-    assert (got_offer["id"], got_offer["machine_id"], got_offer["dph_total"]) == (48743418, 3969, 0.09703703703703705)
+    assert (got_offer["id"], got_offer["machine_id"], got_offer["dph_total"]) == (12345678, 1111, 0.09703703703703705)
     assert got["actual_status"] == "running" and got["dph_total"] == pytest.approx(0.1025925925925926)
-    assert got["machine_id"] == 3969 and got["public_ipaddr"].strip() == "85.10.218.46" and "70040/tcp" in got["ports"]
+    assert got["machine_id"] == 1111 and got["public_ipaddr"].strip() == "203.0.113.46" and "70040/tcp" in got["ports"]
 
 
 LIVE_KEY = pathlib.Path("~/.config/vastai/vast_api_key").expanduser()

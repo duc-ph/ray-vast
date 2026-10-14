@@ -6,7 +6,7 @@ import pytest
 from ray_vast.state import Candidate, ClusterState, Slot
 
 
-def make_candidate(instance_id, ip="1.2.3.4", dph=0.5, machine_id=7):
+def make_candidate(instance_id, ip="192.0.2.4", dph=0.5, machine_id=7):
     return Candidate(instance_id=instance_id, slot_id="s", offer_id=1, machine_id=machine_id, public_ip=ip, dph_total=dph)
 
 
@@ -20,8 +20,8 @@ def test_concurrent_changes_lose_no_update():
             ids.append(slot_id)
             with state.lock:
                 state.add_slot(Slot(slot_id, "worker"))
-                state.add_candidate(make_candidate(t * 1000 + i, ip="9.9.9.9"))
-                state.ip_ref_add("9.9.9.9")
+                state.add_candidate(make_candidate(t * 1000 + i, ip="198.51.100.9"))
+                state.ip_ref_add("198.51.100.9")
 
     threads = [threading.Thread(target=work, args=(t,)) for t in range(8)]
     for t in threads:
@@ -31,7 +31,7 @@ def test_concurrent_changes_lose_no_update():
     assert len(set(ids)) == 1600
     assert len(state.slots) == 1600
     assert len(state.candidates) == 1600
-    assert state.ip_refs["9.9.9.9"] == 1600
+    assert state.ip_refs["198.51.100.9"] == 1600
     assert state.total_dph() == 800.0
 
 
@@ -59,12 +59,12 @@ def test_blocklist_expiry_by_kind():
 
 def test_ip_ref_counts():
     state = ClusterState()
-    assert state.ip_ref_add("1.2.3.4") == 1
-    assert state.ip_ref_add("1.2.3.4") == 2
-    assert state.ip_ref_remove("1.2.3.4") == 1
-    assert state.ip_ref_remove("1.2.3.4") == 0
-    assert state.ip_ref_remove("1.2.3.4") == 0
-    assert state.ip_ref_add("1.2.3.4") == 1
+    assert state.ip_ref_add("192.0.2.4") == 1
+    assert state.ip_ref_add("192.0.2.4") == 2
+    assert state.ip_ref_remove("192.0.2.4") == 1
+    assert state.ip_ref_remove("192.0.2.4") == 0
+    assert state.ip_ref_remove("192.0.2.4") == 0
+    assert state.ip_ref_add("192.0.2.4") == 1
 
 
 def test_block_rejects_unknown_kind():
@@ -80,7 +80,7 @@ def test_single_calls_are_atomic_without_caller_lock():
         for i in range(200):
             state.add_slot(Slot(state.new_slot_id(), "worker"))
             state.add_candidate(make_candidate(t * 1000 + i))
-            counts.append(state.ip_ref_add("9.9.9.9"))
+            counts.append(state.ip_ref_add("198.51.100.9"))
             state.mark_enrolled(t * 1000 + i)
 
     threads = [threading.Thread(target=work, args=(t,)) for t in range(8)]
@@ -94,8 +94,8 @@ def test_single_calls_are_atomic_without_caller_lock():
     assert sorted(counts) == list(range(1, 1601))
     for t in range(8):
         for i in range(200):
-            state.ip_ref_remove("9.9.9.9")
-    assert state.ip_ref_add("9.9.9.9") == 1
+            state.ip_ref_remove("198.51.100.9")
+    assert state.ip_ref_add("198.51.100.9") == 1
 
 
 def test_total_dph_drops_when_candidate_removed():
@@ -108,9 +108,9 @@ def test_total_dph_drops_when_candidate_removed():
 
 def test_ip_ref_at_zero_leaves_no_entry():
     state = ClusterState()
-    state.ip_ref_add("1.2.3.4")
-    state.ip_ref_remove("1.2.3.4")
-    assert "1.2.3.4" not in state.ip_refs
+    state.ip_ref_add("192.0.2.4")
+    state.ip_ref_remove("192.0.2.4")
+    assert "192.0.2.4" not in state.ip_refs
 
 
 def test_timeout_block_lasts_one_day():
@@ -171,8 +171,8 @@ def test_total_dph_counts_candidates_in_every_status():
     lambda s: s.add_candidate(make_candidate(1)),
     lambda s: s.remove_candidate(1),
     lambda s: s.mark_enrolled(1),
-    lambda s: s.ip_ref_add("1.2.3.4"),
-    lambda s: s.ip_ref_remove("1.2.3.4"),
+    lambda s: s.ip_ref_add("192.0.2.4"),
+    lambda s: s.ip_ref_remove("192.0.2.4"),
     lambda s: s.block(1, "x", "network", now=0.0),
     lambda s: s.is_blocked(1, now=0.0),
     lambda s: s.total_dph(),
