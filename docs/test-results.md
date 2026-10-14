@@ -359,3 +359,25 @@ The first 8 candidates cost $2.02/h, below the $3.00 limit. The upper limit of `
 Other findings:
 - `up` took 8 min 11 s with the 18.4 GB GPU image. The C5 and C6 runs with the CPU image took 2.5 min. Most of the time is the pull of the image on the head.
 - The vast credit fell by $0.0104 during C8 with no C8 rental. vast books the end of a rental some minutes after the destroy.
+
+## Live cycle C5 re-run (2026-10-14)
+
+Setup: as the first C5 run, from commit 4441ab9 (GPU count from `/dev/nvidia<N>`, head refuses a GPU mismatch, head `--shm-size` 0.33 × RAM, one ending function `VastNodeProvider._end`, one `vast_api.sweep`, `RAYVAST_IMAGE_INFO` marker line). Data: `archive/results/2026-10-14/` (`progress.md` "C5 re-run", `c5-rerun/`, `spend.md`, `resources.csv`).
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| T15 | Pass | `up` 2 min 22 s (exit 0). Second wave: create → `running` ≤ 20 s → enrolled 35.7 s after the create → Ray node running 9.0 s later. | The marker line of `up` works with the `-cpu` image. `c5-rerun/up.log`, `c5-rerun/head/monitor.log` |
+| Join | Pass (diff) | 4 rentals in 2 waves. Wave 1: both candidates called `/enroll` at the same time. The head refused the second one (`no free slot`). The provider ended it 0.08 s after the enrollment. Wave 2: the provider ended the extra candidate 4.5 s after the enrollment. | In the first run, the extra candidate never called `/enroll`. The plan allows both paths. |
+| Fields | Pass | `actual_status` values: `null`, `loading`, `running`, `exited`. | All 10 names exist. `public_ipaddr` equals the worker's public IP (143.55.45.86). `ports` has 64 entries. `exited` is in the failed set. No `unknown vast actual_status` line. `c5-rerun/instance_fields.json` |
+| CapBnd | Pass | `00000000a80405fb` | Host checks all `True` on both enrolled workers. `c5-rerun/worker_*.log` |
+| Task (C5.3) | Pass | Job `SUCCEEDED` in 13 s | Same values as the first run. `c5-rerun/task_probe.out` |
+| GPU count | Pass | GPU 1.0 in Ray on the P100 host m3969 | The first run showed GPU 4.0 on this host. `/proc/driver/nvidia/gpus` still lists 4 GPUs. `/dev` has only `nvidia3`. `c5-rerun/gpu_probe.out` |
+| Head shm | Pass | `/dev/shm` 2.6 GB (ShmSize 2704650240 B = 0.33 × 8003820 kB) | The first run had 64 MB. `c5-rerun/head_shm.txt` |
+| Teardown | Pass | `down` 25.6 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | `down` used the new sweep line (`sweep: destroying instance …`). Secret scan with the cluster token and all 4 join tokens: no output. |
+| Cost | | vast $0.0085 (credit 11.3661 → 11.3576); EC2 about $0.01 | `spend.md` |
+
+Differences from the first run:
+- vast stopped both wave-1 candidates by itself. `intended_status` became `stopped` while `actual_status` was `running`, before any enrollment. The enrolled worker (55886615) ran Ray and then showed `exited`. The provider ended it (`instance status 'exited'`), and v2 rented a new wave. The new worker joined 46 s after the end. The code has no stop call. C6 had the same event once (55870639). The first C5 run had none.
+- Both wave-1 candidates reached `/enroll` within 0.13 s. The head refused one with `no free slot`. The worker also sent a destroy report.
+- A field fetch right after a rental gives `actual_status`, `status_msg` and `ports` as `null` (`c5-rerun/instance_fields_early.json`).
+- The 86 `Dropping the empty legacy field` warnings are still in `monitor.log`.

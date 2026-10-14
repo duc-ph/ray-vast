@@ -37,3 +37,16 @@
 | Peak sum of dph_total | $0/h |
 | EC2 | t3.large head i-093eb1461f73453b8, about 05:42Z to 05:51Z (10 min) at $0.0832/h = about $0.014, plus 60 GiB gp3 (< $0.001). Budget about $0.15. |
 | Day total so far (vast) | credit 11.5658 → 11.3661 = $0.1997. The day limit is $8. |
+
+## C5 re-run (join and task, HEAD 4441ab9)
+
+| Item | Value |
+|---|---|
+| vast credit before | $11.3661 (07:26:36Z) |
+| vast credit after | $11.3576 (07:34:58Z). vast can book the last minutes later. |
+| vast spend (credit) | $0.0085 (budget $0.30) |
+| vast spend (estimate from dph_total) | about $0.013: 55886613 P100 $0.107/h (07:29:49Z-07:30:31Z), 55886615 A5000 $0.239/h (07:29:49Z-07:31:08Z, stopped by vast), 55886788 P100 $0.107/h (07:31:09Z-07:33:5xZ), 55886789 A5000 $0.239/h (07:31:09Z-07:31:50Z) |
+| Rentals | 4 (1 slot, k = 2, two waves): 2 enrolled, 1 refused at /enroll, 1 ended unused |
+| Peak sum of dph_total | $0.346/h |
+| EC2 | t3.large head i-0ee21492e2ec35f8e, about 07:28Z to 07:34Z (6 min) at $0.0832/h = about $0.009, plus 60 GiB gp3 (< $0.001). Budget about $0.15. |
+| Day total so far (vast) | credit 11.5658 → 11.3576 = $0.2082. The day limit is $8. |
