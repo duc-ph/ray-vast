@@ -23,7 +23,8 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 | `--profile NAME` | all | AWS profile. Default: `AWS_PROFILE`, or the default credentials. |
 | `--key-file FILE` | `up`, `attach`, `dashboard` | Private SSH key file of the head. Or set `provider.key_file`. |
 | `--key-name NAME` | `up` | EC2 key pair name. Or set `provider.key_name`. |
-| `--wheel FILE` | `up` | The ray-vast wheel to install on the head. Default: build it from the source tree. |
+| `--wheel FILE` | `up` | For development. Install this ray-vast wheel on the head. |
+| `--index-url URL` | `up` | To test a release from TestPyPI. Install ray-vast on the head from this package index. The dependencies come from PyPI. |
 
 An option wins over the YAML field.
 
@@ -39,7 +40,7 @@ An option wins over the YAML field.
 ## `ray-vast up`
 
 ```bash
-ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
+ray-vast up cluster.yaml --profile my-aws-profile
 ```
 
 `up` does these steps:
@@ -47,7 +48,7 @@ ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
 1. It reads and checks the YAML. It shows the warnings. It stops at once if the cluster already exists: an EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`.
 2. It makes the IAM role `ray-vast-<cluster_name>`, the 5 security groups `ray-vast-<cluster_name>-0` … `-4`, the role policy and the instance profile. Group 0 gets one SSH rule for the public IP of your laptop.
 3. It starts the EC2 head: Ubuntu 24.04, `head_instance_type`, 60 GB gp3 disk, IMDSv2 required, no Elastic IP. User data installs Docker.
-4. It copies the ray-vast wheel to the head, and builds a derived image: `provider.image` plus the wheel. It reads the Ray version of the image, and warns if it is not 2.59.
+4. It builds a derived image on the head: `provider.image` plus ray-vast. Read [Where the head gets ray-vast](#where-the-head-gets-ray-vast). It reads the Ray version of the image, and warns if it is not 2.59.
 5. It measures the image size and sets `image_size_gb`. A value in your YAML wins.
 6. It copies the vast key to the head. It makes the CA, the cluster token and the head certificate on the head. The CA key never leaves the head.
 7. It starts the head container `ray-vast-head` and waits until `ray status` answers.
@@ -55,6 +56,7 @@ ray-vast up cluster.yaml --wheel wheels/ray_vast-0.1.0-py3-none-any.whl
 Output:
 
 ```text
+installing ray-vast==<version> from PyPI
 head instance <instance id> starting
 head IP <head ip>
 cluster <cluster_name> is up. Head IP <head ip>.
@@ -68,10 +70,33 @@ Rules:
 
 - `up` reads the vast key from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`. It sends the key to the head. The key is never in the YAML.
 - `up` needs an EC2 key pair (`--key-name` or `provider.key_name`) and its private key file (`--key-file` or `provider.key_file`).
-- `up` needs a ray-vast wheel for the head. Pass `--wheel FILE`. Without `--wheel`, `up` builds the wheel from the source tree with `python -m build`. This works only for an editable install from a git clone, with the `build` package installed. Otherwise `up` stops with `not running from a source tree: pass --wheel`.
-- Get the wheel of an installed release with `pip download ray-vast==<version> --no-deps -d wheels`.
 - `up` makes no vast rental. Workers start when a job needs them, or for `min_workers`.
 - After an AWS error, `up` prints `Run ray-vast down CLUSTER_YAML to remove what was created.`
+
+### Where the head gets ray-vast
+
+`up` installs ray-vast in the derived image. The first line of the `up` output tells the source. `up` uses the first source that applies:
+
+| Source | When | Output line |
+|---|---|---|
+| A wheel file | You pass `--wheel FILE`. | `installing ray-vast from the wheel FILE` |
+| A package index | You pass `--index-url URL`. | `installing ray-vast==<version> from URL` |
+| The source tree | `ray-vast` runs from a git clone (an editable install). `up` builds the wheel with `python -m build`. This needs the `build` package (in the `test` extra). | `installing ray-vast from a wheel built from the source tree <path>` |
+| PyPI | All other cases: the normal `pip install ray-vast`. | `installing ray-vast==<version> from PyPI` |
+
+- `<version>` is the version of the `ray-vast` package on your laptop. So the head runs the same version as the CLI.
+- `--wheel` and `--index-url` do not go together.
+- With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have the dependencies of ray-vast, so they come from PyPI.
+- `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. Else `up` stops before it makes anything.
+- Do not put a user name or a password in `URL`. `URL` goes into the Dockerfile, so the head image keeps it in its build history. `up` replaces a user name and a password in its output with `***`.
+- If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from <index>; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
+
+To test a release on TestPyPI:
+
+```bash
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple ray-vast==<version>
+ray-vast up cluster.yaml --profile my-aws-profile --index-url https://test.pypi.org/simple/
+```
 
 ## `ray-vast down`
 

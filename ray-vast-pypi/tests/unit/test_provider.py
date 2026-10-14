@@ -43,7 +43,7 @@ def test_head_is_always_listed_with_the_tags_v2_needs(env):
     assert p.node_tags("head") == {TAG_RAY_NODE_KIND: "head", TAG_RAY_USER_NODE_TYPE: "head",
                                    TAG_RAY_NODE_STATUS: "up-to-date"}
     assert p.non_terminated_nodes({TAG_RAY_NODE_KIND: "worker"}) == []
-    assert p.is_running("head") and not p.is_terminated("head") and p.external_ip("head") == "9.9.9.9"
+    assert p.is_running("head") and not p.is_terminated("head") and p.external_ip("head") == "198.51.100.9"
     p.terminate_node("head")
     assert p.non_terminated_nodes({}) == ["head"]
 
@@ -60,7 +60,7 @@ def test_create_rents_candidates_and_returns_slots_without_waiting(env):
     request = env.vast.requests[0]
     assert request["label"] == LABEL and request["disk_gb"] == 40 and request["image"] == "img:1"
     assert request["args"][:2] == ["sh", "-c"] and "bootstrap" in request["args"][2]
-    assert request["env"]["RAYVAST_HEAD_IP"] == "9.9.9.9" and request["env"]["RAYVAST_PORT_A"] == "7443"
+    assert request["env"]["RAYVAST_HEAD_IP"] == "198.51.100.9" and request["env"]["RAYVAST_PORT_A"] == "7443"
     assert request["env"]["RAYVAST_CLUSTER"] == "c1" and len(request["env"]["RAYVAST_CA_SHA256"]) == 64
     assert env.vast.last_query["num_gpus"] == {"eq": 1}
 
@@ -118,11 +118,11 @@ def test_running_candidate_gets_ip_and_sg_rule(env):
     create(p)
     p.reconcile_once()
     assert env.rules() == []
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()
-    assert env.rules() == ["5.5.5.5/32"]
-    assert p.state.ip_refs == {"5.5.5.5": 1}
-    env.vast.instances[101]["public_ipaddr"] = "6.6.6.6"  # an IP change before enrollment ends it too
+    assert env.rules() == ["198.51.100.55/32"]
+    assert p.state.ip_refs == {"198.51.100.55": 1}
+    env.vast.instances[101]["public_ipaddr"] = "203.0.113.66"  # an IP change before enrollment ends it too
     p.reconcile_once()
     assert instance_ids(env) == [] and env.rules() == []
 
@@ -131,7 +131,7 @@ def test_sg_quota_destroys_candidate(env, monkeypatch):
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
     create(p)
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()  # healthy; now AWS refuses the next rule
     env.vast.offers = [offer(2, 12)]
     create(p)
@@ -139,9 +139,9 @@ def test_sg_quota_destroys_candidate(env, monkeypatch):
     def refuse(**kwargs):
         raise botocore.exceptions.ClientError({"Error": {"Code": "RulesPerSecurityGroupLimitExceeded", "Message": "x"}}, "op")
     monkeypatch.setattr(env.ec2, "authorize_security_group_ingress", refuse)
-    env.vast.run(102, "5.5.5.6")
+    env.vast.run(102, "198.51.100.56")
     p.reconcile_once()
-    assert instance_ids(env) == [101] and p.state.ip_refs == {"5.5.5.5": 1}
+    assert instance_ids(env) == [101] and p.state.ip_refs == {"198.51.100.55": 1}
 
 
 def test_pull_timeout_from_image_size_and_blocklist(env):
@@ -175,7 +175,7 @@ def test_enrollment_timeout_one_minute_after_running(env):
     p = env.make(candidate_factor=1)
     create(p)
     env.clock.now += 500
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()
     env.clock.now += 59
     p.reconcile_once()
@@ -203,14 +203,14 @@ def test_filled_slot_destroys_the_other_candidates_of_its_request(env):
     slots = list(create(p, count=3))
     assert len(env.vast.instances) == 6
     for iid in (101, 102, 103):
-        env.vast.run(iid, f"5.5.5.{iid}")
+        env.vast.run(iid, f"198.51.100.{iid}")
     p.reconcile_once()
     for iid in (101, 102, 103):
         enroll(p, iid)
     p.reconcile_once()
     assert instance_ids(env) == [101, 102, 103]
     assert all(p.is_running(s) for s in slots)
-    assert sorted(env.rules()) == ["5.5.5.101/32", "5.5.5.102/32", "5.5.5.103/32"]
+    assert sorted(env.rules()) == ["198.51.100.101/32", "198.51.100.102/32", "198.51.100.103/32"]
 
 
 def test_free_slot_stays_while_a_pending_candidate_of_its_type_remains(env):
@@ -247,7 +247,7 @@ def test_running_candidate_without_ip_hits_the_pull_limit_then_gets_the_enrollme
     env.vast.instances[102].update(actual_status="running")
     env.clock.now += 800
     p.reconcile_once()
-    env.vast.run(102, "5.5.5.6")  # 102 gets its IP in time; its enrollment clock starts now
+    env.vast.run(102, "198.51.100.56")  # 102 gets its IP in time; its enrollment clock starts now
     p.reconcile_once()
     env.clock.now += 101
     p.reconcile_once()  # 101 is past the 15 min pull limit; 102 is 101 s into its enrollment, past 60 s
@@ -261,11 +261,11 @@ def test_running_candidate_gets_its_ip_late_and_is_not_stuck(env):
     env.vast.instances[101].update(actual_status="running")
     env.clock.now += 600
     p.reconcile_once()
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()
     env.clock.now += 59
     p.reconcile_once()
-    assert instance_ids(env) == [101] and env.rules() == ["5.5.5.5/32"]
+    assert instance_ids(env) == [101] and env.rules() == ["198.51.100.55/32"]
 
 
 def test_instance_missing_from_vast_counts_only_after_the_grace_period(env):
@@ -324,22 +324,22 @@ def test_worker_ip_change_exited_and_heartbeat_loss_destroy_the_worker(env):
     p = env.make(candidate_factor=1)
     slots = [next(iter(create(p))) for _ in range(3)]
     for iid in (101, 102, 103):
-        env.vast.run(iid, f"5.5.5.{iid}")
+        env.vast.run(iid, f"198.51.100.{iid}")
     p.reconcile_once()
     for iid in (101, 102, 103):
         enroll(p, iid)
         p.state.candidates[iid].last_heartbeat = env.clock()
     p.reconcile_once()
     assert p.node_tags(slots[0])[TAG_RAY_NODE_STATUS] == "up-to-date"
-    env.vast.instances[101]["public_ipaddr"] = "7.7.7.7"
+    env.vast.instances[101]["public_ipaddr"] = "203.0.113.77"
     env.vast.instances[102]["actual_status"] = "exited"
     env.clock.now += 301
     p.state.candidates[103].last_heartbeat = env.clock() - 299
-    env.vast.instances[103]["public_ipaddr"] = "5.5.5.103"
+    env.vast.instances[103]["public_ipaddr"] = "198.51.100.103"
     p.reconcile_once()
     assert instance_ids(env) == [103]
     assert p.non_terminated_nodes({TAG_RAY_NODE_KIND: "worker"}) == [slots[2]]
-    assert env.rules() == ["5.5.5.103/32"]
+    assert env.rules() == ["198.51.100.103/32"]
     env.clock.now += 2
     p.reconcile_once()
     assert instance_ids(env) == [] and env.rules() == []
@@ -347,8 +347,8 @@ def test_worker_ip_change_exited_and_heartbeat_loss_destroy_the_worker(env):
 
 def test_orphan_sweep_destroys_an_unknown_labelled_instance_and_not_other_labels(env, caplog):
     p = env.make()
-    env.vast.instances[7] = {"id": 7, "label": LABEL, "actual_status": "running", "public_ipaddr": "1.1.1.1"}
-    env.vast.instances[8] = {"id": 8, "label": "someone-else", "actual_status": "running", "public_ipaddr": "1.1.1.2"}
+    env.vast.instances[7] = {"id": 7, "label": LABEL, "actual_status": "running", "public_ipaddr": "203.0.113.11"}
+    env.vast.instances[8] = {"id": 8, "label": "someone-else", "actual_status": "running", "public_ipaddr": "203.0.113.12"}
     p.reconcile_once()
     assert instance_ids(env) == [8]
     assert any(r.getMessage() == "sweep: destroying instance 7 with label ray-vast:c1" for r in caplog.records)
@@ -359,12 +359,12 @@ def test_two_workers_on_one_ip_share_one_rule(env):
     p = env.make(candidate_factor=1)
     a, b = next(iter(create(p))), next(iter(create(p)))
     for iid in (101, 102):
-        env.vast.run(iid, "5.5.5.5")
+        env.vast.run(iid, "198.51.100.55")
     p.reconcile_once()
     enroll(p, 101), enroll(p, 102)
-    assert env.rules() == ["5.5.5.5/32"] and p.state.ip_refs == {"5.5.5.5": 2}
+    assert env.rules() == ["198.51.100.55/32"] and p.state.ip_refs == {"198.51.100.55": 2}
     p.terminate_node(a)
-    assert env.rules() == ["5.5.5.5/32"] and instance_ids(env) == [102]
+    assert env.rules() == ["198.51.100.55/32"] and instance_ids(env) == [102]
     p.terminate_node(b)
     assert env.rules() == [] and instance_ids(env) == []
     assert p.non_terminated_nodes({}) == ["head"]
@@ -445,10 +445,10 @@ def test_startup_sweep_destroys_labelled_instances_and_rules_then_scales_from_ze
     env.vast.offers = [offer(1, 11), offer(2, 12)]
     old = env.make()
     create(old)
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     old.reconcile_once()
-    assert env.rules() == ["5.5.5.5/32"]
-    env.vast.instances[50] = {"id": 50, "label": "other", "actual_status": "running", "public_ipaddr": "1.1.1.1"}
+    assert env.rules() == ["198.51.100.55/32"]
+    env.vast.instances[50] = {"id": 50, "label": "other", "actual_status": "running", "public_ipaddr": "203.0.113.11"}
     new = env.make()  # a restart: a new provider object on the same vast and group
     assert instance_ids(env) == [50] and env.rules() == []
     assert new.non_terminated_nodes({}) == ["head"]
@@ -488,9 +488,9 @@ def test_vast_api_url_in_the_provider_config_points_the_vast_client_at_it(env, t
             return []
 
     monkeypatch.setattr(ray_vast.provider, "VastClient", RecordingVast)
-    pki.write_head_files(tmp_path / "s", "9.9.9.9")
+    pki.write_head_files(tmp_path / "s", "198.51.100.9")
     (tmp_path / "s" / "vast_api_key").write_text("k\n")
-    config = {"head_ip": "9.9.9.9", "secrets_dir": str(tmp_path / "s"), "security_group_ids": env.group_ids,
+    config = {"head_ip": "198.51.100.9", "secrets_dir": str(tmp_path / "s"), "security_group_ids": env.group_ids,
               "region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10,
               "vast_api_url": "http://127.0.0.1:1/api/v0"}
     ray_vast.provider.VastNodeProvider(config, "c2", ec2=env.ec2, start_threads=False)
@@ -515,10 +515,10 @@ def test_a_worker_ip_rule_goes_into_the_second_group_when_the_first_is_full(env)
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
     create(p)
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()
     group_1 = env.ec2.describe_security_groups(GroupIds=[env.group_ids[1]])["SecurityGroups"][0]["IpPermissions"]
-    assert [r["CidrIp"] for perm in group_1 for r in perm["IpRanges"]] == ["5.5.5.5/32"]
+    assert [r["CidrIp"] for perm in group_1 for r in perm["IpRanges"]] == ["198.51.100.55/32"]
     assert instance_ids(env) == [101]
 
 
@@ -575,7 +575,7 @@ def test_the_provider_log_never_holds_a_join_token(env, caplog):
     env.vast.offers = [offer(1, 11), offer(2, 12)]
     p = env.make()
     create(p)
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     env.vast.instances[102]["actual_status"] = "exited"
     p.reconcile_once()
     env.clock.now += 120  # 101 does not enroll in time
@@ -622,7 +622,7 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
 def test_provider_start_logs_a_warning_when_the_ca_expires_within_14_days(env, tmp_path, caplog, ca_days, warns):
     from ray_vast import pki
 
-    pki.write_head_files(tmp_path / "short", "9.9.9.9", ca_days)
+    pki.write_head_files(tmp_path / "short", "198.51.100.9", ca_days)
     (tmp_path / "short" / "vast_api_key").write_text("k\n")
     env.make(secrets_dir=str(tmp_path / "short"))
     warnings = [r for r in caplog.records if r.levelname == "WARNING" and "expire" in r.message]
@@ -752,8 +752,8 @@ def test_a_timed_out_revoke_does_not_stop_the_reconcile_pass(env, monkeypatch):
     env.vast.offers = [offer(1, 11), offer(2, 12)]
     p = env.make(candidate_factor=1)
     create(p), create(p)
-    env.vast.run(101, "5.5.5.5")
-    env.vast.run(102, "5.5.5.6")
+    env.vast.run(101, "198.51.100.55")
+    env.vast.run(102, "198.51.100.56")
     p.reconcile_once()
     time_out_revokes(env, monkeypatch)
     env.vast.instances[101]["actual_status"] = "exited"
@@ -766,13 +766,13 @@ def test_the_next_reconcile_pass_removes_a_rule_whose_revoke_timed_out(env, monk
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
     create(p)
-    env.vast.run(101, "5.5.5.5")
+    env.vast.run(101, "198.51.100.55")
     p.reconcile_once()
     revoke = env.ec2.revoke_security_group_ingress
     time_out_revokes(env, monkeypatch)
     env.vast.instances[101]["actual_status"] = "exited"
     p.reconcile_once()
-    assert instance_ids(env) == [] and env.rules() == ["5.5.5.5/32"]
+    assert instance_ids(env) == [] and env.rules() == ["198.51.100.55/32"]
     monkeypatch.setattr(env.ec2, "revoke_security_group_ingress", revoke)  # AWS answers again
     p.reconcile_once()
     assert env.rules() == []

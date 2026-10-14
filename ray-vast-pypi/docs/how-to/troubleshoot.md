@@ -71,7 +71,7 @@ Run the `export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...` line that `ray-vast
 | Error | Cause | What to do |
 |---|---|---|
 | `cluster <name> already exists; use ray-vast down first` | An EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`, exists. | Run `ray-vast down cluster.yaml`. |
-| `not running from a source tree: pass --wheel` | `up` needs a ray-vast wheel for the head. | Pass `--wheel FILE`. Read [CLI](../reference/cli.md). |
+| `the head image build failed while installing ray-vast==<version> from <index>` | The `docker build` on the head failed. Possible causes: the version is not on the index, the index is not reachable, or the base image pull failed. | Read the build output below the message. Run `ray-vast down cluster.yaml`. Read [CLI](../reference/cli.md). |
 | `no vast key: set VAST_API_KEY or put it in ~/.config/vastai/vast_api_key` | No vast key. | Set the key. |
 | `AWS error ...` and `The AWS user lacks a permission` | The AWS user cannot make an IAM role, a security group or an instance. | Read [IAM permissions](../reference/iam.md). |
 | `the image check printed no single RAYVAST_IMAGE_INFO ... line` | The image has no Python with `ray` and `ray_vast`, or its ENTRYPOINT does not run the command. | Read [Use GPU images](gpu-images.md). |

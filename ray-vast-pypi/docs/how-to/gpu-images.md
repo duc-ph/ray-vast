@@ -10,7 +10,7 @@ The image must have:
 
 - `sh`;
 - a Python that can `import ray`. The worker looks for `python3` and `python` on `$PATH`, then `/home/ray/anaconda3/bin/python`, `/opt/conda/bin/python`, `/usr/local/bin/python3` and `/usr/bin/python3`;
-- `pip`, because `up` installs the ray-vast wheel into the derived image;
+- `pip`, because `up` installs ray-vast into the derived image with `pip`;
 - Ray 2.59. `ray-vast up` warns if the image has another Ray version. Ray 2.59 is the only tested version;
 - no `ENTRYPOINT`, or an `ENTRYPOINT` that ends with `exec "$@"`.
 

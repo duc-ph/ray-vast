@@ -246,7 +246,13 @@ The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the s
 2. Make the IAM role, its policy and the instance profile. The role can only add and remove rules in the cluster's 5 security groups, and describe EC2.
 3. Make the 5 security groups `ray-vast-<cluster>-0` … `-4` (tagged). Group 0 gets one SSH rule for the operator's IP.
 4. Start the EC2 head: Ubuntu 24.04, `head_instance_type` (default `t3.large`), 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
-5. Copy the ray-vast wheel to the head (built on the laptop from the source tree, or `--wheel`). Build the derived image `FROM <image>` plus the wheel. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`; a value in the YAML wins).
+5. Build the derived image `FROM <image>` plus ray-vast. The first source that applies wins:
+    - `--wheel FILE`. `up` copies the wheel to the head.
+    - `--index-url URL`, for TestPyPI. The image runs `pip install --index-url URL --extra-index-url https://pypi.org/simple ray-vast==<the CLI's version>`. `URL` must be a plain `http://` or `https://` URL with no spaces. `up` masks a user name and a password in `URL` in its output.
+    - The source tree, when the CLI runs from a git clone. `up` builds the wheel on the laptop. This is for development.
+    - PyPI, in all other cases. The image runs `pip install ray-vast==<the CLI's version>`.
+
+    The first output line names the source. A failed build on an index path stops `up`. The message names the version and the index, and the end of the build output follows. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`; a value in the YAML wins).
 6. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML.
 7. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
 8. Wait until `ray status` works. Warn if the CA expires within 14 days.

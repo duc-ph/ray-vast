@@ -506,14 +506,14 @@ def test_egress_ip_tries_the_next_echo_url_after_a_non_200():
 
     def good(handler):
         handler.send_response(200)
-        handler.send_header("Content-Length", "8")
+        handler.send_header("Content-Length", "10")
         handler.end_headers()
-        handler.wfile.write(b"1.2.3.4\n")
+        handler.wfile.write(b"192.0.2.4\n")
 
     bad_server, bad_url = serve_once(bad)
     good_server, good_url = serve_once(good)
     try:
-        assert bootstrap.egress_ip([bad_url, good_url]) == "1.2.3.4"
+        assert bootstrap.egress_ip([bad_url, good_url]) == "192.0.2.4"
         assert bootstrap.egress_ip([bad_url]) is None
     finally:
         bad_server.shutdown()

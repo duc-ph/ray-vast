@@ -308,7 +308,7 @@ def test_full_stack_real_ray_worker_joins_real_tls_token_head_and_a_task_runs_wi
     Skipped host checks in this test: egress_ip_ok (egress is the box's public IP, PUBLIC_IPADDR is the private IP)
     and own_netns (host network). The fake Ray stand-in is NOT used here: the worker starts a real raylet.
     """
-    ip = local_ip_to("8.8.8.8")
+    ip = local_ip_to("203.0.113.1")
     world = World(tmp_path, head_ip=ip, public_ip=ip, gcs_address=f"{ip}:19990")
     world.start()
     try:

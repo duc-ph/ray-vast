@@ -5,8 +5,8 @@
 First version.
 
 - Ray autoscaler v2 node provider (`VastNodeProvider`) for vast.ai workers. The head runs on AWS EC2 (`head_instance_type`, default `t3.large`).
-- Commands: `ray-vast up`, `down`, `attach` and `dashboard`. Options: `--profile`, `--key-file`, `--key-name`, `--wheel`.
-- `up` makes an IAM role, 5 security groups, an instance profile and the head. It builds a derived image with the ray-vast wheel (built on the laptop, or given with `--wheel`). It stops if the cluster already exists. It measures the image size and sets `image_size_gb`.
+- Commands: `ray-vast up`, `down`, `attach` and `dashboard`. Options: `--profile`, `--key-file`, `--key-name`, `--wheel`, `--index-url`.
+- `up` makes an IAM role, 5 security groups, an instance profile and the head. It builds a derived image with ray-vast. By default, `pip` installs the CLI's own version (`ray-vast==<version>`) from PyPI. `--index-url URL` installs it from another index, for example TestPyPI. `--wheel FILE` installs a wheel file, and a source tree builds its own wheel (both for development). It stops if the cluster already exists. It measures the image size and sets `image_size_gb`.
 - `down` ends the head first, then destroys the vast instances, then deletes the AWS resources. It finds everything by tag and label, so it works after a failed `up` and when the head is gone. It reports what is left (exit code 1 if anything). Without a vast key it cleans AWS and warns that vast instances were not swept.
 - `dashboard` copies the token to `~/.ray-vast/<cluster>/token`, prints the `RAY_AUTH_MODE` and `RAY_AUTH_TOKEN_PATH` export line, and opens the SSH tunnel, so `ray job submit` works from the laptop.
 - State files in `~/.ray-vast/`: `<cluster>.json`, `<cluster>.known_hosts`, `<cluster>/token`.

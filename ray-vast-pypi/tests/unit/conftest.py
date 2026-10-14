@@ -71,9 +71,9 @@ def offer(offer_id, machine_id, dph=0.5, inet_down=1000):
 
 @pytest.fixture(scope="session")
 def head_files(tmp_path_factory):
-    """The CA, head cert and token for 9.9.9.9, made once (RSA key generation is slow); each test copies them."""
+    """The CA, head cert and token for 198.51.100.9, made once (RSA key generation is slow); each test copies them."""
     directory = tmp_path_factory.mktemp("head_files") / "secrets"
-    pki.write_head_files(directory, "9.9.9.9")
+    pki.write_head_files(directory, "198.51.100.9")
     return directory
 
 
@@ -87,7 +87,7 @@ def env(tmp_path, head_files):
         group_ids = [ec2.create_security_group(GroupName=f"head-{i}", Description="t")["GroupId"] for i in range(5)]
         group_id = group_ids[0]
         vast, clock = FakeVast(), Clock()
-        config = {"head_ip": "9.9.9.9", "secrets_dir": str(secrets), "security_group_ids": group_ids,
+        config = {"head_ip": "198.51.100.9", "secrets_dir": str(secrets), "security_group_ids": group_ids,
                   "region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10, "candidate_factor": 2}
         providers = []
 
