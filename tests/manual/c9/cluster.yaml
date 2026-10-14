@@ -1,0 +1,34 @@
+# C9 (docs/test-plan.md): Ray libraries (L7). 2 GPU workers of one type (min_workers 2, so they stay up through the cycle),
+# k = 2, and a 2-GPU type for C9.3.4 only.
+cluster_name: rvtest-c9
+max_workers: 3
+idle_timeout_minutes: 10     # min_workers keeps the 2 `gpu` workers; the `gpu2` worker of C9.3.4 ends 10 min after its job
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu   # CUDA 12.1.1 (image env CUDA_VERSION), no PyTorch: torch comes from runtime_env pip
+  image_size_gb: 20          # the pull limit; the GPU image pulls slowly
+  # Peak: 4 `gpu` candidates (0.097 + 0.233 + 0.233 + 0.324) + 2 `gpu2` candidates (0.464 + 0.647) = $2.00/h (offers of
+  # 2026-10-14T08:15Z). The steady state is 2 workers, about $0.33/h.
+  max_dollars_per_hour: 2.5
+  candidate_factor: 2
+  key_name: ray-vast-devbox
+  key_file: ~/ray-vast-devbox.pem
+auth: {ssh_user: ray}
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  # Offers on 2026-10-14T08:15Z (offers.py, with the speed floor): `gpu` 7 offers on 7 machines: P100 0.097, RTX A5000
+  # 0.233 x 2, RTX 3090 0.324, CMP 170HX 0.536 and 0.603, RTX 4090 0.857. Without compute_cap: 12 offers (+ RTX 5070 Ti and
+  # 5090, Blackwell). `gpu2` 4 offers on 4 machines: 2x RTX A5000 0.464, 2x RTX 3090 0.647, 2x CMP 170HX 1.07 and 1.20.
+  # Check them again with offers.py at each setup.
+  # compute_cap 600-899: the GPUs that torch 2.7.1 (PyPI wheel, CUDA 12.6, sm_50 to sm_90) supports. It leaves out Blackwell.
+  gpu:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 2
+    max_workers: 2
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
+  gpu2:
+    resources: {CPU: 4, GPU: 2}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
