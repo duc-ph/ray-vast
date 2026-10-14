@@ -89,7 +89,7 @@ Facts from the Ray source and the spikes on Ray 2.59.0 ([spikes.md](spikes.md)).
 - **Slots.** A slot with a worker stays until the worker ends. A free slot is removed when no pending candidate of its node type is left. v2 then asks again.
 - **Budget.** `max_dollars_per_hour` (required) is a limit on the sum of `dph_total` over workers, candidates and rentals in progress. The provider does not rent above it.
 - **Blocklist.** By `machine_id`, in memory, one for each cluster (lost at `down` or a head restart). Kinds and expiry:
-  - `security` (30 days): a failed capability, network namespace or `/dev/shm` check.
+  - `security` (30 days): a failed capability, network namespace or `/dev/shm` check, or a GPU count other than the declared one.
   - `network` (1 day): a failed egress IP check or port check; an `exited` or error status before enrollment.
   - `timeout` (1 day): a pull or enrollment timeout.
   - The end of an enrolled worker (IP change, exit, no heartbeat) does not blocklist the host.
@@ -181,10 +181,11 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 
 ### 5.7 Head rules for `/enroll`
 
-- **Order of the checks:** the body (400 if it is not valid); a known candidate that is not enrolled yet; the source IP equals the candidate's public IP; the join token equals the candidate's token; the host checks; the port check; a free slot. The head makes no vast call during `/enroll`.
+- **Order of the checks:** the body (400 if it is not valid); a known candidate that is not enrolled yet; the source IP equals the candidate's public IP; the join token equals the candidate's token; the host checks; the GPU count; the port check; a free slot. The head makes no vast call during `/enroll`.
+- **GPUs:** the worker's `gpu_count` is the number of `/dev/nvidia<N>` device nodes in its container. `/proc/driver/nvidia/gpus` is not used: it shows every GPU of the host (C5). The answer's `num_gpus` is the node type's `GPU` (F4).
 - **Body limits:** `ports` holds 64 different values in 1–65535; `cpu_count` is 1–4096; `gpu_count` is 0–64. Other values give 400.
 - **Refusals without a destroy:** an unknown instance, an instance that is already enrolled, a wrong source IP, a missing or wrong join token. Reason: a stranger must not be able to kill our candidates. The provider's time limits end such candidates.
-- **Refusals with a destroy:** after a valid token, a failed host check, a failed port check or no free slot destroys the candidate. A host fault also puts the host on the blocklist (section 4).
+- **Refusals with a destroy:** after a valid token, a failed host check, a `gpu_count` other than the node type's `GPU` (in both directions; blocklist `security`), a failed port check or no free slot destroys the candidate. A host fault also puts the host on the blocklist (section 4).
 - **Port check:** the head opens a TCP connection to every identity port P on the public IP, in parallel, 5 s limit for each. Every port must accept.
 - **Node cert:** the head makes it before it marks the instance enrolled, so a failure leaves no half-enrolled slot. The cert has the IP SANs of the worker's public IP and 127.0.0.1, and the URI SAN `rayvast:instance/<instance_id>`. On port B the head checks both against the body's `instance_id` and the enrolled IP. A cert for another instance gets 403 `unknown`.
 - **Lost answer:** if an `/enroll` answer is lost, the retry gets 403 "already enrolled", and the worker destroys itself. This is rare and safe.
@@ -245,7 +246,7 @@ The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the s
 4. Start the EC2 head: Ubuntu 24.04, `head_instance_type` (default `t3.large`), 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
 5. Copy the ray-vast wheel to the head (built on the laptop from the source tree, or `--wheel`). Build the derived image `FROM <image>` plus the wheel. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and its size (`image_size_gb`; a value in the YAML wins).
 6. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML.
-7. Start the head container: `docker run --init --network host` with no restart policy, main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
+7. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
 8. Wait until `ray status` works. Warn if the CA expires within 14 days.
 
 Head ports (`--network host`): GCS 6379; dashboard 8265 (127.0.0.1); node manager 6380; object manager 6381; metrics 6382; agent gRPC 6383; agent HTTP (job port) 6384 and runtime-env agent 6385 (127.0.0.1 through the shim); workers 10002–10100; head server 7443 (A) and 7444 (B). Ray also opens 10001 (Ray client, private IP and 127.0.0.1) and random ports for the monitor and the dashboard.

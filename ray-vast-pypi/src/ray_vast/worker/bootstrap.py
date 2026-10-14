@@ -6,7 +6,6 @@ The bootloader downloads this file from the head and runs it. Rules for this fil
   error message. CONTAINER_API_KEY never leaves this instance: only vast sees it, in our own DELETE.
 """
 import base64
-import glob
 import hashlib
 import http.client
 import json
@@ -66,6 +65,14 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
     def redirect_request(self, *args, **kwargs):
         return None
+
+
+def count_gpus(dev_names):
+    """Return the number of GPUs that the container can use, from the names in /dev.
+
+    Each GPU is a device node `nvidia<N>`. Not /proc/driver/nvidia/gpus: it shows all the GPUs of the host (C5).
+    """
+    return sum(1 for name in dev_names if name.startswith("nvidia") and name[6:].isdigit())
 
 
 def call(url, ctx, body=None, method=None, headers=None, timeout=10):
@@ -240,7 +247,7 @@ def main():
             quota_cores = None
         if quota_cores is not None:
             cpu_count = min(cpu_count, max(1, math.floor(quota_cores)))
-        gpu_count = len(glob.glob("/proc/driver/nvidia/gpus/*"))
+        gpu_count = count_gpus(os.listdir("/dev"))
         enroll_body = {
             "instance_id": state.instance_id, "join_token": state.join_token, "checks": checks, "ports": ports,
             "cpu_count": cpu_count, "gpu_count": gpu_count,

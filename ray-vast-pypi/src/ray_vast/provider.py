@@ -225,7 +225,7 @@ class VastNodeProvider(NodeProvider):
                             self.state.add_candidate(Candidate(
                                 instance_id, slots[rented % count].id, offer["id"], offer["machine_id"],
                                 status="rented", rented_at=self._clock(), dph_total=dph, node_type=node_type,
-                                pull_limit_s=pull_limit, join_token=join_token))
+                                gpus=int(resources.get("GPU", 0)), pull_limit_s=pull_limit, join_token=join_token))
                 if instance_id is None:
                     continue
                 rented += 1

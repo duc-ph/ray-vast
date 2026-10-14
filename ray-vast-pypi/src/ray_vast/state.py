@@ -40,6 +40,7 @@ class Candidate:
     running_at: Optional[float] = None
     dph_total: float = 0.0
     node_type: Optional[str] = None  # set by the provider at rent time; used when the candidate's own slot is gone
+    gpus: int = 0  # the declared GPU of the node type, set by the provider at rent time (design F4: GPU is exact)
     last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
     pull_limit_s: float = 900.0  # the provider's limit for "rented, not yet running" (image pull)
     join_token: Optional[str] = field(default=None, repr=False)  # secret; valid until the candidate enrolls or ends

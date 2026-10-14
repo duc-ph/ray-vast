@@ -69,22 +69,24 @@ def env(tmp_path, listeners):
     server.stop()
 
 
-def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN_TOKEN, node_type="gpu", machine_id=7):
+def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN_TOKEN, node_type="gpu", machine_id=7,
+                  gpus=1):
     """A candidate that the provider has seen `running` with `ip` (ip None: not seen running yet)."""
     with env.state.lock:
         if slot_id not in env.state.slots:
             env.state.add_slot(Slot(slot_id, node_type))
-        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, public_ip=ip, join_token=token))
+        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, public_ip=ip, join_token=token,
+                                         gpus=gpus))
         if ip:
             env.state.ip_ref_add(ip)
 
 
-def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None):
+def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None, gpu_count=1):
     body = {
         "instance_id": instance_id, "join_token": token,
         "checks": checks or {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True,
                              "details": ""},
-        "ports": ports or env.ports, "cpu_count": 8, "gpu_count": 1,
+        "ports": ports or env.ports, "cpu_count": 8, "gpu_count": gpu_count,
     }
     return requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
 
@@ -253,6 +255,22 @@ def test_port_check_failure_is_refused_and_blocked_as_network(env):
     resp = enroll(env, 11, ports=ports)
     assert resp.status_code == 403 and resp.json()["reason"] == "port check failed: 1 of 64 ports unreachable"
     assert env.state.blocklist[7].kind == "network" and env.vast.destroyed == [11]
+
+
+@pytest.mark.parametrize("declared, found", [(2, 1), (1, 4), (0, 1)])
+def test_a_gpu_count_other_than_the_declared_one_is_refused_and_blocked_as_security(env, declared, found):
+    # C5: a 1-GPU rental saw the 4 GPUs of the host. Fewer GPUs is a broken host; more can be another tenant's GPUs.
+    add_candidate(env, 11, gpus=declared)
+    resp = enroll(env, 11, gpu_count=found)
+    assert resp.status_code == 403
+    assert resp.json()["reason"] == f"GPU count: the container has {found}, the node type declares {declared}"
+    assert env.state.blocklist[7].kind == "security" and env.vast.destroyed == [11] and 11 not in env.state.enrolled
+
+
+def test_a_cpu_node_type_enrolls_with_num_gpus_0(env):
+    add_candidate(env, 11, gpus=0)
+    resp = enroll(env, 11, gpu_count=0)
+    assert resp.status_code == 200 and resp.json()["num_gpus"] == 0
 
 
 def worker_session(env, ip, instance_id=11, tmp_name="w"):

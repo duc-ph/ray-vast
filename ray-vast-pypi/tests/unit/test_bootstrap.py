@@ -481,6 +481,14 @@ def test_token_check_retries_a_non_401_answer_until_401(world, tmp_path):
     assert (report["kind"], report["ok"]) == ("token_check", True)
 
 
+def test_gpu_count_is_the_nvidia_device_nodes_of_the_container_only():
+    # C5: a 1-GPU rental on a 4-GPU host had these /dev entries (and 4 entries in /proc/driver/nvidia/gpus)
+    c5 = ["nvidia-modeset", "nvidia-uvm", "nvidia-uvm-tools", "nvidia3", "nvidiactl", "null", "shm"]
+    assert bootstrap.count_gpus(c5) == 1
+    assert bootstrap.count_gpus(["nvidia0", "nvidia1", "nvidia-caps", "nvidiactl", "nvidia10"]) == 3
+    assert bootstrap.count_gpus(["null", "zero", "shm"]) == 0
+
+
 def test_capbnd_parse_reads_the_bounding_set():
     text = "CapInh:\t0\nCapEff:\t0000000000000000\nCapBnd:\t00000000a80425fb\n"
     assert bootstrap.parse_capbnd(text) == 0xA80425FB  # CapEff is 0 here (non-root); the bounding set is not

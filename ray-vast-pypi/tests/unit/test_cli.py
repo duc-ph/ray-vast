@@ -188,6 +188,9 @@ def test_up_starts_the_head_container_and_keeps_secrets_off_command_lines(aws, c
     assert f"--node-ip-address={env['RAYVAST_PUBLIC_IP']}" in container_command
     assert "--num-cpus=0" in container_command  # the head runs no tasks
     assert "--init" in options
+    # Docker's default /dev/shm is 64 MB; Ray's object store (30% of RAM) then falls back to /tmp (C5). Like Ray's
+    # cluster launcher, the head host sets shm to 0.3 x 1.1 of its RAM, so it follows the head instance type.
+    assert "--shm-size=$(awk '/MemTotal/ {print int($2 * 0.33)}' /proc/meminfo)k" in options
     assert f"--autoscaling-config=/home/ubuntu/ray-vast-{CLUSTER}/cluster.yaml" in container_command
     assert env["RAY_CLOUD_INSTANCE_ID"] == "head" and env["RAY_NODE_TYPE_NAME"] == "head"
     assert env["LD_PRELOAD"] == "/site-packages/ray_vast/shim/librayvast_shim.so"

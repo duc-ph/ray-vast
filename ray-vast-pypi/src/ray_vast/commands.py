@@ -242,7 +242,8 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
                  "--dashboard-host=127.0.0.1", *(f"--{k}={v}" for k, v in HEAD_PORTS.items()), f"--autoscaling-config={work}/cluster.yaml"]
     ssh.run(head_ip, " ".join([
         f"sudo docker rm -f {CONTAINER} >/dev/null 2>&1;", "sudo docker run -d", f"--name {CONTAINER}", "--init",
-        "--network host", f"-v {work}:{work}",
+        # shm for Ray's object store (30% of RAM; Docker's default is 64 MB): 0.3 x 1.1 of RAM, as Ray's launcher does.
+        """"--shm-size=$(awk '/MemTotal/ {print int($2 * 0.33)}' /proc/meminfo)k\"""", "--network host", f"-v {work}:{work}",
         *(f"-e {k}={shlex.quote(v)}" for k, v in env.items()), image_tag, *map(shlex.quote, ray_start)]))
 
     # 6. Wait until Ray answers.

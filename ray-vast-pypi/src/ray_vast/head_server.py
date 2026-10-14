@@ -215,6 +215,13 @@ class HeadServer:
             self._destroy(cand, reason)
             return 403, {"reason": reason}
 
+        # GPU is exact (design F4). Fewer GPUs is a broken host; more can be another tenant's GPUs.
+        if gpu_count != cand.gpus:
+            reason = "GPU count: the container has %d, the node type declares %d" % (gpu_count, cand.gpus)
+            state.block(cand.machine_id, reason, "security", self.clock())
+            self._destroy(cand, reason)
+            return 403, {"reason": reason}
+
         with ThreadPoolExecutor(max_workers=len(ports)) as pool:
             def reachable(port):
                 try:
@@ -261,7 +268,7 @@ class HeadServer:
             "token": self.token,
             "shim_b64": base64.b64encode(self.shim_bytes).decode(),
             "gcs_address": f"{self.head_ip}:6379",
-            "num_gpus": gpu_count,
+            "num_gpus": cand.gpus,
             "heartbeat_interval_s": HEARTBEAT_INTERVAL_S,
             "heartbeat_timeout_s": HEARTBEAT_TIMEOUT_S,
             "num_workers_soft_limit": min(cpu_count, len(IDENTITY_PORTS) - 6),

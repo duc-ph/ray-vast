@@ -625,7 +625,7 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
     body = {"instance_id": iid, "join_token": env.vast.requests[-1]["env"]["RAYVAST_JOIN_TOKEN"], "checks": checks,
             "ports": identity_listeners, "cpu_count": 4, "gpu_count": 1}
     status, answer = p.head_server.enroll(body, "127.0.0.1")
-    assert status == 200, answer
+    assert status == 200 and answer["num_gpus"] == 1, answer  # the declared GPU of the node type (RESOURCES)
     fail_one_slot(env, p)
     fail_one_slot(env, p)
     assert len(create(p)) == 1  # 2 failures since the enrollment: no stop
