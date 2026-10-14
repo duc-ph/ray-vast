@@ -25,3 +25,15 @@
 | Peak sum of dph_total | $0.583/h |
 | EC2 | t3.large head i-067cffda6c3128957, about 05:16Z to 05:37Z (22 min) at $0.0832/h = about $0.03, plus 60 GiB gp3 (< $0.002). Budget about $0.15. |
 | Day total so far (vast) | $0.0074 (C5) + $0.1670 (C6) = $0.1744. The day limit is $8. |
+
+## C8 (full scale test; stopped at `up` by a product bug)
+
+| Item | Value |
+|---|---|
+| vast credit before | $11.3764 (05:40:29Z) |
+| vast credit after | $11.3661 (05:51:48Z) |
+| vast spend (credit) | $0.0104 (budget $3.00). C8 rented nothing. This is the late booking of the C6 instances. |
+| Rentals | 0 (`up` failed before the head started) |
+| Peak sum of dph_total | $0/h |
+| EC2 | t3.large head i-093eb1461f73453b8, about 05:42Z to 05:51Z (10 min) at $0.0832/h = about $0.014, plus 60 GiB gp3 (< $0.001). Budget about $0.15. |
+| Day total so far (vast) | credit 11.5658 → 11.3661 = $0.1997. The day limit is $8. |

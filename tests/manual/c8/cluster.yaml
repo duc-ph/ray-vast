@@ -14,16 +14,17 @@ auth: {ssh_user: ray}
 head_node_type: head
 available_node_types:
   head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
-  # The plan's ranges (8000-16000 and 16000-32000 MB) matched 0 offers for gpu-a on 2026-10-14: vast gives a 16 GB card
-  # as 16384 MB. These ranges matched gpu-a: P100 + 3 A5000 (4 machines); gpu-b: 2 RTX 3090 + 4 RTX 5090 (6 machines).
-  # Check them again with offers.py at the C8 setup.
+  # C8 setup 2026-10-14T05:41Z: 16000-24570 gave gpu-a only 5 offers (rule: >= 6 offers on >= 4 machines). With the
+  # speed floor, vast had 29 one-GPU offers in all. gpu-a 8000-24570: 6 offers on 6 machines (RTX 3060, P100, 2 A5000,
+  # 4090, 5070 Ti). gpu-b 24570-70000: 12 offers on 12 machines (4 RTX 3090 at $0.30/h, CMP 170HX, A100, 5090s); the
+  # upper limit leaves out the 80-180 GB cards ($1.3-9.4/h). Check them again with offers.py at each setup.
   gpu-a:
     resources: {CPU: 4, GPU: 1}
     min_workers: 0
     max_workers: 2
-    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 16000, lt: 24570}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
+    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 8000, lt: 24570}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
   gpu-b:
     resources: {CPU: 4, GPU: 1}
     min_workers: 0
     max_workers: 2
-    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 24570, lt: 33000}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)
+    node_config: {disk_gb: 40, offer_query: {gpu_ram: {gte: 24570, lt: 70000}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)

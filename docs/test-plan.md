@@ -20,7 +20,7 @@ The commands for the fast and the full run are in the [README](../ray-vast-pypi/
 ## Not tested live (decided with the user, 2026-10-13)
 
 - An IP change (C7): real vast cannot force one. Unit tests and step 11 cover it.
-- Images other than `rayproject/ray` (root images, images with an ENTRYPOINT): later.
+- Images other than `rayproject/ray` (root images): later. Images with an ENTRYPOINT are in scope: `rayproject/ray:*-gpu` has one (`/opt/nvidia/nvidia_entrypoint.sh`), and C8 uses it (C8 finding, 2026-10-14).
 - Attacks on `/enroll` (wrong token, wrong IP, unknown instance): unit and integration tests cover them.
 - The worker's 10 min enrollment deadline: step 11 covers it.
 

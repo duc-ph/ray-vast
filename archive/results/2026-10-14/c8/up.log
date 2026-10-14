@@ -1,0 +1,15 @@
+head instance i-093eb1461f73453b8 starting
+head IP 16.148.136.195
+Traceback (most recent call last):
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/bin/ray-vast", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/cli.py", line 26, in main
+    return run(args)
+           ^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/commands.py", line 388, in run
+    up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, vast_key=_read_vast_key(),
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/commands.py", line 215, in up
+    ray_version, shim_path = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}").split()
+    ^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)

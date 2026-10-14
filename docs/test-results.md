@@ -333,3 +333,27 @@ Other findings:
 - The log of a container after a reboot is hard to get: C destroyed itself 9 s after the reboot.
 - `vast_tool.py` has a new command `reboot <id>` (`PUT /instances/reboot/<id>/`, from the vast CLI source). It refuses instances without a test label.
 - Do not use `pkill -f` with a pattern in the same shell command: it matches the shell itself.
+
+## Live cycle C8 (2026-10-14)
+
+Setup: `ray-vast up` from commit 93b6e9b on the dev box (the operator machine), EC2 `t3.large` head, us-west-2, image `rayproject/ray:2.59.0-py311-gpu`, node types `gpu-a` and `gpu-b` `{CPU: 4, GPU: 1}`, `max_workers` 2 each, `candidate_factor` 2, `max_dollars_per_hour: 3.0`, `idle_timeout_minutes: 2`. Data: `archive/results/2026-10-14/` (`progress.md`, `c8/`, `spend.md`, `resources.csv`).
+
+Node types. The committed ranges gave `gpu-a` only 5 offers. The rule is 6 offers on 4 machines. With `inet_down` and `inet_up` ≥ 500, vast had only 29 one-GPU offers. We changed the ranges in `tests/manual/c8/cluster.yaml`:
+
+| Type | `gpu_ram` (MB) | Offers | Machines | Cheapest 4 ($/h) |
+|---|---|---|---|---|
+| `gpu-a` | ≥ 8000, < 24570 | 6 | 6 | P100 0.097, A5000 0.233, A5000 0.233, RTX 3060 0.272 |
+| `gpu-b` | ≥ 24570, < 70000 | 12 | 12 | RTX 3090 0.295 × 3, RTX 3090 0.298 |
+
+The first 8 candidates cost $2.02/h, below the $3.00 limit. The upper limit of `gpu-b` excludes the 80–180 GB cards ($1.3–9.4/h).
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| L6 | **Not run (product bug in `up`)** | submit → all workers running: not measured; peak $/h: 0; scale-down time: not measured; cost: vast $0 (the credit fell by $0.0104 from late C6 billing), EC2 about $0.014 | `up` failed after 8 min 11 s, before the head container started. It rented no vast instance. `c8/up.log`, `c8/head/image_info_evidence.txt` |
+| Teardown | Pass | `down` 35 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | Secret scan: no output. No cluster token or join token existed. |
+
+**Product bug: `up` reads the output of the image entrypoint.** `commands.py:215` runs `docker run --rm <image> python -c IMAGE_INFO`. It expects exactly 2 words on stdout: the Ray version and the shim path. The `-gpu` image has `ENTRYPOINT ["/opt/nvidia/nvidia_entrypoint.sh"]`. Before `exec "$@"`, this script writes the CUDA banner, the license text and `WARNING: The NVIDIA Driver was not detected` to stdout. The result is `ValueError: too many values to unpack (expected 2)`. With `--entrypoint ""`, stdout has only the 2 lines. The `-cpu` image has no entrypoint, so C5 and C6 did not find the bug. Effect: `up` cannot use `rayproject/ray:*-gpu`. A fix can read only the last 2 lines of stdout, or run the check with `--entrypoint ""`. The plan lists "images with an ENTRYPOINT" as "later", but the GPU image of `rayproject/ray` has one. Also check the other `docker run` commands of `up` and the worker start on vast with this entrypoint.
+
+Other findings:
+- `up` took 8 min 11 s with the 18.4 GB GPU image. The C5 and C6 runs with the CPU image took 2.5 min. Most of the time is the pull of the image on the head.
+- The vast credit fell by $0.0104 during C8 with no C8 rental. vast books the end of a rental some minutes after the destroy.

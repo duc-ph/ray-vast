@@ -1,0 +1,115 @@
++ date -u +%FT%TZ
+2026-10-14T05:50:44Z
++ sudo docker ps -a --format '{{.Names}} {{.Image}} {{.Status}}'
++ sudo docker images --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}'
+ray-vast-rvtest-c8:head aec2306d5a07 18.4GB
+rayproject/ray:2.59.0-py311-gpu cc46dd7e8b1d 18.4GB
++ sudo docker inspect --format 'entrypoint={{json .Config.Entrypoint}} cmd={{json .Config.Cmd}}' rayproject/ray:2.59.0-py311-gpu ray-vast-rvtest-c8:head
+entrypoint=["/opt/nvidia/nvidia_entrypoint.sh"] cmd=["/bin/bash"]
+entrypoint=["/opt/nvidia/nvidia_entrypoint.sh"] cmd=["/bin/bash"]
+--- stdout of the IMAGE_INFO command (cat -A):
++ T=ray-vast-rvtest-c8:head
++ echo '--- stdout of the IMAGE_INFO command (cat -A):'
++ sudo docker run --rm ray-vast-rvtest-c8:head python -c 'import os, ray, ray_vast; print(ray.__version__); print(os.path.join(os.path.dirname(ray_vast.__file__), "shim", "librayvast_shim.so"))'
++ cat -A
+$
+==========$
+== CUDA ==$
+==========$
+$
+CUDA Version 12.1.1$
+$
+Container image Copyright (c) 2016-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.$
+$
+This container image and its contents are governed by the NVIDIA Deep Learning Container License.$
+By pulling and using the container, you accept the terms and conditions of this license:$
+https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license$
+$
+A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.$
+$
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.$
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see$
+   https://docs.nvidia.com/datacenter/cloud-native/ .$
+$
+2.59.0$
+/home/ray/anaconda3/lib/python3.11/site-packages/ray_vast/shim/librayvast_shim.so$
+--- same with --entrypoint "" :
++ echo '--- same with --entrypoint "" :'
++ sudo docker run --rm --entrypoint '' ray-vast-rvtest-c8:head python -c 'import ray; print(ray.__version__)'
++ cat -A
+2.59.0$
++ cat /opt/nvidia/nvidia_entrypoint.sh
++ head -0
++ sudo docker run --rm --entrypoint '' ray-vast-rvtest-c8:head sed -n 1,40p /opt/nvidia/nvidia_entrypoint.sh
+#!/bin/bash
+# Copyright (c) 2016-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# Gather parts in alpha order
+shopt -s nullglob extglob
+_SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+declare -a _PARTS=( "${_SCRIPT_DIR}/entrypoint.d"/*@(.txt|.sh) )
+shopt -u nullglob extglob
+
+print_repeats() {
+  local -r char="$1" count="$2"
+  local i
+  for ((i=1; i<=$count; i++)); do echo -n "$char"; done
+  echo
+}
+
+  local banner_char=$1
+  local -r text="$2"
+  local pad="${banner_char}${banner_char}"
+  print_repeats "${banner_char}" $((${#text} + 6))
+  echo "${pad} ${text} ${pad}"
+  print_repeats "${banner_char}" $((${#text} + 6))
+}
+
+# Execute the entrypoint parts
+for _file in "${_PARTS[@]}"; do
+  case "${_file}" in
+    *.txt) cat "${_file}";;
+    *.sh)  source "${_file}";;
+  esac
+done
+
+echo
+
+# This script can either be a wrapper around arbitrary command lines,
+# or it will simply exec bash if no arguments were given
+if [[ $# -eq 0 ]]; then
+  exec "/bin/bash"
+else
+  exec "$@"
+fi
+10-banner.sh
+12-banner.sh
+15-container-copyright.txt
+30-container-license.txt
+50-gpu-driver-check.sh
+80-internal-image.sh
+90-deprecated-image.sh
