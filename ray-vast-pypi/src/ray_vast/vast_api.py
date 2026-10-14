@@ -20,6 +20,28 @@ _SECRET_RES = (
 )
 
 
+def label(cluster):
+    """The vast label of the cluster's instances. It is also the description of the cluster's security group rules
+    (design 8.3): one marker finds everything of the cluster."""
+    return f"ray-vast:{cluster}"
+
+
+def sweep(vast, instances, cluster, keep=()):
+    """Destroy each instance in `instances` (a vast list) that has the cluster's label and whose ID is not in `keep`.
+    Return their IDs. The one sweep of the start-up sweep, the orphan sweep and `down` (D3). The caller passes the list,
+    so the orphan sweep can judge its `keep` set against the same list. A failed destroy does not stop the sweep: the
+    caller's next sweep tries again. The log holds a VastError text (redacted) or only the type of another error."""
+    found = [i["id"] for i in instances if i.get("label") == label(cluster) and i["id"] not in keep]
+    for instance_id in found:
+        log.warning("sweep: destroying instance %s with label %s", instance_id, label(cluster))
+        try:
+            vast.destroy_instance(instance_id)
+        except Exception as e:
+            log.error("sweep: destroy of instance %s failed (the next sweep tries again): %s", instance_id,
+                      e if isinstance(e, VastError) else type(e).__name__)
+    return found
+
+
 class VastError(Exception):
     """A vast API call failed. Holds no auth header and no instance key."""
 

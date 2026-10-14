@@ -2,6 +2,7 @@ import logging
 import re
 import socket
 import threading
+import time
 
 import botocore.exceptions
 import pytest
@@ -10,6 +11,7 @@ from ray.autoscaler.node_launch_exception import NodeLaunchException
 from ray.autoscaler.tags import TAG_RAY_NODE_KIND, TAG_RAY_NODE_STATUS, TAG_RAY_USER_NODE_TYPE
 
 import ray_vast.state
+from ray_vast.vast_api import VastError
 from conftest import offer  # noqa: E402
 
 LABEL = "ray-vast:c1"
@@ -343,28 +345,13 @@ def test_worker_ip_change_exited_and_heartbeat_loss_destroy_the_worker(env):
     assert instance_ids(env) == [] and env.rules() == []
 
 
-def test_worker_destroyed_by_head_server_loses_its_slot_and_its_rule(env):
-    env.vast.offers = [offer(1, 11)]
-    p = env.make(candidate_factor=1)
-    (slot_id,) = create(p)
-    env.vast.run(101, "5.5.5.5")
-    p.reconcile_once()
-    enroll(p, 101)
-    peer_cert = {"subjectAltName": (("IP Address", "5.5.5.5"), ("URI", "rayvast:instance/101"))}
-    status, _ = p.head_server.worker_request(
-        "/report", {"instance_id": 101, "kind": "token_check", "ok": False, "reason": "open"}, peer_cert)
-    assert status == 200 and instance_ids(env) == [] and env.rules() == []
-    p.reconcile_once()
-    assert p.is_terminated(slot_id)
-
-
 def test_orphan_sweep_destroys_an_unknown_labelled_instance_and_not_other_labels(env, caplog):
     p = env.make()
     env.vast.instances[7] = {"id": 7, "label": LABEL, "actual_status": "running", "public_ipaddr": "1.1.1.1"}
     env.vast.instances[8] = {"id": 8, "label": "someone-else", "actual_status": "running", "public_ipaddr": "1.1.1.2"}
     p.reconcile_once()
     assert instance_ids(env) == [8]
-    assert any(r.message.startswith("orphan sweep: destroying unknown instance 7") for r in caplog.records)
+    assert any(r.getMessage() == "sweep: destroying instance 7 with label ray-vast:c1" for r in caplog.records)
 
 
 def test_two_workers_on_one_ip_share_one_rule(env):
@@ -640,3 +627,189 @@ def test_provider_start_logs_a_warning_when_the_ca_expires_within_14_days(env, t
     env.make(secrets_dir=str(tmp_path / "short"))
     warnings = [r for r in caplog.records if r.levelname == "WARNING" and "expire" in r.message]
     assert len(warnings) == (1 if warns else 0)
+
+
+# ---- the one ending path: the head server ends a candidate or worker through the provider ----
+
+GOOD_CHECKS = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True, "details": ""}
+BAD_CHECKS = {**GOOD_CHECKS, "no_net_raw_admin": False}
+
+
+def running_candidate(env, p):
+    """Rent one candidate for one new slot and let the provider see it running on 127.0.0.1. Return (slot, instance)."""
+    (slot_id,) = create(p)
+    iid = max(p.state.candidates)
+    env.vast.run(iid, "127.0.0.1")
+    p.reconcile_once()
+    return slot_id, iid
+
+
+def head_enroll(env, p, iid, ports, checks=GOOD_CHECKS):
+    token = env.vast.requests[iid - 101]["env"]["RAYVAST_JOIN_TOKEN"]
+    body = {"instance_id": iid, "join_token": token, "checks": checks, "ports": ports, "cpu_count": 4, "gpu_count": 1}
+    return p.head_server.enroll(body, "127.0.0.1")
+
+
+def test_a_candidate_the_head_refuses_is_destroyed_its_host_blocked_and_its_rule_removed(env, identity_listeners):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make(candidate_factor=1)
+    _, iid = running_candidate(env, p)
+    assert env.rules() == ["127.0.0.1/32"]
+    status, answer = head_enroll(env, p, iid, identity_listeners, BAD_CHECKS)
+    assert status == 403 and "no_net_raw_admin" in answer["reason"]
+    assert instance_ids(env) == [] and env.rules() == []
+    create(p)
+    assert [r["offer_id"] for r in env.vast.requests] == [1, 2]  # host 11 is blocked: the next rental skips it
+
+
+def test_a_worker_the_head_ends_loses_its_slot_at_once(env, identity_listeners):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    slot_id, iid = running_candidate(env, p)
+    assert head_enroll(env, p, iid, identity_listeners)[0] == 200
+    peer_cert = {"subjectAltName": (("IP Address", "127.0.0.1"), ("URI", f"rayvast:instance/{iid}"))}
+    status, _ = p.head_server.worker_request(
+        "/report", {"instance_id": iid, "kind": "token_check", "ok": False, "reason": "open"}, peer_cert)
+    assert status == 200 and instance_ids(env) == [] and env.rules() == []
+    assert p.is_terminated(slot_id) and p.non_terminated_nodes({}) == ["head"]  # no reconcile pass needed
+
+
+def test_two_parallel_refusals_of_one_candidate_end_it_once(env, identity_listeners, monkeypatch):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make(candidate_factor=1)
+    _, first = running_candidate(env, p)
+    running_candidate(env, p)  # the second candidate on the same IP keeps the rule
+    destroy = env.vast.destroy_instance
+    monkeypatch.setattr(env.vast, "destroy_instance", lambda iid: (time.sleep(0.3), destroy(iid)))  # widen the race
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(head_enroll(env, p, first, identity_listeners, BAD_CHECKS)[0]))
+               for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert results == [403, 403]
+    assert env.vast.calls.count("destroy_instance") == 1 and instance_ids(env) == [102]
+    assert env.rules() == ["127.0.0.1/32"] and p.state.ip_refs == {"127.0.0.1": 1}
+
+
+def test_a_candidate_the_head_refuses_counts_as_one_failed_slot_for_the_breaker(env, identity_listeners):
+    """The refusal leaves the free slot; the next reconcile pass removes it and counts it, once. So the third refusal
+    in a row (not the second) stops the launches of the node type."""
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 10)]
+    p = env.make(candidate_factor=1)
+    for _ in range(3):
+        slot_id, iid = running_candidate(env, p)  # raises once the breaker stops launches
+        assert head_enroll(env, p, iid, identity_listeners, BAD_CHECKS)[0] == 403
+        assert not p.is_terminated(slot_id)
+        p.reconcile_once()
+        assert p.is_terminated(slot_id)
+    with pytest.raises(NodeLaunchException, match="repeated enrollment failures"):
+        create(p)
+
+
+@pytest.mark.parametrize("path", ["provider", "head"])
+@pytest.mark.parametrize("error, logged, hidden", [
+    (VastError("DELETE /instances/101/: HTTP 500: busy"), "HTTP 500: busy", None),
+    (RuntimeError("raw text that may hold a secret"), "RuntimeError", "raw text"),
+])
+def test_a_failed_destroy_never_stops_the_ending_and_logs_only_redacted_text(
+        env, identity_listeners, caplog, monkeypatch, path, error, logged, hidden):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    slot_id, iid = running_candidate(env, p)
+
+    def fail(instance_id):
+        raise error
+    monkeypatch.setattr(env.vast, "destroy_instance", fail)
+    if path == "provider":
+        env.vast.instances[iid]["actual_status"] = "exited"
+        p.reconcile_once()
+    else:
+        assert head_enroll(env, p, iid, identity_listeners, BAD_CHECKS)[0] == 403
+    assert iid not in p.state.candidates and env.rules() == []  # the rule goes; the orphan sweep retries the destroy
+    failure = [r.getMessage() for r in caplog.records if r.levelname == "ERROR" and "destroy of instance" in r.getMessage()]
+    assert len(failure) == 1 and logged in failure[0]
+    assert hidden is None or hidden not in caplog.text
+
+
+def time_out_revokes(env, monkeypatch):
+    def time_out(**kwargs):
+        raise botocore.exceptions.ConnectTimeoutError(endpoint_url="https://ec2.us-west-2.amazonaws.com")
+    monkeypatch.setattr(env.ec2, "revoke_security_group_ingress", time_out)
+
+
+def test_a_timed_out_revoke_still_answers_the_head_refusal_with_403(env, identity_listeners, monkeypatch):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    _, iid = running_candidate(env, p)
+    time_out_revokes(env, monkeypatch)
+    status, answer = head_enroll(env, p, iid, identity_listeners, BAD_CHECKS)
+    assert status == 403 and "no_net_raw_admin" in answer["reason"] and instance_ids(env) == []
+
+
+def test_a_timed_out_revoke_does_not_stop_the_reconcile_pass(env, monkeypatch):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make(candidate_factor=1)
+    create(p), create(p)
+    env.vast.run(101, "5.5.5.5")
+    env.vast.run(102, "5.5.5.6")
+    p.reconcile_once()
+    time_out_revokes(env, monkeypatch)
+    env.vast.instances[101]["actual_status"] = "exited"
+    env.vast.instances[102]["actual_status"] = "exited"
+    p.reconcile_once()
+    assert instance_ids(env) == []
+
+
+def test_the_next_reconcile_pass_removes_a_rule_whose_revoke_timed_out(env, monkeypatch):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.run(101, "5.5.5.5")
+    p.reconcile_once()
+    revoke = env.ec2.revoke_security_group_ingress
+    time_out_revokes(env, monkeypatch)
+    env.vast.instances[101]["actual_status"] = "exited"
+    p.reconcile_once()
+    assert instance_ids(env) == [] and env.rules() == ["5.5.5.5/32"]
+    monkeypatch.setattr(env.ec2, "revoke_security_group_ingress", revoke)  # AWS answers again
+    p.reconcile_once()
+    assert env.rules() == []
+
+
+def test_a_failed_port_check_blocks_the_host_even_when_the_autoscaler_ended_the_candidate_during_the_check(
+        env, identity_listeners, monkeypatch):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make(candidate_factor=1)
+    slot_id, iid = running_candidate(env, p)
+    ended = threading.Lock()
+
+    def unreachable_after_a_terminate(address, timeout):  # the network: the autoscaler ends the node mid-check
+        if ended.acquire(blocking=False):
+            p.terminate_node(slot_id)
+        raise OSError("unreachable")
+    monkeypatch.setattr(socket, "create_connection", unreachable_after_a_terminate)
+    status, answer = head_enroll(env, p, iid, identity_listeners)
+    assert status == 403 and answer["reason"].startswith("port check failed")
+    monkeypatch.undo()
+    create(p)
+    assert [r["offer_id"] for r in env.vast.requests] == [1, 2]  # host 11 is blocked: the next rental skips it
+
+
+@pytest.mark.parametrize("failure, blocked_after_2_days", [
+    ("security check", True), ("egress check", False), ("gpu count", True), ("port check", False)])
+def test_a_head_refusal_blocks_the_host_for_30_days_on_a_security_failure_and_1_day_on_a_network_failure(
+        env, identity_listeners, failure, blocked_after_2_days):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    _, iid = running_candidate(env, p)
+    body = {"instance_id": iid, "join_token": env.vast.requests[0]["env"]["RAYVAST_JOIN_TOKEN"], "cpu_count": 4,
+            "checks": {**GOOD_CHECKS, "egress_ip_ok": False} if failure == "egress check" else
+            BAD_CHECKS if failure == "security check" else GOOD_CHECKS,
+            "gpu_count": 2 if failure == "gpu count" else 1,
+            "ports": {**identity_listeners, "70000": 1} if failure == "port check" else identity_listeners}
+    assert p.head_server.enroll(body, "127.0.0.1")[0] == 403
+    assert p.state.is_blocked(11, env.clock())
+    env.clock.now += 2 * 86400
+    assert p.state.is_blocked(11, env.clock()) == blocked_after_2_days

@@ -3,6 +3,8 @@ description `ray-vast:<cluster>`. A rule goes into the first group with room."""
 import botocore.config
 import botocore.exceptions
 
+from .vast_api import label
+
 class SgQuotaError(Exception):
     """No security group of the cluster has room for another worker IP."""
 
@@ -16,7 +18,7 @@ class SecurityGroupRules:
     def __init__(self, ec2, group_ids, cluster):
         self._ec2 = ec2
         self._group_ids = list(group_ids)
-        self._description = f"ray-vast:{cluster}"
+        self._description = label(cluster)
 
     def _our_rules(self):
         """Return {cidr: group id} for every rule of this cluster in its groups."""

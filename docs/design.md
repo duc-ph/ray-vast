@@ -136,6 +136,8 @@ The join token proves to the head that an `/enroll` request comes from the insta
 
 A short `sh` and Python script in the container command (`args`, about 1.5 KB). It holds no secrets.
 
+The image's `ENTRYPOINT` stays. Docker runs it with the container command as its arguments. An ENTRYPOINT that ends with `exec "$@"` (for example `/opt/nvidia/nvidia_entrypoint.sh` in `rayproject/ray:*-gpu`, which prepares CUDA) then runs the bootloader, and the bootstrap is still PID 1. Text that the ENTRYPOINT writes goes to the container log.
+
 1. Find a Python that can `import ray`: `$PATH`, `/home/ray/anaconda3/bin`, `/opt/conda/bin`, `/usr/local/bin`.
 2. Download `/bootstrap` from port A (TLS, no cert check).
 3. Compare its SHA-256 with `RAYVAST_BOOTSTRAP_SHA256`. If it is the same, `exec` it.
@@ -230,7 +232,7 @@ The bootstrap stays as PID 1 and is the watchdog.
 | An instance with the cluster label that the provider does not know | provider (orphan sweep, each reconcile pass) | Destroy. |
 | `ray-vast down` | CLI | Terminate the head, then destroy every instance with the label. |
 
-After every end, the provider removes the slot and lowers the IP rule's ref count (8.3).
+Every end by the provider or the head server goes through one function, the provider's `_end`. It removes the candidate from the state, removes the slot that the instance fills, blocks the host if the reason has a block kind, destroys the instance, lowers the IP rule's ref count, and removes the rule at 0 (8.3). A failed destroy is logged; the orphan sweep tries again. A free slot stays; the reconcile pass removes it when no pending candidate of its node type is left (section 4). A worker that leaves vast's list goes through the same function.
 
 ### 6.3 Signals to PID 1
 
@@ -244,7 +246,7 @@ The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the s
 2. Make the IAM role, its policy and the instance profile. The role can only add and remove rules in the cluster's 5 security groups, and describe EC2.
 3. Make the 5 security groups `ray-vast-<cluster>-0` … `-4` (tagged). Group 0 gets one SSH rule for the operator's IP.
 4. Start the EC2 head: Ubuntu 24.04, `head_instance_type` (default `t3.large`), 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
-5. Copy the ray-vast wheel to the head (built on the laptop from the source tree, or `--wheel`). Build the derived image `FROM <image>` plus the wheel. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and its size (`image_size_gb`; a value in the YAML wins).
+5. Copy the ray-vast wheel to the head (built on the laptop from the source tree, or `--wheel`). Build the derived image `FROM <image>` plus the wheel. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`; a value in the YAML wins).
 6. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML.
 7. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
 8. Wait until `ray status` works. Warn if the CA expires within 14 days.

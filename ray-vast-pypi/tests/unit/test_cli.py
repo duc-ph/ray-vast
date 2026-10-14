@@ -12,6 +12,7 @@ from botocore.awsrequest import AWSResponse
 from moto import mock_aws
 
 from ray_vast import cli, commands, pki
+from ray_vast.vast_api import VastError
 
 CLUSTER = "rvtest-ab12"
 REGION = "us-west-2"
@@ -32,10 +33,12 @@ CLUSTER_YAML = {
 class FakeSsh:
     """Records every call. `fail_at` is the index of the call that raises; `ray_version` is what the image reports."""
 
-    def __init__(self, fail_at=None, ray_version="2.59.0", ca_days=365, image_bytes="4500000000"):
+    def __init__(self, fail_at=None, ray_version="2.59.0", ca_days=365, image_bytes="4500000000", image_info=None):
+        """`image_info`: the stdout of the image probe; by default the marker line with `ray_version` and a shim path."""
         self.calls = []  # (kind, ip, command or remote path, stdin)
         self.fail_at = fail_at
         self.ray_version = ray_version
+        self.image_info = image_info
         self.image_bytes = image_bytes
         self.ca_pem = pki.make_ca(ca_days)[0].decode()
         self.interactive_calls = []
@@ -55,7 +58,10 @@ class FakeSsh:
             return "tok-0123456789abcdef\n"
         if "docker image inspect" in command:
             return self.image_bytes + "\n"
-        return f"{self.ray_version}\n/site-packages/ray_vast/shim/librayvast_shim.so\n" if "ray_vast; print" in command else ""
+        if "import os, ray, ray_vast" in command:
+            return self.image_info if self.image_info is not None else \
+                f"RAYVAST_IMAGE_INFO {self.ray_version} /site-packages/ray_vast/shim/librayvast_shim.so\n"
+        return ""
 
     def copy(self, ip, local, remote):
         self._record("copy", ip, remote)
@@ -221,6 +227,38 @@ def test_up_warns_about_untested_ray_version(aws, cluster_yaml, wheel, tmp_path,
     messages = []
     run_up(aws, cluster_yaml, wheel, tmp_path, ssh=FakeSsh(ray_version=version), out=messages.append)
     assert any("tested with 2.59" in m for m in messages) == warns
+
+
+# The stdout of `docker run --rm rayproject/ray:2.59.0-py311-gpu ...` (C8): the NVIDIA ENTRYPOINT prints this banner
+# before it runs the command.
+NVIDIA_BANNER = """
+==========
+== CUDA ==
+==========
+
+CUDA Version 12.1.1
+
+WARNING: The NVIDIA Driver was not detected.  GPU functionality will not be available.
+   Use the NVIDIA Container Toolkit to start this container with GPU support; see
+   https://docs.nvidia.com/datacenter/cloud-native/ .
+
+"""
+
+
+def test_up_reads_the_image_info_after_an_entrypoint_banner(aws, cluster_yaml, wheel, tmp_path):
+    shim = "/home/ray/anaconda3/lib/python3.11/site-packages/ray_vast/shim/librayvast_shim.so"
+    ssh = FakeSsh(image_info=NVIDIA_BANNER + f"RAYVAST_IMAGE_INFO 2.59.0 {shim}\n")
+    messages = []
+    run_up(aws, cluster_yaml, wheel, tmp_path, ssh=ssh, out=messages.append)
+    start = next(c[2] for c in ssh.calls if c[0] == "run" and "docker run -d" in c[2])
+    assert f"-e LD_PRELOAD={shim} " in start
+    assert not any("tested with" in m for m in messages)
+
+
+def test_up_without_the_image_info_line_stops_with_a_clear_error(aws, cluster_yaml, wheel, tmp_path):
+    ssh = FakeSsh(image_info=NVIDIA_BANNER + "2.59.0\n/some/path\n")
+    with pytest.raises(commands.CliError, match="RAYVAST_IMAGE_INFO"):
+        run_up(aws, cluster_yaml, wheel, tmp_path, ssh=ssh)
 
 
 def test_up_shows_config_warnings(aws, cluster_yaml, wheel, tmp_path):
@@ -662,3 +700,38 @@ def test_main_down_exits_1_when_something_is_left(running_cluster, aws, home, cl
     aws.events.register("before-call.iam.DeleteRole", no_op_response)
     assert cli.main(["down", str(cluster_yaml)]) == 1
     assert f"left: role ray-vast-{CLUSTER}" in capsys.readouterr().out
+
+
+def test_down_sweeps_again_until_vast_lists_no_instance_of_the_cluster(aws, tmp_path):
+    """vast can list a destroyed instance for a while, and a late rental can appear; `down` lists again until none."""
+    class LateVast(FakeVast):
+        def __init__(self, instances):
+            super().__init__(instances)
+            self.lists = 0
+
+        def list_instances(self):
+            self.lists += 1
+            if self.lists == 2:  # an instance that the head rented just before it stopped
+                self.instances.append({"id": 5, "label": f"ray-vast:{CLUSTER}"})
+            return super().list_instances()
+
+    vast = LateVast([{"id": 1, "label": f"ray-vast:{CLUSTER}"}, {"id": 3, "label": "ray-vast:other"}])
+    sleeps = []
+    left = commands.down(CLUSTER, REGION, aws, vast, tmp_path / "state", sleep=sleeps.append, out=lambda m: None)
+    assert left == [] and [i["id"] for i in vast.instances] == [3] and len(sleeps) == 2
+
+
+def test_down_goes_on_after_a_failed_destroy_and_tries_again(aws, tmp_path, caplog):
+    class FlakyVast(FakeVast):
+        failed = False
+
+        def destroy_instance(self, instance_id):
+            if not self.failed:
+                self.failed = True
+                raise VastError(f"DELETE /instances/{instance_id}/: HTTP 500: busy", status=500)
+            super().destroy_instance(instance_id)
+
+    vast = FlakyVast([{"id": 1, "label": f"ray-vast:{CLUSTER}"}, {"id": 2, "label": f"ray-vast:{CLUSTER}"}])
+    left = commands.down(CLUSTER, REGION, aws, vast, tmp_path / "state", sleep=lambda s: None, out=lambda m: None)
+    assert left == [] and vast.instances == []
+    assert "HTTP 500: busy" in caplog.text

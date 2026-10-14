@@ -14,6 +14,7 @@ First version.
 - Cluster YAML with node types. Each type has declared resources (`CPU` minimum, `GPU` exact), `node_config.disk_gb` (default 50) and an `offer_query` in the vast API JSON form (MB units). ray-vast adds the filters `num_gpus`, `cpu_cores_effective`, `direct_port_count`, `verified`, `rentable` and `datacenter`. A stricter user filter on `cpu_cores_effective` or `direct_port_count` is allowed.
 - Provider fields with defaults: `candidate_factor` 2, `cert_max_age_days` 365, `allow_non_datacenter` false, `order_by` `dph_total`, `head_instance_type` `t3.large`, `port_a` 7443, `port_b` 7444. Optional: `image_size_gb`, `key_name`, `key_file`.
 - Example YAMLs: `gpu-24gb`, `gpu-80gb`, `cpu-heavy`.
+- Images with an `ENTRYPOINT` that ends with `exec "$@"` work, for example `rayproject/ray:*-gpu`. `up` keeps the ENTRYPOINT and reads the image check from one marked line of its output.
 - Candidates: the provider rents `candidate_factor` times as many instances as slots. The first candidates that enroll fill the slots. The provider destroys the others. The pull time limit comes from `image_size_gb` and `inet_down` (5 to 15 minutes).
 - `max_dollars_per_hour` budget limit. It is required. The vast key is not a config field: it comes from `VAST_API_KEY` or `~/.config/vastai/vast_api_key`.
 - Worker-first enrollment: the container command holds no secrets. The worker checks the host, proves its identity with a one-time join token, and then gets its certificate, key and the cluster token.

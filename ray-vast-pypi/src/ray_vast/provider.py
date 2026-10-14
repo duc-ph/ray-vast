@@ -16,8 +16,7 @@ Slots are the nodes that Ray sees. A create call makes `count` slots and rents u
 candidates (vast instances); the first candidates that enroll fill the slots, the rest are destroyed. The read methods
 answer from memory (F10). A reconcile thread (every 10 s) lists the vast instances once and applies the rules in
 `reconcile_once`. All vast and AWS calls run outside `state.lock` (rule 8).
-Every path that ends a candidate or worker goes through `_end` or the head server's `_destroy`, then `_revoke_unused`
-(rule 9).
+Every path that ends a candidate or worker, in the provider and in the head server, goes through `_end` (rule 9).
 
 Unknown node IDs: `node_tags` returns `{}` (v2 then skips the node as unmanaged), `is_running` returns False.
 """
@@ -45,7 +44,7 @@ from .aws_sg import SecurityGroupRules, SgQuotaError, ec2_client_config
 from .config import PROVIDER_DEFAULTS, build_offer_query
 from .head_server import HeadServer
 from .state import BREAKER_FAILED_SLOTS, Candidate, ClusterState, Slot
-from .vast_api import VastClient, VastError
+from .vast_api import VastClient, VastError, label, sweep
 
 log = logging.getLogger(__name__)
 
@@ -68,14 +67,16 @@ class VastNodeProvider(NodeProvider):
         super().__init__(provider_config, cluster_name)
         cfg = {**PROVIDER_DEFAULTS, **provider_config}
         self._cfg, self._clock = cfg, clock
-        self._label = f"ray-vast:{cluster_name}"
+        self._label = label(cluster_name)
         self._head_ip = cfg["head_ip"]
         self._max_dph = cfg["max_dollars_per_hour"]
         self.state = ClusterState()
         self._creating = set()  # slot IDs of create calls in flight: reconcile leaves them and their instances alone
         self._reserved_dph = 0.0  # dollars per hour of rentals in flight (budget check)
         self._request_of_slot = {}  # slot id -> the id of the create call that made it
-        self._sg_lock = threading.Lock()  # one SG change at a time; never held with state.lock
+        # One SG change at a time. Lock order: `_sg_lock`, then `state.lock` (a short read only); never the reverse.
+        self._sg_lock = threading.Lock()
+        self._failed_revokes = set()  # IPs whose rule removal failed; each reconcile pass tries again (under _sg_lock)
         self._stop = threading.Event()
         self._seen_statuses = set()  # unknown vast statuses are logged once each
 
@@ -95,20 +96,13 @@ class VastNodeProvider(NodeProvider):
         self._bootloader = (package / "worker" / "bootloader.sh").read_text()
 
         # Start-up sweep (D3): a new provider means a new GCS, so every old instance and rule is useless.
-        for instance in self._vast.list_instances():
-            if instance.get("label") == self._label:
-                log.warning("start-up sweep: destroying instance %s", instance["id"])
-                try:
-                    self._vast.destroy_instance(instance["id"])
-                except VastError as e:
-                    log.error("start-up sweep: destroy of instance %s failed (reconcile retries): %s", instance["id"], e)
+        sweep(self._vast, self._vast.list_instances(), cluster_name)  # a failed destroy: the orphan sweep tries again
         self._sg.revoke_all()
 
         self.head_server = HeadServer(
-            self.state, self._vast, ca_cert, ca_key, read("head.pem"), read("head.key"), read("token").decode().strip(),
+            self.state, self._end, ca_cert, ca_key, read("head.pem"), read("head.key"), read("token").decode().strip(),
             (package / "shim" / "librayvast_shim.so").read_bytes(), (package / "worker" / "bootstrap.py").read_bytes(),
-            self._head_ip, cfg["port_a"], cfg["port_b"], cluster_name, clock=clock,
-            on_destroy=lambda ip, remaining: self._revoke_unused(ip) if remaining == 0 else None)
+            self._head_ip, cfg["port_a"], cfg["port_b"], cluster_name, clock=clock)
         if start_threads:
             self.head_server.start()
             self._thread = threading.Thread(target=self._reconcile_loop, name="ray-vast-reconcile", daemon=True)
@@ -250,44 +244,55 @@ class VastNodeProvider(NodeProvider):
             slot = self.state.remove_slot(node_id)
             if slot is None:
                 return
-            ending = [c.instance_id for c in self.state.candidates.values() if c.instance_id == slot.instance_id
+            ending = [c for c in self.state.candidates.values() if c.instance_id == slot.instance_id
                       or (c.slot_id == slot.id and c.instance_id not in self.state.enrolled)]
-        for instance_id in ending:
-            self._end(instance_id, "terminated by the autoscaler")
+        for cand in ending:
+            self._end(cand, "terminated by the autoscaler")
 
     # ---- ending instances ----
 
-    def _end(self, instance_id, reason, block_kind=None):
-        """End a candidate or worker: drop it and its slot from state, destroy the instance, lower the IP ref count
-        and remove the SG rule at 0. Does nothing if the head server ended it first."""
+    def _end(self, cand, reason, block_kind=None):
+        """End a candidate or worker: block its host when `block_kind` is given, drop it and the slot that it fills
+        from state, lower the IP ref count, destroy the instance, and remove the SG rule at 0. The one ending path for
+        the provider and the head server (rule 9). The block happens on every call (a check can fail after another
+        path ended the candidate); the rest only for the first caller for an instance. It never raises for a failed
+        destroy or a failed rule removal: its callers are the reconcile pass and the head server's request threads.
+        A free slot stays; the reconcile pass removes it and counts it for the rent-loop breaker."""
+        instance_id = cand.instance_id
         with self.state.lock:
-            cand = self.state.remove_candidate(instance_id)
-            if cand is None:
+            if block_kind:
+                self.state.block(cand.machine_id, reason, block_kind, self._clock())
+            if self.state.remove_candidate(instance_id) is None:
                 return
             for slot in [s for s in self.state.slots.values() if s.instance_id == instance_id]:
                 self.state.remove_slot(slot.id)
             remaining = self.state.ip_ref_remove(cand.public_ip) if cand.public_ip else None
-            if block_kind:
-                self.state.block(cand.machine_id, reason, block_kind, self._clock())
-        log.warning("ending instance %s (machine %s, ip %s): %s", instance_id, cand.machine_id, cand.public_ip, reason)
+        log.warning("ending instance %s (machine %s, ip %s): %r", instance_id, cand.machine_id, cand.public_ip,
+                    reason[:300])
         try:
             self._vast.destroy_instance(instance_id)
-        except VastError as e:
-            log.error("destroy of instance %s failed (the next reconcile pass retries): %s", instance_id, e)
+        except Exception as e:  # a VastError text is redacted; any other text may hold a secret, so log only its type
+            log.error("destroy of instance %s failed (the orphan sweep retries): %s", instance_id,
+                      e if isinstance(e, VastError) else type(e).__name__)
         if remaining == 0:
             self._revoke_unused(cand.public_ip)
 
     def _revoke_unused(self, ip):
-        """Remove the SG rule if no candidate or worker uses the IP any more (checked again under the SG lock)."""
+        """Remove the SG rule if no candidate or worker uses the IP any more (checked again under the SG lock). A failed
+        removal never raises; the IP stays in `_failed_revokes` and the next reconcile pass tries again."""
         with self._sg_lock:
+            self._failed_revokes.discard(ip)
             with self.state.lock:
                 in_use = self.state.ip_refs.get(ip, 0) > 0
             if in_use:
                 return
             try:
                 self._sg.revoke_ip(ip)
-            except botocore.exceptions.ClientError as e:
-                log.error("revoke of the SG rule for %s failed: %s", ip, e)
+            except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:  # never raise (see _end)
+                code = e.response["Error"]["Code"] if isinstance(e, botocore.exceptions.ClientError) else None
+                log.error("revoke of the SG rule for %s failed (the next reconcile pass retries): %s %s", ip,
+                          type(e).__name__, code or "")
+                self._failed_revokes.add(ip)
 
     # ---- reconcile ----
 
@@ -342,7 +347,7 @@ class VastNodeProvider(NodeProvider):
                     self._seen_statuses.add(status)
                     log.warning("reconcile: unknown vast actual_status %r (treated as pending)", status)
                 if reason:
-                    to_end.append((cand.instance_id, reason, block))
+                    to_end.append((cand, reason, block))
 
         # 2. A rule for each new candidate IP. A full security group ends the candidate.
         for cand in newly_running:
@@ -350,30 +355,30 @@ class VastNodeProvider(NodeProvider):
                 with self._sg_lock:
                     self._sg.allow_ip(cand.public_ip)
             except SgQuotaError as e:
-                to_end.append((cand.instance_id, str(e), None))
+                to_end.append((cand, str(e), None))
             except botocore.exceptions.ClientError as e:
                 log.error("SG rule for %s failed (the candidate will time out): %s", cand.public_ip, e)
-        for instance_id, reason, block in to_end:
-            self._end(instance_id, reason, block)
-            ended_ids.add(instance_id)
+        for cand, reason, block in to_end:
+            self._end(cand, reason, block)
+            ended_ids.add(cand.instance_id)
 
         # 3. Candidates of a finished request; instances that are not ours to keep (orphan sweep).
-        request_ends, strays = [], []
+        request_ends, keep = [], None
         with self.state.lock:
             open_requests = {self._request_of_slot.get(s.id) for s in self.state.slots.values() if s.instance_id is None}
             for cand in self.state.candidates.values():
                 if cand.instance_id not in self.state.enrolled and self._request_of_slot.get(cand.slot_id) not in open_requests:
-                    request_ends.append(cand.instance_id)
+                    request_ends.append(cand)
             if not self._creating:  # a create call may hold an instance that is not recorded yet
-                strays = [i for i in by_id if i not in self.state.candidates and i not in ended_ids]
-        for instance_id in request_ends:
-            self._end(instance_id, "its request has no free slot left")
-        for instance_id in strays:
-            log.warning("orphan sweep: destroying unknown instance %s", instance_id)
-            try:
-                self._vast.destroy_instance(instance_id)
-            except VastError as e:
-                log.error("destroy of instance %s failed (the next pass retries): %s", instance_id, e)
+                keep = set(self.state.candidates) | ended_ids
+        for cand in request_ends:
+            self._end(cand, "its request has no free slot left")
+        if keep is not None:
+            sweep(self._vast, instances, self.cluster_name, keep)
+        with self._sg_lock:
+            failed_revokes = list(self._failed_revokes)
+        for ip in failed_revokes:
+            self._revoke_unused(ip)
 
         # 4. Slots: drop a slot whose worker is gone. Drop a free slot only when no pending candidate of its node type is
         # left (the head server fills any free slot of the type). Forget request entries that nothing points at.

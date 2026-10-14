@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 import boto3
+from ray_vast.vast_api import label  # the cluster marker: the vast label and the SG rule description
 
 import vast_tool
 
@@ -22,7 +23,7 @@ ec2 = boto3.Session(profile_name=os.environ.get("AWS_PROFILE", "personal"), regi
 while True:
     row = {"utc": vast_tool.utc()}
     try:
-        found = [i for i in vast_tool.instances() if i.get("label") == f"ray-vast:{cluster}"]
+        found = [i for i in vast_tool.instances() if i.get("label") == label(cluster)]
         row["instances"] = [{k: i.get(k) for k in ("id", "actual_status", "dph_total", "machine_id")} for i in found]
         row["dph_total_sum"] = round(sum(i.get("dph_total") or 0 for i in found), 4)
     except SystemExit as e:
@@ -32,7 +33,7 @@ while True:
             {"Name": "group-name", "Values": [f"ray-vast-{cluster}-{i}" for i in range(5)]},
             {"Name": "tag:ray-vast-cluster", "Values": [cluster]}])["SecurityGroups"]
         row["worker_rules"] = sum(1 for g in groups for p in g["IpPermissions"] for r in p.get("IpRanges", [])
-                                  if r.get("Description") == f"ray-vast:{cluster}")
+                                  if r.get("Description") == label(cluster))
         row["groups"] = len(groups)
     except Exception as e:
         row["aws_error"] = type(e).__name__

@@ -108,14 +108,12 @@ class _Handler(http.server.BaseHTTPRequestHandler):
 
 
 class HeadServer:
-    """`on_destroy(public_ip, remaining_refs)` is called after the head destroys a candidate or worker.
+    """`end(cand, reason, block_kind=None)` is the provider's one ending path (rule 9): the head server ends a
+    candidate or worker only through it, and makes no vast or AWS call of its own. Call it without `state.lock`."""
 
-    The head already lowered the IP ref count in `state`; the provider removes the security group rule when it hits 0.
-    """
-
-    def __init__(self, state, vast, ca_cert_pem, ca_key_pem, head_cert_pem, head_key_pem, token, shim_bytes,
-                 bootstrap_bytes, head_ip, port_a, port_b, cluster, clock=time.time, on_destroy=None):
-        self.state, self.vast, self.clock, self.on_destroy = state, vast, clock, on_destroy
+    def __init__(self, state, end, ca_cert_pem, ca_key_pem, head_cert_pem, head_key_pem, token, shim_bytes,
+                 bootstrap_bytes, head_ip, port_a, port_b, cluster, clock=time.time):
+        self.state, self.end, self.clock = state, end, clock
         self.ca_cert_pem, self.ca_key_pem, self.token = ca_cert_pem, ca_key_pem, token
         self.shim_bytes, self.bootstrap_bytes = shim_bytes, bootstrap_bytes
         self.head_ip, self.cluster = head_ip, cluster
@@ -146,26 +144,6 @@ class HeadServer:
             server.shutdown()
             server.server_close()
         self._servers = []
-
-    def _destroy(self, cand, reason):
-        """End a candidate or worker: destroy the vast instance, drop it from state, lower the IP ref count.
-
-        Idempotent: only the caller that removes the candidate from state does the work.
-        """
-        if self.state.remove_candidate(cand.instance_id) is None:
-            return
-        log.warning("destroying instance %s (machine %s, ip %s): %s", cand.instance_id, cand.machine_id,
-                    cand.public_ip, _clip(reason))
-        try:
-            self.vast.destroy_instance(cand.instance_id)
-        except Exception as e:  # the provider sweep destroys what is left
-            log.error("destroy of instance %s failed (the provider sweep will retry): %s", cand.instance_id,
-                      type(e).__name__)
-        finally:
-            if cand.public_ip is not None:
-                remaining = self.state.ip_ref_remove(cand.public_ip)
-                if self.on_destroy:
-                    self.on_destroy(cand.public_ip, remaining)
 
     def enroll(self, body, source_ip):
         """Return (status, answer) for POST /enroll. The checks run in the order of design 5.7. No vast call."""
@@ -210,16 +188,13 @@ class HeadServer:
         failed = [name for name in (*SECURITY_CHECKS, "egress_ip_ok") if checks.get(name) is not True]
         if failed:
             reason = "worker checks failed: %s (%s)" % (", ".join(failed), _clip(checks.get("details", "")))
-            kind = "security" if set(failed) & set(SECURITY_CHECKS) else "network"
-            state.block(cand.machine_id, reason, kind, self.clock())
-            self._destroy(cand, reason)
+            self.end(cand, reason, "security" if set(failed) & set(SECURITY_CHECKS) else "network")
             return 403, {"reason": reason}
 
         # GPU is exact (design F4). Fewer GPUs is a broken host; more can be another tenant's GPUs.
         if gpu_count != cand.gpus:
             reason = "GPU count: the container has %d, the node type declares %d" % (gpu_count, cand.gpus)
-            state.block(cand.machine_id, reason, "security", self.clock())
-            self._destroy(cand, reason)
+            self.end(cand, reason, "security")
             return 403, {"reason": reason}
 
         with ThreadPoolExecutor(max_workers=len(ports)) as pool:
@@ -232,8 +207,7 @@ class HeadServer:
             unreachable = sorted(p for p, ok in zip(ports.values(), pool.map(reachable, ports.values())) if not ok)
         if unreachable:
             reason = "port check failed: %d of %d ports unreachable" % (len(unreachable), len(ports))
-            state.block(cand.machine_id, reason, "network", self.clock())
-            self._destroy(cand, reason)
+            self.end(cand, reason, "network")
             return 403, {"reason": reason}
 
         # The cert comes before the slot is taken, so a failure here leaves nothing half-enrolled.
@@ -254,7 +228,7 @@ class HeadServer:
                 cand.join_token = None  # one enrollment only (design 5.2)
                 state.slot_enrolled(slot.node_type)
         if slot is None:
-            self._destroy(cand, "no free slot")
+            self.end(cand, "no free slot")
             return 403, {"reason": "no free slot"}
 
         log.info("enrolled instance %s (machine %s, ip %s) into %s", instance_id, cand.machine_id, cand.public_ip,
@@ -299,7 +273,7 @@ class HeadServer:
             with self.state.lock:
                 cand.last_heartbeat = self.clock()
         elif body.get("kind") == "token_check" and body.get("ok") is not True:
-            self._destroy(cand, "token check failed: " + str(body.get("reason", ""))[:200])
+            self.end(cand, "token check failed: " + str(body.get("reason", ""))[:200])
         elif body.get("kind") == "destroy":
             log.warning("worker %s asks to be destroyed: %s", instance_id, _clip(body.get("reason")))
         return 200, {}

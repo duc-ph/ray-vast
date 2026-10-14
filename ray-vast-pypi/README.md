@@ -28,7 +28,7 @@ The full flow and the design are in [docs/design.md](../docs/design.md) (section
 - `ssh` and `scp` on your laptop.
 - Docker image rules. The image runs on the head and on the workers. It must have:
   - `sh`, and a Python that can `import ray`. Nothing else is needed: no sshd, no apt, no `sudo`, no curl;
-  - no `ENTRYPOINT` (the provider sets the container command);
+  - no `ENTRYPOINT`, or an `ENTRYPOINT` that ends with `exec "$@"` (as in `rayproject/ray:*-gpu`). The provider sets the container command, and the ENTRYPOINT runs it;
   - Ray 2.59 or later. Ray 2.59 is the tested version. `ray-vast up` warns if the image has a different Ray version.
 
 ## Install

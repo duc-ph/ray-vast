@@ -176,6 +176,57 @@ def test_image_with_an_entrypoint_fails_clearly(bridge_world, tmp_path):
         docker("rmi", "-f", f"{CONTAINER_PREFIX}entrypoint-image", check=False)
 
 
+# Like /opt/nvidia/nvidia_entrypoint.sh of rayproject/ray:*-gpu (C8): text on stdout and stderr, then `exec "$@"`.
+NVIDIA_LIKE_ENTRYPOINT = """#!/bin/bash
+echo "=========="
+echo "== CUDA =="
+echo "=========="
+echo "WARNING: The NVIDIA Driver was not detected." >&2
+echo
+exec "$@"
+"""
+
+
+@pytest.fixture
+def nvidia_like_image(tmp_path):
+    """The Ray image with an ENTRYPOINT like NVIDIA's. Removed at the end."""
+    context = tmp_path / "nvidia-like"
+    context.mkdir()
+    (context / "entrypoint.sh").write_text(NVIDIA_LIKE_ENTRYPOINT)
+    (context / "entrypoint.sh").chmod(0o755)
+    (context / "Dockerfile").write_text(f'FROM {RAY_IMAGE}\nCOPY entrypoint.sh /entrypoint.sh\nENTRYPOINT ["/entrypoint.sh"]\n')
+    name = f"{CONTAINER_PREFIX}nvidia-like-image"
+    docker("build", "-q", "-t", name, str(context))
+    yield name
+    docker("rmi", "-f", name, check=False)
+
+
+def test_image_with_an_exec_entrypoint_runs_the_bootstrap_as_pid_1_and_enrolls(bridge_world, tmp_path, nvidia_like_image):
+    """The ENTRYPOINT runs first (it prints its banner), then `exec "$@"` runs the bootloader, which execs the bootstrap."""
+    world = bridge_world
+    start_worker(W, world, tmp_path, image=nvidia_like_image)
+    assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), logs(W)
+    assert "== CUDA ==" in logs(W) and "NVIDIA Driver" in logs(W)  # the ENTRYPOINT ran
+    checks = world.head.bodies("A", "/enroll")[0]["checks"]
+    expected = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True}
+    assert {k: checks[k] for k in expected} == expected, checks["details"]
+    assert wait_for(lambda: world.head.bodies("B", "/report")), logs(W)
+    assert world.head.bodies("B", "/report")[0]["kind"] == "token_check" and world.head.bodies("B", "/report")[0]["ok"]
+    assert docker("exec", W, "cat", "/proc/1/cmdline").stdout.split("\0")[1:2] == ["/tmp/rayvast-bootstrap.py"]
+
+
+def test_the_image_info_line_of_up_survives_an_entrypoint_banner(nvidia_like_image):
+    """`up` runs IMAGE_INFO in the derived image with its ENTRYPOINT; here ray_vast comes from the source tree."""
+    from ray_vast.commands import IMAGE_INFO
+
+    src = Path(__file__).resolve().parents[2] / "src"
+    stdout = docker("run", "--rm", "-v", f"{src}:/rvsrc:ro", "-e", "PYTHONPATH=/rvsrc", nvidia_like_image,
+                    "python", "-c", IMAGE_INFO).stdout
+    assert "== CUDA ==" in stdout
+    [line] = [x for x in stdout.splitlines() if x.startswith("RAYVAST_IMAGE_INFO ")]
+    assert line == "RAYVAST_IMAGE_INFO 2.59.0 /rvsrc/ray_vast/shim/librayvast_shim.so"
+
+
 @pytest.mark.parametrize("sig", ["TERM", "INT", "HUP"])
 def test_signal_to_pid_1_from_the_ray_user_reports_then_destroys_and_the_container_stays_up(
     bridge_world, tmp_path, sig

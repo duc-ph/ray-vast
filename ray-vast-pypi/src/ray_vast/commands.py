@@ -32,7 +32,7 @@ import yaml
 from . import config as config_module
 from . import pki
 from .aws_sg import ec2_client_config
-from .vast_api import VastClient
+from .vast_api import VastClient, label, sweep
 
 TAG_KEY = "ray-vast-cluster"
 SECURITY_GROUPS = 5
@@ -64,9 +64,11 @@ DOCKERFILE = """FROM {image}
 COPY {wheel} /tmp/{wheel}
 RUN pip install --no-cache-dir /tmp/{wheel}
 """
-# Prints the Ray version and the path of the shim inside the derived image.
-IMAGE_INFO = ("import os, ray, ray_vast; print(ray.__version__); "
-              "print(os.path.join(os.path.dirname(ray_vast.__file__), 'shim', 'librayvast_shim.so'))")
+# Prints one line `RAYVAST_IMAGE_INFO <Ray version> <shim path>` inside the derived image. `up` keeps the image's
+# ENTRYPOINT (NVIDIA's prepares CUDA), and an ENTRYPOINT can print to stdout first, so `up` reads only the marker line.
+IMAGE_INFO_MARKER = "RAYVAST_IMAGE_INFO"
+IMAGE_INFO = (f"import os, ray, ray_vast; print({IMAGE_INFO_MARKER!r}, ray.__version__, "
+              "os.path.join(os.path.dirname(ray_vast.__file__), 'shim', 'librayvast_shim.so'))")
 
 
 class CliError(Exception):
@@ -123,7 +125,7 @@ def _our_groups(ec2, cluster):
 
 
 def _vast_instances(vast, cluster):
-    return [i for i in vast.list_instances() if i.get("label") == f"ray-vast:{cluster}"]
+    return [i for i in vast.list_instances() if i.get("label") == label(cluster)]
 
 
 def _read_vast_key():
@@ -212,7 +214,12 @@ def up(config_path, session, ssh, *, key_name, wheel, vast_key, operator_ip, sta
     ssh.copy(head_ip, wheel, f"{build}/{wheel.name}")
     ssh.run(head_ip, f"cat > {build}/Dockerfile", stdin=DOCKERFILE.format(image=provider["image"], wheel=wheel.name))
     ssh.run(head_ip, f"sudo docker build -t {image_tag} {build}", timeout=1800)
-    ray_version, shim_path = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}").split()
+    stdout = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}")
+    info = [line.split() for line in stdout.splitlines() if line.startswith(IMAGE_INFO_MARKER + " ")]
+    if len(info) != 1 or len(info[0]) != 3:
+        raise CliError(f"the image check printed no single `{IMAGE_INFO_MARKER} <ray version> <shim path>` line; "
+                       f"its stdout ends with: {stdout[-300:]!r}")
+    _, ray_version, shim_path = info[0]
     if not ray_version.startswith(tuple(v + "." for v in TESTED_RAY_VERSIONS)):
         out(f"warning: the image has Ray {ray_version}; ray-vast is tested with {', '.join(TESTED_RAY_VERSIONS)}")
 
@@ -277,13 +284,11 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
 
     if vast is None:
         out(f"warning: no vast key, so vast instances were not swept. Set VAST_API_KEY and run `ray-vast down` again, or list "
-            f"them with `vastai show instances` and destroy those with label ray-vast:{cluster} (`vastai destroy instance ID`).")
-    for _ in range(60 if vast else 0):
-        found = _vast_instances(vast, cluster)
+            f"them with `vastai show instances` and destroy those with label {label(cluster)} (`vastai destroy instance ID`).")
+    for _ in range(60 if vast else 0):  # list again until vast lists none (a destroy can show late)
+        found = sweep(vast, vast.list_instances(), cluster)
         if not found:
             break
-        for instance in found:
-            vast.destroy_instance(instance["id"])
         out(f"destroyed {len(found)} vast instance(s)")
         sleep(5)
 
