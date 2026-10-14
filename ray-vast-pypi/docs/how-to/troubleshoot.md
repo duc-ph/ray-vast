@@ -47,6 +47,18 @@ The head container logs in the local time zone of the head.
 - `max_workers` can stop new workers.
 - A worker has 58 ports for Ray worker processes. Tasks wait when no port is free. Read [Limits](../reference/limits.md).
 
+## A node dies with `can't start new thread`
+
+Symptoms:
+
+- A task or actor fails with `RuntimeError: can't start new thread`, or a log has `pthread_create failed: Resource temporarily unavailable`.
+- `monitor.log` has `worker <id> asks to be destroyed: ray start exited with code 1`. The raylet aborted.
+- The autoscaler rents a replacement, and the job can fail again on the new node.
+
+Cause: the node passed the process limit of the vast container (about 1280 processes and threads on many hosts). Each Ray worker process has about 50 threads. A job that uses all CPUs of a host with many cores passes the limit.
+
+What to do: run fewer worker processes on each node. For Ray Data, limit its CPUs. Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts) and [Run your Ray workload](run-your-workload.md#ray-data-limit-the-cpus).
+
 ## An actor fails with a misleading error
 
 An actor fails after about 6 minutes with:

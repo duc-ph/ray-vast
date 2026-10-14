@@ -22,6 +22,47 @@ Each Ray worker process (a task, an actor or a driver) needs one port.
 - Ray has no setting for the total number of worker processes. ray-vast sets `RAY_num_workers_soft_limit` to `min(cores, 58)`, so that idle processes release their ports sooner.
 - Do not set `CPU` above 58.
 
+## The process limit of vast hosts
+
+A vast container has a limit on processes and threads together (the pids limit).
+On many 1-GPU hosts, the limit is about 1280. One 2-GPU host had 3328.
+
+Each Ray worker process has about 50 threads. The raylet has about 70. An idle node has about 300 threads.
+ray-vast starts Ray with the real core count of the host as `CPU`. A job that uses all CPUs of a 24-core or 48-core host starts 24 to 48 worker processes. That is more threads than the limit allows.
+
+When the node reaches the limit:
+
+- Tasks fail with `RuntimeError: can't start new thread` or `pthread_create failed: Resource temporarily unavailable`.
+- The raylet aborts, and the node dies.
+- The worker destroys itself. The autoscaler rents a replacement.
+
+So keep the number of busy worker processes on one node low (about 20 on a host with a limit of 1280).
+For Ray Data, limit its CPUs. Read [Run your Ray workload](../how-to/run-your-workload.md#ray-data-limit-the-cpus).
+
+A fix in ray-vast is under review.
+
+## No multi-node Ray Train
+
+Ray Train with PyTorch DDP over 2 or more nodes does not work. This is true for NCCL and for Gloo.
+
+- The rendezvous (`TCPStore`) of rank 0 uses a random port.
+- Gloo and NCCL open more connections on random ports. They also send the container's private address to the other ranks.
+- vast maps only the 64 identity ports of each worker. Ray uses all of them.
+- Ray Train 2.59 has no setting for the rendezvous port.
+
+The job fails after about 3 minutes with `DistNetworkError` or `DistStoreError ... 1/2 clients joined`.
+This is a limit of running behind the NAT of vast.
+
+Use one node with many GPUs. Make a node type with `GPU: 2` or more, and train on that node. Ray Train on one node with 2 GPUs and NCCL works.
+
+## Checkpoints need cloud storage
+
+Ray Tune and Ray Train write checkpoints to `storage_path`.
+Ray 2.59 refuses a local `storage_path` on a cluster with more than one node. The error is `A local path on the head node is not accessible by worker nodes`.
+The default `storage_path` is local, so the default fails too.
+
+Set `storage_path` to a cloud bucket, and give the workers credentials for it. Read [Run your Ray workload](../how-to/run-your-workload.md#ray-tune-and-ray-train-checkpoints).
+
 ## Certificates do not renew
 
 The CA and every node certificate live `cert_max_age_days` (default 365).

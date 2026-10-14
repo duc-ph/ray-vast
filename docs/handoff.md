@@ -1,4 +1,4 @@
-# Handoff: continue ray-vast on the dev box (2026-10-14)
+# Handoff: continue ray-vast on the dev box (2026-10-15)
 
 You are the lead agent. Read this file first, then do the work in "Next work". The user moved the work from the laptop to the dev box `ray-vast-dev`.
 
@@ -40,19 +40,29 @@ These are the user's rules from the earlier sessions. Follow them.
 - `~/ray-vast-pypi/` on the box is an old rsync copy from the laptop, with a venv. Do not edit it. Use the clone.
 - `ray-vast up/down` (paid live tests) need AWS credentials (profile `personal`) and the vast key in `~/.config/vastai/vast_api_key` on the box. Check with the user before the first paid run on the box.
 
-## State at handoff
+## State at handoff (2026-10-14, end of the night run)
 
-- Steps 0–11 are done and committed (2026-10-14).
-  - Step 10b: the one-time join token, 5 security groups, no head restart policy, the rent-loop breaker, the CA expiry warning.
-  - Step 10c: 14 shim tests and a mutation script (23 of 25 mutants killed, 2 equivalent).
-  - Step 11: 8 local end-to-end scenarios passed 3 runs in a row (about 12 min each). No product bug.
-- Test counts: the fast run has about 308 tests; the full run (`-m "not live and not local_e2e"`) has 363.
-- The dev box has the clone at `/home/ubuntu/ray-vast` and a venv made with `uv` (`ray-vast-pypi/.venv`, no pip inside; use `VIRTUAL_ENV=.venv uv pip install`). The box has `python3.12-venv` for the packaging test.
-- The box has **no** AWS credentials for the profile `personal` and no `aws` CLI. Step 12 needs them.
+- Steps 0–12 are done. Step 13 is partly done.
+- Code on `main` is version `0.1.0rc1`. Since step 11:
+  - one ending function (`VastNodeProvider._end`) and one label sweep (`vast_api.sweep`);
+  - the image ENTRYPOINT is kept, and `up` reads one `RAYVAST_IMAGE_INFO` line;
+  - the GPU count comes from `/dev/nvidia<N>`, and the head refuses a mismatch;
+  - the head container gets `--shm-size` = 0.33 × RAM;
+  - `pip install ray-vast` then `ray-vast up` installs the same version on the head from PyPI; `--index-url` tests a release from TestPyPI;
+  - a clean Ctrl-C on `dashboard`, and line-buffered output.
+- Tests: the full run has about 405 tests; local_e2e passes 8 of 8 (3 runs in a row after the refactor).
+- Live cycles of 2026-10-14 on the final code: C5, C6, C8 (with `rayproject/ray:*-gpu`) and C9 (Ray libraries) pass. Results: `docs/test-results.md`. The vast spend of the day is about $3.82.
+- TestPyPI: `0.1.0rc1` is at https://test.pypi.org/project/ray-vast/0.1.0rc1/. A clean install ran `up`/`down` with `--index-url`.
+- Docs site: https://duc-ph.github.io/ray-vast/ (MkDocs Material; `.github/workflows/docs.yml` publishes on push).
+- **Waits on the user:**
+  1. The pids-limit fix on branch `pids-limit-review` (not merged). Part 1 (shim v4) makes `sysconf(_SC_NPROCESSORS_CONF)` return 4 in worker containers, so gRPC pools stay small (user code also sees 4 cores: OpenBLAS uses at most 4 threads). Part 2 (commit marked DESIGN CHANGE) caps Ray CPUs and worker ports by `pids.max`. Live: C9.1.1/1.3/1.6 pass without a CPU limit on a 1280-pid host. Without the fix, `main` documents a Ray Data CPU limit as the workaround.
+  2. The PyPI release (version `0.1.0`).
+  3. A private contact for security reports (`security.md` has a TODO).
+- The box has AWS credentials (`~/.aws`, profile `personal`), the EC2 key pair `ray-vast-devbox` (`~/ray-vast-devbox.pem`), the vast key, and a TestPyPI token in `~/.pypirc`. The deploy key can push branches and workflows.
 
 ## Next work
 
-1. Step 12 (paid live cycles C5, C6, C8 in `docs/test-plan.md`). Ask the user before the first paid run. Add AWS credentials on the box first.
-2. Step 13 (docs and release). Never publish to PyPI without the user.
+1. The user reviews the branch `pids-limit-review` and chooses: merge both parts, merge part 1 only, or keep the documented workaround. Then run local_e2e and C9.1 again on the result.
+2. Step 13: the user reviews the docs site; then version `0.1.0`, the PyPI upload with the user, and the clean-machine check from PyPI.
 
 When a step is done: update the status table in `docs/implementation-plan.md`, add the results to `docs/test-results.md` if it ran a cycle, commit, push, and give the user a short report.
