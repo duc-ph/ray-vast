@@ -348,6 +348,18 @@ def test_passing_token_check_and_destroy_report_do_not_destroy(env):
     assert env.end.ended == []
 
 
+def test_a_long_destroy_reason_is_logged_short_with_its_error_line(env, caplog):
+    # C9: the log cut a traceback before its last line, the one that names the error.
+    enrolled_worker(env, 11, "10.0.0.5")
+    reason = "unexpected error:\nTraceback (most recent call last):\n" + '  File "x.py", line 1, in main\n' * 20 + (
+        "RuntimeError: can't start new thread")
+    requests.post(f"https://127.0.0.1:{env.port_b}/report", json={"instance_id": 11, "kind": "destroy", "reason": reason},
+                  **worker_session(env, "10.0.0.5"))
+    line = next(r.getMessage() for r in caplog.records if "asks to be destroyed" in r.getMessage())
+    assert "unexpected error" in line and "RuntimeError: can" in line and "start new thread" in line  # repr: can\'t
+    assert len(line) < 300
+
+
 def test_report_before_enrollment_is_accepted(env):
     resp = requests.post(f"https://127.0.0.1:{env.port_a}/report", verify=env.ca_file, timeout=30,
                          json={"instance_id": 11, "kind": "destroy", "reason": "r"})

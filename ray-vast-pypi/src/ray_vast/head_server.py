@@ -33,7 +33,9 @@ SECURITY_CHECKS = ("no_net_raw_admin", "own_netns", "shm_empty")
 
 
 def _clip(text):
-    return repr(str(text)[:200])
+    """At most about 200 characters: the start and the end (the error line of a traceback is the last one)."""
+    text = str(text)
+    return repr(text if len(text) <= 200 else text[:80] + " ... " + text[-115:])
 
 
 class _TlsServer(http.server.ThreadingHTTPServer):

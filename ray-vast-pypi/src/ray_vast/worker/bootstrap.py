@@ -101,7 +101,10 @@ def call(url, ctx, body=None, method=None, headers=None, timeout=10):
             outcome.append(e)
 
     worker = threading.Thread(target=attempt, daemon=True)
-    worker.start()
+    try:
+        worker.start()
+    except RuntimeError:  # "can't start new thread" (the container's pids limit): a failed call, not a fatal error
+        raise OSError("cannot start a thread for the call") from None
     worker.join(timeout)
     if not outcome:
         raise TimeoutError(f"no complete answer within {timeout} s")

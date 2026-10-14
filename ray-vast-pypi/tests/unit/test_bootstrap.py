@@ -579,3 +579,14 @@ def test_bootloader_gives_up_a_trickling_download_after_its_total_time_limit(new
     downloads = lambda: [e for e in world.head.events if e[2] == "/bootstrap"]
     assert wait_for(lambda: len(downloads()) >= 2, timeout=70), run.stdout  # 30 s limit + 10 s pause, then a retry
     assert run.proc.poll() is None and world.vast.destroys == []
+
+
+def test_a_call_that_cannot_start_its_thread_is_a_transient_network_error(monkeypatch):
+    # C9: under the container's pids limit, `threading.Thread.start` raises RuntimeError("can't start new thread").
+    # Only the heartbeat time limit may end a worker, so the watchdog must see a failed call (NET_ERRORS).
+    def no_thread(self):
+        raise RuntimeError("can't start new thread")
+
+    monkeypatch.setattr(bootstrap.threading.Thread, "start", no_thread)
+    with pytest.raises(bootstrap.NET_ERRORS):
+        bootstrap.call("http://127.0.0.1:9/", None, timeout=1)
