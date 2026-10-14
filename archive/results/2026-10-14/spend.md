@@ -12,3 +12,16 @@
 | Peak sum of dph_total | $0.344/h (both candidates, 35 s) |
 | EC2 | t3.large head i-0240c26ac434bba6a, about 04:43Z to 04:50Z (7 min) at $0.0832/h = about $0.010, plus 60 GiB gp3 for 7 min (< $0.001). Budget about $0.15. |
 | Day total so far (vast) | $0.0074 from this cycle. The day limit is $8. |
+
+## C6 (self-destroy paths)
+
+| Item | Value |
+|---|---|
+| vast credit before | $11.5584 (05:15:32Z) |
+| vast credit after | $11.3915 (05:37:58Z; the same at 05:38:14Z) |
+| vast spend (credit) | $0.1670 (budget $1.00) |
+| vast spend (estimate from dph_total in the poll) | about $0.149 |
+| Rentals | 7: 55870639 P100 $0.107/h (05:18:23Z-05:19:37Z, stopped by vast), 55870649 A5000 $0.237/h (to 05:26:11Z, A), 55870661 A5000 $0.239/h (to 05:33:42Z, B), 55870811 P100 $0.107/h (05:19:39Z-05:35:04Z, C), 55871644 P100 $0.107/h, 55872600 P100 $0.107/h, 55872780 A5000 $0.237/h (replacements, to down at 05:37Z) |
+| Peak sum of dph_total | $0.583/h |
+| EC2 | t3.large head i-067cffda6c3128957, about 05:16Z to 05:37Z (22 min) at $0.0832/h = about $0.03, plus 60 GiB gp3 (< $0.002). Budget about $0.15. |
+| Day total so far (vast) | $0.0074 (C5) + $0.1670 (C6) = $0.1744. The day limit is $8. |

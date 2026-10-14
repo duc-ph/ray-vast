@@ -307,3 +307,29 @@ Other findings:
 - `monitor.log` has two Ray warnings every 5 s: `Dropping the empty legacy field head_node` and `worker_nodes`. They are not errors.
 - The head container logs in local time (UTC−7), not UTC.
 - The provider got one HTTP 429 from vast and retried. The operator's poller used the same key every 5 s.
+
+## Live cycle C6 (2026-10-14)
+
+Setup: `ray-vast up` from commit f830338 on the dev box (the operator machine), EC2 `t3.large` head, us-west-2, image `rayproject/ray:2.59.0-py311-cpu`, one worker type `w` `{CPU: 4, GPU: 1}`, `min_workers: 3`, `candidate_factor` 1, `max_dollars_per_hour: 1.5`. Data: `archive/results/2026-10-14/` (`progress.md`, `c6/`, `spend.md`, `resources.csv`).
+
+Workers: A = 55870649 (RTX A5000, 5.2.174.20), B = 55870661 (RTX A5000, 5.2.174.20), C = 55870811 (P100, 143.55.45.86). The first plan put B on 55870811. After C6.1, a replacement got the same IP as 55870811. A rule by source IP would then block two workers. So B and C changed places, and C6.3 ran after C6.2.
+
+| # | Result | Key numbers | Notes and links |
+|---|---|---|---|
+| T13 | Pass | Five signals: no effect after 120 s. `SIGTERM`: report 0.5 s after the signal, gone from vast ≤ 3.3 s after the signal (limit 20 s). Ray node DEAD 31.6 s after the signal. | `SIGKILL`, `SIGQUIT`, `SIGUSR1`, `SIGUSR2` and `SIGCONT` were sent. PID 1 stayed the same bootstrap process. 50 orphans went to PID 1; zombies of PID 1: 0. Head log: `worker 55870649 asks to be destroyed: 'received SIGTERM'`. vast never showed `exited`. v2 rented a replacement. `c6/signals.out`, `c6/sigterm.out`, `c6/logloop_A/08.log` |
+| T14 | Pass | Provider destroy at `t_last` + 308.9 s (limit 270–330 s). Watchdog destroy decision at about `t_last` + 311 s. | `t_last` comes from a SYN capture on the head host, because the head does not log heartbeats. The provider acted first (`no heartbeat for 5 min`). The worker log shows the watchdog decision `no successful heartbeat for 300 s` about 2 s later. B's Ray node was ALIVE in every check until after the destroy. `c6/b_syn_capture.txt`, `c6/b_watch.txt`, `c6/logloop_B/16.log` |
+| Restart | Pass | Reboot → refusal 8 s; refusal → gone from vast ≤ 0.7 s | Head log: `enroll refused for instance 55870811 … already enrolled`, no destroy by the head for it. The worker's report reached port A (`unverified report … 'head refused enrollment: already enrolled'`). vast showed `rebooting` for one poll. The provider did not end C first. `c6/t_r.txt`, `c6/head/monitor.log` |
+| GPU count | Pass | GPU 1.0 on each of the 6 Ray workers | Host m3969 counted 4 GPUs in C5. Now it shows 1. No GPU refusal. `c6/node_resources_start.txt`, `c6/ray_nodes_end.json` |
+| Head shm | Pass | `/dev/shm` 2.6 GB (ShmSize 2704651264 B = 0.33 × 8003824 kB) | C5 had 64 MB. `c6/head_shm.txt` |
+| Teardown | Pass | `down` 41 s, `left: nothing`, exit 0; sweep `0 left`; `aws left: nothing` | Secret scan with the cluster token and all 7 join tokens: no output. |
+| Cost | | vast $0.1670 (credit 11.5584 → 11.3915); EC2 about $0.03 | 7 rentals, peak $0.583/h. `spend.md` |
+
+Other findings:
+- vast stopped one new candidate (55870639) by itself. `intended_status` became `stopped` before `running`. The worker enrolled, and then vast showed `exited`. The provider ended it (`instance status 'exited'`) and v2 rented a replacement. This is correct behavior. No worker report came, because the container was stopped from outside.
+- vast has the status `rebooting`. It is in neither provider status set. The provider would log it once as unknown and treat it as pending. That is correct for a reboot.
+- vast returned `no_such_ask` (HTTP 400) for two offers between the search and the rent. The provider took the next offer.
+- Two workers on different machines (m29217, m29278) had the same public IP. Both joined (F3).
+- The plan expects `t_last` in the head log. The head does not log heartbeats. A header-only SYN capture of port 7444 on the head host gives `t_last`.
+- The log of a container after a reboot is hard to get: C destroyed itself 9 s after the reboot.
+- `vast_tool.py` has a new command `reboot <id>` (`PUT /instances/reboot/<id>/`, from the vast CLI source). It refuses instances without a test label.
+- Do not use `pkill -f` with a pattern in the same shell command: it matches the shell itself.

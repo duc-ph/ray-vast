@@ -8,6 +8,7 @@
 #        python vast_tool.py logs <id>              # the container log (fetch it before the destroy)
 #        python vast_tool.py fields <label>         # the instance fields that the provider reads (C5.4)
 #        python vast_tool.py env-secret <id> <file> # the instance's join token into a new mode-600 file (for scan_secrets.sh)
+#        python vast_tool.py reboot <id>            # C6.3: restart the container (PUT /instances/reboot/<id>/); test labels only
 import json
 import os
 import sys
@@ -122,5 +123,10 @@ if __name__ == "__main__":
         with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as f:
             f.write(token)
         print(f"wrote the join token of {instance_id} to {path}")
+    elif command == "reboot":
+        instance = next((i for i in instances() if i["id"] == int(args[0])), None)
+        if not instance or not is_test_label(instance.get("label")):
+            raise SystemExit(f"instance {args[0]}: not listed or no test label; not rebooted")
+        print(f"{utc()} reboot {args[0]}: {json.dumps(call('PUT', f'/instances/reboot/{args[0]}/', {}))}")
     else:
         raise SystemExit(f"unknown command {command!r}")
