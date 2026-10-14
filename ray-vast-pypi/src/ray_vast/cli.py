@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 
 def main(argv=None):
@@ -20,9 +21,11 @@ def main(argv=None):
             sub.add_argument("--key-name", help="EC2 key pair name (or provider.key_name)")
             sub.add_argument("--wheel", help="ray-vast wheel to install on the head, for development (default: in a source tree, build "
                                              "the wheel; else install this CLI's own version from PyPI)")
-            sub.add_argument("--index-url", help="install ray-vast on the head from this package index (to test a release on "
-                                                 "TestPyPI); the dependencies still come from PyPI")
+            sub.add_argument("--index-url", help="install ray-vast on the head from this package index, with PyPI as an extra index "
+                                                 "(to test a release on TestPyPI; not for normal use)")
     args = parser.parse_args(argv)
+    # Progress lines show at once also when stdout is a pipe or a file (there Python buffers whole blocks).
+    sys.stdout.reconfigure(line_buffering=True)
 
     from .commands import run
 

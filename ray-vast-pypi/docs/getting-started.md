@@ -1,7 +1,7 @@
 # Getting started
 
 This tutorial starts a small GPU cluster, runs one job on it, and removes it.
-It takes about 15 minutes and costs less than $1.
+It takes about 20 minutes and costs less than $1.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ You need these on your laptop (the operator machine):
 ## 1. Install
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install ray-vast
 ```
@@ -90,7 +90,7 @@ cluster gpu-24gb is up. Head IP <head ip>.
 ```
 
 `up` takes about 2.5 minutes with the CPU image (`rayproject/ray:2.59.0-py311-cpu`).
-It takes about 8 minutes with the 18 GB GPU image, because the head pulls the image.
+It takes about 8 to 10 minutes with the 18 GB GPU image, because the head pulls the image.
 `up` makes no vast rental. Workers start only when a job needs them.
 
 If `up` stops with an error, run `ray-vast down cluster.yaml` and read [Clean up after a failure](how-to/clean-up.md).
@@ -121,7 +121,10 @@ Open a second terminal. Activate the venv, and run the `export` line that `dashb
 export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/home/you/.ray-vast/gpu-24gb/token
 ```
 
-Write a small job, `hello.py`:
+Write a small job, `hello.py`.
+This job needs a GPU worker. The autoscaler rents one on vast.ai, so this step costs money.
+The cluster YAML must allow at least 1 worker of a GPU type (`max_workers` 1 or more).
+
 
 ```python
 import ray
@@ -166,7 +169,7 @@ Read [Control cost](how-to/control-cost.md) for more.
 
 ## 7. Remove the cluster
 
-Stop the tunnel with Ctrl-C. Then run:
+Stop the tunnel with Ctrl-C. The `dashboard` command prints `tunnel closed`. Then run:
 
 ```bash
 ray-vast down cluster.yaml

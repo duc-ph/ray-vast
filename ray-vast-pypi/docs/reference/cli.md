@@ -24,7 +24,7 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 | `--key-file FILE` | `up`, `attach`, `dashboard` | Private SSH key file of the head. Or set `provider.key_file`. |
 | `--key-name NAME` | `up` | EC2 key pair name. Or set `provider.key_name`. |
 | `--wheel FILE` | `up` | For development. Install this ray-vast wheel on the head. |
-| `--index-url URL` | `up` | To test a release from TestPyPI. Install ray-vast on the head from this package index. The dependencies come from PyPI. |
+| `--index-url URL` | `up` | To test a release on TestPyPI. Not for normal use. Install ray-vast on the head from this package index, with PyPI as an extra index. |
 
 An option wins over the YAML field.
 
@@ -86,12 +86,14 @@ Rules:
 
 - `<version>` is the version of the `ray-vast` package on your laptop. So the head runs the same version as the CLI.
 - `--wheel` and `--index-url` do not go together.
-- With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have the dependencies of ray-vast, so they come from PyPI.
+- With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have all the dependencies of ray-vast, so PyPI is an extra index.
+- `pip` does not prefer one of the two indexes. For each package, it takes the highest version from either index. So a dependency can come from TestPyPI, for example a pre-release that is not on PyPI. In a test, `pip` took `opentelemetry-exporter-prometheus 1.12.0rc1` from TestPyPI.
+- Thus use `--index-url` only to test a release. For normal use, install from PyPI without `--index-url`.
 - `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. Else `up` stops before it makes anything.
 - Do not put a user name or a password in `URL`. `URL` goes into the Dockerfile, so the head image keeps it in its build history. `up` replaces a user name and a password in its output with `***`.
 - If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from <index>; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
 
-To test a release on TestPyPI:
+To test a release on TestPyPI (the same index rules apply to the `pip install` on your laptop):
 
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple ray-vast==<version>
@@ -151,7 +153,7 @@ ray-vast dashboard cluster.yaml
 
 1. It copies the cluster token to `~/.ray-vast/<cluster_name>/token` (mode 600).
 2. It prints the `export` line for the Ray CLI.
-3. It opens an SSH tunnel from port 8265 on your laptop to port 8265 on the head. Ctrl-C closes it.
+3. It opens an SSH tunnel from port 8265 on your laptop to port 8265 on the head. Ctrl-C closes it. Then the command prints `tunnel closed` and exits with code 0.
 
 Output:
 
