@@ -54,7 +54,7 @@ ray-vast-pypi/
 | 10c | Shim tests and mutation evaluation | Done (14 tests; 23 of 25 mutants killed, 2 equivalent) |
 | 11 | Local end-to-end on the dev box | Done (8 scenarios, 3 runs in a row; no product bug) |
 | 12 | Live tests on vast (paid) | Done: C5, C6, C8, C9 on 2026-10-14 (C9 found the pids limit; fix on branch `pids-limit-review` for review) |
-| 13 | Docs and release | Docs site live; TestPyPI 0.1.0rc1 tested; PyPI waits on the user |
+| 13 | Docs and release | Docs site live; TestPyPI 0.1.0rc1 tested; PyPI 0.1.0 published 2026-10-15 |
 
 
 ## Step 10b — Spec changes of 2026-10-13
