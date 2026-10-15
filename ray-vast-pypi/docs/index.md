@@ -1,5 +1,7 @@
 # ray-vast
 
+(work in progress)
+
 ray-vast runs a Ray cluster with the head on AWS EC2 and the workers on vast.ai.
 
 - The Ray head runs on one EC2 instance in your AWS account.
@@ -51,12 +53,6 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 
 You need an AWS profile, an EC2 key pair, and a vast API key in `~/.config/vastai/vast_api_key`.
 The full steps are in [Getting started](getting-started.md).
-
-<!-- PRE-RELEASE: remove at the PyPI release -->
-!!! note
-    ray-vast is not on PyPI yet. Until the first release, install the release candidate from TestPyPI:
-    `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ray-vast==0.1.0rc1`.
-    Then pass `--index-url https://test.pypi.org/simple/` to `ray-vast up`.
 
 ```bash
 pip install ray-vast "ray[default]==2.59.*"

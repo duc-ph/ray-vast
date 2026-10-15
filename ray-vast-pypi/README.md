@@ -1,5 +1,7 @@
 # ray-vast
 
+(work in progress)
+
 Run a Ray cluster with the head on AWS EC2 and GPU workers on vast.ai.
 
 - The Ray head runs on one EC2 instance in your AWS account.
@@ -23,9 +25,6 @@ pip install ray-vast "ray[default]==2.59.*"
 ```
 
 The Ray pin keeps Ray on your laptop at the same version as Ray in the cluster image. ray-vast is tested with Ray 2.59.
-
-<!-- PRE-RELEASE: remove at the PyPI release -->
-ray-vast is not on PyPI yet. Until the first release, install the release candidate from TestPyPI: `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ray-vast==0.1.0rc1`, and pass `--index-url https://test.pypi.org/simple/` to `ray-vast up`.
 
 You need Python 3.10 or later, an AWS profile, an EC2 key pair, and a vast.ai API key.
 Details: [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
@@ -71,7 +70,7 @@ Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/
 
 ## Status
 
-Version 0.1.0rc1, a release candidate of 0.1.0. Tested with Ray 2.59.
+Version 0.1.0. Tested with Ray 2.59.
 
 ## Contributing
 

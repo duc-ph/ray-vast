@@ -22,12 +22,6 @@ source .venv/bin/activate
 pip install ray-vast "ray[default]==2.59.*"
 ```
 
-<!-- PRE-RELEASE: remove at the PyPI release -->
-!!! note
-    ray-vast is not on PyPI yet. Until the first release, install the release candidate from TestPyPI:
-    `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ ray-vast==0.1.0rc1`.
-    Then pass `--index-url https://test.pypi.org/simple/` to `ray-vast up`.
-
 This installs the `ray-vast` command and the `ray` command.
 The pin `ray[default]==2.59.*` keeps Ray on the laptop at the same version as Ray in the cluster image (`rayproject/ray:2.59.0-...`).
 Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59 only.
