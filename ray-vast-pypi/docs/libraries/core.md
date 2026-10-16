@@ -34,11 +34,14 @@ Packages, credentials and GPUs: read [Ray Jobs](jobs.md).
 
 ## Settings
 
-B is the number of worker processes that your work can use on one worker. B = worker ports − 4.
+B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
 CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type.
+
+The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library pages add their own settings on top of this rule.
+
 The values below are for B = 10 and CPUS = 24.
 
 ```python
@@ -97,7 +100,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
     sudo docker exec ray-vast-head grep "process limit" /tmp/ray/session_latest/logs/monitor.log
     ```
 
-2. **The job log.** An actor that got no port can fail after about 6 minutes with `ActorUnschedulableError ... Failed to startup worker after retrying 5 times`. This error does not name the port limit.
+2. **The job log.** An actor that got no port hangs, or fails with `Failed to startup worker after retrying 5 times`. This error does not name the port limit.
 
     ```bash
     ray job logs <job id>

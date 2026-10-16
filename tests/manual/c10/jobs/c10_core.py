@@ -3,7 +3,9 @@
 #          the actors take all worker ports, and the child tasks never get a process: the job hangs.
 #   tuned: the same ITEMS work items on an actor pool of budget // 2 actors (budget = ports - 4), num_cpus = cpus / budget
 #          for the actors and the child tasks. At most budget processes: the job completes.
-# Usage: python c10_core.py many|tuned
+#   full:  budget actors with num_cpus = cpus / budget (the rule of the library pages: at most budget processes), each
+#          with ITEMS / budget work items that need no child task. The actors fill the CPUs and use budget ports.
+# Usage: python c10_core.py many|tuned|full
 import time
 
 import ray
@@ -30,11 +32,19 @@ class Worker:
     def work(self, i):
         return ray.get(child.options(num_cpus=self.child_cpus).remote(i))
 
+    def solo(self, i):
+        time.sleep(0.2)
+        return i
+
 
 if mode == "many":
     share = min(0.1, cpus / (2 * ITEMS))
     actors = [Worker.options(num_cpus=share).remote(share) for _ in range(ITEMS)]
     params = {"actors": len(actors), "actor_cpus": round(share, 4), "child_cpus": round(share, 4)}
+elif mode == "full":
+    share = cpus / budget
+    actors = [Worker.options(num_cpus=share).remote(share) for _ in range(budget)]
+    params = {"actors": len(actors), "actor_cpus": round(share, 3), "child_cpus": None}
 else:
     share = cpus / budget
     actors = [Worker.options(num_cpus=share).remote(share) for _ in range(max(1, budget // 2))]
@@ -43,7 +53,8 @@ print(f"C10_PARAMS {params}", flush=True)
 PROGRESS.update(params, items=ITEMS, done=0)
 try:
     t = time.time()
-    pending = [actors[i % len(actors)].work.remote(i) for i in range(ITEMS)]
+    call = (lambda a: a.solo) if mode == "full" else (lambda a: a.work)
+    pending = [call(actors[i % len(actors)]).remote(i) for i in range(ITEMS)]
     while pending:
         ready, pending = ray.wait(pending, num_returns=len(pending), timeout=5)
         ray.get(ready)

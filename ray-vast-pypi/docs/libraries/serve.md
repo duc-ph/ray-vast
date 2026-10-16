@@ -41,19 +41,22 @@ ray-vast down cluster.yaml --profile my-aws-profile
 
 ## Settings
 
-B is the number of worker processes that your work can use on one worker. B = worker ports − 4.
+B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
-The values below are for B = 10.
+CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type. [Ray Core](core.md#settings) shows how to get CPUS in your driver.
+
+The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library settings below come on top of this rule.
+
+The values below are for B = 10 and CPUS = 24, on one worker.
 
 ```python
 from ray import serve
 
 @serve.deployment(
-    num_replicas=5,                    # at most B // 2 for each worker
-    max_replicas_per_node=5,           # B // 2
-    ray_actor_options={"num_cpus": 1},
+    num_replicas=10,                        # at most B for each worker
+    ray_actor_options={"num_cpus": 2.4},    # CPUS / B
 )
 class Model:
     def __call__(self, request):
@@ -62,24 +65,27 @@ class Model:
 serve.run(Model.bind(), route_prefix="/")
 ```
 
-| Setting | Value (B = 10) | Formula |
+| Setting | Value (B = 10, CPUS = 24) | Formula |
 |---|---|---|
-| `num_replicas` (or `max_replicas` of `autoscaling_config`) | 5 for each worker | B // 2 × workers |
-| `max_replicas_per_node` | 5 | B // 2 (not tested; it keeps the limit with many workers) |
+| `ray_actor_options={"num_cpus": ...}` | 2.4 | CPUS / B |
+| `num_replicas` (or `max_replicas` of `autoscaling_config`) | 10 for each worker | B × workers |
+
+With `num_cpus` = CPUS / B, Ray puts at most B replicas on one worker. So you do not need `max_replicas_per_node`.
+We tested B replicas with `num_cpus` = CPUS / B on one worker with 14 ports (`pids.max` 1280, a local test with the real ray-vast head and worker, 2026-10-16): 10 replicas started and answered, with no refused fork.
 
 ## Why
 
 ray-vast gives each worker as many worker ports as its process limit (`pids.max`) allows, usually 14.
 Each Ray actor, task or replica needs a port.
 Too many at the same time make the work hang, or fail after 5 worker-start retries, but they do not crash the worker.
-Each worker also runs a Serve proxy, and a replica has about 50 threads, so B // 2 replicas on each worker keep the ports and the threads under the limit.
-Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
+Each worker also runs a Serve proxy. One of the 4 free ports is for it.
+A replica has about 50 threads (read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts)). ray-vast sizes the worker ports for this, so B replicas stay under the process limit.
 
 ## What does not work
 
 | What | Do this instead |
 |---|---|
-| Many replicas on one worker. In a test, 60 replicas on one worker with 14 ports made `serve.run` hang. | Set `num_replicas` and `max_replicas_per_node` to at most B // 2 for each worker. |
+| Many replicas on one worker. In a test, 60 replicas on one worker with 14 ports made `serve.run` hang. | Set `num_cpus` = CPUS / B on each replica. |
 | HTTP from your laptop to the head without a tunnel. The security groups do not open port 8000. | Use the SSH tunnel above. |
 
 ## If it fails

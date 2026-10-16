@@ -24,7 +24,7 @@ A host without the image in its cache must pull the image first. For the 18 GB G
 ## How the provider picks an offer
 
 - The provider searches with your offer query plus the filters that it adds. It asks vast for up to 100 offers.
-- It sorts the offers by `order_by` (default `dph_total`), in ascending order. So the cheapest offers come first.
+- It sorts the offers by `dph_total`, in ascending order. So the cheapest offers come first. You cannot change the order.
 - It skips the hosts on the blocklist. A host that fails a check goes on the blocklist for this cluster.
 - It skips an offer that would take the total price above `max_dollars_per_hour`.
 
@@ -34,7 +34,7 @@ A host without the image in its cache must pull the image first. For the 18 GB G
 |---|---|---|
 | Pull | The pull limit. Read [Use GPU images](../how-to/gpu-images.md#image-size-and-the-pull-limit). | The provider destroys the candidate. Blocklist `timeout`, 1 day. |
 | Enrollment | 1 minute after the provider first sees the candidate `running` | The provider destroys the candidate. Blocklist `timeout`, 1 day. |
-| Missing from vast's list | 60 seconds | The provider forgets the candidate. |
+| Missing from vast's list | 60 seconds after the last list that showed it | The provider destroys the candidate. One list without it does not end it. |
 | vast status `exited` or an error | at once | The provider destroys the candidate. Blocklist `network`, 1 day. |
 
 **Rent-loop breaker.** The provider counts the slots of each node type that end with no worker. After 3 such slots in a row, it stops new launches of that node type for 10 minutes. A successful enrollment sets the count to 0.
@@ -63,7 +63,8 @@ After it starts Ray, the bootstrap stays as PID 1 and becomes the watchdog.
 | A container restart | Worker | The head refuses the second enrollment. The worker destroys itself. |
 | A failed token check | Head | The head destroys the worker. |
 | No heartbeat for 5 minutes, seen by the head | Provider | Destroy. |
-| The public IP of the instance changes | Provider | Destroy. A Ray node cannot change its address. |
+| The public IP of the instance changes | Provider | Destroy. A Ray node cannot change its address. (Unit-tested. No live test saw an IP change.) |
+| Missing from vast's list for 60 seconds after the last list that showed it | Provider | Destroy. A live instance that the provider forgets costs money. |
 | vast status `exited` or an error | Provider | Destroy. |
 | An instance with the cluster label that the provider does not know | Provider (orphan sweep) | Destroy. |
 | `ray-vast down` | CLI | It terminates the head, then destroys every instance with the label. |

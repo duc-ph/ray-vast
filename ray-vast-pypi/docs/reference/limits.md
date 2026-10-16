@@ -9,6 +9,7 @@ The default AWS quota is 60 rules for each group, and the SSH rule uses one. So 
 - Two workers on the same IP share one rule.
 - Raise the quota "Inbound or outbound rules per security group" in AWS Service Quotas for a bigger cluster.
 - When all 5 groups are full, the provider destroys the candidate. The error says to raise the quota.
+- Unit tests check the group order and the full-group case. No live test had this many workers.
 
 ## 58 worker ports for each worker
 
@@ -17,8 +18,7 @@ Each Ray worker process (a task, an actor or a driver) needs one port.
 A worker with a process limit gets fewer worker ports. Read [The process limit of vast hosts](#the-process-limit-of-vast-hosts).
 
 - When no port is free, tasks wait.
-- A driver fails at once with `No available ports`.
-- An actor fails after about 6 minutes. The error is misleading: `ActorUnschedulableError ... Failed to startup worker after retrying 5 times ... Python environment setup`. The real cause (`No available ports`) is only in the worker log.
+- An actor that gets no port hangs, or fails with `Failed to startup worker after retrying 5 times`. This error does not name the port limit. The real cause (`No available ports`) is only in the worker log.
 - Actors use ports too.
 - Ray has no setting for the total number of worker processes. Idle worker processes keep their ports up to `RAY_num_workers_soft_limit`. ray-vast sets this limit to the smaller of the cores and half the worker ports. So a job that needs a new kind of worker process (for example, another runtime env) finds a free port.
 - Do not set `CPU` above 58.
@@ -31,16 +31,17 @@ At the limit, Ray cannot start a thread. The raylet can stop, and then the worke
 
 ray-vast keeps each worker below its limit:
 
-- Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). A Ray task or actor process has about 25 threads, not about 50. A Serve replica has about 50.
+- Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). Then a Ray task or actor process has 25 to 29 threads, not about 50, and a Serve replica with a FastAPI ingress has 50. We measured these numbers with `RAY_num_grpc_internal_threads=4` on a simulated 48-core host (2026-10-16).
 - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
 - The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at most 58 and at least 4. With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
+- The library pages use B = worker ports − 4: the number of worker processes that your work can use on one worker. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 - Ray still gets all the cores as `CPU`.
 
 Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
 The symptom of too much work is a queue, not a crash:
 
 - Tasks wait for a free port. A job takes longer.
-- An actor that waits for a port fails after about 6 minutes with a misleading error. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
+- An actor that waits for a port hangs, or fails with an error that does not name the port limit. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
 - A job that needs more processes at the same time than the ports allow can hang. For example, a Ray Data `groupby` needs its map tasks and its aggregator actors at the same time.
 
 Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit.
@@ -72,12 +73,12 @@ Set `storage_path` to a cloud bucket, and give the workers credentials for it. R
 ## Certificates do not renew
 
 The CA and every node certificate live 365 days.
-To renew, run `ray-vast down` and `ray-vast up`. `up` and the head log warn 14 days before the CA expires.
+To renew, run `ray-vast down` and `ray-vast up`. The head log warns 14 days before the CA expires.
 
 ## The head has no Elastic IP
 
-A reboot of the head keeps its IP.
-After an EC2 stop and start, the IP changes. Run `ray-vast down` and `ray-vast up`. The old workers destroy themselves.
+A reboot of the head keeps its IP, but the cluster does not survive it. The head container has no restart policy, and the provider keeps its state in memory only.
+After a reboot, or after an EC2 stop and start (the IP changes), run `ray-vast down` and `ray-vast up`. The old workers destroy themselves.
 
 ## No self-healing
 

@@ -34,7 +34,7 @@ The user (or the profile in `--profile`) needs these actions:
 
 All resources have the name `ray-vast-<cluster_name>` (the groups add `-0` … `-4`) and the tag `ray-vast-cluster=<cluster_name>`.
 
-`ray-vast-user` has no `iam:CreatePolicy`. So a restricted user cannot make a role with more permissions than the boundary. A live test proved it: `iam:CreateRole` without the boundary, or with another boundary, was denied.
+`ray-vast-user` has no `iam:CreatePolicy`. So a restricted user cannot make a role with more permissions than the boundary. A live test on 2026-10-16 proved it: `iam:CreateRole` without the boundary, or with another boundary, was denied.
 
 ## The head role
 

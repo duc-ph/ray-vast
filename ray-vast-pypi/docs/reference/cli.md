@@ -22,7 +22,6 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 |---|---|---|
 | `--profile NAME` | all | AWS profile. Default: `AWS_PROFILE`. Else, for `down`, `attach` and `dashboard`, the profile that `up` saved. Else the default credentials. |
 | `--wheel FILE` | `up` | For development. Install this ray-vast wheel on the head. |
-| `--index-url URL` | `up` | To test a release on TestPyPI. Not for normal use. Install ray-vast on the head from this package index, with PyPI as an extra index. |
 
 ## Exit codes
 
@@ -91,24 +90,17 @@ Rules:
 | Source | When | Output line |
 |---|---|---|
 | A wheel file | You pass `--wheel FILE`. | `installing ray-vast from the wheel FILE` |
-| A package index | You pass `--index-url URL`. | `installing ray-vast==<version> from URL` |
 | The source tree | `ray-vast` runs from a git clone (an editable install). `up` builds the wheel with `python -m build`. This needs the `build` package (in the `test` extra). | `installing ray-vast from a wheel built from the source tree <path>` |
 | PyPI | All other cases: the normal `pip install ray-vast`. | `installing ray-vast==<version> from PyPI` |
 
 - `<version>` is the version of the `ray-vast` package on your laptop. So the head runs the same version as the CLI.
-- `--wheel` and `--index-url` do not go together.
-- With `--index-url`, `pip` on the head uses `--index-url URL --extra-index-url https://pypi.org/simple`. TestPyPI does not have all the dependencies of ray-vast, so PyPI is an extra index.
-- `pip` does not prefer one of the two indexes. For each package, it takes the highest version from either index. So a dependency can come from TestPyPI, for example a pre-release that is not on PyPI. In a test, `pip` took `opentelemetry-exporter-prometheus 1.12.0rc1` from TestPyPI.
-- So use `--index-url` only to test a release. For normal use, install from PyPI without `--index-url`.
-- `URL` must start with `http://` or `https://`. It must not contain spaces or line breaks. If it does not obey these rules, `up` stops before it makes anything.
-- Do not put a user name or a password in `URL`. `URL` goes into the Dockerfile, so the head image keeps it in its build history. `up` replaces a user name and a password in its output with `***`.
-- If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from <index>; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
+- If the image build fails, `up` stops with `the head image build failed while installing ray-vast==<version> from PyPI; see the build output below`. The end of the build output follows. The head exists then. Run `ray-vast down`.
 
-To test a release on TestPyPI (the same index rules apply to the `pip install` on your laptop):
+To test a release on TestPyPI, download its wheel and pass it with `--wheel`:
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple ray-vast==<version>
-ray-vast up cluster.yaml --profile my-aws-profile --index-url https://test.pypi.org/simple/
+pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version> -d /tmp/rv
+ray-vast up cluster.yaml --profile my-aws-profile --wheel /tmp/rv/ray_vast-<version>-py3-none-any.whl
 ```
 
 ## `ray-vast down`

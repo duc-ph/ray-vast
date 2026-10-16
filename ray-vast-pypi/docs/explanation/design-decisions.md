@@ -15,7 +15,7 @@ This page gives a short summary. The full list, with the rejected options, is in
 | Why rent extra candidates? | `candidate_factor` 2 by default. | About 8% of hosts in a test had a port that we could not reach, and about 8% had a wrong egress IP. Extra candidates hide one bad host. |
 | How do you choose GPUs? | An offer query in the vast API JSON form, with MB units. `CPU` is a minimum, `GPU` is exact. | No own copy of the vast CLI parser. Ray reports the real cores of a running worker. |
 | Is there a budget? | `max_dollars_per_hour` is required. | A missing budget must not mean "no limit". |
-| Does the head get an Elastic IP? | No. | A reboot keeps the IP. After a stop and start, run `down` and `up`. |
+| Does the head get an Elastic IP? | No. | A reboot keeps the IP, but the cluster does not survive a reboot: the head container has no restart policy, and the state is in memory. After a reboot or a stop and start, run `down` and `up`. |
 | How many worker IPs? | Up to 5 security groups, about 299 worker IPs with the default quota. | 5 is the AWS default limit of groups for one network interface. An open head would let a DDoS stop the cluster. |
 | Do certificates renew? | No. They live 365 days. Run `down` and `up` to renew. | Ray loads certificate files only at process start. Short certificates make outages more likely. |
 | Which Ray versions? | `ray[default]>=2.59`. `up` warns for an untested version. | A hard pin would make pip change the image's Ray. |

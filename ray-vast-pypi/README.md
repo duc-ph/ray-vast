@@ -26,6 +26,7 @@ pip install ray-vast "ray[default]==2.59.*"
 
 The Ray pin keeps Ray on your laptop at the same version as Ray in the cluster image. ray-vast is tested with Ray 2.59.
 
+The CLI is tested on Linux. macOS is not tested.
 You need Python 3.10 or later, an AWS profile, the IAM policy `ray-vast-head-boundary` in your AWS account (a one-time step), and a vast.ai API key.
 Details: [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
 

@@ -36,17 +36,21 @@ The workers and the driver (on the head) need write access to the bucket. Read [
 
 ## Settings
 
-B is the number of worker processes that your work can use on one worker. B = worker ports − 4.
+B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
-The values below are for B = 10.
+CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type. [Ray Core](core.md#settings) shows how to get CPUS in your driver.
+
+The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library settings below come on top of this rule.
+
+The values below are for B = 10 and CPUS = 24.
 
 ```python
 from ray import tune
 
 tuner = tune.Tuner(
-    trainable,
+    tune.with_resources(trainable, {"cpu": 2.4}),                 # CPUS / B
     param_space={"x": tune.uniform(0, 1)},
     tune_config=tune.TuneConfig(num_samples=60, metric="score", mode="max",
                                 max_concurrent_trials=5),        # B // 2
@@ -55,8 +59,9 @@ tuner = tune.Tuner(
 tuner.fit()
 ```
 
-| Setting | Value (B = 10) | Formula |
+| Setting | Value (B = 10, CPUS = 24) | Formula |
 |---|---|---|
+| CPUs of each trial (`tune.with_resources`), and `num_cpus` of each task that a trial starts | 2.4 | CPUS / B |
 | `TuneConfig(max_concurrent_trials=...)` | 5 | B // 2 |
 | `RunConfig(storage_path=...)` | `s3://...` | A cloud bucket |
 

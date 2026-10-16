@@ -14,7 +14,8 @@ def main(argv=None):
     ]:
         sub = subparsers.add_parser(name, help=help_text)
         sub.add_argument("cluster_yaml")
-        sub.add_argument("--profile", default=os.environ.get("AWS_PROFILE"), help="AWS profile (default: AWS_PROFILE or the default credentials)")
+        sub.add_argument("--profile", default=os.environ.get("AWS_PROFILE"), help="AWS profile (default: AWS_PROFILE; else, for down, attach and dashboard, "
+                                                                          "the profile that up saved; else the default credentials)")
         if name == "up":
             sub.add_argument("--wheel", help="ray-vast wheel to install on the head, for development (default: in a source tree, build "
                                              "the wheel; else install this CLI's own version from PyPI)")

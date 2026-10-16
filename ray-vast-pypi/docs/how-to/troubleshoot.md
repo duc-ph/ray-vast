@@ -103,12 +103,12 @@ Your own threads count too. Use fewer threads in each task, for example `torch.s
 
 Or rent hosts with fewer cores, so that one worker gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
 
-## An actor fails with a misleading error
+## An actor hangs or fails with a misleading error
 
-An actor fails after about 6 minutes with:
+An actor hangs, or fails with:
 
 ```text
-ActorUnschedulableError ... Failed to startup worker after retrying 5 times ... Python environment setup
+Failed to startup worker after retrying 5 times
 ```
 
 The real cause can be that the worker has no free port (`No available ports`). The cause is only in the worker's Ray log. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker).
@@ -127,7 +127,7 @@ Run the `export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...` line that `ray-vast
 | Error | Cause | What to do |
 |---|---|---|
 | ``cluster <name> already exists; use `ray-vast down` first`` | An EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`, exists. | Run `ray-vast down cluster.yaml`. |
-| `the head image build failed while installing ray-vast==<version> from <index>` | The `docker build` on the head failed. Possible causes: the version is not on the index, the index is not reachable, or the base image pull failed. | Read the build output below the message. Run `ray-vast down cluster.yaml`. Read [CLI](../reference/cli.md). |
+| `the head image build failed while installing ray-vast==<version> from PyPI` | The `docker build` on the head failed. Possible causes: the version is not on PyPI, PyPI is not reachable, or the base image pull failed. | Read the build output below the message. Run `ray-vast down cluster.yaml`. Read [CLI](../reference/cli.md). |
 | `no vast key: set VAST_API_KEY or put it in ~/.config/vastai/vast_api_key` | No vast key. | Set the key. |
 | `AWS error ...` and `The AWS user lacks a permission` | The AWS user does not have a permission that ray-vast needs. | Read [IAM permissions](../reference/iam.md). |
 | `the image check printed no single RAYVAST_IMAGE_INFO ... line` | The image has no Python with `ray` and `ray_vast`, or its ENTRYPOINT does not run the command. | Read [Use GPU images](gpu-images.md). |

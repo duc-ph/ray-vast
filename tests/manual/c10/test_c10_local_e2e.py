@@ -143,6 +143,8 @@ CASES = [
     ("c10_serve.py", "tuned", 1280, 150), ("c10_serve.py", "many", 1280, 150),
     ("c10_train.py", "tuned", 1280, 300), ("c10_train.py", "many", 1280, 180),
     ("c10_rllib.py", "tuned", 1280, 300), ("c10_rllib.py", "many", 1280, 180),
+    # The rule of the library pages (2026-10-16): B = ports - 4 processes, each with num_cpus = CPUS / B.
+    ("c10_serve.py", "full", 1280, 300), ("c10_core.py", "full", 1280, 300),
 ]
 
 

@@ -5,7 +5,7 @@ It takes about 20 minutes and costs less than $1.
 
 ## Prerequisites
 
-You need these on your laptop (the operator machine):
+You need these on your laptop (the operator machine). The CLI is tested on Linux. macOS is not tested.
 
 - **Python 3.10 or later.** Ray 2.59 needs Python 3.10 or later.
 - **`ssh` and `scp`.** ray-vast uses them to reach the head.
@@ -166,7 +166,7 @@ cluster gpu-24gb is up. Head IP <head ip>.
   shell:     ray-vast attach cluster.yaml
 ```
 
-`up` takes about 2.5 minutes with the CPU image (`rayproject/ray:2.59.0-py311-cpu`).
+`up` took 2.5 to 6.5 minutes with the CPU image (`rayproject/ray:2.59.0-py311-cpu`) in our tests.
 It takes about 8 to 10 minutes with the 18 GB GPU image, because the head pulls the image.
 `up` makes no vast rental. Workers start only when a job needs them.
 

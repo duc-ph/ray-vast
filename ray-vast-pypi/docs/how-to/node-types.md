@@ -31,7 +31,7 @@ A running worker reports its real core count to Ray. Ray uses the real count for
 But Ray plans a new worker with the declared `CPU` value. So declare a `CPU` value that is close to the real hosts.
 
 **Cold-start overshoot.** Before the first worker reports its real cores, Ray plans with the declared `CPU`.
-So Ray can start more workers than necessary. In a test, Ray started 2 workers for 4 tasks.
+So Ray can start more workers than necessary. In a local spike (one machine, Ray 2.59), Ray started 2 workers for 4 tasks.
 The extra worker stays idle until `idle_timeout_minutes` removes it. This costs a few minutes of one worker.
 
 Do not set `CPU` above 58. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker).
@@ -101,7 +101,7 @@ Set a GPU memory range and a `dlperf` minimum.
 
 ray-vast does not add the network speed filters. Add them when your jobs need them.
 
-The provider sorts the offers by `order_by` (default `dph_total`, the cheapest first). Read [How the provider picks an offer](../explanation/worker-lifecycle.md#how-the-provider-picks-an-offer).
+The provider sorts the offers by `dph_total`, the cheapest first. Read [How the provider picks an offer](../explanation/worker-lifecycle.md#how-the-provider-picks-an-offer).
 
 ## Check your node types
 

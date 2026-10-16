@@ -3,8 +3,9 @@
 #          runs a Serve proxy: more processes than worker ports. Some replicas never start, so serve.run never returns:
 #          the job hangs.
 #   tuned: num_replicas = budget // 2 (budget = ports - 4), ray_actor_options={"num_cpus": min(1, cpus / (replicas + 1))}.
+#   full:  num_replicas = budget, ray_actor_options={"num_cpus": cpus / budget} (the rule of the library pages: B replicas).
 # Ends with serve.shutdown() (run_c10.py also runs c10_cleanup.py after a hang).
-# Usage: python c10_serve.py many|tuned
+# Usage: python c10_serve.py many|tuned|full
 import time
 
 from ray import serve
@@ -14,8 +15,8 @@ from c10common import PROGRESS, SCALE, error_info, finish, start, target
 ID = "C10.serve"
 mode = start(ID, 600)
 cpus, ports, budget = target()
-replicas = max(ports + 4, int(60 * SCALE)) if mode == "many" else max(1, budget // 2)
-replica_cpu = round(min(0.1 if mode == "many" else 1, cpus / (replicas + 1)), 4)
+replicas = {"many": max(ports + 4, int(60 * SCALE)), "full": budget}.get(mode, max(1, budget // 2))
+replica_cpu = cpus / budget if mode == "full" else round(min(0.1 if mode == "many" else 1, cpus / (replicas + 1)), 4)
 
 
 @serve.deployment(num_replicas=replicas, ray_actor_options={"num_cpus": replica_cpu})

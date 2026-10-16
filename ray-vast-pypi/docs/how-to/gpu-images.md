@@ -33,7 +33,7 @@ exec "$@"
 
 An ENTRYPOINT can write text to stdout before `exec "$@"`. This is fine. `up` reads only one marked line from the output of its image check.
 
-If the ENTRYPOINT does not run the command, the candidate never enrolls. The provider destroys it at a time limit, or when vast shows it as exited.
+If the ENTRYPOINT does not run the command, the image check of `up` prints no `RAYVAST_IMAGE_INFO` line, and `up` stops with an error. Read [`up` fails](troubleshoot.md#up-fails).
 
 ## Recommended images
 
@@ -59,6 +59,6 @@ Set `provider.image` to its name.
 A big image takes long to pull. The provider gives each candidate a pull limit. The limit comes from the image size and the download speed of the offer: `2 × size in GB × 8000 / inet_down` seconds, between 5 and 15 minutes.
 `up` measures the image size on the head. You cannot set it.
 
-`up` also takes longer with a big image, because the head pulls it. `up` takes about 8 to 10 minutes with the 18 GB GPU image, and about 2.5 minutes with the CPU image.
+`up` also takes longer with a big image, because the head pulls it. `up` took 8 to 10 minutes with the 18 GB GPU image, and 2.5 to 6.5 minutes with the CPU image, in our tests.
 
 To pull faster, add `inet_down: {gte: 500}` to the offer query. Read [Choose node types and offer queries](node-types.md).

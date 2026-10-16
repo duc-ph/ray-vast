@@ -34,7 +34,6 @@ ray-vast does not use the Ray fields `file_mounts`, `setup_commands`, `initializ
 | `max_dollars_per_hour` | number above 0 | required | Limit for the sum of `dph_total` over all workers and candidates. The provider does not rent above it. A missing value is an error, not "no limit". |
 | `candidate_factor` | integer | `2` | The provider rents up to this many candidates for each slot. It destroys the extra candidates when the slots are full. |
 | `allow_non_datacenter` | boolean | `false` | If true, ray-vast does not add the `datacenter = true` filter, and `up` shows a warning. Read [Security model](../security.md). |
-| `order_by` | string | `dph_total` | The vast offer field to sort by, in ascending order. The default puts the cheapest offers first. |
 
 ray-vast sets `type`, `module` and `disable_node_updaters` itself. Do not set them.
 

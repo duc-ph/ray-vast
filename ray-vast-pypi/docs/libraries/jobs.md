@@ -104,7 +104,8 @@ The job itself needs no settings. The driver runs on the head and uses no worker
 
 The work in the job needs settings. They use **B**, the number of worker processes that your work can use on one worker:
 
-- B = worker ports − 4. B keeps 4 ports free for the helper processes of the libraries (the Serve proxy, the Data and Train helpers).
+- B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
+- The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. CPUS is the number of Ray CPUs of one worker. Then Ray puts at most B of them on one worker. The library settings come on top of this rule.
 - The start line of each worker shows its port count, for example `worker ports 14`. Read it in the vast console (the instance log), or with `vastai logs <instance id>`.
 - Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
@@ -128,7 +129,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 | A local output path (for example `/tmp/out`). The files stay on each worker. | Write shared output to a cloud bucket. |
 | A library that opens its own connections between workers on other ports. Only the 64 identity ports of each worker are open. | Keep that work on one worker. |
 
-Ray traffic between workers goes over the public internet. Large objects move at about 30 MB/s between hosts.
+Ray traffic between workers goes over the public internet. Large objects moved at 3 to 30 MB/s between hosts in our tests. The rate depends on the hosts.
 
 ## If it fails
 

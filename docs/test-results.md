@@ -650,3 +650,17 @@ Runs of `tests/live/test_up_down.py` as the test user (`up --profile ray-vast-ia
 So `iam:DeleteRole` with the boundary condition works live: `down` deleted the role as the restricted user in all three runs. `up` with the generated key, `dashboard` with the generated key, and `down` with the saved profile all worked.
 
 Teardown: the test user and its access key were deleted. No `ray-vast-rvtest-*` instance, security group, volume, key pair, role or instance profile is left. vast: 0 instances. The two policies `ray-vast-head-boundary` and `ray-vast-user` stay in the account (it had none before), so the account is set up for ray-vast.
+
+## Local check: the `num_cpus` = CPUS / B rule (2026-10-16)
+
+Setup: the C10 local check with the real ray-vast head and worker bootstrap (`tests/manual/c10/test_c10_local_e2e.py`, the step 11 harness), on the dev box. One worker container with `--pids-limit 1280`: 14 worker ports, so B = 10. The box has 4 cores, so CPUS = 4 and CPUS / B = 0.4. Image `c10-local:torch`. Cost $0.
+
+Command: `PYTHONPATH=src .venv/bin/python -m pytest -o addopts="" -p no:cacheprovider -s ../tests/manual/c10/test_c10_local_e2e.py -k full`.
+
+| Test | Result | Settings | Time | pids.peak | Worker processes (peak) | `pids.events` |
+|---|---|---|---|---|---|---|
+| C10.serve.full | PASS (40 answers) | 10 replicas (B), `num_cpus` 0.4 (CPUS / B), no `max_replicas_per_node` | 27 s | 545 | 13 | `max 0` |
+| C10.core.full | PASS (20 items) | 10 actors (B), `num_cpus` 0.4 (CPUS / B) | 15 s | 390 | 12 | `max 0` |
+
+The worker stayed alive in both runs, and the head logged no process-limit WARNING. So the library pages give B (not B // 2) replicas, and `max_replicas_per_node` is not needed: `num_cpus` = CPUS / B lets Ray put at most B replicas on one worker.
+Not tested here: the rule on Tune trials, Train workers and RLlib env runners. Their caps (B // 2) are the ones that C10 tested.

@@ -34,19 +34,23 @@ ray-vast down cluster.yaml --profile my-aws-profile
 
 ## Settings
 
-B is the number of worker processes that your work can use on one worker. B = worker ports − 4.
+B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
-The values below are for B = 10. Env runners:
+CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type. [Ray Core](core.md#settings) shows how to get CPUS in your driver.
+
+The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library settings below come on top of this rule.
+
+The values below are for B = 10 and CPUS = 24. Env runners:
 
 ```python
 from ray.rllib.algorithms.ppo import PPOConfig
 
 config = (PPOConfig().environment("CartPole-v1")
-          .env_runners(num_env_runners=2,             # at most B // 2 = 5 for each worker
+          .env_runners(num_env_runners=2,             # 2 (tested); B // 2 or fewer for each worker
                        num_envs_per_env_runner=20,     # more environments here, not more runners
-                       num_cpus_per_env_runner=1))
+                       num_cpus_per_env_runner=2.4))   # CPUS / B
 algo = config.build_algo()
 algo.train()
 ```
@@ -58,7 +62,7 @@ from ray import tune
 
 config = (PPOConfig().environment("CartPole-v1")
           .env_runners(num_env_runners=0)
-          .learners(num_learners=2, num_gpus_per_learner=1, num_cpus_per_learner=1)
+          .learners(num_learners=2, num_gpus_per_learner=1, num_cpus_per_learner=2.4)   # CPUS / B
           .resources(placement_strategy="STRICT_PACK"))   # all learners on one worker
 tune.Tuner(config.algo_class, param_space=config,
            run_config=tune.RunConfig(
@@ -66,11 +70,12 @@ tune.Tuner(config.algo_class, param_space=config,
                checkpoint_config=tune.CheckpointConfig(checkpoint_at_end=False))).fit()
 ```
 
-This is the tested code. For checkpoints, add `storage_path="s3://my-bucket/experiments"` to `RunConfig`, as for [Ray Tune](tune.md#settings).
+We tested this code with `num_cpus_per_learner=1`. For checkpoints, add `storage_path="s3://my-bucket/experiments"` to `RunConfig`, as for [Ray Tune](tune.md#settings).
 
-| Setting | Value (B = 10) | Formula |
+| Setting | Value (B = 10, CPUS = 24) | Formula |
 |---|---|---|
-| `num_env_runners` | 2 (tested); at most 5 for each worker | B // 2 for each worker |
+| `num_cpus_per_env_runner`, `num_cpus_per_learner` | 2.4 | CPUS / B |
+| `num_env_runners` | 2 (tested) | B // 2 or fewer for each worker |
 | `num_envs_per_env_runner` | 20 | The environments you need / `num_env_runners` |
 | `placement_strategy` for learners | `"STRICT_PACK"` | All learners on one worker |
 | `num_learners` | 2 | At most the GPUs of one worker |
