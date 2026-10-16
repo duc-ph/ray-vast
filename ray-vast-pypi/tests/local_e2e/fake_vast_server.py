@@ -1,10 +1,11 @@
 """A fake vast.ai HTTP server that runs each rented "instance" as a local Docker container (plan step 11).
 
 It answers what `vast_api.VastClient` calls: POST /bundles/, PUT /asks/<offer>/, GET /instances/, GET and DELETE
-/instances/<id>/. A rental runs `docker run --network host` with the given image and args. Host networking gives
-every instance the box IP as `PUBLIC_IPADDR`, so two instances always share one public IP, and a connection from an
-instance to the head comes from that same IP (the head server checks it). Each instance gets its own block of 64
-host ports, mapped P to P (the bootstrap listens on them directly). Containers are named `<prefix>w-<id>`.
+/instances/<id>/. A rental runs `docker run --network <network>` with the given image and args: the network namespace of
+the scenario (e2e_harness.box_ip), which the head shares. So every instance has the scenario IP as `PUBLIC_IPADDR`, two
+instances always share one public IP, and a connection from an instance to the head comes from that same IP (the head
+server checks it). Each instance gets its own block of 64 ports, mapped P to P (the bootstrap listens on them directly).
+The server itself listens on `host_ip` (the box), outside the namespace. Containers are named `<prefix>w-<id>`.
 """
 import http.server
 import json
@@ -21,9 +22,9 @@ PORT_BLOCK_START = 20000
 
 
 class FakeVast:
-    def __init__(self, box_ip, offers, prefix, account_key="st11-account-key", docker_args=(), extra_env=None,
+    def __init__(self, box_ip, offers, prefix, host_ip, network, account_key="st11-account-key", docker_args=(), extra_env=None,
                  failing_hosts=0, silent_hosts=0):
-        self.box_ip, self.account_key, self.prefix = box_ip, account_key, prefix
+        self.box_ip, self.account_key, self.prefix, self.network = box_ip, account_key, prefix, network
         self.docker_args = list(docker_args)  # added to every `docker run` (for example --cpus 2)
         self.extra_env = dict(extra_env or {})  # added to the env of every instance
         # The first `failing_hosts` rentals get NET_ADMIN and run the real host checks, so the capability check fails
@@ -71,7 +72,7 @@ class FakeVast:
 
         self._server = http.server.ThreadingHTTPServer(("0.0.0.0", 0), Handler)
         self._server.daemon_threads = False  # so that server_close() waits for the requests in flight (a rental)
-        self.url = f"http://{box_ip}:{self._server.server_address[1]}{PREFIX}"
+        self.url = f"http://{host_ip}:{self._server.server_address[1]}{PREFIX}"
 
     def start(self):
         threading.Thread(target=self._server.serve_forever, daemon=True).start()
@@ -170,7 +171,7 @@ class FakeVast:
         env_file = Path(self._tmp.name, f"{name}.env")
         env_file.write_text("".join(f"{k}={v}\n" for k, v in env.items()))
         run = subprocess.run(
-            ["docker", "run", "-d", "--name", name, "--network", "host", "--env-file", str(env_file),
+            ["docker", "run", "-d", "--name", name, "--network", self.network, "--env-file", str(env_file),
              *docker_args, body["image"], *args],
             capture_output=True, text=True,
         )

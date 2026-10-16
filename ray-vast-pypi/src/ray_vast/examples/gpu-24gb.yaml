@@ -1,4 +1,4 @@
-# A 24 GB GPU tier. Workers are vast.ai instances, the head is an EC2 instance.
+# A 24 GB to 32 GB GPU tier. Workers are vast.ai instances, the head is an EC2 instance.
 # Every field is listed. A commented-out field keeps its default or does not apply here.
 # Reference: https://duc-ph.github.io/ray-vast/reference/configuration/
 
@@ -28,6 +28,6 @@ available_node_types:
     node_config:
       disk_gb: 80                   # disk of the instance in GB (default: 50)
       offer_query:                  # required: which vast offers this type can rent (vast API form)
-        gpu_ram: {gte: 24000, lte: 32000}   # MB
+        gpu_ram: {gte: 24000, lte: 33000}   # MB (RTX 3090, 4090: 24 GB; RTX 5090: 32 GB)
         dlperf: {gte: 40}
         inet_down: {gte: 500}

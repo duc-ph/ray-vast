@@ -1,0 +1,23 @@
+
+=== ray-vast up /home/ubuntu/ray-vast/archive/results/2026-10-16/A03/b/cluster.yaml --profile personal (Ctrl-C when ready; exit -2)
+installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi
+head instance i-0cddb9025713b24d8 starting
+Traceback (most recent call last):
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/bin/ray-vast", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/cli.py", line 28, in main
+    return run(args)
+           ^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/commands.py", line 466, in run
+    up(args.cluster_yaml, raw, session, ssh, profile=args.profile, wheel=wheel, vast_key=_read_vast_key(),
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/commands.py", line 227, in up
+    ec2.get_waiter("instance_running").wait(InstanceIds=[instance_id])
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/botocore/waiter.py", line 58, in wait
+    Waiter.wait(self, **kwargs)
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/botocore/context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/botocore/waiter.py", line 396, in wait
+    time.sleep(sleep_amount)
+KeyboardInterrupt

@@ -2,9 +2,9 @@
 # user docs at the host's B and CPUS (the C10 scripts use older values for these three; core, data and serve use
 # c10_core.py tuned, c10_data.py tuned2 and c10_serve.py full, which match the docs). The load is the same as the
 # matching "many" run of C10:
-#   tune:  max(ports + 4, 60) trials, each with resources {"cpu": CPUS / B}, and each trial runs its evaluation as a Ray
-#          task with num_cpus = CPUS / B (tune.md: "and num_cpus of each task that a trial starts");
-#          TuneConfig(max_concurrent_trials = B // 2).
+#   tune:  max(ports + 4, 60) trials; each trial runs its evaluation as a Ray task with num_cpus = CPUS / B, so it holds
+#          tune.PlacementGroupFactory([{"CPU": CPUS / B}, {"CPU": CPUS / B}]) (tune.md, Settings: one bundle for the trial
+#          and one for its task); TuneConfig(max_concurrent_trials = B // 2).
 #   train: TorchTrainer (gloo, CPU) with num_workers = B // 2, resources_per_worker {"CPU": CPUS / B},
 #          placement_strategy "STRICT_PACK", DataLoader num_workers 2 (train.md). Needs torch.
 #   rllib: PPO, num_env_runners = B // 2, num_cpus_per_env_runner = CPUS / B, the max(ports + 4, 40) environments of
@@ -39,10 +39,11 @@ try:
             for step in range(3):
                 tune.report({"score": ray.get(evaluate.remote(config["x"], step))})
 
-        params = {"trials": trials, "trial_cpu": share, "task_cpu": share, "max_concurrent_trials": budget // 2}
+        params = {"trials": trials, "bundles": [share, share], "task_cpu": share, "max_concurrent_trials": budget // 2}
         print(f"C10_PARAMS {params}", flush=True)
         PROGRESS.update(params)
-        grid = tune.Tuner(tune.with_resources(trainable, {"cpu": share}), param_space={"x": tune.uniform(0, 1)},
+        resources = tune.PlacementGroupFactory([{"CPU": share}, {"CPU": share}])  # the trial, and its task
+        grid = tune.Tuner(tune.with_resources(trainable, resources), param_space={"x": tune.uniform(0, 1)},
                           tune_config=tune.TuneConfig(num_samples=trials, metric="score", mode="max",
                                                       max_concurrent_trials=budget // 2)).fit()
         kind = "COMPLETED" if len(grid) == trials and grid.num_errors == 0 else "ERROR"

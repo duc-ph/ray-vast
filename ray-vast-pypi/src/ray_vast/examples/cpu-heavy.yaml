@@ -1,4 +1,4 @@
-# A CPU-heavy variant: one small GPU and many CPU cores in each worker.
+# A CPU-heavy variant: one GPU and many CPU cores in each worker.
 # CPU is a minimum. The offer must have at least this many effective cores.
 # Do not set CPU above 58. Each Ray worker process needs one worker port.
 # Every field is listed. A commented-out field keeps its default or does not apply here.
@@ -30,6 +30,6 @@ available_node_types:
     node_config:
       # disk_gb: 50                 # disk of the instance in GB (default: 50)
       offer_query:                  # required: which vast offers this type can rent (vast API form)
-        gpu_ram: {gte: 12000, lte: 24000}   # MB
+        gpu_ram: {gte: 8000}                # MB (any size: few hosts have 32 cores and a small GPU)
         cpu_ram: {gte: 64000}               # MB
         dlperf: {gte: 20}

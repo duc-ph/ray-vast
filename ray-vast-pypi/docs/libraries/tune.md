@@ -59,9 +59,27 @@ tuner = tune.Tuner(
 tuner.fit()
 ```
 
+A trial that starts Ray tasks must also hold the CPUs of these tasks. Ray starts a task of a trial only in the trial's own bundles. If no bundle is free for the task, the task does not start, and Tune shows `No trial resources are available`. Give each trial one bundle for itself and one bundle for each task that it runs at the same time (`tune.PlacementGroupFactory`):
+
+```python
+import ray
+from ray import tune
+
+@ray.remote(num_cpus=2.4)                                        # CPUS / B
+def evaluate(x):
+    return x
+
+def trainable(config):
+    tune.report({"score": ray.get(evaluate.remote(config["x"]))})
+
+resources = tune.PlacementGroupFactory([{"CPU": 2.4}, {"CPU": 2.4}])   # the trial, and its task
+tuner = tune.Tuner(tune.with_resources(trainable, resources), ...)
+```
+
 | Setting | Value (B = 10, CPUS = 24) | Formula |
 |---|---|---|
-| CPUs of each trial (`tune.with_resources`), and `num_cpus` of each task that a trial starts | 2.4 | CPUS / B |
+| CPUs of each trial (`tune.with_resources`) | 2.4 | CPUS / B |
+| A trial that starts tasks: one bundle for the trial and one for each task that runs at the same time (`tune.PlacementGroupFactory`), and `num_cpus` of each task | 2.4 for each bundle and task | CPUS / B |
 | `TuneConfig(max_concurrent_trials=...)` | 5 | B // 2 |
 | `RunConfig(storage_path=...)` | `s3://...` | A cloud bucket |
 
@@ -80,6 +98,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 | What | Do this instead |
 |---|---|
 | Many trials at the same time (the default). In a test, 60 trials on one worker with 14 ports hung. | Set `max_concurrent_trials` = B // 2. |
+| A task that a trial starts, with no free bundle in the trial for it. The task does not start: `No trial resources are available`. | Give the trial a bundle for each task (`tune.PlacementGroupFactory`). |
 | The default `storage_path`. The error is `Unable to set up cluster storage ... A local path on the head node is not accessible by worker nodes`. | Set `storage_path` to a cloud bucket, and give the workers credentials. |
 | Anonymous S3 access through pyarrow (`s3://anonymous@...`). S3 refuses its uploads. | Use credentials that can write to the bucket prefix. |
 

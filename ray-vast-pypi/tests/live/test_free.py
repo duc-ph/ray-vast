@@ -26,11 +26,12 @@ FULL = ["-o", "addopts=", "-p", "no:cacheprovider", "-m", "not live and not loca
 pytestmark = pytest.mark.free
 
 
-def run_pytest(record, name, args, timeout=3600):
+def run_pytest(record, name, args, timeout=3600, extra_env=None):
     """Run pytest in the package; keep the output and the JUnit XML. Returns (exit code, {test name: outcome})."""
     xml = record.dir / f"{name}.xml"
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("PYTEST_XDIST", "RAYVAST_LIVE_"))}  # not a worker of this run
     done = subprocess.run([PY, "-m", "pytest", *args, f"--junitxml={xml}", "-q"], cwd=PKG, capture_output=True, text=True,
-                          timeout=timeout, env={**os.environ, "PYTHONPATH": str(PKG / "src")})
+                          timeout=timeout, env={**env, "PYTHONPATH": str(PKG / "src"), **(extra_env or {})})
     record.evidence(f"{name}.txt", done.stdout + done.stderr)
     outcomes = {}
     if xml.exists():
@@ -169,7 +170,7 @@ def test_F07_bootloader_in_docker(record):
     check(record, "both variables tested", len(outcomes) == 2, sorted(outcomes))
 
 
-# --- F08-F15: the local end-to-end run (step 11), once for all eight ----------------------------------------------------
+# --- F08-F15: the local end-to-end scenarios (step 11), each in its own run (they can run at the same time) ----------
 
 LOCAL_E2E = {
     "F08": "test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero",
@@ -183,29 +184,13 @@ LOCAL_E2E = {
 }
 
 
-@pytest.fixture(scope="module")
-def local_e2e(results_dir):
-    """One run of tests/local_e2e (about 12 min). Each of F08-F15 reads its own test case."""
-    out = results_dir / "_session" / "local_e2e"
-    out.mkdir(parents=True, exist_ok=True)
-    xml = out / "local_e2e.xml"
-    done = subprocess.run([PY, "-m", "pytest", "-o", "addopts=", "-p", "no:cacheprovider", "-m", "local_e2e", "tests/local_e2e",
-                           f"--junitxml={xml}", "-q"], cwd=PKG, capture_output=True, text=True, timeout=3600)
-    (out / "local_e2e.txt").write_text(done.stdout + done.stderr)
-    cases = {}
-    for case in ET.parse(xml).iter("testcase"):
-        failure = next((c for c in case if c.tag in ("failure", "error", "skipped")), None)
-        cases[case.get("name")] = (failure.tag if failure is not None else "passed", case.get("time"),
-                                   (failure.get("message") or "")[:300] if failure is not None else "")
-    return cases
-
-
 def _local_e2e_test(scenario):
-    def test(record, local_e2e):
-        kind, seconds, message = local_e2e.get(LOCAL_E2E[scenario], ("missing", None, "not in the run"))
-        record.data("local_e2e_case", LOCAL_E2E[scenario])
-        record.evidence("README.txt", f"Evidence: _session/local_e2e/local_e2e.txt and .xml, test {LOCAL_E2E[scenario]}\n")
-        check(record, f"{LOCAL_E2E[scenario]} passed", kind == "passed", f"{kind} {seconds} s {message}")
+    def test(record):
+        case = LOCAL_E2E[scenario]
+        code, outcomes = run_pytest(record, "local_e2e", ["-o", "addopts=", "-p", "no:cacheprovider", "-m", "local_e2e",
+                                                         f"tests/local_e2e/test_local_e2e.py::{case}"])
+        record.data("local_e2e_case", case)
+        check(record, f"{case} passed", code == 0 and outcomes.get(case) == "passed", (code, outcomes))
     return test
 
 
@@ -221,13 +206,15 @@ test_F15_local_e2e_rent_loop_breaker = _local_e2e_test("F15")
 
 @pytest.mark.limits
 def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
-    """The C10 local check (tests/manual/c10/test_c10_local_e2e.py): one worker with --pids-limit 1280, 14 ports, B = 10."""
+    """The C10 local check (tests/manual/c10/test_c10_local_e2e.py): one worker with --pids-limit 1280, 14 ports, B = 10.
+    The 5 pair runs run at the same time (xdist; each has its own network namespace)."""
     selected = "core.py-tuned or core.py-many or c10_data.py-many-560 or serve.py-full or core.py-full"
-    code, outcomes = run_pytest(record, "c10_local_e2e", ["-o", "addopts=", "-p", "no:cacheprovider", "-s",
-                                                         str(MANUAL / "c10" / "test_c10_local_e2e.py"), "-k", selected], timeout=7200)
+    code, outcomes = run_pytest(record, "c10_local_e2e", ["-o", "addopts=", "-p", "no:cacheprovider", "-s", "-n", "5",
+                                                         str(MANUAL / "c10" / "test_c10_local_e2e.py"), "-k", selected], timeout=7200,
+                                extra_env={"C10E_OUT": str(record.dir / "c10e")})
     all_pass(record, "C10 local pairs", code, outcomes)
     check(record, "5 pair runs", len(outcomes) == 5, sorted(outcomes))
-    text = (record.dir / "c10_local_e2e.txt").read_text()
+    text = "".join(p.read_text() for p in sorted((record.dir / "c10e").glob("*")))  # each run's result line, job log and head log
     for line in re.findall(r"C10E_RESULT .*", text):
         record.data(line.split(" ", 4)[1] + " " + line.split(" ", 4)[2] + " " + line.split(" ", 5)[4], line[:400])
     warning = re.search(r"is at its process limit: \d+ refused forks/threads \(\+\d+\), pids \d+ of 1280, worker ports in use \d+ of \d+\. "
@@ -278,15 +265,20 @@ def test_F17_wheel_and_sdist(record, dist):
 
 @pytest.mark.release
 def test_F18_python_3_10_install(record, dist):
+    """The wheel installs and runs on 3.10. Then the unit tests run on 3.10 in the layout they need: the package source
+    tree (an editable install: some CLI tests build a wheel from it) next to the repository's docs/test-plan.md (the
+    claim matrix test)."""
     wheel = next(dist.glob("*.whl"))
     script = f"""set -e
-pip install -q /dist/{wheel.name} pytest pytest-timeout 'moto[server]' responses freezegun build hatchling > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
+pip install -q /dist/{wheel.name} > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
 python -V
 ray-vast --help | head -3
-cp -r /pkg /tmp/pkg && cd /tmp/pkg && rm -rf .venv
+mkdir -p /tmp/repo/docs && cp /plan/test-plan.md /tmp/repo/docs/ && cp -r /pkg /tmp/repo/ray-vast-pypi && cd /tmp/repo/ray-vast-pypi && rm -rf .venv
+pip install -q -e '.[test]' > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
 python -m pytest -q -p no:cacheprovider tests/unit 2>&1 | tail -3
 """
-    done = docker("run", "--rm", "-v", f"{dist}:/dist:ro", "-v", f"{PKG}:/pkg:ro", "python:3.10", "bash", "-c", script, timeout=3600)
+    done = docker("run", "--rm", "-v", f"{dist}:/dist:ro", "-v", f"{PKG}:/pkg:ro", "-v", f"{PKG.parent / 'docs'}:/plan:ro", "python:3.10",
+                  "bash", "-c", script, timeout=3600)
     record.evidence("py310.txt", done.stdout + done.stderr)
     check(record, "Python 3.10", "Python 3.10" in done.stdout, re.findall(r"Python 3\.\S+", done.stdout))
     check(record, "ray-vast --help works", "usage: ray-vast" in done.stdout, "")
@@ -356,7 +348,8 @@ def test_F20_doc_snippets_run_in_ray_2_59(record, tmp_path):
     (tmp_path / "imports.py").write_text("\n".join(imports) + "\nprint('IMPORTS OK')\n")
     record.evidence("imports.py", (tmp_path / "imports.py").read_text())
     done = docker("run", "--rm", "-v", f"{tmp_path}:/s:ro", RAY_IMAGE.replace("-cpu", "-gpu"), "bash", "-c",
-                  "pip install -q torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu >/dev/null 2>&1; python /s/imports.py", timeout=3600)
+                  "pip install -q torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu >/tmp/pip.log 2>&1 || tail -5 /tmp/pip.log; "
+                  "python /s/imports.py", timeout=3600)
     record.evidence("imports.txt", done.stdout + done.stderr)
     check(record, "all snippet imports work in the Ray 2.59 image (torch from pip)", "IMPORTS OK" in done.stdout, done.stderr[-300:])
     # The page's two blocks, on a local node with the page's CPUS = 24, then one call through the pool.

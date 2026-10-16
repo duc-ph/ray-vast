@@ -46,13 +46,19 @@ pytest -o addopts="" -m local_e2e tests/local_e2e
 The live suite in `tests/live/` proves the claims of the docs on real AWS and vast.ai. The claim matrix (one scenario for each claim) is in `docs/test-plan.md` at the repository root. Some groups cost money.
 
 ```
-pytest tests/live -m free                      # no cost: unit, Docker, local e2e, the package, the offer search
-pytest tests/live -m aws                       # AWS only, no vast rental
-pytest tests/live -m "lifecycle or libraries"  # vast rentals
-python tests/live/summarize.py                 # the results table into docs/test-results.md
+pytest tests/live -m free -n 12                     # no cost: unit, Docker, local e2e, the package, the offer search
+pytest tests/live -m aws -n 8                       # AWS only, no vast rental
+pytest tests/live -m "lifecycle or libraries" -n 8  # vast rentals
+python tests/live/summarize.py                      # the results table into docs/test-results.md
 ```
 
-Each test writes `archive/results/<UTC date>/<ID>/result.json` and its evidence. The cluster fixtures run `ray-vast up` once and `ray-vast down` at the end of the session, also after a failure or Ctrl-C. Read the docstring of each test module before you run it. It gives the time and the cost.
+`-n N` runs the tests in N processes (pytest-xdist). The suite sets `--dist loadgroup`: all tests of one cluster run in one process, so each cluster has one `up` and one `down`. The clusters run at the same time.
+
+Each test writes `archive/results/<UTC date>/<ID>/result.json` and its evidence. The cluster fixtures run `ray-vast up` once and `ray-vast down` at the end, also after a failure or Ctrl-C. Read the docstring of each test module before you run it. It gives the time and the cost.
+
+To debug, add `--keep-cluster`. The run keeps its clusters (it prints a `KEPT CLUSTER` line for each), and the next run with the option uses them again. Do the final run without the option: it ends the kept clusters and makes fresh ones.
+
+The local end-to-end tests also run in parallel: `pytest -o addopts="" -m local_e2e tests/local_e2e -n 8`. Each scenario has its own network namespace.
 
 ### Markers
 

@@ -1,0 +1,203 @@
+{
+ "id": "A01",
+ "markers": [
+  "aws"
+ ],
+ "fixture": "aws_only",
+ "started": 1792186658.426049,
+ "checks": [
+  {
+   "name": "up: first line names the source",
+   "ok": true,
+   "detail": "installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi"
+  },
+  {
+   "name": "up output line ^head instance i-\\w+ starting$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^head IP [\\d.]+$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^cluster rvtest-aws-e536 is up\\. Head IP [\\d.]+\\.$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^  dashboard: ray-vast dashboard \\S+   \\(then open http://127\\.0\\.0\\.1:8265\\)$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^  shell:     ray-vast attach \\S+$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "state file: region, profile, head, groups, role, instance profile",
+   "ok": true,
+   "detail": "{'cluster': 'rvtest-aws-e536', 'region': 'us-west-2', 'profile': 'personal', 'head_instance_id': 'i-0601a91739d2ebb1f', 'head_ip': '34.222.10.152', 'role_name': 'ray-vast-rvtest-aws-e536', 'instance_profile_name': 'ray-vast-rvtest-aws-e536'}"
+  },
+  {
+   "name": "ssh_key.pem mode 600, its directory 700",
+   "ok": true,
+   "detail": "('0o600', '0o700')"
+  },
+  {
+   "name": "head: t3.large (the default), Ubuntu 24.04 amd64",
+   "ok": true,
+   "detail": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004"
+  },
+  {
+   "name": "head: 60 GiB gp3, IMDSv2 required, no Elastic IP",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "instance has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "volume has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "key pair has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-e536-0 has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-e536-1 has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-e536-2 has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-e536-3 has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-e536-4 has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "role has the tag ray-vast-cluster=rvtest-aws-e536",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the head role has the boundary",
+   "ok": true,
+   "detail": "arn:aws:iam::491085427508:policy/ray-vast-head-boundary"
+  },
+  {
+   "name": "head /dev/shm = 0.33 x RAM",
+   "ok": true,
+   "detail": "0.33"
+  },
+  {
+   "name": "the head YAML has the measured image_size_gb",
+   "ok": true,
+   "detail": "7"
+  },
+  {
+   "name": "attach with the saved profile opens a shell on the head",
+   "ok": true,
+   "detail": " can be applied with ESM Apps.\nLearn more about enabling ESM Apps service at https://ubuntu.com/esm\n\nNew release '26.04.1 LTS' available.\nRun 'do-release-upgrade' to upgrade to it.\n\n\nATTACH_OK ubuntu\n"
+  },
+  {
+   "name": "dashboard prints the export line before the tunnel ends",
+   "ok": true,
+   "detail": "['for `ray job submit` set:\\n', '  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/tmp/pytest-of-ubuntu/pytest-224/home-aws_only0/.ray-vast/rvtest-aws-e536/token\\n', 'dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265\\n']"
+  },
+  {
+   "name": "the tunnel opens 8265",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "token file mode 600",
+   "ok": true,
+   "detail": "0o600"
+  },
+  {
+   "name": "Ctrl-C prints `tunnel closed`, exit 0",
+   "ok": true,
+   "detail": "('tunnel closed\\n', 0)"
+  },
+  {
+   "name": "dashboard with AWS_PROFILE=bogus fails on that profile (it wins over the saved one)",
+   "ok": true,
+   "detail": "ray-vast dashboard: the AWS profile 'bogus' does not exist (--profile, AWS_PROFILE or the profile that `up` saved)"
+  },
+  {
+   "name": "dashboard with --profile bogus fails on that profile (it wins over the saved one)",
+   "ok": true,
+   "detail": "ray-vast dashboard: the AWS profile 'bogus' does not exist (--profile, AWS_PROFILE or the profile that `up` saved)"
+  },
+  {
+   "name": "attach without the SSH key: the documented error",
+   "ok": true,
+   "detail": " cluster rvtest-aws-e536 at /tmp/pytest-of-ubuntu/pytest-224/home-aws_only0/.ray-vast/rvtest-aws-e536/ssh_key.pem: `ray-vast up` makes it on the machine where it runs. Run attach and dashboard there.\n"
+  },
+  {
+   "name": "0 vast rentals",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "down: terminating head first",
+   "ok": true,
+   "detail": "['terminating head i-0601a91739d2ebb1f']"
+  },
+  {
+   "name": "down: 5 groups, key pair, instance profile, role",
+   "ok": true,
+   "detail": "['terminating head i-0601a91739d2ebb1f', 'deleted security group sg-00b87637c28f54d1e', 'deleted security group sg-01bfb49a86261f197', 'deleted security group sg-04e70e23f2cb1349b', 'deleted security group sg-070c3c4dc51184572', 'deleted security group sg-09f529d170facdc6a', 'deleted key pair ray-vast-rvtest-aws-e536', 'deleted instance profile ray-vast-rvtest-aws-e536', 'deleted role ray-vast-rvtest-aws-e536', 'left: nothing']"
+  },
+  {
+   "name": "down: left nothing, exit 0",
+   "ok": true,
+   "detail": "['left: nothing']"
+  },
+  {
+   "name": "AWS check: nothing left",
+   "ok": false,
+   "detail": "['volume vol-0583d74ba48758885']"
+  }
+ ],
+ "data": {
+  "up_s": 490.8,
+  "head": {
+   "type": "t3.large",
+   "image": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004",
+   "volume": [
+    60,
+    "gp3"
+   ],
+   "imds": "required",
+   "eips": 0
+  },
+  "down_s": 35.2
+ },
+ "outcome": "failed",
+ "message": "AssertionError: AWS check: nothing left: ['volume vol-0583d74ba48758885']",
+ "ended": 1792186701.3845596,
+ "wall_s": 43.0
+}

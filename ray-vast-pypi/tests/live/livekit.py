@@ -68,7 +68,7 @@ def summary_table(root, expected):
                 lines.append(f"| {name} | NOT RUN | | | |")
                 continue
             word, line = _verdict(result)
-            line = line.replace("|", "/")
+            line = " ".join(line.replace("|", "/").split())  # one row: no line break, no pipe
             lines.append(f"| {name} | {word} | {result.get('wall_s', '')} | {line} | `{root.name}/{name}/` |")
     return "\n".join(lines) + "\n"
 
@@ -99,12 +99,12 @@ class NotOurs(Exception):
     """The suite was about to change an AWS or vast resource that it did not make."""
 
 
-OUR_NAME = re.compile(r"^ray-vast-(rvtest-[a-z0-9-]+|livetest-\d{8}(-s3)?)$")
+OUR_NAME = re.compile(r"^ray-vast-(rvtest-[a-z0-9-]+|livetest-\d{8}(-s3(-[a-z0-9]+)?)?)$")
 
 
 def assert_ours(name):
     """Every name that the suite deletes passes here first. Only the suite's clusters and S3 buckets (`rvtest-*`) and
-    its IAM test users (`livetest-<date>`, `livetest-<date>-s3`) are ours; never the dev box, its key pair, the two account
+    its IAM test users (`livetest-<date>`, `livetest-<date>-s3-<host>`) are ours; never the dev box, its key pair, the two account
     policies, or anything named badminton."""
     if not OUR_NAME.match(name or "") or "badminton" in name:
         raise NotOurs(f"refusing to touch {name!r}: not made by the live suite")
@@ -246,3 +246,77 @@ def host_facts(probe, machine_id):
     pids_max = int(value) if value and value.isdigit() else None
     return {"machine_id": machine_id, "pids_max": pids_max, "cgroup": probe.get("cgroup"), "cpus": int(probe["ray_cpus"]),
             "limited": pids_max is not None}
+
+
+def xdist_group(scenario, fixturenames, host=None):
+    """The xdist group of one test, for `pytest -n N --dist loadgroup` (conftest forces loadgroup). xdist runs all tests
+    of a group in one worker process, so a session fixture of that group runs `up` once and `down` once. A02 joins the
+    aws_only group (it deletes the account boundary, so it runs first there; the other clusters wait for it). A test with
+    the restricted IAM user joins lifecycle (one user for each run). F17 and F18 share one wheel build; F20 joins them,
+    because F18 and F20 each fill about 1.5 GB of the dev box disk in a container (pip installs). Each libraries host
+    (H1, H2, H3, gpu2) is its own cluster and group. None: any worker."""
+    if "aws_only" in fixturenames or scenario == "A02":
+        return "aws_only"
+    if "lifecycle" in fixturenames or "restricted_user" in fixturenames:
+        return "lifecycle"
+    if "libraries" in fixturenames:
+        return f"libraries-{host.lower()}"
+    if "dist" in fixturenames or scenario == "F20":
+        return "dist"
+    return "release" if "release" in fixturenames else None
+
+
+def note_opened(run_dir, cluster):
+    """Write `<run_dir>/opened/<name>.json` ({name, region, kept, yaml, home}) before the cluster's `up`, so the end of the
+    run checks it, also after a failed `up` or in another worker process."""
+    path = Path(run_dir) / "opened" / f"{cluster['name']}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(cluster))
+
+
+def end_of_run(run_dir, test_label, sweep, aws_check, scan):
+    """The guards of a run, once, after every worker process ended (so no worker still uses a cluster): a vast label sweep
+    to 0, the AWS check of each cluster, and the secret scan (`scan()` gives the files with a secret pattern; each worker
+    wrote the files with its own secret values to `scan_<worker>.txt`). A kept cluster (--keep-cluster) is not swept or
+    checked. Returns (problems, one KEPT line for each kept cluster). The logs go to `run_dir`."""
+    run_dir = Path(run_dir)
+    opened = [json.loads(p.read_text()) for p in sorted((run_dir / "opened").glob("*.json"))]
+    ended = [c for c in opened if not c["kept"]]
+    problems = []
+    try:
+        lines = sweep([test_label] + [f"ray-vast:{c['name']}" for c in ended])
+        (run_dir / "sweep.log").write_text("\n".join(lines) + "\n")
+    except Exception as e:  # noqa: BLE001 - the report must name it
+        problems.append(f"vast sweep failed: {type(e).__name__}: {e}")
+    for c in ended:
+        left = aws_check(c["name"], c["region"])
+        (run_dir / f"aws_check_{c['name']}.log").write_text(("\n".join(left) or "aws left: nothing") + "\n")
+        if left:
+            problems.append(f"AWS left for {c['name']}: {left}")
+    found = sorted({*map(str, scan()), *(line for p in run_dir.glob("scan_*.txt") for line in p.read_text().split())})
+    (run_dir / "secret_scan.txt").write_text("".join(f"{p}\n" for p in found) or "no file holds a secret\n")
+    if found:
+        problems.append(f"the secret scan found {len(found)} file(s): {', '.join(found)}")
+    kept = [f"KEPT CLUSTER {c['name']} still runs and costs money. End it: HOME={c['home']} ray-vast down {c['yaml']} "
+            f"(or run the suite again without --keep-cluster)" for c in opened if c["kept"]]
+    return problems, kept
+
+
+def timeline_spend(rows):
+    """The vast spend of one cluster in $, from its timeline (Cluster.start_poller): each sample's instances cost their
+    dph_total until the next sample. A failed sample keeps the instances of the last good one. In a parallel run the
+    credit of the account moves for all clusters at once, so each group uses this estimate."""
+    total, last = 0.0, []
+    for row, after in zip(rows, rows[1:]):
+        last = row.get("instances", last)
+        total += sum(i.get("dph_total") or 0 for i in last) * (after["t"] - row["t"]) / 3600
+    return round(total, 4)
+
+
+def host_of(item):
+    """The libraries host of a test item: its `where` parameter or its `host` marker (None for other tests)."""
+    params = getattr(item, "callspec", None)
+    if params is not None and "where" in params.params:
+        return params.params["where"]
+    marker = item.get_closest_marker("host")
+    return marker.args[0] if marker else None

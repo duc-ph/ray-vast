@@ -1,0 +1,400 @@
+2026-10-16 16:15:27,946	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-16 16:15:27,961	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-16 16:15:27,961	SUCC cli.py:67 -- [32mJob 'raysubmit_2QF8zwLhYXFnaFSF' submitted successfully[39m
+2026-10-16 16:15:27,961	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-16 16:15:27,961	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-16 16:15:27,961	INFO cli.py:331 -- Query the logs of the job:
+2026-10-16 16:15:27,962	INFO cli.py:333 -- [1mray job logs raysubmit_2QF8zwLhYXFnaFSF[22m
+2026-10-16 16:15:27,962	INFO cli.py:335 -- Query the status of the job:
+2026-10-16 16:15:27,962	INFO cli.py:337 -- [1mray job status raysubmit_2QF8zwLhYXFnaFSF[22m
+2026-10-16 16:15:27,962	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-16 16:15:27,962	INFO cli.py:341 -- [1mray job stop raysubmit_2QF8zwLhYXFnaFSF[22m
+2026-10-16 16:15:27,964	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-16 16:15:27,957	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_2QF8zwLhYXFnaFSF: python c10_data.py many
+C10_START C10.data many 1792192529.8 guard_s=150.0
+2026-10-16 16:15:29,757	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 172.17.0.7:6379...
+2026-10-16 16:15:29,785	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=16.0 ports=4 budget=0
+C10_PARAMS {'blocks': 40, 'rows': 40000, 'map_num_cpus': 0.05}
+2026-10-16 16:15:31,199	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hAUS9Y92PBq9tfRuuyE_0. Full logs are in /tmp/ray/session_2026-10-16_16-15-00_343907_7/logs/ray-data
+2026-10-16 16:15:31,199	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hAUS9Y92PBq9tfRuuyE_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange] -> TaskPoolMapOperator[MapBatches(add_key)] -> HashAggregateOperator[HashAggregate(key_columns=('key',), num_partitions=40)]
+2026-10-16 16:15:31,275	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-16 16:15:31,470	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:15:31,470	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:15:31,470	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-16 16:15:31,471	INFO logging_progress.py:181 -- 
+2026-10-16 16:15:31,471	INFO logging_progress.py:231 -- ReadRange: 0/1
+2026-10-16 16:15:31,471	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 39 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 16:15:31,471	INFO logging_progress.py:231 -- MapBatches(add_key): 0/1
+2026-10-16 16:15:31,471	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 16:15:31,471	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:15:31,471	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 16:15:31,471	INFO logging_progress.py:231 --     - Shuffle: 0/1
+2026-10-16 16:15:31,471	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:15:31,471	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet)[0m [2026-10-16 16:15:32,718 E 679 707] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_343907_7 is over 95% full, available space: 1.23951 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.
+2026-10-16 16:15:33,951	INFO hash_aggregate.py:161 -- Estimated memory requirement for aggregating aggregator (partitions=40, aggregators=16, dataset (estimate)=0.0GiB): shuffle=0.0MiB, output=0.0MiB, total=0.1MiB, 
+[36m(pid=333)[0m [2026-10-16 16:15:35,810 E 333 333] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=d898943a0a8db430089ca4a171041855deb5a26541558f6e67fc0b3c
+2026-10-16 16:15:41,542	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:15:41,542	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:15:41,542	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:15:41,542	INFO logging_progress.py:181 -- 
+2026-10-16 16:15:41,542	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:15:41,542	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:15:41,542	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:15:41,542	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:15:41,542	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:15:41,542	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:15:41,542	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:15:41,542	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:15:41,542	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet)[0m [2026-10-16 16:15:42,735 E 679 707] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_343907_7 is over 95% full, available space: 1.68811 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(pid=383)[0m [2026-10-16 16:15:36,645 E 383 383] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=1f0ddd4ca570bc33fead1261ec627b51df23943a2b63bf812a44bde2[32m [repeated 7x across cluster][0m
+2026-10-16 16:15:51,545	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:15:51,545	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:15:51,545	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:15:51,545	INFO logging_progress.py:181 -- 
+2026-10-16 16:15:51,545	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:15:51,545	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:15:51,545	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:15:51,545	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:15:51,545	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:15:51,545	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:15:51,545	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:15:51,545	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:15:51,545	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +22s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +22s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet)[0m [2026-10-16 16:15:52,740 E 679 707] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_343907_7 is over 95% full, available space: 0.868725 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[36m(autoscaler +27s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:01,642	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:01,642	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:01,642	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:01,642	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:01,642	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:01,642	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:01,642	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:01,642	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:01,642	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:01,642	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:01,642	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:01,642	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:01,642	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +32s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet)[0m [2026-10-16 16:16:02,745 E 679 707] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_343907_7 is over 95% full, available space: 0.983185 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[36m(autoscaler +37s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:11,648	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:11,648	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:11,648	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:11,648	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:11,648	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:11,648	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:11,648	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:11,648	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:11,648	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:11,648	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:11,648	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:11,648	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:11,649	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +42s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +47s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:21,743	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:21,744	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:21,744	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:21,744	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:21,744	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:21,744	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:21,744	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:21,744	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:21,744	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:21,744	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:21,744	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:21,744	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:21,744	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +52s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +57s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:31,746	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:31,746	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:31,747	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:31,747	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:31,747	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:31,747	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:31,747	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:31,747	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:31,747	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:31,747	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:31,747	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:31,747	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:31,747	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet)[0m [2026-10-16 16:16:34,009 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(330) have not registered within the timeout. The process is dead, probably it crashed during start.
+[33m(raylet)[0m [2026-10-16 16:16:05,932 E 50 62] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_343907_7 is over 95% full, available space: 0.983059 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.
+[36m(pid=548)[0m [2026-10-16 16:16:34,711 E 548 548] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=c70bedfcaecf3e5ed773418cd7c9c8a82de691876c36d2373ad3b638
+[36m(autoscaler +1m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:41,836	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:41,836	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:41,836	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:41,836	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:41,836	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:41,836	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:41,836	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:41,836	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:41,836	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:41,836	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:41,836	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:41,836	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:41,836	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:16:51,926	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:16:51,926	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:16:51,926	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:16:51,926	INFO logging_progress.py:181 -- 
+2026-10-16 16:16:51,926	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:16:51,926	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:16:51,926	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:16:51,926	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:16:51,926	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:16:51,926	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:16:51,926	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:16:51,926	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:16:51,926	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:02,005	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:02,005	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:02,005	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:02,005	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:02,005	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:02,005	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:02,005	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:02,005	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:02,005	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:02,005	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:02,005	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:02,005	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:02,005	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m32s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m37s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m42s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:12,083	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:12,083	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:12,084	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:12,084	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:12,084	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:12,084	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:12,084	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:12,084	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:12,084	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:12,084	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:12,084	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:12,084	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:12,084	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m47s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m52s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:22,164	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:22,164	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:22,164	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:22,164	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:22,164	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:22,164	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:22,164	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:22,164	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:22,164	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:22,164	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:22,164	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:22,164	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:22,164	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m57s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:32,242	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:32,242	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:32,242	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:32,242	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:32,242	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:32,242	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:32,242	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:32,242	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:32,242	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:32,242	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:32,242	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:32,242	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:32,242	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet)[0m [2026-10-16 16:17:34,075 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(551) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 13x across cluster][0m
+[36m(pid=708)[0m [2026-10-16 16:16:36,363 E 708 708] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=1b9a95330f7c5cb1e4e7a63bddb48e54c451731b41e37f3cacbb3b62[32m [repeated 7x across cluster][0m
+[36m(autoscaler +2m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:42,330	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:42,330	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:42,330	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:42,330	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:42,330	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:42,330	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:42,330	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:42,330	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:42,330	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:42,330	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:42,330	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:42,331	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:42,331	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-16 16:17:52,408	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hAUS9Y92PBq9tfRuuyE_0 =======
+2026-10-16 16:17:52,408	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 16:17:52,408	INFO logging_progress.py:227 -- Active & requested resources: 14.7/16 CPU, 16.0GiB/21.5GiB memory, 468.8KiB/4.6GiB object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:181 -- 
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 -- ReadRange: 22000/40000
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:52,408	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+C10_JOB C10.data HUNG {"alive_nodes": ["8140cb75834a82538732115666036b9383f82646100ee4dc177ecf42"], "elapsed_s": 150.0, "guard_s": 150.0, "mode": "many", "progress": {"blocks": 40, "map_num_cpus": 0.05, "rows": 40000, "stage": "groupby"}}
+2026-10-16 16:18:03,205	ERR cli.py:74 -- [31m---------------------------------------[39m
+2026-10-16 16:18:03,205	ERR cli.py:75 -- [31mJob 'raysubmit_2QF8zwLhYXFnaFSF' failed[39m
+2026-10-16 16:18:03,206	ERR cli.py:76 -- [31m---------------------------------------[39m
+2026-10-16 16:18:03,206	INFO cli.py:89 -- Status message: Job entrypoint command failed with exit code 3, last available logs (truncated to 20,000 chars):
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 16 (0.0B); Resources: 2.0 CPU, 15.6KiB memory, 125.0KiB object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 -- MapBatches(add_key): 8000/40000
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 14; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.7 CPU, 218.8KiB memory, 343.8KiB object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=40): 0/1
+2026-10-16 16:17:52,408	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 12.0 CPU, 16.0GiB memory, 0.0B object store
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 16:17:52,408	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 16:17:52,408	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 16.0, 'memory': 23085449216.0, 'GPU': 0.0}*2. Add suitable node types to this cluster to resolve this issue.
+C10_JOB C10.data HUNG {"alive_nodes": ["8140cb75834a82538732115666036b9383f82646100ee4dc177ecf42"], "elapsed_s": 150.0, "guard_s": 150.0, "mode": "many", "progress": {"blocks": 40, "map_num_cpus": 0.05, "rows": 40000, "stage": "groupby"}}
+
+2026-10-16 16:15:27,951	INFO dashboard_sdk.py:423 -- Package gcs://_ray_pkg_90ba90f302ac53bb.zip already exists, skipping upload.
+2026-10-16 16:18:03,201	INFO sdk.py:520 -- WebSocket closed for job raysubmit_2QF8zwLhYXFnaFSF with close code 1000
+
+--- head log
+2026-10-16 16:15:26,713	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:26,713	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:26,713	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:31,728	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:31,728	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:31,728	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:36,741	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:36,741	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:36,741	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:41,754	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:41,754	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:41,754	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:46,770	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:46,770	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:46,770	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:51,784	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:51,785	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:51,785	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:56,798	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:56,798	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:56,798	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:01,808	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:01,808	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:01,808	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:06,819	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:06,819	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:06,819	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:11,830	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:11,830	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:11,830	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:16,842	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:16,842	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:16,842	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:21,854	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:21,854	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:21,854	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:26,869	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:26,869	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:26,869	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:31,881	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:31,881	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:31,881	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:36,891	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:36,891	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:36,891	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:41,902	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:41,902	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:41,902	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:44,269	WARNING head_server.py:288 -- worker slot-1-a72112 (instance 1000, ip 172.17.0.7) is at its process limit: 0 refused forks/threads (+0), pids 245 of 560, worker ports in use 4 of 4. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
+2026-10-16 16:16:46,912	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:46,913	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:46,913	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:51,923	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:51,923	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:51,923	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:56,934	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:56,934	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:56,934	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:01,944	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:01,944	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:01,945	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:06,955	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:06,955	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:06,955	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:11,966	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:11,966	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:11,966	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:16,977	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:16,977	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:16,977	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:21,987	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:21,987	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:21,987	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:26,998	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:26,998	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:26,999	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:32,009	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:32,009	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:32,009	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:37,019	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:37,019	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:37,019	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:42,030	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:42,030	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:42,030	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:47,041	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:47,041	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:47,041	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:52,051	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:52,051	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:52,051	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:57,062	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:57,062	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:57,062	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:02,072	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:02,072	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:02,072	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:07,082	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:07,082	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:07,082	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:12,093	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:12,093	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:12,093	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:17,103	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:17,104	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:17,104	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:22,113	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:22,114	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:22,114	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:27,123	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:27,123	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:27,124	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:32,133	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:32,134	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:32,134	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:37,143	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:37,144	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:37,144	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:42,154	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:42,154	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:42,154	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:47,164	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:47,164	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:47,164	INFO util.py:402 -- setting max workers for head node type to 0

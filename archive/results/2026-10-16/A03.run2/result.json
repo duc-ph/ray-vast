@@ -1,0 +1,38 @@
+{
+ "id": "A03",
+ "markers": [
+  "aws",
+  "failure"
+ ],
+ "fixture": "none",
+ "started": 1792192745.2231252,
+ "checks": [
+  {
+   "name": "(a) up was stopped after the key pair",
+   "ok": true,
+   "detail": "fer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+  },
+  {
+   "name": "(a) down: left nothing",
+   "ok": true,
+   "detail": "deleted security group sg-04993c1cb696a4cd8\ndeleted security group sg-02263241974dc747d\ndeleted security group sg-092e355abc99e5789\ndeleted key pair ray-vast-rvtest-a03a-55e0\ndeleted role ray-vast-rvtest-a03a-55e0\nleft: nothing\n"
+  },
+  {
+   "name": "(a) AWS check",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "(c) a head exists",
+   "ok": true,
+   "detail": "['i-0cddb9025713b24d8']"
+  }
+ ],
+ "data": {
+  "a_up_output_tail": "^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1252, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+ },
+ "outcome": "failed",
+ "message": "botocore.exceptions.WaiterError: Waiter InstanceTerminated failed: Waiter encountered a terminal failure state: For expression \"Reservations[].Instances[].State.Name\" we matched expected path: \"pending\" at least once",
+ "ended": 1792192782.5735188,
+ "wall_s": 37.4
+}

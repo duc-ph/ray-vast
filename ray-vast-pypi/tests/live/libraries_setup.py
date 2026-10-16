@@ -1,5 +1,6 @@
-"""The `libraries` cluster of the live suite (clusters/libraries.yaml) and its controls: the cluster shape (which workers
-run), the host pins of H1 and H2, and the node probe.
+"""The `libraries` clusters of the live suite (clusters/libraries.yaml, one cluster for each host H1, H2, H3, gpu2, so
+the hosts run in parallel) and their controls: the cluster shape (which workers run), the host pins of H1 and H2, and the
+node probe.
 
 How a scenario gets its hosts. The head's autoscaler reads `/home/ubuntu/ray-vast-<cluster>/cluster.yaml` again in each
 loop (Ray 2.59: autoscaler/v2/autoscaler.py calls `FileConfigReader.refresh_cached_autoscaling_config()` before each
@@ -10,7 +11,6 @@ and no demand can start a worker of another type. A host is blocked by a `machin
 itself does not block a destroyed host: C10, docs/test-results.md)."""
 import json
 import re
-import secrets
 import shutil
 import subprocess
 import tempfile
@@ -36,18 +36,23 @@ SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate i
 LOG_TIME = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})")
 
 
-def make_libraries_cluster(group_dir, home):
-    """The Cluster of the group (not up yet). Before `up`: search the vast offers of the named H1 and H2 hosts and record
-    them in `<group_dir>/host_offers.json` (a host that is not rentable now is replaced by the fallback query at rent time)."""
+HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}  # the worker type of each libraries host
+
+
+def make_libraries_cluster(group_dir, home, host, suffix):
+    """The Cluster of one libraries host (not up yet): libraries.yaml with only the head and the worker type of `host`,
+    named `rvtest-lib-<host>-<suffix>`. For H1 and H2: search the vast offers of the named hosts first and record them in
+    `<group_dir>/host_offers.json` (a host that is not rentable now is replaced by the fallback query at rent time)."""
     config = yaml.safe_load((HERE / "clusters" / "libraries.yaml").read_text())
-    config["cluster_name"] = f"{config['cluster_name']}-{secrets.token_hex(2)}"
-    offers = {}
-    for kind, pin in PINS.items():
-        node_type = config["available_node_types"][kind]
-        found = vast().search_offers(build_offer_query(node_type, False, kind))
-        offers[kind] = [{k: o.get(k) for k in ("machine_id", "id", "gpu_name", "num_gpus", "cpu_cores", "cpu_cores_effective",
-                                                "dph_total", "geolocation", "compute_cap")} for o in found]
-    (Path(group_dir) / "host_offers.json").write_text(json.dumps(offers, indent=1))
+    kind = HOST_TYPE[host]
+    config["cluster_name"] = f"{config['cluster_name']}-{host.lower()}-{suffix}"
+    config["available_node_types"] = {name: t for name, t in config["available_node_types"].items() if name in ("head", kind)}
+    if kind in PINS:
+        found = vast().search_offers(build_offer_query(config["available_node_types"][kind], False, kind))
+        offers = [{k: o.get(k) for k in ("machine_id", "id", "gpu_name", "num_gpus", "cpu_cores", "cpu_cores_effective",
+                                          "dph_total", "geolocation", "compute_cap")} for o in found]
+        Path(group_dir).mkdir(parents=True, exist_ok=True)
+        (Path(group_dir) / "host_offers.json").write_text(json.dumps({kind: offers}, indent=1))
     cluster = Cluster("libraries", config, group_dir, home)
     cluster.queries = {}   # the offer query of each type now in the head's YAML, when it differs from libraries.yaml
     cluster.matched = {}   # node type -> the host facts of the last host that matched (rented first next time)

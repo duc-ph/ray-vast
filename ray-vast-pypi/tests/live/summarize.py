@@ -21,11 +21,18 @@ if __name__ == "__main__":
     table = livekit.summary_table(root, expected)
     spend = []
     for path in sorted((root / "_session").glob("*/spend.json")):
-        s = json.loads(path.read_text())
-        spend.append(f"| {s['group']} | {s['cluster']} | ${s['spend']:.4f} | ${s['top_ups']:.2f} | {s['hours']} h | ${s['ec2_estimate']:.2f} |")
+        s = json.loads(path.read_text())  # before 2026-10-17: `spend` (credit change); since: `vast_estimate` (timeline)
+        spend.append(f"| {s['group']} | {s['cluster']} | ${s.get('vast_estimate', s.get('spend', 0)):.4f} | {s['hours']} h | "
+                     f"${s['ec2_estimate']:.2f} |")
     if spend:
-        table += ("\nSpend for each cluster group (vast credit before and after, plus the auto top-ups in between; EC2 is an "
-                  "estimate from the hours):\n\n| Group | Cluster | vast | Top-ups | Hours | EC2 |\n|---|---|---|---|---|---|\n"
-                  + "\n".join(spend) + "\n")
+        table += ("\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an "
+                  "estimate from the hours):\n\n| Group | Cluster | vast | Hours | EC2 |\n|---|---|---|---|---|\n" + "\n".join(spend) + "\n")
+    runs = []
+    for path in sorted((root / "_session" / "runs").glob("*/spend.json")):
+        s = json.loads(path.read_text())
+        runs.append(f"| {path.parent.name} | ${s['spend']:.4f} | ${s['top_ups']:.2f} |")
+    if runs:
+        table += ("\nvast spend of each run (the credit before and after, plus the auto top-ups in between):\n\n"
+                  "| Run | vast | Top-ups |\n|---|---|---|\n" + "\n".join(runs) + "\n")
     livekit.write_summary(REPO / "docs" / "test-results.md", date, table)
     print(table)

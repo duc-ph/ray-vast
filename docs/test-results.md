@@ -677,76 +677,6 @@ The user docs give some numbers that no live cycle of this file measured. Their 
 | "HTTP calls worked after the job" (serve.md) | LB09 of the live suite |
 | "tested with `num_cpus_per_learner=1`" (rllib.md) | LB10 of the live suite records the value |
 
-<!-- live-suite 2016-10-16 start -->
-## Live suite 2016-10-16
-
-Written by `tests/live/summarize.py` from `archive/results/2016-10-16/`.
-
-| ID | Result | Time (s) | Line | Evidence |
-|---|---|---|---|---|
-| F01 | NOT RUN | | | |
-| F02 | NOT RUN | | | |
-| F03 | NOT RUN | | | |
-| F04 | NOT RUN | | | |
-| F05 | NOT RUN | | | |
-| F06 | NOT RUN | | | |
-| F07 | NOT RUN | | | |
-| F08 | NOT RUN | | | |
-| F09 | NOT RUN | | | |
-| F10 | NOT RUN | | | |
-| F11 | NOT RUN | | | |
-| F12 | NOT RUN | | | |
-| F13 | NOT RUN | | | |
-| F14 | NOT RUN | | | |
-| F15 | NOT RUN | | | |
-| F16 | NOT RUN | | | |
-| F17 | NOT RUN | | | |
-| F18 | NOT RUN | | | |
-| F19 | NOT RUN | | | |
-| F20 | NOT RUN | | | |
-| A01 | NOT RUN | | | |
-| A02 | NOT RUN | | | |
-| A03 | NOT RUN | | | |
-| A04 | NOT RUN | | | |
-| A05 | NOT RUN | | | |
-| A06 | NOT RUN | | | |
-| A07 | NOT RUN | | | |
-| A08 | NOT RUN | | | |
-| A09 | NOT RUN | | | |
-| A10 | NOT RUN | | | |
-| A11 | NOT RUN | | | |
-| A12 | NOT RUN | | | |
-| A13 | NOT RUN | | | |
-| L01 | NOT RUN | | | |
-| L02 | NOT RUN | | | |
-| L03 | NOT RUN | | | |
-| L04 | NOT RUN | | | |
-| L05 | NOT RUN | | | |
-| L06 | NOT RUN | | | |
-| L07 | NOT RUN | | | |
-| L08 | NOT RUN | | | |
-| L09 | NOT RUN | | | |
-| L10 | NOT RUN | | | |
-| L11 | NOT RUN | | | |
-| LB00 | NOT RUN | | | |
-| LB01 | NOT RUN | | | |
-| LB02 | NOT RUN | | | |
-| LB03 | NOT RUN | | | |
-| LB04 | NOT RUN | | | |
-| LB05 | NOT RUN | | | |
-| LB06 | NOT RUN | | | |
-| LB07 | NOT RUN | | | |
-| LB08 | NOT RUN | | | |
-| LB09 | NOT RUN | | | |
-| LB10 | NOT RUN | | | |
-| LB11 | NOT RUN | | | |
-| LB12 | NOT RUN | | | |
-| LB13 | NOT RUN | | | |
-| LB14 | NOT RUN | | | |
-| R01 | NOT RUN | | | |
-| R02 | NOT RUN | | | |
-<!-- live-suite 2016-10-16 end -->
-
 <!-- live-suite 2026-10-16 start -->
 ## Live suite 2026-10-16
 
@@ -754,50 +684,39 @@ Written by `tests/live/summarize.py` from `archive/results/2026-10-16/`.
 
 | ID | Result | Time (s) | Line | Evidence |
 |---|---|---|---|---|
-| F01 | PASS | 152.8 | committed shim is the step 10c build: 79055dea6e913180c362c81e2b0c9903dd7a39bac5e3d5bab0e491bb9b3817fd; shim tests: exit 0: {'passed': 14}; shim tests: no failure or error: {'passed': 14}; 14 shim tests: 14; mutation run: the unchanged source builds the committed .so: _overwritten_environment_memory | `2026-10-16/F01/` |
-| F02 | PASS | 204.3 | shim: node ALIVE: ['NODES ["ALIVE"]']; shim: job ran a task; shim: no Errno 99: ['ERRNO99 0']; control without the shim: Errno 99 or no job: ['ray start exit 124', 'NODES none', 'ERRNO99 0'] | `2026-10-16/F02/` |
-| F03 | FAIL | 31.8 | check failed: config and CLI unit tests: a passing test 'already_exists' ([]) | `2026-10-16/F03/` |
-| F04 | PASS | 15.3 | provider unit tests: exit 0: {'passed': 124}; provider unit tests: no failure or error: {'passed': 124}; provider unit tests: a passing test 'missing_from_vast_counts_only_after_the_grace': ['test_instance_missing_from_vast_counts_only_after_the_grace_period']; provider unit tests: a passing test 'o | `2026-10-16/F04/` |
-| F05 | FAIL | 132.3 | check failed: bootstrap tests: a passing test 'missing' ([]) | `2026-10-16/F05/` |
-| F06 | PASS | 57.1 | head server and PKI tests: exit 0: {'passed': 72}; head server and PKI tests: no failure or error: {'passed': 72}; a test asserts the exact enroll answer keys: {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address"} | `2026-10-16/F06/` |
-| F07 | FAIL | 82.4 | check failed: missing CONTAINER_ID or CONTAINER_API_KEY: log and wait: exit 0 ({}) | `2026-10-16/F07/` |
-| F08 | PASS | 0.0 | test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero passed: passed 125.756 s  | `2026-10-16/F08/` |
-| F09 | PASS | 0.0 | test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed passed: passed 103.122 s  | `2026-10-16/F09/` |
-| F10 | PASS | 0.0 | test_host_with_more_cores_than_declared_runs_with_the_real_core_count passed: passed 26.851 s  | `2026-10-16/F10/` |
-| F11 | PASS | 0.0 | test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again passed: passed 95.333 s  | `2026-10-16/F11/` |
-| F12 | PASS | 0.0 | test_head_silence_makes_each_worker_report_and_destroy_itself passed: passed 115.545 s  | `2026-10-16/F12/` |
-| F13 | PASS | 0.0 | test_container_restart_is_refused_a_second_enrollment_and_destroys_itself passed: passed 37.109 s  | `2026-10-16/F13/` |
-| F14 | PASS | 0.0 | test_monitor_crash_stops_the_head_and_every_worker_destroys_itself passed: passed 94.674 s  | `2026-10-16/F14/` |
-| F15 | PASS | 0.0 | test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again passed: passed 149.500 s  | `2026-10-16/F15/` |
-| F16 | PASS | 802.4 | C10 local pairs: exit 0: {'passed': 5}; C10 local pairs: no failure or error: {'passed': 5}; 5 pair runs: ['test_pair[c10_core.py-full-1280-300]', 'test_pair[c10_core.py-many-1280-150]', 'test_pair[c10_core.py-tuned-1280-150]', 'test_pair[c10_data.py-many-560-150]', 'test_pair[c10_serve.py-full-1280 | `2026-10-16/F16/` |
-| F17 | FAIL | 0.6 | check failed: no secret in the wheel or the sdist (['ray_vast-0.1.0/tests/live/livekit.py', 'ray_vast-0.1.0/tests/local_e2e/fake_vast_server.py', 'ray_vast-0.1.0/tests/unit/test_bootstrap.py', 'ray_vast-0.1.0/tests/unit/test_cli.py', 'ray_vast-0.1.0/tests/unit/test_live_kit.py']) | `2026-10-16/F17/` |
-| F18 | FAIL | 209.7 | check failed: fast unit run passes on 3.10 (['3 failed, 423 passed, 49 deselected in 100.49s (0:01:40)']) | `2026-10-16/F18/` |
-| F19 | FAIL | 0.4 | check failed: cpu-heavy.yaml cpu32: >= 4 offers on >= 3 machines ({'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 3, 'machines': 3, 'cheapest': [0.337, 0.536], 'budget': 4.0}) | `2026-10-16/F19/` |
-| F20 | NOT RUN | | | |
-| A01 | FAIL | 43.0 | check failed: AWS check: nothing left (['volume vol-0583d74ba48758885']) | `2026-10-16/A01/` |
-| A02 | PASS | 8.0 | no ray-vast role uses the boundary now: []; up exits 1 with the message and the link: ray-vast up: the IAM policy ray-vast-head-boundary does not exist in AWS account 491085427508. Create it once (one command): https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created.
-; noth | `2026-10-16/A02/` |
-| A03 | PASS | 51.5 | (a) up was stopped after the key pair: fer)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/ssl.py", line 1104, in read
-    return self._sslobj.read(len, buffer)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-KeyboardInterrupt
-; (a) down: left nothing: deleted security group sg-0ee83a772 | `2026-10-16/A03/` |
-| A04 | PASS | 8.8 | a second up stops (head tag): ray-vast up: cluster rvtest-aws-b842 already exists; use `ray-vast down` first
-; it made nothing (no head line): installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi
-; up stops on the state file alone: ray-vast up: cluster rvte | `2026-10-16/A04/` |
-| A05 | PASS | 96.0 | port 6379 is closed from the operator machine: TimeoutError; port 7443 is closed from the operator machine: TimeoutError; port 7444 is closed from the operator machine: TimeoutError; port 8265 is closed from the operator machine: TimeoutError; port 10001 is closed from the operator machine: TimeoutE | `2026-10-16/A05/` |
-| A06 | PASS | 16.5 | CA key mode 600: 600; vast key mode 600: 600; the job ran: SUCCEEDED; a task on the head can read the vast key and the CA key: {'/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/vast_api_key': True, '/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/ca.key': True} | `2026-10-16/A06/` |
-| A07 | PASS | 23.5 | s3 ListAllMyBuckets is denied: AccessDenied; ec2 CreateSecurityGroup is denied: UnauthorizedOperation; authorize on an untagged group is denied: UnauthorizedOperation; authorize on cluster group 1 works: ALLOWED; revoke on cluster group 1 works: ALLOWED | `2026-10-16/A07/` |
-| A08 | PASS | 27.0 | monitor.log: no rentable offer matches the node type query: 2026-10-16 14:17:56,746	INFO node_provider.py:491 -- Failed to launch 1 nodes of type impossible: Node Launch Exception (no offers): node type 'impossible': no rentable offer matches the node type query; monitor.log: every matching offer wo | `2026-10-16/A08/` |
-| A09 | PASS | 5.3 | ray job submit without RAY_AUTH_* fails: t variable. To generate a token for local development, use `ray get-auth-token --generate` For remote clusters, ensure that the token is propagated to all nodes of the cluster when token authentication is enabled. For more information, see: https://docs.ray.i | `2026-10-16/A09/` |
+| F01 | PASS | 144.0 | committed shim is the step 10c build: 79055dea6e913180c362c81e2b0c9903dd7a39bac5e3d5bab0e491bb9b3817fd; shim tests: exit 0: {'passed': 14}; shim tests: no failure or error: {'passed': 14}; 14 shim tests: 14; mutation run: the unchanged source builds the committed .so: _overwritten_environment_memory | `2026-10-16/F01/` |
+| F02 | PASS | 201.3 | shim: node ALIVE: ['NODES ["ALIVE"]']; shim: job ran a task; shim: no Errno 99: ['ERRNO99 0']; control without the shim: Errno 99 or no job: ['ray start exit 124', 'NODES none', 'ERRNO99 0'] | `2026-10-16/F02/` |
+| F03 | PASS | 25.2 | config and CLI unit tests: exit 0: {'passed': 174}; config and CLI unit tests: no failure or error: {'passed': 174}; config and CLI unit tests: a passing test '0_1_0': ['test_main_down_removes_a_cluster_that_version_0_1_0_made', 'test_main_down_of_a_0_1_0_yaml_without_the_state_file_takes_the_region | `2026-10-16/F03/` |
+| F04 | PASS | 13.0 | provider unit tests: exit 0: {'passed': 124}; provider unit tests: no failure or error: {'passed': 124}; provider unit tests: a passing test 'missing_from_vast_counts_only_after_the_grace': ['test_instance_missing_from_vast_counts_only_after_the_grace_period']; provider unit tests: a passing test 'o | `2026-10-16/F04/` |
+| F05 | PASS | 114.9 | bootstrap tests: exit 0: {'passed': 55}; bootstrap tests: no failure or error: {'passed': 55}; bootstrap tests: a passing test 'cgroup_v1_cpu_quota': ['test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_1_is_no_limit[150000\\n-100000\\n-1]', 'test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_ | `2026-10-16/F05/` |
+| F06 | PASS | 56.1 | head server and PKI tests: exit 0: {'passed': 72}; head server and PKI tests: no failure or error: {'passed': 72}; a test asserts the exact enroll answer keys: {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address"} | `2026-10-16/F06/` |
+| F07 | PASS | 83.9 | bootloader and bootstrap container tests: exit 0: {'passed': 16}; bootloader and bootstrap container tests: no failure or error: {'passed': 16}; bootloader and bootstrap container tests: a passing test 'one_changed_byte': ['test_bootstrap_with_one_changed_byte_is_refused_by_the_bootloader_which_dest | `2026-10-16/F07/` |
+| F08 | PASS | 118.6 | test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero passed: (0, {'test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero': 'passed'}) | `2026-10-16/F08/` |
+| F09 | PASS | 100.0 | test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed passed: (0, {'test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed': 'passed'}) | `2026-10-16/F09/` |
+| F10 | PASS | 27.1 | test_host_with_more_cores_than_declared_runs_with_the_real_core_count passed: (0, {'test_host_with_more_cores_than_declared_runs_with_the_real_core_count': 'passed'}) | `2026-10-16/F10/` |
+| F11 | PASS | 96.5 | test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again passed: (0, {'test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again': 'passed'}) | `2026-10-16/F11/` |
+| F12 | PASS | 109.6 | test_head_silence_makes_each_worker_report_and_destroy_itself passed: (0, {'test_head_silence_makes_each_worker_report_and_destroy_itself': 'passed'}) | `2026-10-16/F12/` |
+| F13 | PASS | 25.6 | test_container_restart_is_refused_a_second_enrollment_and_destroys_itself passed: (0, {'test_container_restart_is_refused_a_second_enrollment_and_destroys_itself': 'passed'}) | `2026-10-16/F13/` |
+| F14 | PASS | 101.2 | test_monitor_crash_stops_the_head_and_every_worker_destroys_itself passed: (0, {'test_monitor_crash_stops_the_head_and_every_worker_destroys_itself': 'passed'}) | `2026-10-16/F14/` |
+| F15 | PASS | 152.0 | test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again passed: (0, {'test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again': 'passed'}) | `2026-10-16/F15/` |
+| F16 | PASS | 235.6 | C10 local pairs: exit 0: {'passed': 5}; C10 local pairs: no failure or error: {'passed': 5}; 5 pair runs: ['test_pair[c10_core.py-full-1280-300]', 'test_pair[c10_core.py-many-1280-150]', 'test_pair[c10_core.py-tuned-1280-150]', 'test_pair[c10_data.py-many-560-150]', 'test_pair[c10_serve.py-full-1280 | `2026-10-16/F16/` |
+| F17 | PASS | 0.4 | twine check --strict: ['Checking /tmp/pytest-of-ubuntu/pytest-186/popen-gw1/dist0/ray_vast-0.1.0.tar.gz:\x1b[32mPASSED\x1b[0m']; wheel has ray_vast/shim/librayvast_shim.so; wheel has ray_vast/worker/bootstrap.py; wheel has ray_vast/worker/bootloader.sh; wheel has ray_vast/examples/gpu-24gb.yaml; whe | `2026-10-16/F17/` |
+| F18 | PASS | 155.8 | Python 3.10: ['Python 3.10.22']; ray-vast --help works; fast unit run passes on 3.10: ['445 passed, 52 deselected in 90.79s (0:01:30)'] | `2026-10-16/F18/` |
+| F19 | PASS | 0.7 | cpu-heavy.yaml cpu32: >= 4 offers on >= 3 machines: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 22, 'machines': 22, 'cheapest': [0.337, 0.671], 'budget': 4.0}; cpu-heavy.yaml cpu32: the first candidates fit the budget: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 22, 'machines | `2026-10-16/F19/` |
+| F20 | PASS | 31.7 | core_0 compiles; core_1 compiles; data_0 compiles; rllib_0 compiles; rllib_1 compiles; serve_0 compiles; train_0 compiles; tune_0 compiles; tune_1 compiles; all snippet imports work in the Ray 2.59 image (torch from pip); the core snippets run on a local node: ing '--shm-size=10.00gb' to 'docker run | `2026-10-16/F20/` |
+| A01 | PASS | 41.5 | up: first line names the source: installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi; up output line ^head instance i-\w+ starting$; up output line ^head IP [\d.]+$; up output line ^cluster rvtest-aws-455d is up\. Head IP [\d.]+\.$; up output line ^ dashb | `2026-10-16/A01/` |
+| A02 | PASS | 5.9 | no ray-vast role uses the boundary now: []; up exits 1 with the message and the link: ray-vast up: the IAM policy ray-vast-head-boundary does not exist in AWS account 491085427508. Create it once (one command): https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created. ; noth | `2026-10-16/A02/` |
+| A03 | PASS | 43.6 | (a) up was stopped after the key pair: fer) ^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/lib/python3.12/ssl.py", line 1104, in read return self._sslobj.read(len, buffer) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ KeyboardInterrupt ; (a) down: left nothing: deleted security group sg-0b31a7c85 | `2026-10-16/A03/` |
+| A04 | PASS | 6.0 | a second up stops (head tag): ray-vast up: cluster rvtest-aws-455d already exists; use `ray-vast down` first ; it made nothing (no head line): installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi ; up stops on the state file alone: ray-vast up: cluster rvte | `2026-10-16/A04/` |
+| A05 | PASS | 96.6 | port 6379 is closed from the operator machine: TimeoutError; port 7443 is closed from the operator machine: TimeoutError; port 7444 is closed from the operator machine: TimeoutError; port 8265 is closed from the operator machine: TimeoutError; port 10001 is closed from the operator machine: TimeoutE | `2026-10-16/A05/` |
+| A06 | PASS | 14.8 | CA key mode 600: 600; vast key mode 600: 600; the job ran: SUCCEEDED; a task on the head can read the vast key and the CA key: {'/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/vast_api_key': True, '/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/ca.key': True} | `2026-10-16/A06/` |
+| A07 | PASS | 24.7 | s3 ListAllMyBuckets is denied: AccessDenied; ec2 CreateSecurityGroup is denied: UnauthorizedOperation; authorize on an untagged group is denied: UnauthorizedOperation; authorize on cluster group 1 works: ALLOWED; revoke on cluster group 1 works: ALLOWED | `2026-10-16/A07/` |
+| A08 | PASS | 24.3 | monitor.log: no rentable offer matches the node type query: 2026-10-16 16:29:14,365 INFO node_provider.py:491 -- Failed to launch 1 nodes of type impossible: Node Launch Exception (no offers): node type 'impossible': no rentable offer matches the node type query; monitor.log: every matching offer wo | `2026-10-16/A08/` |
+| A09 | PASS | 4.5 | ray job submit without RAY_AUTH_* fails: t variable. To generate a token for local development, use `ray get-auth-token --generate` For remote clusters, ensure that the token is propagated to all nodes of the cluster when token authentication is enabled. For more information, see: https://docs.ray.i | `2026-10-16/A09/` |
 | A10 | PASS | 0.9 | CreateRole ray-vast-negtest without a boundary is denied: AccessDenied; CreateRole ray-vast-negtest with AdministratorAccess as the boundary is denied: AccessDenied; CreateRole negtest-other with the right boundary is denied: AccessDenied; PutRolePolicy on a role not named ray-vast-* is denied: Acce | `2026-10-16/A10/` |
-| A11 | PASS | 360.7 | pip install ray-vast==0.1.0; with_state_file: 0.1.0 up: a11-1ff2 is up. Head IP 34.219.21.175.
-  dashboard: ray-vast dashboard /home/ubuntu/ray-vast/archive/results/2026-10-16/A11/with_state_file/cluster.yaml   (then open http://127.0.0.1:8265)
-  shell:     ray-vast attach /home/ubuntu/ray-vast/arch | `2026-10-16/A11/` |
-| A12 | PASS | 5.4 | ray exec fails: exit 1: ["KeyError: 'type'"]; ray attach fails: exit 1: ["KeyError: 'type'"]; ray rsync-up fails: exit 1: ["KeyError: 'type'"]; ray up fails: exit 1: ["KeyError: 'type'"]; they made no EC2 instance: set(); they rented nothing on vast | `2026-10-16/A12/` |
-| A13 | PASS | 21.7 | up with t4g.small fails with an AWS error: cified instance type does not match the architecture 'x86_64' of the specified AMI. Specify an instance type and an AMI that have matching architectures, and try again. You can use 'describe-instance-types' or 'describe-images' to discover the architecture  | `2026-10-16/A13/` |
+| A11 | PASS | 383.8 | pip install ray-vast==0.1.0; with_state_file: 0.1.0 up: a11-81ed is up. Head IP 35.167.164.61. dashboard: ray-vast dashboard /home/ubuntu/ray-vast/archive/results/2026-10-16/A11/with_state_file/cluster.yaml (then open http://127.0.0.1:8265) shell: ray-vast attach /home/ubuntu/ray-vast/arch | `2026-10-16/A11/` |
+| A12 | PASS | 3.1 | ray exec fails: exit 1: ["KeyError: 'type'"]; ray attach fails: exit 1: ["KeyError: 'type'"]; ray rsync-up fails: exit 1: ["KeyError: 'type'"]; ray up fails: exit 1: ["KeyError: 'type'"]; they made no EC2 instance: set(); they rented nothing on vast | `2026-10-16/A12/` |
+| A13 | PASS | 32.4 | up with t4g.small fails with an AWS error: cified instance type does not match the architecture 'x86_64' of the specified AMI. Specify an instance type and an AMI that have matching architectures, and try again. You can use 'describe-instance-types' or 'describe-images' to discover the architecture | `2026-10-16/A13/` |
 | L01 | NOT RUN | | | |
 | L02 | NOT RUN | | | |
 | L03 | NOT RUN | | | |
@@ -827,28 +746,36 @@ KeyboardInterrupt
 | R01 | NOT RUN | | | |
 | R02 | NOT RUN | | | |
 
-Spend for each cluster group (vast credit before and after, plus the auto top-ups in between; EC2 is an estimate from the hours):
+Spend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate from the hours):
 
-| Group | Cluster | vast | Top-ups | Hours | EC2 |
-|---|---|---|---|---|---|
-| aws_only | rvtest-aws-e536 | $0.0000 | $0.00 | 0.19 h | $0.02 |
+| Group | Cluster | vast | Hours | EC2 |
+|---|---|---|---|---|
+| aws_only | rvtest-aws-455d | $0.0000 | 0.19 h | $0.02 |
+
+vast spend of each run (the credit before and after, plus the auto top-ups in between):
+
+| Run | vast | Top-ups |
+|---|---|---|
+| 231904-264721 | $0.0000 | $0.00 |
+| 233326-266447 | $0.0000 | $0.00 |
 <!-- live-suite 2026-10-16 end -->
-
 ### Notes on the live suite run of 2026-10-16 (free and aws groups only)
 
-The run stopped early: the dev box was resized. No vast group ran. All FAIL rows above are test bugs. The fixes are in the suite code, but the scenarios did not run again:
+The first run stopped early: the dev box was resized. The second run (after the dev box resize, in parallel with `-n`) ran the free and aws groups again. All 33 scenarios pass. No vast group ran.
 
-- F03, F05, F07: the test looked for a unit test name that does not exist (`already_exists`, `missing`, `-k missing`). Fixed to the real names.
-- F17: the secret patterns matched the fake keys in the package's own test files. Fixed: only the real vast key counts in `tests/`.
-- F18: 3 of 426 unit tests failed on Python 3.10. Not analysed yet (see `F18/py310.txt`).
-- F19: `cpu-heavy.yaml` type `cpu32` had 3 offers on 3 machines (the criterion is 4). Decide: a looser example query, or a lower criterion.
-- F20: not finished (no record).
-- A01 (run 2): every check passed up to the last AWS check, which saw the head's volume a few seconds after `down` (`DeleteOnTermination` takes time). The volume was gone at the cleanup check. Fix needed: wait for the volume. Run 1 failed on the test's Ctrl-C (SIGINT to `ray-vast` only, not to its process group with `ssh`); fixed.
-- A05, A06, A09 (run 1): the job-status helper read stdout only; Ray prints the status to stderr. Fixed (JobSubmissionClient); run 2 passed.
-- A11 (run 1): the 0.1.0 YAML had no top-level `max_workers`, which 0.1.0 needs (Ray's monitor asserted). Fixed; run 2 passed. The leaked 0.1.0 cluster was removed with the current `down` and `--profile` (left: nothing).
+- Wall time of the free group: 38 min one after the other (2300 s, the code before the parallel suite), 5 min 52 s with `-n 12` (352 s). The aws group: 12 min 13 s with `-n 8`.
+- F03, F05, F07: the test looked for a unit test name that does not exist. Fixed to the real names; pass.
+- F05 (parallel run 1 and 2): the bootstrap tests and the container tests of F07 took the same ports at the same time (random port blocks of the fake worker world). Fixed: each fake world reserves a port block with a lock file (`tests/fakes/worker_world.py`, red test `test_worlds_that_exist_at_the_same_time_get_port_blocks_that_do_not_overlap`).
+- F17: the secret patterns matched the fake keys in the package's own test files. Fixed earlier; pass.
+- F18: no product bug on Python 3.10. The 3 failures came from the layout: the unit tests ran against the installed wheel, outside a source tree and without `docs/test-plan.md`. F18 now runs them in an editable source tree next to the plan; 445 pass on 3.10.
+- F19: the example queries of `cpu-heavy.yaml`, `gpu-24gb.yaml` and `gpu-80gb.yaml` matched 1 offer each on 2026-10-16. The examples are wider now (decisions.md); each type has 8 or more offers.
+- F20: the first try failed because the dev box disk was full (`pip install torch`: "No space left on device"; the test hid the pip output). Space was freed, the test shows the pip output now, and F20 runs after F18 (both fill about 1.5 GB). Pass.
+- A01: the AWS check waits up to 180 s while only the head's volume is left (`cluster.aws_leftovers`). Pass.
+- A03 (parallel run): the boto3 `instance_terminated` waiter fails at once when it sees the head still `pending`. Fixed with a poll loop; pass. The failed run left the IAM role, key pair and groups of `rvtest-a03b-a6f2`: the end-of-run check did not know clusters without a fixture. Removed with `ray-vast down --profile` (left: nothing). Now every `Cluster` of a run is noted for the end-of-run check.
+- A05, A06, A09, A11: fixed in the first run; pass.
 
 Product changes found by this work (both with a red test first):
 - `down`, `attach` and `dashboard` of a 0.1.0 YAML without the state file failed with "the YAML needs node_config.region". They now take `provider.region` (test `test_main_down_of_a_0_1_0_yaml_without_the_state_file_takes_the_region_from_provider_region`).
 - An unknown AWS profile or missing credentials printed a traceback. Now one line (tests `test_main_with_an_unknown_profile_prints_one_line_without_a_traceback`, `test_main_down_without_aws_credentials_prints_one_line_without_a_traceback`).
 
-Doc bug found by the local runs of the libraries jobs (not fixed): tune.md, Settings table. A trial that asks `{"cpu": CPUS / B}` and starts a task with `num_cpus = CPUS / B` fails with "No trial resources are available": the task needs a second bundle (`PlacementGroupFactory`), as `c10_tune.py` does.
+Doc bug found by the local runs of the libraries jobs (fixed): tune.md, Settings. A trial that asks `{"cpu": CPUS / B}` and starts a task with `num_cpus = CPUS / B` fails with "No trial resources are available" (local C10 check, `lb_tuned.py tune` at pids.max 1280, 14 ports: ERROR). tune.md now gives such a trial `tune.PlacementGroupFactory([{"CPU": CPUS / B}, {"CPU": CPUS / B}])`, and LB11 `tune.tuned` runs that code: PASS in the local C10 check (18 trials, 25 s). The same check ran `lb_tuned.py train` and `rllib` with the train.md and rllib.md values: both PASS, so those pages need no change.

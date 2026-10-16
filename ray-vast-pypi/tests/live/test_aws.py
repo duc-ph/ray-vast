@@ -93,7 +93,7 @@ def test_A02_boundary_policy_missing(record, tmp_path):
 
 
 @pytest.mark.failure
-def test_A03_down_recovery(record, tmp_path):
+def test_A03_down_recovery(record, tmp_path, account_gate):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
     terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything."""
     a = Cluster("none", small_config("a03a"), record.dir / "a", tmp_path / "home_a")
@@ -110,8 +110,12 @@ def test_A03_down_recovery(record, tmp_path):
     run_until(b, ["up", b.yaml, "--profile", ADMIN_PROFILE], lambda: bool(commands._head_instances(ec2, b.name)))
     heads = commands._head_instances(ec2, b.name)
     check(record, "(c) a head exists", heads, [h["InstanceId"] for h in heads])
-    ec2.terminate_instances(InstanceIds=[h["InstanceId"] for h in heads])
-    ec2.get_waiter("instance_terminated").wait(InstanceIds=[h["InstanceId"] for h in heads])
+    ids = [h["InstanceId"] for h in heads]
+    ec2.terminate_instances(InstanceIds=ids)
+    deadline = time.time() + 600  # not the boto3 waiter: it fails at once when it sees the head still `pending`
+    while time.time() < deadline and any(i["State"]["Name"] != "terminated" for r in ec2.describe_instances(InstanceIds=ids)["Reservations"]
+                                         for i in r["Instances"]):
+        time.sleep(10)
     if b.state_dir.joinpath(f"{b.name}.json").exists():
         done = b.cli("attach", b.yaml)
         check(record, "attach without a running head: one-line error", done.returncode == 1 and f"no running head for cluster {b.name}"
@@ -161,7 +165,7 @@ def test_A10_restricted_user_denials(record, restricted_user):
 
 
 @pytest.mark.failure
-def test_A11_down_of_a_0_1_0_cluster(record, tmp_path):
+def test_A11_down_of_a_0_1_0_cluster(record, tmp_path, account_gate):
     """`pip install ray-vast==0.1.0`, `up` with a 0.1.0 YAML (provider.region, key_name, key_file); then the current `down`
     with that YAML: once with the 0.1.0 state file (region from it), once without (region from provider.region)."""
     venv = tmp_path / "venv010"
@@ -209,7 +213,7 @@ def test_A11_down_of_a_0_1_0_cluster(record, tmp_path):
             ec2.delete_key_pair(KeyName=key_name)
 
 
-def test_A13_an_arm_head_type_fails_and_down_cleans(record, tmp_path):
+def test_A13_an_arm_head_type_fails_and_down_cleans(record, tmp_path, account_gate):
     """limits.md: the head `instance_type` must be x86_64 (not `t4g`)."""
     cluster = Cluster("none", small_config("a13", instance_type="t4g.small"), record.dir, tmp_path / "home")
     done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
@@ -402,6 +406,8 @@ print("A07", json.dumps(out))
 def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     """The `up` of the fixture ran with `--profile` and no AWS_PROFILE. Then: the state file, the key, the head, attach,
     dashboard (saved profile, explicit profile wins, Ctrl-C), the missing-key error, and `down` with no flag (last)."""
+    if aws_only.kept:
+        pytest.skip("--keep-cluster: the cluster stays")
     up = aws_only.up_output
     record.evidence("up.txt", up["stdout"] + up["stderr"])
     record.data("up_s", up["wall_s"])

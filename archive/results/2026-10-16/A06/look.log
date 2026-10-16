@@ -1,15 +1,15 @@
-2026-10-16 21:37:32,821	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:42133[22m
-2026-10-16 21:37:32,836	INFO cli.py:569 -- 2026-10-16 14:37:19,909	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job look-3a081f: python -c 'import os, ray
+2026-10-16 23:29:06,987	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:58987[22m
+2026-10-16 23:29:07,002	INFO cli.py:569 -- 2026-10-16 16:28:55,224	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job look-6fe0ca: python -c 'import os, ray
 from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
 ray.init()
 head = next(n['"'"'NodeID'"'"'] for n in ray.nodes() if n['"'"'Alive'"'"'] and n['"'"'Resources'"'"'].get('"'"'CPU'"'"', 0) == 0)
 @ray.remote(num_cpus=0)
 def look():
-    return {p: os.access(p, os.R_OK) for p in ['"'"'/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/vast_api_key'"'"', '"'"'/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/ca.key'"'"']}
+    return {p: os.access(p, os.R_OK) for p in ['"'"'/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/vast_api_key'"'"', '"'"'/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/ca.key'"'"']}
 print('"'"'READABLE'"'"', ray.get(look.options(scheduling_strategy=NodeAffinitySchedulingStrategy(head, soft=False)).remote()))
 '
-2026-10-16 14:37:21,975	INFO worker.py:1686 -- Using address 34.222.10.152:6379 set in the environment variable RAY_ADDRESS
-2026-10-16 14:37:21,980	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.222.10.152:6379...
-2026-10-16 14:37:22,017	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-READABLE {'/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/vast_api_key': True, '/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/ca.key': True}
+2026-10-16 16:28:57,209	INFO worker.py:1686 -- Using address 18.237.255.236:6379 set in the environment variable RAY_ADDRESS
+2026-10-16 16:28:57,214	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.237.255.236:6379...
+2026-10-16 16:28:57,248	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+READABLE {'/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/vast_api_key': True, '/home/ubuntu/ray-vast-rvtest-aws-455d/secrets/ca.key': True}

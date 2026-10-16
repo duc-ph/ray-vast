@@ -1,0 +1,9 @@
+ray job submit --address http://127.0.0.1:42133 --submission-id look-3a081f --no-wait -- python -c import os, ray
+from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
+ray.init()
+head = next(n['NodeID'] for n in ray.nodes() if n['Alive'] and n['Resources'].get('CPU', 0) == 0)
+@ray.remote(num_cpus=0)
+def look():
+    return {p: os.access(p, os.R_OK) for p in ['/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/vast_api_key', '/home/ubuntu/ray-vast-rvtest-aws-e536/secrets/ca.key']}
+print('READABLE', ray.get(look.options(scheduling_strategy=NodeAffinitySchedulingStrategy(head, soft=False)).remote()))
+

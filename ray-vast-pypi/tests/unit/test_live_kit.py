@@ -61,7 +61,8 @@ def test_spend_adds_back_the_auto_top_ups_inside_the_window_only():
 
 
 @pytest.mark.parametrize("name", ["ray-vast-rvtest-aws-1a2b", "ray-vast-rvtest-aws-1a2b-3", "ray-vast-livetest-20261016",
-                                  "ray-vast-livetest-20261016-s3", "ray-vast-rvtest-20261016-0a1b"])
+                                  "ray-vast-livetest-20261016-s3", "ray-vast-livetest-20261016-s3-h1", "ray-vast-livetest-20261016-s3-gpu2",
+                                  "ray-vast-rvtest-20261016-0a1b", "ray-vast-rvtest-lib-h1-keep"])
 def test_the_suite_may_delete_its_own_resources(name):
     livekit.assert_ours(name)
 
@@ -289,3 +290,93 @@ def test_a_second_run_of_a_scenario_keeps_the_earlier_records_as_run1_and_run2(t
     assert json.loads((tmp_path / "A05" / "result.json").read_text())["outcome"] == "passed"
     assert (tmp_path / "A05.run1" / "result.json").exists() and (tmp_path / "A05.run2" / "log.txt").read_text() == "failed"
     assert livekit.summary_table(tmp_path, ["A05"]).count("| A05") == 1
+
+
+@pytest.mark.parametrize("scenario, fixtures, host, group", [
+    ("A04", ["record", "aws_only", "tmp_path"], None, "aws_only"),
+    ("A02", ["record", "tmp_path"], None, "aws_only"),           # deletes the boundary: before the aws_only `up`
+    ("L03", ["record", "lifecycle", "session_env"], None, "lifecycle"),
+    ("A10", ["record", "restricted_user"], None, "lifecycle"),   # one restricted IAM user for each run
+    ("LB11[H1]", ["record", "libraries", "env"], "H1", "libraries-h1"),
+    ("LB07", ["record", "libraries", "env", "s3"], "gpu2", "libraries-gpu2"),
+    ("R01", ["record", "release"], None, "release"),
+    ("F18", ["record", "dist"], None, "dist"),                   # F17 and F18 share one wheel build
+    ("F20", ["record", "tmp_path"], None, "dist"),               # after F18: each fills about 1.5 GB of the box disk
+    ("F08", ["record"], None, None),
+    ("A03", ["record", "tmp_path", "account_gate"], None, None),
+])
+def test_each_cluster_and_the_tests_that_share_its_setup_get_one_xdist_group(scenario, fixtures, host, group):
+    assert livekit.xdist_group(scenario, fixtures, host) == group
+
+
+def _opened(run_dir, name, kept, region="us-west-2"):
+    livekit.note_opened(run_dir, {"name": name, "region": region, "kept": kept, "yaml": f"/r/{name}.yaml", "home": f"/h/{name}"})
+
+
+def test_the_end_of_a_run_sweeps_and_checks_only_the_clusters_that_are_not_kept_and_names_the_kept_ones(tmp_path):
+    run_dir = tmp_path / "run"
+    _opened(run_dir, "rvtest-aws-1a2b", kept=False)
+    _opened(run_dir, "rvtest-life-keep", kept=True, region="us-east-2")
+    (run_dir / "scan_gw1.txt").write_text("L03/probe.log\n")
+    swept, checked = [], []
+
+    def sweep(prefixes):
+        swept.append(prefixes)
+        return ["0 left"]
+
+    def aws_check(name, region):
+        checked.append((name, region))
+        return ["volume vol-1"] if name == "rvtest-aws-1a2b" else []
+
+    problems, kept = livekit.end_of_run(run_dir, "ray-vast-test-20261016", sweep, aws_check, lambda: [])
+    assert swept == [["ray-vast-test-20261016", "ray-vast:rvtest-aws-1a2b"]]
+    assert checked == [("rvtest-aws-1a2b", "us-west-2")]
+    assert problems == ["AWS left for rvtest-aws-1a2b: ['volume vol-1']", "the secret scan found 1 file(s): L03/probe.log"]
+    assert len(kept) == 1 and "KEPT CLUSTER rvtest-life-keep" in kept[0] and "ray-vast down /r/rvtest-life-keep.yaml" in kept[0]
+
+
+def test_the_end_of_a_run_with_a_failed_sweep_is_a_problem_and_the_aws_checks_still_run(tmp_path):
+    run_dir = tmp_path / "run"
+    _opened(run_dir, "rvtest-aws-1a2b", kept=False)
+
+    def sweep(prefixes):
+        raise RuntimeError("vast is down")
+
+    checked = []
+    problems, kept = livekit.end_of_run(run_dir, "ray-vast-test-20261016", sweep, lambda n, r: checked.append(n) or [],
+                                        lambda: ["F17/x.txt"])
+    assert problems == ["vast sweep failed: RuntimeError: vast is down", "the secret scan found 1 file(s): F17/x.txt"]
+    assert checked == ["rvtest-aws-1a2b"] and kept == []
+
+
+def test_the_vast_spend_of_one_cluster_comes_from_its_timeline_and_a_failed_sample_keeps_the_last_known_instances():
+    rows = [{"t": 0.0, "instances": [{"id": 1, "dph_total": 0.36}, {"id": 2, "dph_total": 0.36}]},
+            {"t": 1800.0, "error": "ConnectionError"},                  # still 2 instances
+            {"t": 3600.0, "instances": [{"id": 1, "dph_total": 0.36}]},
+            {"t": 7200.0, "instances": []}]
+    assert livekit.timeline_spend(rows) == 0.72 + 0.36
+    assert livekit.timeline_spend([]) == 0.0
+
+
+def test_every_cluster_object_of_a_run_is_noted_for_the_end_of_run_check_also_one_without_a_cluster_fixture(tmp_path, monkeypatch):
+    import sys
+    from pathlib import Path
+    monkeypatch.syspath_prepend(str(Path(livekit.__file__).parent))
+    monkeypatch.setenv("RAYVAST_LIVE_RESULTS", str(tmp_path / "results"))
+    monkeypatch.setenv("RAYVAST_LIVE_RUN", "run1")
+    monkeypatch.setenv("VAST_API_KEY", "fake-key")
+    sys.modules.pop("cluster", None)
+    import cluster
+    config = {"cluster_name": "rvtest-a03b-1a2b", "head_node_type": "head",
+              "available_node_types": {"head": {"node_config": {"region": "us-west-2"}}}}
+    made = cluster.Cluster("none", config, tmp_path / "out", tmp_path / "home")
+    noted = json.loads((tmp_path / "results" / "_session" / "runs" / "run1" / "opened" / "rvtest-a03b-1a2b.json").read_text())
+    assert noted == {"name": "rvtest-a03b-1a2b", "region": "us-west-2", "kept": False, "yaml": str(made.yaml), "home": str(tmp_path / "home")}
+
+
+def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_path):
+    record = livekit.Recorder(tmp_path, "A03", markers=["aws"], fixture="none")
+    record.check("up was stopped", True, "Traceback\n  File x\nKeyboardInterrupt\n")
+    record.finish("passed", "")
+    rows = [line for line in livekit.summary_table(tmp_path, ["A03"]).splitlines() if line.startswith("| A03")]
+    assert len(rows) == 1 and "KeyboardInterrupt" in rows[0] and rows[0].endswith("`" + tmp_path.name + "/A03/` |")

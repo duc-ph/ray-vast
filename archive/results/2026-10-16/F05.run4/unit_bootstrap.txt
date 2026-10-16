@@ -1,0 +1,42 @@
+..................................FF...................                  [100%]
+=================================== FAILURES ===================================
+_____________________ test_heartbeat_403_destroys_at_once ______________________
+
+world = <fakes.worker_world.World object at 0x7f726ff45130>
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-139/test_heartbeat_403_destroys_at0')
+
+    def test_heartbeat_403_destroys_at_once(world, tmp_path):
+        world.run()
+>       assert wait_for(lambda: world.head.bodies("B", "/heartbeat"))
+E       assert False
+E        +  where False = wait_for(<function test_heartbeat_403_destroys_at_once.<locals>.<lambda> at 0x7f726ff13380>)
+
+tests/unit/test_bootstrap.py:341: AssertionError
+______________ test_enroll_503_is_retried_until_the_head_accepts _______________
+
+world = <fakes.worker_world.World object at 0x7f726ff47230>
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-139/test_enroll_503_is_retried_unt0')
+
+    @pytest.mark.slow
+    def test_enroll_503_is_retried_until_the_head_accepts(world, tmp_path):
+        world.head.enroll_503s = 2
+        run = world.run()
+>       assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), run.stdout  # retry period is 10 s / 30
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: bootstrap: host checks: {'egress_ip_ok': True, 'no_net_raw_admin': True, 'own_netns': True, 'shm_empty': True, 'details': "egress_ip=52.34.69.95 public_ip=127.0.0.1 cap_bnd=1ffffffffff netns_inode=4026531833 shm_entries=1 SKIPPED (these failed: ['egress_ip_ok', 'no_net_raw_admin', 'own_netns', 'shm_empty'])"}
+E         bootstrap: destroying this instance: unexpected error:
+E         Traceback (most recent call last):
+E           File "/home/ubuntu/ray-vast/ray-vast-pypi/src/ray_vast/worker/bootstrap.py", line 283, in main
+E             listener.bind(("0.0.0.0", port))
+E         OSError: [Errno 98] Address already in use
+E         
+E         bootstrap: vast accepted the delete; waiting for it to stop this container
+E         
+E       assert False
+E        +  where False = wait_for(<function test_enroll_503_is_retried_until_the_head_accepts.<locals>.<lambda> at 0x7f726ff834c0>)
+
+tests/unit/test_bootstrap.py:350: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_bootstrap.py::test_heartbeat_403_destroys_at_once - as...
+FAILED tests/unit/test_bootstrap.py::test_enroll_503_is_retried_until_the_head_accepts
+2 failed, 53 passed in 194.96s (0:03:14)

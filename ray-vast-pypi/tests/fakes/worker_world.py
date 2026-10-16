@@ -1,11 +1,12 @@
 """One test world for the worker: PKI, fake head, fake vast, and the container env that vast would set."""
 import ctypes
+import fcntl
 import hashlib
 import os
-import random
 import signal
 import socket
 import sys
+import tempfile
 from pathlib import Path
 
 import ray_vast
@@ -30,26 +31,40 @@ def die_with_parent():
         ctypes.CDLL(None).prctl(1, signal.SIGKILL)  # PR_SET_PDEATHSIG = 1
 
 
-def free_ports(count):
-    """Return `count` consecutive ports in 19000-19999 that nobody listens on now (other test runs may share the box)."""
-    while True:
-        base = random.randrange(19000, 20000 - count)
+PORT_LOCKS = Path(tempfile.gettempdir()) / "rayvast-test-ports"
+
+
+def reserve_ports(count):
+    """Reserve `count` consecutive ports in 20000-29999 for one World: the lowest block (blocks start at 20000 + k * count)
+    whose lock file no other World holds, and whose ports are all free now (no listener, no TIME_WAIT of an earlier
+    test). Test processes that run at the same time (the parallel live suite) never get the same block. Ports
+    19900-19999 stay free for the real Ray head of a container test. Returns (base, the open lock file); closing it, or
+    the end of the process, frees the block."""
+    PORT_LOCKS.mkdir(exist_ok=True)
+    for base in range(20000, 30000 - count + 1, count):
+        lock = open(PORT_LOCKS / f"{base}.lock", "w")
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            lock.close()
+            continue
         sockets = []
         try:
             for port in range(base, base + count):
                 probe = socket.socket()
                 sockets.append(probe)
                 probe.bind(("0.0.0.0", port))
+            return base, lock
         except OSError:
-            continue
+            lock.close()
         finally:
             for probe in sockets:
                 probe.close()
-        return base
+    raise RuntimeError(f"no free block of {count} ports in 20000-29999")
 
 
 class World:
-    """Ports (all in 19000-19999, chosen free): head A and B, vast, and the 64 worker host ports in one block."""
+    """Ports (one reserved block in 20000-29999): head A and B, vast, and the 64 worker host ports."""
 
     def __init__(self, tmp_path, *, head_ip="127.0.0.1", public_ip="127.0.0.1", gcs_address=None,
                  api_key="FAKEKEY-vast-container-api-key", join_token="FAKEJOINTOKEN" + "ab" * 26, instance_id=424242,
@@ -62,7 +77,7 @@ class World:
         self.instance_id = instance_id
         self.head_ip = head_ip
         self.public_ip = public_ip
-        block = free_ports(67)  # one block, so the head ports can never fall inside the worker ports
+        block, self._port_lock = reserve_ports(67)  # one block, so the head ports can never fall inside the worker ports
         self.port_base = block
         head_ports = block + 64
         self.vast_port = head_ports + 2
@@ -102,3 +117,4 @@ class World:
         if self.started:
             self.head.stop()
             self.vast.stop()
+        self._port_lock.close()

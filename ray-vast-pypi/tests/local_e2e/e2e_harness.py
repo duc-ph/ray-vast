@@ -1,7 +1,8 @@
 """Step 11 harness and fixtures (not a conftest.py: tests/unit has one and imports it by name): a fake vast (containers on the box), moto as the AWS endpoint, and a Ray head in a container.
 
-Run on the dev box: `pytest -o addopts="" -m local_e2e tests/local_e2e`. Container names start with `st11-<pid>-`, so
-a run sees only its own containers.
+Run on the dev box: `pytest -o addopts="" -m local_e2e tests/local_e2e` (add `-n 8` to run the scenarios at the same
+time). Container names start with `st11-<pid>-`, so a run sees only its own containers. Each scenario has its own network
+namespace (`box_ip`), so scenarios in parallel processes do not share ports.
 """
 import json
 import os
@@ -10,8 +11,6 @@ import socket
 import ssl
 import subprocess
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 import boto3
@@ -38,12 +37,28 @@ def docker(*args, check=True):
 
 
 @pytest.fixture(scope="session")
-def box_ip():
+def host_ip():
+    """The box's own IP: moto and the fake vast listen there, and the containers reach them from the bridge network."""
     probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     probe.connect(("10.255.255.255", 9))
     ip = probe.getsockname()[0]
     probe.close()
     return ip
+
+
+def netns():
+    """The name of the scenario's network namespace holder (read at call time: tests/manual/c10 changes PREFIX)."""
+    return PREFIX + "ns"
+
+
+@pytest.fixture
+def box_ip():
+    """The scenario's "public IP": a holder container on the default bridge owns a network namespace, and the head and
+    every worker join it (`--network container:<holder>`). So they share one IP, as on one host with host networking,
+    and another scenario at the same time has its own ports."""
+    docker("run", "-d", "--init", "--name", netns(), RAY_IMAGE, "sleep", "infinity")
+    yield docker("inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", netns()).stdout.strip()
+    docker("rm", "-f", netns(), check=False)
 
 
 @pytest.fixture(scope="session")
@@ -60,13 +75,13 @@ def head_image(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def moto_url(box_ip):
+def moto_url(host_ip):
     with socket.socket() as s:
         s.bind(("", 0))
         port = s.getsockname()[1]
     server = ThreadedMotoServer(ip_address="0.0.0.0", port=port, verbose=False)
     server.start()
-    yield f"http://{box_ip}:{port}"
+    yield f"http://{host_ip}:{port}"
     server.stop()
 
 
@@ -132,7 +147,7 @@ class Cluster:
             "AWS_DEFAULT_REGION": REGION, "PYTHONPATH": "/e2e", **extra_env,
         }
         docker(
-            "run", "-d", "--init", "--network", "host", "--name", HEAD,
+            "run", "-d", "--init", "--network", f"container:{netns()}", "--name", HEAD,
             *[a for k, v in env.items() for a in ("-e", f"{k}={v}")],
             "-v", f"{self.work}:/work", "-v", f"{Path(__file__).parent}:/e2e:ro", HEAD_IMAGE,
             "ray", "start", "--head", "--block", f"--node-ip-address={ip}", "--port=6379", "--num-cpus=0",
@@ -152,17 +167,16 @@ class Cluster:
         assert sorted(names) == sorted(self.fake.name_of(i) for i in expected), names
 
     def agents_refuse_without_token(self, instance_id):
-        """True when both Ray agent ports of the worker answer 401 without a token: the worker's token check passes."""
+        """True when both Ray agent ports of the worker answer 401 without a token: the worker's token check passes. The
+        ports listen on 127.0.0.1 of the scenario's namespace, so the call runs in the holder container."""
         block = self.fake.instances[instance_id]["block"]
-        statuses = []
-        for port in (block + 4, block + 5):  # identity ports 70004 and 70005
-            try:
-                statuses.append(urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2).status)
-            except urllib.error.HTTPError as e:
-                statuses.append(e.code)
-            except OSError:
-                statuses.append(None)
-        return statuses == [401, 401]
+        script = ("import sys, urllib.request, urllib.error\n"
+                  "for port in sys.argv[1:]:\n"
+                  "    try:\n        print(urllib.request.urlopen(f'http://127.0.0.1:{port}/', timeout=2).status)\n"
+                  "    except urllib.error.HTTPError as e:\n        print(e.code)\n"
+                  "    except OSError:\n        print(None)\n")
+        out = docker("exec", netns(), "python", "-c", script, str(block + 4), str(block + 5), check=False).stdout
+        return out.split() == ["401", "401"]  # identity ports 70004 and 70005
 
     def sg_cidrs(self):
         """The ingress rules that ray-vast made (the security group only has those)."""
@@ -205,13 +219,13 @@ class Cluster:
 
 
 @pytest.fixture
-def make_cluster(tmp_path, box_ip, moto_url, head_image):
+def make_cluster(tmp_path, box_ip, host_ip, moto_url, head_image):
     """`make_cluster(offers=6, docker_args=(), worker_env={}, failing_hosts=0, silent_hosts=0)` returns a Cluster whose
     head has not started yet. `failing_hosts` and `silent_hosts`: see FakeVast."""
     fakes = []
 
     def make(offers=6, docker_args=(), worker_env=None, failing_hosts=0, silent_hosts=0):
-        fake = FakeVast(box_ip, make_offers(offers), PREFIX, docker_args=docker_args,
+        fake = FakeVast(box_ip, make_offers(offers), PREFIX, host_ip=host_ip, network=f"container:{netns()}", docker_args=docker_args,
                         extra_env={"RAYVAST_SKIP_HOST_CHECKS": "1", **(worker_env or {})}, failing_hosts=failing_hosts,
                         silent_hosts=silent_hosts)
         fake.start()

@@ -32,10 +32,11 @@ e2e_harness.HEAD = e2e_harness.PREFIX + "head"
 e2e_harness.HEAD_IMAGE = "c10-head"  # not the st11 tag, which other runs build from other sources
 # The worker and head image: rayproject/ray:2.59.0-py311-cpu plus torch 2.7.1 (CPU), for Train and RLlib (see the README).
 e2e_harness.RAY_IMAGE = os.environ.get("C10E_IMAGE", "c10-local:torch")
-from e2e_harness import box_ip, docker, head_image, make_cluster, moto_url, teardown_removes_every_container  # noqa: E402,F401
+from e2e_harness import box_ip, docker, head_image, host_ip, make_cluster, moto_url, teardown_removes_every_container  # noqa: E402,F401
 from run_c10 import node_warnings, verdict  # noqa: E402
 
 HEAD = e2e_harness.HEAD
+LIVE_JOBS = HERE.parents[2] / "ray-vast-pypi" / "tests" / "live" / "jobs"
 SCALE = os.environ.get("C10E_SCALE", "0.1")
 OUT = Path(os.environ.get("C10E_OUT", "/tmp/c10e"))  # the job log and the head log lines of each run  # Train and RLlib many: max(ports + 4, 40 * scale) torch processes
 TIME_SCALE = 3  # heartbeat every 10 s instead of 30 s, so the warning comes sooner
@@ -65,6 +66,7 @@ def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
     cluster.write_config(cpu=1, max_workers=1, idle_timeout_minutes=30)
     cluster.start_head()
     docker("cp", str(HERE / "jobs"), f"{HEAD}:/tmp/c10jobs")
+    docker("cp", str(LIVE_JOBS / "lb_tuned.py"), f"{HEAD}:/tmp/c10jobs/lb_tuned.py")  # the live suite's LB11 tuned runs
     def probe():
         """c10_probe.py in the head; again every 15 s for up to 3 min while it fails."""
         for _ in range(12):
@@ -103,7 +105,9 @@ def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
             "ray_env": before.get("ray_env"), "cpu": before.get("CPU"), "worker_alive": cluster.fake.live_ids() == [instance_id],
             "pids.events": (post.get(node_id) or {}).get("pids.events"),
             "no_port_errors": (post.get(node_id) or {}).get("no_port_errors"), "warnings": warnings[:3]}
-    print(f"C10E_RESULT {script} {mode} pids.max {pids_limit} {status} {json.dumps(dict(data, reasons=reasons))}", flush=True)
+    line = f"C10E_RESULT {script} {mode} pids.max {pids_limit} {status} {json.dumps(dict(data, reasons=reasons))}"
+    print(line, flush=True)
+    (OUT / f"{script[:-3]}_{mode}_{pids_limit}.result").write_text(line + "\n")  # under xdist, a worker's print is not shown
     cluster.assert_live([instance_id])  # the worker did not crash or destroy itself
     return status, reasons, data
 
@@ -145,6 +149,8 @@ CASES = [
     ("c10_rllib.py", "tuned", 1280, 300), ("c10_rllib.py", "many", 1280, 180),
     # The rule of the library pages (2026-10-16): B = ports - 4 processes, each with num_cpus = CPUS / B.
     ("c10_serve.py", "full", 1280, 300), ("c10_core.py", "full", 1280, 300),
+    # The live suite's LB11 "tuned" runs (tests/live/jobs/lb_tuned.py), with the values of tune.md, train.md and rllib.md.
+    ("lb_tuned.py", "tune", 1280, 600), ("lb_tuned.py", "train", 1280, 900), ("lb_tuned.py", "rllib", 1280, 900),
 ]
 
 

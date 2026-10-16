@@ -1,15 +1,21 @@
 """Group `libraries` (docs/test-plan.md, claim matrix LB00-LB14): the Ray libraries on vast, with the snippets of the user
 docs (docs/libraries/*.md) taken from the docs at run time (livekit.doc_snippet), the C9 jobs and the C10 pairs.
 
-One cluster (clusters/libraries.yaml, admin profile, us-west-2). Each test sets the workers that it needs with
-libraries_setup.ensure_shape() (only these workers run), so the library code needs no node pinning:
-  H1 = 1 `h1` worker (48 CPUs, pids.max 1280, cgroup v1), H2 = 1 `h2` worker (cgroup v2), H3 = 2 `gpu` workers,
-  gpu2 = 1 `gpu2` worker (2 GPUs). H1, H2 and the LB13 worker come from libraries_setup.find() (probe, at most 3 rentals).
-Order (destructive scenarios last): LB00, LB01, LB02, LB04, LB05, LB06, LB08, LB09 on H3; LB10 (H3, then gpu2); LB07
-(gpu2); LB03 (H3, then H1); LB11 (H1, with the LB12 diagnostics during serve.many, then H2); LB12; LB13; LB14.
-S3: one bucket `ray-vast-rvtest-<date>-<hex>` and an IAM user `ray-vast-livetest-<date>-s3` that can use only that bucket.
-Its keys go to the jobs in runtime_env env_vars; they are never written (the `*_submit.txt` files are redacted).
-About 8.5 h (LB11 is about 4 h); vast about $5 ($4 to $7), EC2 about $0.7."""
+One cluster for each host (clusters/libraries.yaml with one worker type, admin profile, us-west-2), so the hosts run in
+parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (48 CPUs, pids.max 1280, cgroup v1),
+H2 = 1 `h2` worker (cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker (2 GPUs). A test names its host with the
+`where` parameter or the `host` marker. Each test sets the workers that it needs with libraries_setup.ensure_shape()
+(only these workers run), so the library code needs no node pinning. H1, H2 and the LB13 worker come from
+libraries_setup.find() (probe, at most 3 rentals). The tests of one host run one after the other, in the file order
+(destructive scenarios last), so a "many" run of LB11 is alone on its host:
+  H3:   LB00, LB01, LB02, LB04, LB05, LB06, LB08, LB09, LB10, LB03, LB13, LB14
+  gpu2: LB00, LB10, LB07, LB14
+  H1:   LB00, LB03, LB11 (with the LB12 diagnostics during serve.many), LB12, LB14
+  H2:   LB00, LB11, LB14
+S3: for each host that needs it (H3, gpu2, H1), one bucket `ray-vast-rvtest-<date>-<hex>` and an IAM user
+`ray-vast-livetest-<date>-s3-<host>` that can use only that bucket. Its keys go to the jobs in runtime_env env_vars; they
+are never written (the `*_submit.txt` files are redacted).
+In parallel: about 4.5 h (H1 with LB11 is the longest); vast about $5 ($4 to $7), EC2 about $1.3 (4 heads)."""
 import json
 import re
 import secrets
@@ -26,7 +32,7 @@ import pytest
 
 import livekit
 from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers, free_port, sweep_label, wait_port
-from libraries_setup import JOBS, PINS, alive_workers, b_and_cpus, ensure_shape, find, log_epoch, probe, wait_shape, workdir
+from libraries_setup import HOST_TYPE, JOBS, PINS, alive_workers, b_and_cpus, ensure_shape, find, log_epoch, probe, wait_shape, workdir
 from livekit import check, scan_secrets
 
 sys.path.insert(0, str(MANUAL / "c10"))
@@ -43,7 +49,7 @@ STATE = {}  # what one test leaves for a later one: the LB12 diagnostics of LB11
 
 
 # --- fixtures ---------------------------------------------------------------------------------------------------------
-@pytest.fixture(scope="module")
+@pytest.fixture
 def env(libraries):
     with libraries.tunnel() as tunnel_env:
         yield tunnel_env
@@ -52,9 +58,9 @@ def env(libraries):
 class S3Access:
     """The test bucket and the least-privilege IAM user (admin calls; the log has no secret)."""
 
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, host):
         self.bucket = f"ray-vast-rvtest-{DATE8}-{secrets.token_hex(2)}"
-        self.user = f"ray-vast-livetest-{DATE8}-s3"
+        self.user = f"ray-vast-livetest-{DATE8}-s3-{host.lower()}"
         livekit.assert_ours(self.bucket)
         livekit.assert_ours(self.user)
         session = boto3.Session(profile_name=ADMIN_PROFILE, region_name="us-west-2")
@@ -129,21 +135,38 @@ class S3Access:
 
 
 @pytest.fixture(scope="module")
-def s3(libraries, request):
-    access = S3Access(libraries.dir)
-    live_conftest = next(p for p in request.config.pluginmanager.get_plugins()
-                         if str(getattr(p, "__file__", "")).endswith(str(Path("live") / "conftest.py")))
-
-    def create():
-        access.create()
-        live_conftest.EXTRA_SECRETS.append(access.secret)
-        return access
-    yield from livekit.lifetime(create, access.delete)
+def s3_by_host():
+    """{host: S3Access}: the S3 access of each host that used one. All are deleted at the end."""
+    made = {}
+    try:
+        yield made
+    finally:
+        for access in made.values():
+            access.delete()
 
 
-@pytest.fixture(scope="module")
-def parquet_in(libraries, env, s3):
-    """The LB03 input: about 3 GB of parquet in s3://<bucket>/lb03/in, written by a job (lb_make_parquet.py)."""
+@pytest.fixture
+def s3(libraries, request, s3_by_host):
+    """The S3 access of the test's host, made at its first test that needs one."""
+    host = livekit.host_of(request.node)
+    if host not in s3_by_host:
+        s3_by_host[host] = S3Access(libraries.dir, host)
+        s3_by_host[host].create()
+        live_conftest = next(p for p in request.config.pluginmanager.get_plugins()
+                             if str(getattr(p, "__file__", "")).endswith(str(Path("live") / "conftest.py")))
+        live_conftest.EXTRA_SECRETS.append(s3_by_host[host].secret)
+    return s3_by_host[host]
+
+
+PARQUET = {}  # host -> the LB03 input of that host
+
+
+@pytest.fixture
+def parquet_in(libraries, env, s3, request):
+    """The LB03 input of the host: about 3 GB of parquet in s3://<bucket>/lb03/in, written by a job (lb_make_parquet.py)."""
+    host = livekit.host_of(request.node)
+    if host in PARQUET:
+        return PARQUET[host]
     path = f"s3://{s3.bucket}/lb03/in"
     status, log = s3_job(libraries, env, s3, workdir(JOBS / "lb_make_parquet.py"), ["python", "lb_make_parquet.py", path, str(PARQUET_ROWS)],
                          libraries.dir, "make_parquet", timeout=3600)
@@ -151,7 +174,8 @@ def parquet_in(libraries, env, s3):
     size = sum(o["Size"] for o in s3.objects("lb03/in/"))
     (libraries.dir / "parquet_in.json").write_text(json.dumps({"status": status, "result": found, "bytes": size, "rows": PARQUET_ROWS}))
     assert found and found[1] == "PASS", f"the LB03 input was not written: {status} {found}"
-    return {"path": path, "bytes": size, "rows": PARQUET_ROWS}
+    PARQUET[host] = {"path": path, "bytes": size, "rows": PARQUET_ROWS}
+    return PARQUET[host]
 
 
 # --- helpers ------------------------------------------------------------------------------------------------------------
@@ -262,22 +286,25 @@ def host(cluster, env, record, name):
 
 # --- LB00 to LB10: not destructive ------------------------------------------------------------------------------------
 @pytest.mark.limits
-def test_LB00_host_probe_on_every_libraries_host(record, libraries, env):
+@pytest.mark.parametrize("where", ["H3", "gpu2", "H1", "H2"])
+def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
     t_start = time.time()
-    hosts = {}
-    for name, kind in (("H1", "h1"), ("H2", "h2")):
+    if where in ("H1", "H2"):
+        kind = where.lower()
         facts, tries = find(libraries, env, kind, PINS[kind]["want"], {}, record.dir)
-        record.data(f"{name}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cpus", "match", "query")} for t in tries])
-        hosts[name] = [facts["probe"]]
-        ensure_shape(libraries, {})
-    ensure_shape(libraries, {"gpu": 2, "gpu2": 1})
-    nodes = probe(libraries, env, record.dir, "probe_h3_gpu2")
-    hosts.update(H3=nodes["gpu"], gpu2=nodes["gpu2"])
+        record.data(f"{where}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cpus", "match", "query")} for t in tries])
+        hosts = {where: [facts["probe"]]}
+    else:
+        kind = HOST_TYPE[where]
+        ensure_shape(libraries, {kind: 2 if where == "H3" else 1})
+        hosts = {where: probe(libraries, env, record.dir, f"probe_{kind}")[kind]}
     record.evidence("node_probe.json", json.dumps(hosts, indent=1))
-    check(record, "H1: 48 Ray CPUs, pids.max 1280, cgroup v1", livekit.host_facts(hosts["H1"][0], 0)["cpus"] == 48 and
-          hosts["H1"][0].get("pids.max") == "1280" and hosts["H1"][0]["cgroup"] == "v1",
-          {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
-    check(record, "H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
+    if where == "H1":
+        check(record, "H1: 48 Ray CPUs, pids.max 1280, cgroup v1", livekit.host_facts(hosts["H1"][0], 0)["cpus"] == 48 and
+              hosts["H1"][0].get("pids.max") == "1280" and hosts["H1"][0]["cgroup"] == "v1",
+              {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
+    if where == "H2":
+        check(record, "H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
     lines = libraries.monitor_log()
     enrolled = {int(m.group(1)): log_epoch(x) for x in lines for m in [re.search(r"enrolled instance (\d+)", x)] if m}
     first_running = {}
@@ -303,9 +330,9 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env):
             check(record, f"{name} {cid}: Ray CPUs = the real core count (affinity and quota)", 1 <= n["ray_cpus"] <= n["affinity"],
                   (n["ray_cpus"], n["affinity"], n["cpu_quota"]))
             check(record, f"{name} {cid}: enrolled within 45 s of the first `running` sample", enroll_s is not None and enroll_s <= 45, enroll_s)
-    ensure_shape(libraries, {"gpu": 2})
 
 
+@pytest.mark.host("H3")
 def test_LB01_jobs_workflow(record, libraries, env):
     h3(libraries, env, record)
     word, data = c9(libraries, env, record, "c9_0_2_hello.py", timeout=900)
@@ -339,6 +366,7 @@ def test_LB01_jobs_workflow(record, libraries, env):
 
 
 @pytest.mark.limits
+@pytest.mark.host("H3")
 def test_LB02_core_functions_and_the_core_snippet(record, libraries, env):
     rows, b, cpus = h3(libraries, env, record)
     for script, claim in (("c9_5_1_placement.py", "PACK on one worker, STRICT_SPREAD on both"),
@@ -364,6 +392,7 @@ def test_LB02_core_functions_and_the_core_snippet(record, libraries, env):
 
 
 @pytest.mark.limits
+@pytest.mark.host("H3")
 def test_LB04_data_shuffles_with_the_tuned_settings(record, libraries, env):
     rows, b, cpus = h3(libraries, env, record)
     wd = workdir(JOBS / "lb_data_tuned.py", C9_JOBS / "c9common.py")
@@ -376,6 +405,7 @@ def test_LB04_data_shuffles_with_the_tuned_settings(record, libraries, env):
               status == "SUCCEEDED" and found and found[1] == "PASS", (status, found[2] if found else None))
 
 
+@pytest.mark.host("H3")
 def test_LB05_data_defaults_without_a_shuffle(record, libraries, env):
     h3(libraries, env, record)
     for script in ("c9_1_1_data_cpu.py", "c9_1_2_data_objstore.py", "c9_1_5_data_io.py", "c9_1_6_data_many.py"):
@@ -388,6 +418,7 @@ def test_LB05_data_defaults_without_a_shuffle(record, libraries, env):
 
 
 @pytest.mark.limits
+@pytest.mark.host("H3")
 def test_LB06_tune_snippet_with_s3(record, libraries, env, s3):
     rows, b, cpus = h3(libraries, env, record)
     share = round(cpus / b, 3)
@@ -418,6 +449,7 @@ def test_LB06_tune_snippet_with_s3(record, libraries, env, s3):
           word == "LIMIT" and re.search(r"(?i)access_?denied|access denied|forbidden|\b403\b", json.dumps(data)), data)
 
 
+@pytest.mark.host("H3")
 def test_LB08_multi_node_ddp_and_learners_limit(record, libraries, env):
     h3(libraries, env, record)
     for script, torch in (("c9_3_3_train_gloo.py", True), ("c9_3_2_train_nccl.py", True), ("c9_3_5_store_port.py", True)):
@@ -436,6 +468,7 @@ def test_LB08_multi_node_ddp_and_learners_limit(record, libraries, env):
 
 
 @pytest.mark.limits
+@pytest.mark.host("H3")
 def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
     rows, b, cpus = h3(libraries, env, record)
     share, replicas = round(cpus / b, 3), b * len(rows)
@@ -496,17 +529,21 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
 
 
 @pytest.mark.limits
-def test_LB10_rllib_env_runners_and_learners(record, libraries, env):
-    rows, b, cpus = h3(libraries, env, record)
-    share = round(cpus / b, 3)
-    code = snippet("rllib.md", 0, [("num_cpus_per_env_runner=2.4", f"num_cpus_per_env_runner={share}")], record, "rllib_runners")
-    start = log_mark(libraries)
-    status, word, data, _ = snippet_job(libraries, env, record, "rllib_runners", code, "rllib_runners", runtime_env=TORCH_ENV, timeout=2700)
-    lines = libraries.monitor_log(start)
-    record.data("rllib_runners", data)
-    check(record, f"the env runner snippet (2 runners, num_cpus {share}): 2 iterations", word == "PASS", data)
-    check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
-    record.data("shape_wait_gpu2_s", ensure_shape(libraries, {"gpu": 2, "gpu2": 1}))
+@pytest.mark.parametrize("where", ["H3", "gpu2"])
+def test_LB10_rllib_env_runners_and_learners(record, libraries, env, where):
+    if where == "H3":
+        rows, b, cpus = h3(libraries, env, record)
+        share = round(cpus / b, 3)
+        code = snippet("rllib.md", 0, [("num_cpus_per_env_runner=2.4", f"num_cpus_per_env_runner={share}")], record, "rllib_runners")
+        start = log_mark(libraries)
+        status, word, data, _ = snippet_job(libraries, env, record, "rllib_runners", code, "rllib_runners", runtime_env=TORCH_ENV,
+                                            timeout=2700)
+        lines = libraries.monitor_log(start)
+        record.data("rllib_runners", data)
+        check(record, f"the env runner snippet (2 runners, num_cpus {share}): 2 iterations", word == "PASS", data)
+        check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
+        return
+    record.data("shape_wait_gpu2_s", ensure_shape(libraries, {"gpu2": 1}))
     gpu2 = probe(libraries, env, record.dir, "probe_gpu2")["gpu2"]
     b2, cpus2 = b_and_cpus(gpu2)
     share2 = round(cpus2 / b2, 3)
@@ -519,8 +556,9 @@ def test_LB10_rllib_env_runners_and_learners(record, libraries, env):
 
 
 @pytest.mark.limits
+@pytest.mark.host("gpu2")
 def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
-    ensure_shape(libraries, {"gpu": 2, "gpu2": 1})
+    ensure_shape(libraries, {"gpu2": 1})
     gpu2 = probe(libraries, env, record.dir, "probe_gpu2")["gpu2"]
     b, cpus = b_and_cpus(gpu2)
     share = round(cpus / b, 3)
@@ -678,6 +716,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
 
 
 @pytest.mark.limits
+@pytest.mark.host("H1")
 def test_LB12_diagnostics_during_a_many_run(record, libraries):
     diag = STATE.get("LB12")
     check(record, "LB11[H1] ran serve.many with the diagnostics", diag is not None, "")
@@ -698,6 +737,7 @@ def test_LB12_diagnostics_during_a_many_run(record, libraries):
 
 @pytest.mark.limits
 @pytest.mark.failure
+@pytest.mark.host("H3")
 def test_LB13_refused_forks(record, libraries, env):
     facts, tries = find(libraries, env, "gpu", {"limited": True}, {}, record.dir)
     record.data("rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cpus", "match")} for t in tries])
@@ -722,10 +762,14 @@ def test_LB13_refused_forks(record, libraries, env):
 
 
 @pytest.mark.security
-def test_LB14_teardown_s3_cleanup_and_secret_scan(record, libraries, s3):
+@pytest.mark.parametrize("where", ["H3", "gpu2", "H1", "H2"])
+def test_LB14_teardown_s3_cleanup_and_secret_scan(record, libraries, s3_by_host, where):
+    if libraries.kept:
+        pytest.skip("--keep-cluster: the cluster stays")
+    s3 = s3_by_host.get(where)  # None on a host that ran no S3 job
+    shape = {HOST_TYPE[where]: 1}
     try:  # `down` must destroy running workers: keep one (min_workers 1 replaces the LB13 worker if it is gone)
-        record.data("shape_wait_s", wait_shape(libraries, {"gpu": 1}, timeout=1200) if libraries.shape == {"gpu": 1} else
-                    ensure_shape(libraries, {"gpu": 1}))
+        record.data("shape_wait_s", wait_shape(libraries, shape, timeout=1200) if libraries.shape == shape else ensure_shape(libraries, shape))
     except TimeoutError as e:
         record.data("shape_error", str(e))
     running = len(libraries.instances())
@@ -740,21 +784,22 @@ def test_LB14_teardown_s3_cleanup_and_secret_scan(record, libraries, s3):
     check(record, "vast: label sweep finds 0", lines[0].endswith(" 0 left"), lines[:3])
     left = aws_leftovers(libraries.name, libraries.region)
     check(record, "AWS (admin): nothing left", left == [], left)
-    s3.delete()
-    shutil.copy(s3.log, record.dir / "s3_iam.log")
-    try:
-        s3.s3.head_bucket(Bucket=s3.bucket)
-        bucket_gone = False
-    except s3.s3.exceptions.ClientError:
-        bucket_gone = True
-    try:
-        s3.iam.get_user(UserName=s3.user)
-        user_gone = False
-    except s3.iam.exceptions.NoSuchEntityException:
-        user_gone = True
-    check(record, "the S3 test bucket is deleted", bucket_gone, s3.bucket)
-    check(record, "the IAM test user is deleted", user_gone, s3.user)
+    if s3 is not None:
+        s3.delete()
+        shutil.copy(s3.log, record.dir / "s3_iam.log")
+        try:
+            s3.s3.head_bucket(Bucket=s3.bucket)
+            bucket_gone = False
+        except s3.s3.exceptions.ClientError:
+            bucket_gone = True
+        try:
+            s3.iam.get_user(UserName=s3.user)
+            user_gone = False
+        except s3.iam.exceptions.NoSuchEntityException:
+            user_gone = True
+        check(record, "the S3 test bucket is deleted", bucket_gone, s3.bucket)
+        check(record, "the IAM test user is deleted", user_gone, s3.user)
     roots = [libraries.dir] + sorted(record.dir.parent.glob("LB*"))
-    found = [p for root in roots for p in scan_secrets(root, libraries.secrets + [s3.secret or ""])]
+    found = [p for root in roots for p in scan_secrets(root, libraries.secrets + [s3.secret if s3 else ""])]
     record.data("secrets_scanned", len(libraries.secrets) + 1)
     check(record, "the scan of the kept logs finds no secret", not found, [str(p) for p in found][:5])

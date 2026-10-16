@@ -70,6 +70,8 @@ def hold(lifecycle, session_env):
 
 @pytest.mark.security
 def test_L01_up_as_the_restricted_user_in_another_region(record, lifecycle, restricted_user):
+    if lifecycle.up_output is None:
+        pytest.skip("--keep-cluster reused a running cluster: this run had no `up`")
     up = lifecycle.up_output
     record.evidence("up.txt", up["stdout"] + up["stderr"])
     record.evidence("iam_commands.log", (restricted_user.log).read_text())
@@ -360,6 +362,8 @@ def test_L09_vast_reboot_of_a_worker(record, lifecycle, session_env, hold):
 def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_env, hold):
     """Stop the hold, wait for 0 workers, ask for 4 again; when one worker is enrolled and another instance still loads,
     stop the head container. Every instance must destroy itself; then `down` without a vast key."""
+    if lifecycle.kept:
+        pytest.skip("--keep-cluster: the cluster stays")
     subprocess.run([str(BIN / "ray"), "job", "stop", "--address", session_env["RAY_ADDRESS"], hold], env=session_env,
                    capture_output=True, timeout=120)
     deadline = time.time() + 900
@@ -402,6 +406,8 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
 
 @pytest.mark.security
 def test_L11_teardown_and_secret_scan(record, lifecycle):
+    if lifecycle.kept:
+        pytest.skip("--keep-cluster: the cluster stays")
     done = lifecycle.down()
     record.evidence("down.txt", done.stdout + done.stderr)
     check(record, "down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-200:])

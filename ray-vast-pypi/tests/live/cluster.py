@@ -75,6 +75,9 @@ class Cluster:
         self.yaml.write_text(yaml.safe_dump(config, sort_keys=False))
         self.profile = profile
         self.region = config["available_node_types"][config["head_node_type"]]["node_config"]["region"]
+        if os.environ.get("RAYVAST_LIVE_RUN") and os.environ.get("RAYVAST_LIVE_RESULTS"):  # in a run: the end-of-run check finds it
+            livekit.note_opened(Path(os.environ["RAYVAST_LIVE_RESULTS"]) / "_session" / "runs" / os.environ["RAYVAST_LIVE_RUN"],
+                                {"name": self.name, "region": self.region, "kept": False, "yaml": str(self.yaml), "home": str(self.home)})
         aws_dir = Path.home() / ".aws"
         self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "PYTHONUNBUFFERED": "1",
                     "AWS_CONFIG_FILE": os.environ.get("AWS_CONFIG_FILE", str(aws_dir / "config")),
@@ -83,6 +86,7 @@ class Cluster:
         self.env.pop("AWS_PROFILE", None)
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
         self.up_output = None
+        self.kept = False  # --keep-cluster: the run does not end it (conftest.group_lifetime)
         self.timeline = []
         self._poller = None
 
@@ -142,6 +146,14 @@ class Cluster:
     def head_exec(self, command, timeout=300, check=True):
         import shlex
         return self.ssh(f"sudo docker exec ray-vast-head bash -c {shlex.quote(command)}", timeout=timeout, check=check)
+
+    def head_runs(self):
+        """True when the state file exists and the head container runs (a kept cluster can be reused)."""
+        if not self.state:
+            return False
+        done = subprocess.run([*self.ssh_args(), "sudo docker inspect -f '{{.State.Running}}' ray-vast-head"], capture_output=True,
+                              text=True, timeout=120, stdin=subprocess.DEVNULL)
+        return done.returncode == 0 and done.stdout.strip() == "true"
 
     def monitor_log(self, start_line=1):
         return self.head_exec(f"tail -n +{start_line} /tmp/ray/session_latest/logs/monitor.log", timeout=120).splitlines()
@@ -276,8 +288,22 @@ class Cluster:
         return ""
 
 
+VOLUME_GONE_S = 180
+
+
 def aws_leftovers(cluster, region, profile=ADMIN_PROFILE):
-    """The independent AWS check (as the admin): every resource of the cluster that is left."""
+    """The independent AWS check (as the admin): every resource of the cluster that is left. EC2 deletes the head's
+    volume (DeleteOnTermination) some seconds after the instance terminates, so while only volumes are left, the check
+    looks again for up to VOLUME_GONE_S."""
+    deadline = time.time() + VOLUME_GONE_S
+    left = _aws_leftovers(cluster, region, profile)
+    while left and all(x.startswith("volume ") for x in left) and time.time() < deadline:
+        time.sleep(10)
+        left = _aws_leftovers(cluster, region, profile)
+    return left
+
+
+def _aws_leftovers(cluster, region, profile):
     session = boto3.Session(profile_name=profile, region_name=region)
     ec2, iam = session.client("ec2"), session.client("iam")
     name, tag = f"ray-vast-{cluster}", [{"Name": f"tag:{commands.TAG_KEY}", "Values": [cluster]}]

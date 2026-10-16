@@ -1,0 +1,174 @@
+2026-10-16 16:15:28,022	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-16 16:15:28,067	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-16 16:15:28,067	SUCC cli.py:67 -- [32mJob 'raysubmit_ZQ9xZkyJExTjSRqM' submitted successfully[39m
+2026-10-16 16:15:28,067	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-16 16:15:28,067	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-16 16:15:28,067	INFO cli.py:331 -- Query the logs of the job:
+2026-10-16 16:15:28,067	INFO cli.py:333 -- [1mray job logs raysubmit_ZQ9xZkyJExTjSRqM[22m
+2026-10-16 16:15:28,067	INFO cli.py:335 -- Query the status of the job:
+2026-10-16 16:15:28,067	INFO cli.py:337 -- [1mray job status raysubmit_ZQ9xZkyJExTjSRqM[22m
+2026-10-16 16:15:28,067	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-16 16:15:28,067	INFO cli.py:341 -- [1mray job stop raysubmit_ZQ9xZkyJExTjSRqM[22m
+2026-10-16 16:15:28,071	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-16 16:15:28,056	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_ZQ9xZkyJExTjSRqM: python c10_core.py many
+C10_START C10.core many 1792192529.4 guard_s=150.0
+2026-10-16 16:15:29,404	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 172.17.0.11:6379...
+2026-10-16 16:15:29,434	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=16.0 ports=14 budget=10
+C10_PARAMS {'actors': 20, 'actor_cpus': 0.1, 'child_cpus': 0.1}
+[33m(raylet)[0m [2026-10-16 16:15:32,682 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 1.23952 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.
+[36m(pid=409)[0m [2026-10-16 16:15:35,110 E 409 409] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=0ef4a0822ce1b22e5f925f194b3bd105d86c880b4abeb2c9bf9153d4
+[33m(raylet)[0m [2026-10-16 16:15:42,697 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 1.71791 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(pid=665)[0m [2026-10-16 16:15:36,491 E 665 665] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=6bf51e2ec2d4687c2ce7a5be1b30699231644862a48b92e8a97e8382[32m [repeated 7x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:15:52,702 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.869091 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:16:02,707 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.983185 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:16:32,801 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(371) have not registered within the timeout. The process is dead, probably it crashed during start.
+[33m(raylet)[0m [2026-10-16 16:16:05,964 E 50 62] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.983059 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.
+[36m(pid=894)[0m [2026-10-16 16:16:33,846 E 894 894] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9c540b57c90697834bde28c35cc4fb928f8e027269492961e01c60e1
+[33m(raylet)[0m [2026-10-16 16:17:33,215 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(894) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 8x across cluster][0m
+[36m(pid=1004)[0m [2026-10-16 16:16:35,830 E 1004 1004] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=69642ce98d1d08a68be42cf0068d252ef141eff060018eb359974c1b[32m [repeated 5x across cluster][0m
+C10_JOB C10.core HUNG {"alive_nodes": ["7bf27325dd71bab24b1ab8721f77a1b4131a0a16c60f0387d8811ddf"], "elapsed_s": 150.0, "guard_s": 150.0, "mode": "many", "progress": {"actor_cpus": 0.1, "actors": 20, "child_cpus": 0.1, "done": 13, "items": 20}}
+2026-10-16 16:18:04,333	ERR cli.py:74 -- [31m---------------------------------------[39m
+2026-10-16 16:18:04,333	ERR cli.py:75 -- [31mJob 'raysubmit_ZQ9xZkyJExTjSRqM' failed[39m
+2026-10-16 16:18:04,333	ERR cli.py:76 -- [31m---------------------------------------[39m
+2026-10-16 16:18:04,333	INFO cli.py:89 -- Status message: Job entrypoint command failed with exit code 3, last available logs (truncated to 20,000 chars):
+[33m(raylet)[0m [2026-10-16 16:15:42,697 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 1.71791 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(pid=665)[0m [2026-10-16 16:15:36,491 E 665 665] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=6bf51e2ec2d4687c2ce7a5be1b30699231644862a48b92e8a97e8382[32m [repeated 7x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:15:52,702 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.869091 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:16:02,707 E 680 704] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.983185 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.[32m [repeated 2x across cluster][0m
+[33m(raylet)[0m [2026-10-16 16:16:32,801 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(371) have not registered within the timeout. The process is dead, probably it crashed during start.
+[33m(raylet)[0m [2026-10-16 16:16:05,964 E 50 62] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2026-10-16_16-15-00_367498_8 is over 95% full, available space: 0.983059 GB; capacity: 37.7036 GB. Object creation will fail if spilling is required.
+[36m(pid=894)[0m [2026-10-16 16:16:33,846 E 894 894] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9c540b57c90697834bde28c35cc4fb928f8e027269492961e01c60e1
+[33m(raylet)[0m [2026-10-16 16:17:33,215 E 50 50] (raylet) worker_pool.cc:627: Some workers of the worker process(894) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 8x across cluster][0m
+[36m(pid=1004)[0m [2026-10-16 16:16:35,830 E 1004 1004] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=69642ce98d1d08a68be42cf0068d252ef141eff060018eb359974c1b[32m [repeated 5x across cluster][0m
+C10_JOB C10.core HUNG {"alive_nodes": ["7bf27325dd71bab24b1ab8721f77a1b4131a0a16c60f0387d8811ddf"], "elapsed_s": 150.0, "guard_s": 150.0, "mode": "many", "progress": {"actor_cpus": 0.1, "actors": 20, "child_cpus": 0.1, "done": 13, "items": 20}}
+
+2026-10-16 16:15:28,037	INFO dashboard_sdk.py:423 -- Package gcs://_ray_pkg_90ba90f302ac53bb.zip already exists, skipping upload.
+2026-10-16 16:18:04,328	INFO sdk.py:520 -- WebSocket closed for job raysubmit_ZQ9xZkyJExTjSRqM with close code 1000
+
+--- head log
+2026-10-16 16:15:26,818	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:26,818	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:26,818	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:31,833	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:31,833	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:31,833	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:36,848	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:36,848	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:36,849	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:41,859	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:41,859	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:41,859	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:46,869	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:46,869	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:46,869	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:51,879	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:51,879	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:51,879	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:15:56,889	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:15:56,889	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:15:56,889	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:01,898	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:01,898	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:01,898	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:06,907	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:06,908	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:06,908	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:11,917	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:11,917	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:11,917	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:16,926	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:16,927	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:16,927	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:21,936	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:21,936	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:21,936	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:26,946	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:26,946	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:26,946	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:31,955	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:31,955	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:31,955	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:34,423	WARNING head_server.py:288 -- worker slot-1-b47a5a (instance 1000, ip 172.17.0.11) is at its process limit: 0 refused forks/threads (+0), pids 513 of 1280, worker ports in use 14 of 14. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
+2026-10-16 16:16:36,964	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:36,964	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:36,964	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:41,974	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:41,974	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:41,974	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:46,983	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:46,983	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:46,983	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:51,992	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:51,992	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:51,992	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:16:57,001	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:16:57,001	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:16:57,001	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:02,010	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:02,010	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:02,010	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:07,020	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:07,020	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:07,020	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:12,029	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:12,029	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:12,029	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:17,038	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:17,038	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:17,038	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:22,047	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:22,047	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:22,047	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:27,056	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:27,056	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:27,056	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:32,065	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:32,066	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:32,066	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:37,075	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:37,075	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:37,075	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:42,085	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:42,085	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:42,085	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:47,094	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:47,094	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:47,094	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:52,103	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:52,103	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:52,104	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:17:57,112	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:17:57,113	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:17:57,113	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:02,122	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:02,122	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:02,122	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:07,131	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:07,131	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:07,131	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:12,140	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:12,140	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:12,140	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:17,150	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:17,150	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:17,150	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:22,159	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:22,159	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:22,159	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:27,168	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:27,168	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:27,168	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:32,177	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:32,177	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:32,177	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:37,186	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:37,186	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:37,186	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:42,196	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:42,196	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:42,196	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-16 16:18:47,206	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-16 16:18:47,206	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-16 16:18:47,206	INFO util.py:402 -- setting max workers for head node type to 0

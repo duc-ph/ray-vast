@@ -1,0 +1,44 @@
+exit 1
+Traceback (most recent call last):
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/bin/ray", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/scripts/scripts.py", line 3013, in main
+    return cli()
+           ^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/cli_logger.py", line 812, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/scripts/scripts.py", line 1911, in rsync_up
+    rsync(
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/commands.py", line 1418, in rsync
+    config = _bootstrap_config(config, no_config_cache=no_config_cache)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/commands.py", line 366, in _bootstrap_config
+    config = prepare_config(config)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/util.py", line 263, in prepare_config
+    with_defaults = fillout_defaults(config)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/util.py", line 288, in fillout_defaults
+    defaults = _get_default_config(config["provider"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/providers.py", line 288, in _get_default_config
+    if provider_config["type"] == "external":
+       ~~~~~~~~~~~~~~~^^^^^^^^
+KeyError: 'type'

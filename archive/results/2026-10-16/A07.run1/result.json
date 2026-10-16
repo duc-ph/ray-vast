@@ -1,0 +1,41 @@
+{
+ "id": "A07",
+ "markers": [
+  "aws",
+  "security"
+ ],
+ "fixture": "aws_only",
+ "started": 1792185505.299221,
+ "checks": [
+  {
+   "name": "s3 ListAllMyBuckets is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "ec2 CreateSecurityGroup is denied",
+   "ok": true,
+   "detail": "UnauthorizedOperation"
+  },
+  {
+   "name": "authorize on an untagged group is denied",
+   "ok": true,
+   "detail": "UnauthorizedOperation"
+  },
+  {
+   "name": "authorize on cluster group 1 works",
+   "ok": true,
+   "detail": "ALLOWED"
+  },
+  {
+   "name": "revoke on cluster group 1 works",
+   "ok": true,
+   "detail": "ALLOWED"
+  }
+ ],
+ "data": {},
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792185528.7921522,
+ "wall_s": 23.5
+}

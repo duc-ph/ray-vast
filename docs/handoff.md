@@ -69,10 +69,18 @@ These are the user's rules from the earlier sessions. Follow them.
 - The user approved running everything to the end without asking ("Just go ahead without me"), then the 0.2.0 PyPI release and R01/R02.
 - The dev box is resized to c6i.4xlarge with an Elastic IP (the user runs it from the laptop).
 
+## State at 2026-10-16, late (after the parallel suite)
+
+- The live suite runs in parallel: `pytest tests/live -n N` (pytest-xdist, `--dist loadgroup`; one xdist group per cluster). `--keep-cluster` keeps and reuses clusters for debugging. The libraries fixture is one cluster for each host (H1, H2, H3, gpu2). Local e2e scenarios run in parallel (one network namespace each). See decisions.md (2026-10-16, "Parallel live suite" and the lines after it) and test-plan.md ("Live suite").
+- Free group: 20 of 20 pass, 6 min with `-n 12` (38 min before). Aws group: 13 of 13 pass, 12 min with `-n 8`. Records in `archive/results/2026-10-16/`.
+- Fixed: the tune.md doc bug (`tune.PlacementGroupFactory` for a trial that starts tasks), the example offer queries (F19), F18 (test layout, no product bug), A01, A03, F20, port clashes of the fake worker world.
+- The dev box disk (38 GB) is nearly full with the Docker images (the GPU image is 18 GB). Free space before a run: `df -h /`.
+- Lifecycle and libraries never ran.
+
 ## Next work
 
-1. Speed up the suite first (user request, iteration is too slow): pytest-xdist `--dist loadgroup`, one group per cluster fixture so the clusters run in parallel; `--keep-cluster` to reuse a live cluster while debugging (the final run does a fresh `up`/`down`); libraries tests pinned per host and run in parallel (a "many" test alone on its host); local e2e scenarios in parallel.
-2. Re-run the failed free/aws scenarios, then run the lifecycle, failure, security, limits and libraries groups to the end. Fix product bugs with TDD; list every workaround and failure.
+1. Done: the parallel suite (see the state above).
+2. Done: the free and aws groups. Next: run the lifecycle, failure, security, limits and libraries groups to the end. Fix product bugs with TDD; list every workaround and failure.
 3. Independent Standards and Spec review by the lead (not by the implementer), then fix.
 4. Version 0.2.0, publish to PyPI, run R01/R02 (clean PyPI install, getting-started verbatim).
 5. Update the Ray library status table from the results; report to the user.

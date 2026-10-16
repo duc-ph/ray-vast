@@ -35,7 +35,28 @@ class RestrictedUser:
             f.write("(output holds the secret access key: not logged)\n" if secret_output else done.stdout + done.stderr)
         return done
 
+    def reuse(self):
+        """--keep-cluster: use the user and the credentials file of an earlier run, if both still work. Returns True then."""
+        if not self.credentials_file.exists():
+            return False
+        import configparser
+        section = configparser.ConfigParser()
+        section.read(self.credentials_file)
+        key_id, secret = section[self.profile]["aws_access_key_id"], section[self.profile]["aws_secret_access_key"]
+        try:
+            keys = [k["AccessKeyId"] for k in self.iam.list_access_keys(UserName=self.name)["AccessKeyMetadata"]]
+        except self.iam.exceptions.NoSuchEntityException:
+            return False
+        if key_id not in keys:
+            return False
+        self.secret = secret
+        self.session = boto3.Session(aws_access_key_id=key_id, aws_secret_access_key=secret)
+        with open(self.log, "a") as f:
+            f.write(f"# --keep-cluster: reused the user {self.name} and its credentials file\n")
+        return True
+
     def create(self):
+        self.delete()  # a user of the same date left by a killed or kept run
         import ray_vast
         iam_dir = Path(ray_vast.__file__).parent / "iam"
         account = self.aws("sts", "get-caller-identity", "--query", "Account", "--output", "text").stdout.strip()

@@ -1,0 +1,20 @@
+...............................F.......................                  [100%]
+=================================== FAILURES ===================================
+____________________ test_sigint_and_sighup_destroy_too[1] _____________________
+
+world = <fakes.worker_world.World object at 0x72d05054e960>
+tmp_path = PosixPath('/tmp/pytest-of-ubuntu/pytest-84/test_sigint_and_sighup_destroy1')
+sig = <Signals.SIGHUP: 1>
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("sig", [signal.SIGINT, signal.SIGHUP])
+    def test_sigint_and_sighup_destroy_too(world, tmp_path, sig):
+        run = world.run()
+>       assert wait_for(lambda: world.head.bodies("B", "/heartbeat"))
+E       assert False
+E        +  where False = wait_for(<function test_sigint_and_sighup_destroy_too.<locals>.<lambda> at 0x72d0505071a0>)
+
+tests/unit/test_bootstrap.py:312: AssertionError
+=========================== short test summary info ============================
+FAILED tests/unit/test_bootstrap.py::test_sigint_and_sighup_destroy_too[1] - ...
+1 failed, 54 passed in 169.65s (0:02:49)

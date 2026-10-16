@@ -26,6 +26,8 @@
     - The provider field `order_by` is removed. The provider always rents the cheapest offers first (`dph_total`).
     - The `up` option `--index-url` is removed. To test a release on TestPyPI, download the wheel with `pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`, then run `ray-vast up --wheel <file>`.
 - The example YAMLs list all fields, each with a short comment.
+- The example offer queries match more vast offers: `gpu-24gb.yaml` takes GPUs of 24 GB to 32 GB (also the RTX 5090), `cpu-heavy.yaml` takes any GPU of 8 GB or more, and `gpu-80gb.yaml` has no location filter. On 2026-10-16, the old queries matched 1 offer each.
+- The Ray Tune page shows how a trial that starts Ray tasks holds their CPUs (`tune.PlacementGroupFactory`). Without it, the tasks do not start.
 - Fixes:
     - `down`, `attach` and `dashboard` accept a 0.1.0 YAML. They take the region from the state file of the cluster, else from `provider.region` of the 0.1.0 YAML. Only `up` rejects the old `provider` fields. Tear down a 0.1.0 cluster with the AWS credentials that made it: a restricted `ray-vast-user` cannot delete a 0.1.0 head role (it has no permissions boundary).
     - An unknown AWS profile or missing AWS credentials give a one-line error, not a traceback.
