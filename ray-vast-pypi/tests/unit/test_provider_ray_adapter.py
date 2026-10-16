@@ -15,10 +15,10 @@ pytestmark = pytest.mark.slow  # imports Ray and runs the provider threads
 CLUSTER = {
     "cluster_name": "c1",
     "max_workers": 4,
-    "provider": {"region": "us-west-2", "image": "img:1", "max_dollars_per_hour": 10},
+    "provider": {"image": "img:1", "max_dollars_per_hour": 10},
     "head_node_type": "head",
     "available_node_types": {
-        "head": {"resources": {"CPU": 0}, "node_config": {}},
+        "head": {"resources": {"CPU": 0}, "node_config": {"region": "us-west-2"}},
         "gpu": {"resources": {"CPU": 4, "GPU": 1}, "min_workers": 0, "max_workers": 4,
                 "node_config": {"offer_query": {"gpu_ram": {"gte": 24000}}, "disk_gb": 40}},
     },

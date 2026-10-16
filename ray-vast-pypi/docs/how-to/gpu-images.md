@@ -56,8 +56,8 @@ Set `provider.image` to its name.
 
 ## Image size and the pull limit
 
-A big image takes long to pull. The provider gives each candidate a pull limit. The limit comes from `image_size_gb` and the download speed of the offer. The formula is in [Configuration](../reference/configuration.md#provider).
-`up` measures the image size and sets `image_size_gb`.
+A big image takes long to pull. The provider gives each candidate a pull limit. The limit comes from the image size and the download speed of the offer: `2 × size in GB × 8000 / inet_down` seconds, between 5 and 15 minutes.
+`up` measures the image size on the head. You cannot set it.
 
 `up` also takes longer with a big image, because the head pulls it. `up` takes about 8 to 10 minutes with the 18 GB GPU image, and about 2.5 minutes with the CPU image.
 

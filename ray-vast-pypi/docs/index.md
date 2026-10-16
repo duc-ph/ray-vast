@@ -51,7 +51,7 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 
 ## Quick start
 
-You need an AWS profile, an EC2 key pair, and a vast API key in `~/.config/vastai/vast_api_key`.
+You need an AWS profile, the boundary policy (a one-time AWS step), and a vast API key in `~/.config/vastai/vast_api_key`.
 The full steps are in [Getting started](getting-started.md).
 
 ```bash

@@ -23,11 +23,10 @@ REGION = "us-west-2"
 VAST_KEY = "vast-secret-key-0123456789"
 CLUSTER_YAML = {
     "cluster_name": CLUSTER,
-    "max_workers": 0,
-    "provider": {"region": REGION, "image": "rayproject/ray:2.59.0-py311-cpu", "max_dollars_per_hour": 1.0},
+    "provider": {"image": "rayproject/ray:2.59.0-py311-cpu", "max_dollars_per_hour": 1.0},
     "head_node_type": "head",
     "available_node_types": {
-        "head": {"resources": {"CPU": 0}, "node_config": {}, "max_workers": 0},
+        "head": {"resources": {"CPU": 0}, "node_config": {"region": REGION}},
         "gpu": {"resources": {"CPU": 4, "GPU": 1}, "max_workers": 0,
                 "node_config": {"offer_query": {"gpu_ram": {"gte": 20000}}}},
     },
@@ -86,19 +85,23 @@ class FakeVast:
         self.instances = [i for i in self.instances if i["id"] != instance_id]
 
 
+def make_ubuntu_image(session, region):
+    """moto reads MOTO_AMIS_PATH once per process, so other test files can make it too late. Make the "Ubuntu" image through
+    the API instead: an image of a throwaway instance, owned by the test account, which the CLI is told to look up."""
+    ec2 = session.client("ec2", region_name=region)
+    base = "ami-12c6146b"  # one of moto's default images; `describe_images()` lists about 1300 of them and takes 3 s
+    [seed] = ec2.run_instances(ImageId=base, MinCount=1, MaxCount=1)["Instances"]
+    ec2.create_image(InstanceId=seed["InstanceId"], Name="ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20260101")
+    ec2.terminate_instances(InstanceIds=[seed["InstanceId"]])
+
+
 @pytest.fixture
 def aws(monkeypatch, tmp_path):
     for k, v in {"AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x", "AWS_DEFAULT_REGION": REGION}.items():
         monkeypatch.setenv(k, v)
     with mock_aws():
         session = boto3.Session(region_name=REGION)
-        # moto reads MOTO_AMIS_PATH once per process, so other test files can make it too late. Make the "Ubuntu" image through
-        # the API instead: an image of a throwaway instance, owned by the test account, which the CLI is told to look up.
-        ec2 = session.client("ec2")
-        base = "ami-12c6146b"  # one of moto's default images; `describe_images()` lists about 1300 of them and takes 3 s
-        [seed] = ec2.run_instances(ImageId=base, MinCount=1, MaxCount=1)["Instances"]
-        ec2.create_image(InstanceId=seed["InstanceId"], Name="ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20260101")
-        ec2.terminate_instances(InstanceIds=[seed["InstanceId"]])
+        make_ubuntu_image(session, REGION)
         monkeypatch.setattr(commands, "UBUNTU_OWNER", session.client("sts").get_caller_identity()["Account"])
         yield session
 
@@ -119,7 +122,7 @@ def wheel(tmp_path):
 
 def run_up(aws, cluster_yaml, wheel, tmp_path, ssh=None, out=None):
     ssh = ssh or FakeSsh()
-    commands.up(str(cluster_yaml), aws, ssh, key_name="k", wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
+    commands.up(str(cluster_yaml), aws, ssh, profile="my-profile", wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
            state_dir=tmp_path / "state", sleep=lambda s: None, out=out or (lambda m: None))
     return ssh
 
@@ -132,6 +135,7 @@ def what_is_left(aws, vast):
     left = [i["InstanceId"] for r in ec2.describe_instances(Filters=[
         {"Name": f"tag:{commands.TAG_KEY}", "Values": [CLUSTER]}, {"Name": "instance-state-name", "Values": live}])["Reservations"]
         for i in r["Instances"]]
+    left += [k["KeyName"] for k in ec2.describe_key_pairs(Filters=[{"Name": "key-name", "Values": [name]}])["KeyPairs"]]
     group_names = [f"{name}-{i}" for i in range(5)]
     left += [g["GroupId"] for g in ec2.describe_security_groups(Filters=[{"Name": "group-name", "Values": group_names}])["SecurityGroups"]]
     for get, kwargs in ((iam.get_instance_profile, {"InstanceProfileName": name}), (iam.get_role, {"RoleName": name})):
@@ -151,7 +155,7 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
 
     [head] = commands._head_instances(ec2, CLUSTER)
     assert head["InstanceType"] == "t3.large"
-    assert head["KeyName"] == "k"
+    assert head["KeyName"] == name
     assert head["MetadataOptions"]["HttpTokens"] == "required"
     assert head["IamInstanceProfile"]["Arn"].endswith(f"instance-profile/{name}")
     assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in head["Tags"]
@@ -381,7 +385,7 @@ def test_down_reports_what_is_left(aws, cluster_yaml, wheel, tmp_path):
 
 
 AWS_STEPS = [
-    "iam.CreateRole", "ec2.CreateSecurityGroup", "ec2.AuthorizeSecurityGroupIngress", "iam.PutRolePolicy", "iam.CreateInstanceProfile",
+    "iam.CreateRole", "ec2.CreateKeyPair", "ec2.CreateSecurityGroup", "ec2.AuthorizeSecurityGroupIngress", "iam.PutRolePolicy", "iam.CreateInstanceProfile",
     "iam.AddRoleToInstanceProfile", "ec2.DescribeImages", "ec2.RunInstances", "ec2.DescribeInstances",
 ]
 
@@ -478,8 +482,13 @@ def home(aws, monkeypatch, tmp_path):
     monkeypatch.delenv("AWS_PROFILE", raising=False)
     monkeypatch.setenv("VAST_API_KEY", VAST_KEY)
     monkeypatch.setattr(commands, "_public_ip", lambda: "203.0.113.7")
-    monkeypatch.setattr(boto3, "Session", lambda **kwargs: aws)  # `run` builds its own session; give it the moto one (with its hooks)
+    # `run` builds its own session; give it the moto one (with its hooks), and record the profile it asked for.
+    monkeypatch.setattr(boto3, "Session", lambda **kwargs: PROFILES.append(kwargs.get("profile_name")) or aws)
+    PROFILES.clear()
     return tmp_path / "home"
+
+
+PROFILES = []  # the profile_name of each boto3.Session that `run` built
 
 
 @pytest.fixture
@@ -497,38 +506,10 @@ def main_up(cluster_yaml, wheel, *extra):
     return cli.main(["up", str(cluster_yaml), "--wheel", str(wheel), *extra])
 
 
-def test_main_up_resolves_key_file_and_key_name_from_the_yaml(aws, home, fake_ssh, cluster_yaml, wheel, tmp_path):
-    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "key_file": "~/yaml.pem", "key_name": "yaml-key"})
-    cluster_yaml.write_text(yaml.safe_dump(raw))
-    assert main_up(cluster_yaml, wheel) == 0
-    [(key_file, known_hosts)] = fake_ssh.built
-    assert key_file == Path("~/yaml.pem").expanduser() and known_hosts == home / ".ray-vast" / f"{CLUSTER}.known_hosts"
-    [head] = commands._head_instances(aws.client("ec2"), CLUSTER)
-    assert head["KeyName"] == "yaml-key"
-
-
-def test_main_up_flags_beat_the_yaml(aws, home, fake_ssh, cluster_yaml, wheel):
-    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "key_file": "~/yaml.pem", "key_name": "yaml-key"})
-    cluster_yaml.write_text(yaml.safe_dump(raw))
-    assert main_up(cluster_yaml, wheel, "--key-file", "/keys/flag.pem", "--key-name", "flag-key") == 0
-    assert fake_ssh.built[0][0] == Path("/keys/flag.pem")
-    assert commands._head_instances(aws.client("ec2"), CLUSTER)[0]["KeyName"] == "flag-key"
-
-
-@pytest.mark.parametrize("extra, message", [
-    (["--key-name", "k"], "no SSH key: pass --key-file or set provider.key_file"),
-    (["--key-file", "/keys/a.pem"], "no EC2 key pair: pass --key-name or set provider.key_name"),
-])
-def test_main_up_without_a_key_fails_before_creating_anything(aws, home, fake_ssh, cluster_yaml, wheel, capsys, extra, message):
-    assert main_up(cluster_yaml, wheel, *extra) == 1
-    assert message in capsys.readouterr().err
-    assert what_is_left(aws, FakeVast()) == []
-
-
 def test_main_up_with_a_bad_field_value_prints_one_line_and_creates_nothing(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
     raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "max_dollars_per_hour": -1})
     cluster_yaml.write_text(yaml.safe_dump(raw))
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
+    assert main_up(cluster_yaml, wheel) == 1
     err = capsys.readouterr().err
     assert err.startswith("ray-vast up: ") and "max_dollars_per_hour" in err and err.count("\n") == 1
     assert VAST_KEY not in err
@@ -556,7 +537,7 @@ def test_main_with_a_bad_yaml_prints_one_line(home, tmp_path, capsys, text, prob
 
 def test_main_up_that_fails_on_the_head_exits_1_and_points_to_down(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
     fake_ssh.fake = FakeSsh(fail_at=2)  # the scp of the wheel
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
+    assert main_up(cluster_yaml, wheel) == 1
     assert "ray-vast up: injected failure at call 2" in capsys.readouterr().err  # no traceback
 
 
@@ -564,16 +545,16 @@ def test_main_up_that_fails_in_aws_exits_1_names_the_permission_and_points_to_do
     def deny(**kwargs):
         raise botocore.exceptions.ClientError({"Error": {"Code": "AccessDenied", "Message": "no iam:CreateRole"}}, "CreateRole")
     aws.events.register("before-call.iam.CreateRole", deny)
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
+    assert main_up(cluster_yaml, wheel) == 1
     err = capsys.readouterr().err
     assert "AWS error AccessDenied: no iam:CreateRole" in err and "lacks a permission" in err
     assert f"ray-vast down {cluster_yaml}" in err
 
 
 def test_main_up_on_an_existing_cluster_exits_1_without_the_down_hint(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 0
+    assert main_up(cluster_yaml, wheel) == 0
     capsys.readouterr()
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 1
+    assert main_up(cluster_yaml, wheel) == 1
     err = capsys.readouterr().err
     assert f"cluster {CLUSTER} already exists; use `ray-vast down` first" in err
     assert "to remove what was created" not in err
@@ -586,7 +567,7 @@ def test_main_up_builds_the_wheel_with_a_timeout(aws, home, fake_ssh, cluster_ya
         seen.update(kwargs)
         raise subprocess.TimeoutExpired(argv, kwargs.get("timeout"))
     monkeypatch.setattr(subprocess, "run", fake_build)
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k"]) == 1
+    assert cli.main(["up", str(cluster_yaml)]) == 1
     assert seen["timeout"] > 0
     assert "timed out" in capsys.readouterr().err
     assert what_is_left(aws, FakeVast()) == []
@@ -605,8 +586,8 @@ cli.main(sys.argv[1:])
 def test_main_up_progress_lines_reach_a_pipe_at_once(cluster_yaml, wheel, tmp_path):
     env = {**os.environ, "HOME": str(tmp_path), "VAST_API_KEY": VAST_KEY, "AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x"}
     env.pop("AWS_PROFILE", None)
-    proc = subprocess.Popen([sys.executable, "-c", UP_THAT_BLOCKS, "up", str(cluster_yaml), "--wheel", str(wheel),
-                             "--key-file", "/k.pem", "--key-name", "k"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    proc = subprocess.Popen([sys.executable, "-c", UP_THAT_BLOCKS, "up", str(cluster_yaml), "--wheel", str(wheel)],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     try:
         ready, _, _ = select.select([proc.stdout], [], [], 15)
         assert ready, f"no stdout line while `up` runs; stderr: {proc.stderr.read1().decode() if proc.poll() is not None else ''}"
@@ -618,17 +599,17 @@ def test_main_up_progress_lines_reach_a_pipe_at_once(cluster_yaml, wheel, tmp_pa
 
 @pytest.fixture
 def running_cluster(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 0
+    assert main_up(cluster_yaml, wheel) == 0
     monkeypatch.setattr(commands, "Ssh", fake_ssh.real)  # attach and dashboard use the real class, over a patched subprocess
     return [i for i in commands._head_instances(aws.client("ec2"), CLUSTER)][0]["PublicIpAddress"]
 
 
-def test_main_attach_opens_a_shell_on_the_head(running_cluster, cluster_yaml, monkeypatch):
+def test_main_attach_opens_a_shell_on_the_head_with_the_generated_key(running_cluster, home, cluster_yaml, monkeypatch):
     calls = []
     monkeypatch.setattr(subprocess, "call", lambda argv: calls.append(argv) or 7)
-    assert cli.main(["attach", str(cluster_yaml), "--key-file", "/keys/a.pem"]) == 7  # ssh's exit code is passed on
+    assert cli.main(["attach", str(cluster_yaml)]) == 7  # ssh's exit code is passed on
     [argv] = calls
-    assert argv[0] == "ssh" and argv[argv.index("-i") + 1] == "/keys/a.pem"
+    assert argv[0] == "ssh" and argv[argv.index("-i") + 1] == str(home / ".ray-vast" / CLUSTER / "ssh_key.pem")
     assert argv[-2:] == ["-t", f"ubuntu@{running_cluster}"]
 
 
@@ -636,7 +617,7 @@ def test_main_dashboard_copies_the_token_and_opens_the_tunnel(running_cluster, h
     ran, called = [], []
     monkeypatch.setattr(subprocess, "run", lambda argv, **kw: ran.append(argv) or subprocess.CompletedProcess(argv, 0, "tok-abc\n", ""))
     monkeypatch.setattr(subprocess, "call", lambda argv: called.append(argv) or 0)
-    assert cli.main(["dashboard", str(cluster_yaml), "--key-file", "/keys/a.pem"]) == 0
+    assert cli.main(["dashboard", str(cluster_yaml)]) == 0
     assert ran[0][-1] == f"cat /home/ubuntu/ray-vast-{CLUSTER}/secrets/token" and ran[0][-2] == f"ubuntu@{running_cluster}"
     assert (home / ".ray-vast" / CLUSTER / "token").read_text() == "tok-abc"
     [tunnel] = called
@@ -650,14 +631,14 @@ def test_main_dashboard_ctrl_c_closes_the_tunnel_with_one_line_and_exit_0(runnin
     def ctrl_c(argv):  # subprocess.call kills the ssh child before it raises
         raise KeyboardInterrupt
     monkeypatch.setattr(subprocess, "call", ctrl_c)
-    assert cli.main(["dashboard", str(cluster_yaml), "--key-file", "/keys/a.pem"]) == 0
+    assert cli.main(["dashboard", str(cluster_yaml)]) == 0
     captured = capsys.readouterr()
     assert captured.out.splitlines()[-1] == "tunnel closed" and "Traceback" not in captured.err + captured.out
 
 
 @pytest.mark.parametrize("command", ["attach", "dashboard"])
 def test_main_attach_and_dashboard_without_a_running_head_exit_1(aws, home, cluster_yaml, capsys, command):
-    assert cli.main([command, str(cluster_yaml), "--key-file", "/k.pem"]) == 1
+    assert cli.main([command, str(cluster_yaml)]) == 1
     assert f"no running head for cluster {CLUSTER}" in capsys.readouterr().err
 
 
@@ -674,16 +655,6 @@ def test_main_down_without_a_vast_key_cleans_aws_warns_and_exits_0(running_clust
 def no_op_response(**kwargs):
     """A `before-call` hook result: AWS answers 200 and does nothing."""
     return AWSResponse("https://aws", 200, {}, None), {}
-
-
-def test_up_strips_the_key_pair_from_the_head_config_and_keeps_a_user_image_size(aws, cluster_yaml, wheel, tmp_path):
-    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "key_file": "~/yaml.pem", "key_name": "yaml-key", "image_size_gb": 9})
-    cluster_yaml.write_text(yaml.safe_dump(raw))
-    ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
-    [config_text] = [c[3] for c in ssh.calls if c[2].startswith("cat >") and c[2].endswith("cluster.yaml")]
-    provider = yaml.safe_load(config_text)["provider"]
-    assert "key_name" not in provider and "key_file" not in provider and "yaml.pem" not in config_text
-    assert provider["image_size_gb"] == 9  # the image is 4.5 GB, but the user's value wins
 
 
 def test_up_runs_the_slow_head_steps_with_long_timeouts(aws, cluster_yaml, wheel, tmp_path):
@@ -820,7 +791,7 @@ def dockerfile_of(ssh):
 
 
 def test_main_up_from_an_installed_package_installs_its_own_version_from_pypi(aws, home, fake_ssh, cluster_yaml, installed, capsys):
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k"]) == 0
+    assert cli.main(["up", str(cluster_yaml)]) == 0
     pin = f"ray-vast=={importlib.metadata.version('ray-vast')}"  # the installed package's own version
     assert dockerfile_of(fake_ssh.fake).splitlines() == [
         f"FROM {CLUSTER_YAML['provider']['image']}", f"RUN pip install --no-cache-dir {pin}"]
@@ -831,7 +802,7 @@ def test_main_up_from_an_installed_package_installs_its_own_version_from_pypi(aw
 def test_main_up_with_an_index_url_installs_from_that_index_and_takes_the_dependencies_from_pypi(
         aws, home, fake_ssh, cluster_yaml, installed, capsys):
     test_pypi = "https://test.pypi.org/simple/"
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", test_pypi]) == 0
+    assert cli.main(["up", str(cluster_yaml), "--index-url", test_pypi]) == 0
     pin = f"ray-vast=={importlib.metadata.version('ray-vast')}"
     run_line = dockerfile_of(fake_ssh.fake).splitlines()[1]
     assert run_line == f"RUN pip install --no-cache-dir --index-url {test_pypi} --extra-index-url https://pypi.org/simple {pin}"
@@ -842,12 +813,12 @@ def test_main_up_with_an_index_url_in_a_source_tree_still_installs_from_the_inde
     def no_build(argv, **kwargs):
         raise AssertionError(f"`up` built a wheel: {argv}")
     monkeypatch.setattr(subprocess, "run", no_build)
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", "https://test.pypi.org/simple/"]) == 0
+    assert cli.main(["up", str(cluster_yaml), "--index-url", "https://test.pypi.org/simple/"]) == 0
     assert "--index-url https://test.pypi.org/simple/" in dockerfile_of(fake_ssh.fake)
 
 
 def test_main_up_with_a_wheel_copies_it_and_says_so(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k") == 0
+    assert main_up(cluster_yaml, wheel) == 0
     assert f"COPY {wheel.name} " in dockerfile_of(fake_ssh.fake)
     assert f"installing ray-vast from the wheel {wheel}" in capsys.readouterr().out
 
@@ -858,7 +829,7 @@ def test_main_up_in_a_source_tree_builds_the_wheel_there_and_says_so(aws, home, 
         (outdir / "ray_vast-9.9.9-py3-none-any.whl").write_bytes(b"wheel")
         return subprocess.CompletedProcess(argv, 0)
     monkeypatch.setattr(subprocess, "run", fake_build)
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k"]) == 0
+    assert cli.main(["up", str(cluster_yaml)]) == 0
     assert "COPY ray_vast-9.9.9-py3-none-any.whl " in dockerfile_of(fake_ssh.fake)
     assert f"installing ray-vast from a wheel built from the source tree {commands.SOURCE_TREE}" in capsys.readouterr().out
 
@@ -873,7 +844,7 @@ def test_main_up_with_a_failed_head_image_build_names_the_version_and_the_index(
                 raise commands.SshError("ssh: exit 1: sudo docker build\nERROR: No matching distribution found for ray-vast==0.1.0rc1")
             return super().run(ip, command, stdin, timeout)
     fake_ssh.fake = PipFails()
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", *extra]) == 1
+    assert cli.main(["up", str(cluster_yaml), *extra]) == 1
     err = capsys.readouterr().err
     assert (f"the head image build failed while installing ray-vast=={importlib.metadata.version('ray-vast')} from {index}; "
             "see the build output below") in err
@@ -882,7 +853,7 @@ def test_main_up_with_a_failed_head_image_build_names_the_version_and_the_index(
 
 
 def test_main_up_with_both_a_wheel_and_an_index_url_fails_before_creating_anything(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
-    assert main_up(cluster_yaml, wheel, "--key-file", "/k.pem", "--key-name", "k", "--index-url", "https://test.pypi.org/simple/") == 1
+    assert main_up(cluster_yaml, wheel, "--index-url", "https://test.pypi.org/simple/") == 1
     assert "--wheel and --index-url do not go together" in capsys.readouterr().err
     assert what_is_left(aws, FakeVast()) == []
 
@@ -891,7 +862,7 @@ def test_main_up_with_both_a_wheel_and_an_index_url_fails_before_creating_anythi
                                  "https://test.pypi.org/simple/\nRUN echo injected", "https://"])
 def test_main_up_with_an_index_url_that_is_not_a_plain_http_url_fails_before_creating_anything(
         aws, home, fake_ssh, cluster_yaml, installed, capsys, url):
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", url]) == 1
+    assert cli.main(["up", str(cluster_yaml), "--index-url", url]) == 1
     assert "--index-url must be a plain http:// or https:// URL without spaces" in capsys.readouterr().err
     assert what_is_left(aws, FakeVast()) == [] and fake_ssh.fake.calls == []
 
@@ -907,8 +878,115 @@ def test_main_up_never_prints_the_user_and_password_of_the_index_url(aws, home, 
                                         f"#5 [2/2] RUN pip install --no-cache-dir --index-url {url} ray-vast\nERROR: failed")
             return super().run(ip, command, stdin, timeout)
     fake_ssh.fake = BuildFails()
-    assert cli.main(["up", str(cluster_yaml), "--key-file", "/k.pem", "--key-name", "k", "--index-url", url]) == 1
+    assert cli.main(["up", str(cluster_yaml), "--index-url", url]) == 1
     out, err = capsys.readouterr()
     assert "from https://***@pypi.example.com/simple/" in out and "from https://***@pypi.example.com/simple/" in err
     assert "#5 [2/2] RUN pip install --no-cache-dir --index-url https://***@pypi.example.com/simple/ ray-vast" in err
     assert "cr3t" not in out + err and "alice" not in out + err
+
+
+# --- SSH key per cluster, head settings in the head node type, the IAM boundary, the saved profile (2026-10-16) ---------
+
+def test_up_makes_a_key_pair_for_the_cluster_and_saves_its_private_key_with_mode_600(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    name = f"ray-vast-{CLUSTER}"
+    [pair] = aws.client("ec2").describe_key_pairs(KeyNames=[name])["KeyPairs"]
+    assert {"Key": commands.TAG_KEY, "Value": CLUSTER} in pair["Tags"]
+    key_file = tmp_path / "state" / CLUSTER / "ssh_key.pem"
+    assert "PRIVATE KEY-----" in key_file.read_text()
+    assert oct(key_file.stat().st_mode & 0o777) == "0o600" and oct(key_file.parent.stat().st_mode & 0o777) == "0o700"
+
+
+def test_down_deletes_the_key_pair_and_the_private_key(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    messages = []
+    assert commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path / "state", sleep=lambda s: None, out=messages.append) == []
+    assert aws.client("ec2").describe_key_pairs()["KeyPairs"] == []
+    assert not (tmp_path / "state" / CLUSTER / "ssh_key.pem").exists()
+    assert f"deleted key pair ray-vast-{CLUSTER}" in messages
+
+
+def test_down_never_deletes_a_same_named_key_pair_without_our_tag(aws, tmp_path):
+    ec2 = aws.client("ec2")
+    ec2.create_key_pair(KeyName=f"ray-vast-{CLUSTER}")
+    assert commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path, sleep=lambda s: None, out=lambda m: None) == []
+    assert len(ec2.describe_key_pairs()["KeyPairs"]) == 1
+
+
+def test_down_reports_a_key_pair_that_could_not_be_deleted(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    aws.events.register("before-call.ec2.DeleteKeyPair", no_op_response)
+    left = commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path / "state", sleep=lambda s: None, out=lambda m: None)
+    assert left == [f"key pair ray-vast-{CLUSTER}"]
+
+
+def test_up_takes_the_region_and_the_instance_type_from_the_head_node_type(aws, cluster_yaml, wheel, tmp_path):
+    raw = yaml.safe_load(cluster_yaml.read_text())
+    raw["available_node_types"]["head"]["node_config"] = {"region": "eu-central-1", "instance_type": "m5.xlarge"}
+    cluster_yaml.write_text(yaml.safe_dump(raw))
+    make_ubuntu_image(aws, "eu-central-1")
+    ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
+    [head] = commands._head_instances(aws.client("ec2", region_name="eu-central-1"), CLUSTER)
+    assert head["InstanceType"] == "m5.xlarge"
+    assert commands._head_instances(aws.client("ec2", region_name=REGION), CLUSTER) == []
+    [config_text] = [c[3] for c in ssh.calls if c[2].startswith("cat >") and c[2].endswith("cluster.yaml")]
+    assert yaml.safe_load(config_text)["provider"]["region"] == "eu-central-1"  # the provider on the head needs it
+
+
+def test_up_makes_the_head_role_with_the_permissions_boundary(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    role = aws.client("iam").get_role(RoleName=f"ray-vast-{CLUSTER}")["Role"]
+    assert role["PermissionsBoundary"]["PermissionsBoundaryArn"] == "arn:aws:iam::123456789012:policy/ray-vast-head-boundary"
+
+
+def test_up_without_the_boundary_policy_stops_with_a_pointer_to_the_setup_docs_and_leaves_nothing(aws, cluster_yaml, wheel, tmp_path):
+    def no_policy(**kwargs):  # what AWS answers (seen live); moto does not check that the boundary exists
+        raise botocore.exceptions.ClientError({"Error": {"Code": "NoSuchEntity", "Message": "Scope ARN: arn:aws:iam::123456789012:policy/"
+                                               "ray-vast-head-boundary does not exist or is not attachable."}}, "CreateRole")
+    aws.events.register("before-call.iam.CreateRole", no_policy)
+    with pytest.raises(commands.CliError, match=r"ray-vast-head-boundary.*does not exist.*getting-started"):
+        run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert what_is_left(aws, FakeVast()) == []
+    assert not (tmp_path / "state" / f"{CLUSTER}.json").exists()  # so the next `up` can run at once
+
+
+def test_up_saves_the_profile_in_the_state_file(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert json.loads((tmp_path / "state" / f"{CLUSTER}.json").read_text())["profile"] == "my-profile"
+
+
+def test_main_down_without_a_profile_uses_the_profile_that_up_saved(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
+    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
+    assert main_up(cluster_yaml, wheel, "--profile", "saved-profile") == 0
+    assert cli.main(["down", str(cluster_yaml)]) == 0
+    assert PROFILES == ["saved-profile", "saved-profile"]
+
+
+def test_main_down_with_a_profile_uses_it_and_not_the_saved_one(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
+    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
+    assert main_up(cluster_yaml, wheel, "--profile", "saved-profile") == 0
+    assert cli.main(["down", str(cluster_yaml), "--profile", "flag-profile"]) == 0
+    assert PROFILES[-1] == "flag-profile"
+
+
+def test_main_up_connects_with_the_generated_key(aws, home, fake_ssh, cluster_yaml, wheel):
+    assert main_up(cluster_yaml, wheel) == 0
+    [(key_file, known_hosts)] = fake_ssh.built
+    assert key_file == home / ".ray-vast" / CLUSTER / "ssh_key.pem"
+    assert known_hosts == home / ".ray-vast" / f"{CLUSTER}.known_hosts"
+
+
+@pytest.mark.parametrize("command", ["attach", "dashboard"])
+def test_main_attach_and_dashboard_without_the_generated_key_exit_1(running_cluster, home, cluster_yaml, capsys, command):
+    (home / ".ray-vast" / CLUSTER / "ssh_key.pem").unlink()
+    assert cli.main([command, str(cluster_yaml)]) == 1
+    assert f"no SSH key for cluster {CLUSTER}" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("command", ["up", "down", "attach", "dashboard"])
+def test_main_with_the_old_provider_region_names_the_new_place(home, cluster_yaml, capsys, command):
+    raw = yaml.safe_load(cluster_yaml.read_text())
+    raw["provider"]["region"] = REGION
+    cluster_yaml.write_text(yaml.safe_dump(raw))
+    assert cli.main([command, str(cluster_yaml)]) == 1
+    assert "provider.region is no longer a field (moved: set node_config.region of the head node type)" in capsys.readouterr().err

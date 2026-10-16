@@ -82,7 +82,7 @@ Facts from the Ray source and the spikes on Ray 2.59.0 ([spikes.md](spikes.md)).
 
 - **Requests.** One create call makes one request: its slots and its candidates. The candidates are spread over the slots of the request. The head server fills any free slot of the candidate's node type. When every slot of a request has a worker, the provider destroys the other unenrolled candidates of that request.
 - **Time limits for each candidate:**
-  - Pull: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 min (15 min when `image_size_gb` is not set). `up` measures the image size.
+  - Pull: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 min (15 min when `image_size_gb` is not set). `up` measures the image size; the user cannot set it.
   - Enrollment: 1 min after the provider first sees `running`.
   - Missing from vast's list: ended after 60 s.
   - An `exited` or error status ends the candidate at once.
@@ -279,19 +279,23 @@ The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the s
 ### 7.1 `ray-vast up`
 
 1. Read and check the cluster YAML, and run `bootstrap_config()` (F10). Show the warnings. Stop if the cluster already exists (an EC2 head with the cluster tag, or `~/.ray-vast/<cluster>.json`).
-2. Make the IAM role, its policy and the instance profile. The role can only add and remove rules in the cluster's 5 security groups, and describe EC2.
-3. Make the 5 security groups `ray-vast-<cluster>-0` … `-4` (tagged). Group 0 gets one SSH rule for the operator's IP.
-4. Start the EC2 head: Ubuntu 24.04, `head_instance_type` (default `t3.large`), 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
-5. Build the derived image `FROM <image>` plus ray-vast. The first source that applies wins:
+2. Make the IAM role with the permissions boundary `arn:aws:iam::<account>:policy/ray-vast-head-boundary`. The user creates that policy once (`ray_vast/iam/ray-vast-head-boundary.json`); `up` never creates it and never checks for it. If it is missing, `CreateRole` fails with `NoSuchEntity`, and `up` stops with a pointer to the setup docs. The role is the first resource, so nothing is left.
+3. Write `~/.ray-vast/<cluster>.json` with the region and the AWS profile. `down`, `attach` and `dashboard` use that profile when `--profile` and `AWS_PROFILE` are not given.
+4. Make the EC2 key pair `ray-vast-<cluster>` (ed25519, tagged). Save the private key in `~/.ray-vast/<cluster>/ssh_key.pem` (mode 600, directory 700). All SSH to the head uses it.
+5. Make the 5 security groups `ray-vast-<cluster>-0` … `-4` (tagged). Group 0 gets one SSH rule for the operator's IP. Make the role policy and the instance profile. The role can only add and remove rules in the cluster's 5 security groups, and describe EC2.
+6. Start the EC2 head: Ubuntu 24.04, the head node type's `node_config.instance_type` (default `t3.large`) in its `node_config.region`, 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
+7. Build the derived image `FROM <image>` plus ray-vast. The first source that applies wins:
     - `--wheel FILE`. `up` copies the wheel to the head.
     - `--index-url URL`, for TestPyPI. The image runs `pip install --index-url URL --extra-index-url https://pypi.org/simple ray-vast==<the CLI's version>`. `URL` must be a plain `http://` or `https://` URL with no spaces. `up` masks a user name and a password in `URL` in its output.
     - The source tree, when the CLI runs from a git clone. `up` builds the wheel on the laptop. This is for development.
     - PyPI, in all other cases. The image runs `pip install ray-vast==<the CLI's version>`.
 
-    The first output line names the source. A failed build on an index path stops `up`. The message names the version and the index, and the end of the build output follows. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`; a value in the YAML wins).
-6. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML.
-7. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
-8. Wait until `ray status` works. Warn if the CA expires within 14 days.
+    The first output line names the source. A failed build on an index path stops `up`. The message names the version and the index, and the end of the build output follows. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`).
+8. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML. Its `provider` gets the internal keys `head_ip`, `secrets_dir`, `security_group_ids`, `region` and `image_size_gb`; they are not fields of the user's YAML.
+9. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
+10. Wait until `ray status` works. Warn if the CA expires within 14 days.
+
+`down` deletes the key pair (found by name and tag, like the security groups) and the private key file, also after a failed `up`.
 
 Head ports (`--network host`): GCS 6379; dashboard 8265 (127.0.0.1); node manager 6380; object manager 6381; metrics 6382; agent gRPC 6383; agent HTTP (job port) 6384 and runtime-env agent 6385 (127.0.0.1 through the shim); workers 10002–10100; head server 7443 (A) and 7444 (B). Ray also opens 10001 (Ray client, private IP and 127.0.0.1) and random ports for the monitor and the dashboard.
 
@@ -301,7 +305,7 @@ The provider and the head server log to `/tmp/ray/session_latest/logs/monitor.lo
 
 - Each cluster gets a new CA and a new token. The CA key stays on the head. TLS and `RAY_AUTH_MODE=token` are on for all nodes.
 - RSA-2048 keys. Leaf certs have serverAuth and clientAuth. `not_before` is 5 min in the past (worker clock skew). The CA has `pathlen:0`.
-- Cert life: `cert_max_age_days` (default 365) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `up` and the head log warn 14 days before the CA expires (a leaf cert never lives longer than the CA). Reason: when a cert expires, all TLS handshakes with that node fail, and Ray loads cert files only at process start. Short certs make outages more likely, and they do not add much security.
+- Cert life: 365 days (a constant) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `up` and the head log warn 14 days before the CA expires (a leaf cert never lives longer than the CA). Reason: when a cert expires, all TLS handshakes with that node fail, and Ray loads cert files only at process start. Short certs make outages more likely, and they do not add much security.
 - Files on the head: `ca.pem` and `head.pem` mode 644; keys and the token mode 600; the directory mode 700.
 - The CA fingerprint is the SHA-256 of the CA cert's DER bytes, lowercase hex (S5).
 

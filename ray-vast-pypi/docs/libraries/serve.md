@@ -9,7 +9,7 @@ Model serving with replicas, handles and HTTP.
 
 ## Run it
 
-Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-24gb.yaml). Add your EC2 key pair (`key_name`, `key_file`) to `provider`.
+Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-24gb.yaml). Set the region of the head (`node_config.region` of the head node type).
 
 ```bash
 ray-vast up cluster.yaml --profile my-aws-profile
@@ -24,10 +24,10 @@ export RAY_ADDRESS=http://127.0.0.1:8265
 ray job submit --working-dir . -- python serve_app.py
 ```
 
-In terminal 3, open an SSH tunnel to port 8000 of the head. Use the key file of your cluster YAML (`key_file`). `ray-vast up` prints the head IP.
+In terminal 3, open an SSH tunnel to port 8000 of the head. Use the SSH key that `up` made: `~/.ray-vast/<cluster_name>/ssh_key.pem`. `ray-vast up` prints the head IP.
 
 ```bash
-ssh -i ~/my-ec2-key.pem -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>
+ssh -i ~/.ray-vast/<cluster_name>/ssh_key.pem -o UserKnownHostsFile=~/.ray-vast/<cluster_name>.known_hosts -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>
 curl http://127.0.0.1:18000/
 ```
 

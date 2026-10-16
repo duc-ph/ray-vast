@@ -56,6 +56,8 @@ NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
 # AWS gives no own error code for an instance profile that has not propagated yet: RunInstances answers with the generic
 # `InvalidParameterValue` and this text in the message ("Invalid IAM Instance Profile name/ARN"). Match on the text.
 PROFILE_NOT_READY = "Invalid IAM Instance Profile"
+BOUNDARY_POLICY = "ray-vast-head-boundary"  # the permissions boundary of every head role; the user creates it once
+SETUP_DOCS = "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup"
 USER_DATA = """#!/bin/bash
 set -e
 export DEBIAN_FRONTEND=noninteractive
@@ -130,6 +132,17 @@ def _our_groups(ec2, cluster):
         {"Name": f"tag:{TAG_KEY}", "Values": [cluster]}])["SecurityGroups"]
 
 
+def _our_key_pairs(ec2, cluster):
+    """The key pair of the cluster: by name AND tag, as for the security groups."""
+    return ec2.describe_key_pairs(Filters=[
+        {"Name": "key-name", "Values": [f"ray-vast-{cluster}"]}, {"Name": f"tag:{TAG_KEY}", "Values": [cluster]}])["KeyPairs"]
+
+
+def _key_file(state_dir, cluster):
+    """The private SSH key of the head, which `up` writes and `down` deletes."""
+    return Path(state_dir) / cluster / "ssh_key.pem"
+
+
 def _vast_instances(vast, cluster):
     return [i for i in vast.list_instances() if i.get("label") == label(cluster)]
 
@@ -153,7 +166,7 @@ def _mask_userinfo(text, url):
     return re.sub(r"[^\s/]*@" + re.escape(host), lambda m: "***@" + host, text)
 
 
-def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
+def up(config_path, session, ssh, *, profile, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
     try:
         config, warnings = config_module.load_and_bootstrap(config_path)
     except ValueError as e:  # a field check failed: a user error, so one line and no traceback
@@ -163,16 +176,38 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
         raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
     for warning in warnings:
         out(f"warning: {warning}")
-    region, name = provider["region"], f"ray-vast-{cluster}"
+    head_node_config = config["available_node_types"][config["head_node_type"]]["node_config"]
+    region, name = head_node_config["region"], f"ray-vast-{cluster}"
     tags = [{"Key": TAG_KEY, "Value": cluster}, {"Key": "Name", "Value": name}]
     ec2, iam = _clients(session, region)
     if _head_instances(ec2, cluster) or (Path(state_dir) / f"{cluster}.json").exists():
         raise CliError(f"cluster {cluster} already exists; use `ray-vast down` first")
     account = session.client("sts", config=ec2_client_config()).get_caller_identity()["Account"]
 
-    # 1. AWS resources. The role comes first: if the user lacks IAM permissions, nothing else exists yet.
-    iam.create_role(RoleName=name, Tags=tags, AssumeRolePolicyDocument=json.dumps({
-        "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
+    # 1. AWS resources. The role comes first: if the user lacks IAM permissions or the boundary policy is missing, nothing
+    # else exists yet. The boundary caps what the role can ever do, also after a later change of its inline policy.
+    boundary = f"arn:aws:iam::{account}:policy/{BOUNDARY_POLICY}"
+    try:
+        iam.create_role(RoleName=name, Tags=tags, PermissionsBoundary=boundary, AssumeRolePolicyDocument=json.dumps({
+            "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise
+        raise CliError(f"the IAM policy {BOUNDARY_POLICY} does not exist in AWS account {account}. Create it once (one command): "
+                       f"{SETUP_DOCS}. Nothing was created.") from None
+    state_file = Path(state_dir) / f"{cluster}.json"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state = {"cluster": cluster, "region": region, "profile": profile}  # `down` uses the saved profile by default
+    state_file.write_text(json.dumps(state, indent=2))
+    # The SSH key of the head: one EC2 key pair for each cluster. Its private key exists only in this file.
+    private_key = ec2.create_key_pair(KeyName=name, KeyType="ed25519", TagSpecifications=[
+        {"ResourceType": "key-pair", "Tags": tags}])["KeyMaterial"]
+    key_file = _key_file(state_dir, cluster)
+    key_file.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    key_file.parent.chmod(0o700)
+    key_file.unlink(missing_ok=True)  # O_EXCL makes the mode apply to a fresh file
+    with os.fdopen(os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as f:
+        f.write(private_key)
     # 5 groups: the AWS default limit for one network interface. Worker IP rules fill them in order (design 8.3).
     group_ids = [ec2.create_security_group(GroupName=f"{name}-{i}", Description=f"ray-vast head {cluster}", TagSpecifications=[
         {"ResourceType": "security-group", "Tags": tags}])["GroupId"] for i in range(SECURITY_GROUPS)]
@@ -193,7 +228,7 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
     for attempt in range(12):  # a new instance profile can take several seconds to be usable
         try:
             launched = ec2.run_instances(
-                ImageId=ami, InstanceType=provider["head_instance_type"], MinCount=1, MaxCount=1, KeyName=key_name,
+                ImageId=ami, InstanceType=head_node_config["instance_type"], MinCount=1, MaxCount=1, KeyName=name,
                 SecurityGroupIds=group_ids, IamInstanceProfile={"Name": name}, UserData=USER_DATA,
                 MetadataOptions={"HttpTokens": "required", "HttpEndpoint": "enabled"},
                 BlockDeviceMappings=[{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 60, "VolumeType": "gp3", "DeleteOnTermination": True}}],
@@ -209,11 +244,8 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
     instance = ec2.describe_instances(InstanceIds=[instance_id])["Reservations"][0]["Instances"][0]
     head_ip, private_ip = instance["PublicIpAddress"], instance["PrivateIpAddress"]
     out(f"head IP {head_ip}")
-    state_file = Path(state_dir) / f"{cluster}.json"
-    state_file.parent.mkdir(parents=True, exist_ok=True)
-    state_file.write_text(json.dumps({
-        "cluster": cluster, "region": region, "head_instance_id": instance_id, "head_ip": head_ip,
-        "security_group_ids": group_ids, "role_name": name, "instance_profile_name": name}, indent=2))
+    state.update(head_instance_id=instance_id, head_ip=head_ip, security_group_ids=group_ids, role_name=name, instance_profile_name=name)
+    state_file.write_text(json.dumps(state, indent=2))
 
     # 2. On the head: wait for SSH and Docker.
     for attempt in range(60):
@@ -257,17 +289,17 @@ def up(config_path, session, ssh, *, key_name, wheel=None, index_url=None, vast_
         out(f"warning: the image has Ray {ray_version}; ray-vast is tested with {', '.join(TESTED_RAY_VERSIONS)}")
 
     # 4. Config and secrets on the head. The CA key is made inside a container and never leaves the head.
-    head_provider = {k: v for k, v in provider.items() if k not in ("key_name", "key_file")}
-    head_provider.update(head_ip=head_ip, secrets_dir=secrets, security_group_ids=group_ids)
-    # The build pulled provider.image; its size sets the workers' pull time limit (provider.image_size_gb), unless the user set it.
+    # `region` and `image_size_gb` are for the provider on the head only; they are not fields of the user's YAML.
+    head_provider = {**provider, "head_ip": head_ip, "secrets_dir": secrets, "security_group_ids": group_ids, "region": region}
+    # The build pulled provider.image; its size sets the workers' pull time limit.
     size_bytes = ssh.run(head_ip, f"sudo docker image inspect --format '{{{{.Size}}}}' {shlex.quote(provider['image'])}").strip()
-    if size_bytes.isdigit() and "image_size_gb" not in head_provider:
+    if size_bytes.isdigit():
         head_provider["image_size_gb"] = -(-int(size_bytes) // 10**9)
     head_config = {**config, "provider": head_provider}
     ssh.run(head_ip, f"cat > {work}/cluster.yaml", stdin=yaml.safe_dump(head_config))
     ssh.run(head_ip, f"umask 077 && cat > {secrets}/vast_api_key", stdin=vast_key)
     ssh.run(head_ip, f"sudo docker run --rm -v {secrets}:{secrets} {image_tag} python -c "
-                     + shlex.quote(f"from ray_vast import pki; pki.write_head_files({secrets!r}, {head_ip!r}, {provider['cert_max_age_days']})"))
+                     + shlex.quote(f"from ray_vast import pki; pki.write_head_files({secrets!r}, {head_ip!r})"))
 
     # 5. The head: `ray start --head --block` is the main process, with no restart policy (no self-healing, design 7.3):
     # if Ray's monitor dies, Ray stops the head, and the workers destroy themselves.
@@ -339,6 +371,10 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
                 sleep(5)
         out(f"deleted security group {group['GroupId']}")
 
+    for pair in _our_key_pairs(ec2, cluster):
+        ec2.delete_key_pair(KeyName=pair["KeyName"])  # names are unique in a region
+        out(f"deleted key pair {pair['KeyName']}")
+
     try:
         for role in iam.get_instance_profile(InstanceProfileName=name)["InstanceProfile"]["Roles"]:
             iam.remove_role_from_instance_profile(InstanceProfileName=name, RoleName=role["RoleName"])
@@ -361,6 +397,7 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
     left = [f"vast instance {i['id']}" for i in _vast_instances(vast, cluster)] if vast else []
     left += [f"EC2 instance {i['InstanceId']}" for i in _head_instances(ec2, cluster)]
     left += [f"security group {g['GroupId']}" for g in _our_groups(ec2, cluster)]
+    left += [f"key pair {p['KeyName']}" for p in _our_key_pairs(ec2, cluster)]
     for kind, get, kwargs in (("instance profile", iam.get_instance_profile, {"InstanceProfileName": name}),
                               ("role", iam.get_role, {"RoleName": name})):
         try:
@@ -410,22 +447,26 @@ def run(args):
         if not isinstance(raw, dict):
             raise CliError(f"{args.cluster_yaml}: the YAML must be a mapping (cluster_name:, provider:, ...)")
         cluster, provider = raw.get("cluster_name"), raw.get("provider") or {}
-        if not cluster or not provider.get("region"):
-            raise CliError("the YAML needs cluster_name and provider.region")
+        try:
+            config_module.check_old_provider_fields(provider)
+        except ValueError as e:
+            raise CliError(f"{args.cluster_yaml}: {e}") from None
+        head_type = (raw.get("available_node_types") or {}).get(raw.get("head_node_type")) or {}
+        region = (head_type.get("node_config") or {}).get("region")
+        if not cluster or not region:
+            raise CliError("the YAML needs cluster_name and node_config.region of the head node type")
         if not NAME_RE.match(cluster):
             raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
-        session = boto3.Session(profile_name=args.profile, region_name=provider["region"])
         state_dir = Path.home() / ".ray-vast"
         state_dir.mkdir(exist_ok=True)
-        key_file = getattr(args, "key_file", None) or provider.get("key_file")
-        if args.command != "down" and not key_file:
-            raise CliError("no SSH key: pass --key-file or set provider.key_file")
-        ssh = Ssh(Path(key_file).expanduser(), state_dir / f"{cluster}.known_hosts") if key_file else None
+        # An explicit --profile (or AWS_PROFILE) wins; else the profile that `up` used for this cluster.
+        profile = args.profile
+        if profile is None and args.command != "up" and (state_dir / f"{cluster}.json").exists():
+            profile = json.loads((state_dir / f"{cluster}.json").read_text()).get("profile")
+        session = boto3.Session(profile_name=profile, region_name=region)
+        ssh = Ssh(_key_file(state_dir, cluster), state_dir / f"{cluster}.known_hosts")
 
         if args.command == "up":
-            key_name = args.key_name or provider.get("key_name")
-            if not key_name:
-                raise CliError("no EC2 key pair: pass --key-name or set provider.key_name")
             if args.wheel and args.index_url:
                 raise CliError("--wheel and --index-url do not go together: pass one of them")
             # The URL goes into a Dockerfile RUN line: a space or a newline there would change the instruction.
@@ -443,21 +484,24 @@ def run(args):
                     print(f"installing ray-vast from the wheel {wheel}")
                 else:
                     print(f"installing ray-vast=={__version__} from {_mask_userinfo(args.index_url or 'PyPI', args.index_url)}")
-                up(args.cluster_yaml, session, ssh, key_name=key_name, wheel=wheel, index_url=args.index_url, vast_key=_read_vast_key(),
+                up(args.cluster_yaml, session, ssh, profile=args.profile, wheel=wheel, index_url=args.index_url, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":
             try:
                 vast = VastClient(_read_vast_key())
             except CliError:
                 vast = None  # `down` warns that the vast instances were not swept; AWS is still cleaned up
-            left = down(cluster, provider["region"], session, vast, state_dir)
+            left = down(cluster, region, session, vast, state_dir)
             return 1 if left else 0
         else:
-            ec2, _ = _clients(session, provider["region"])
+            ec2, _ = _clients(session, region)
             heads = [i for i in _head_instances(ec2, cluster) if i["State"]["Name"] == "running"]
             if not heads:
                 raise CliError(f"no running head for cluster {cluster}")
             ip = heads[0]["PublicIpAddress"]
+            if not _key_file(state_dir, cluster).exists():
+                raise CliError(f"no SSH key for cluster {cluster} at {_key_file(state_dir, cluster)}: `ray-vast up` makes it "
+                               f"on the machine where it runs. Run attach and dashboard there.")
             if args.command == "attach":
                 return ssh.interactive(ip, "-t")
             return dashboard(ssh, ip, state_dir, cluster)

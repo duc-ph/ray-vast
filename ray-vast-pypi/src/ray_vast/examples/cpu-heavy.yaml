@@ -1,27 +1,36 @@
 # A CPU-heavy variant: one small GPU and many CPU cores in each worker.
 # CPU is a minimum. The offer must have at least this many effective cores.
 # Do not set CPU above 58. Each Ray worker process needs one worker port.
-cluster_name: cpu-heavy
-max_workers: 3
-idle_timeout_minutes: 5
+# Every field is listed. A commented-out field keeps its default or does not apply here.
+# Reference: https://duc-ph.github.io/ray-vast/reference/configuration/
+
+cluster_name: cpu-heavy            # names the AWS resources (ray-vast-<name>) and the vast label (ray-vast:<name>)
+# max_workers: 4                # the most workers in all; default: the sum of max_workers of the worker types
+idle_timeout_minutes: 5          # Ray removes a worker after it is idle this long
+# auth:
+#   ssh_user: ray               # Ray needs this field; ray-vast does not use it (default: ray)
+
 provider:
-  region: us-west-2
-  image: rayproject/ray:2.59.0-py311-gpu
-  max_dollars_per_hour: 4.0
-auth:
-  ssh_user: ray
+  image: rayproject/ray:2.59.0-py311-gpu   # image for the head and the workers
+  max_dollars_per_hour: 4.0           # hard limit for the sum of dph_total over all workers and candidates
+  # candidate_factor: 2           # candidates rented for each requested worker (default: 2)
+  # order_by: dph_total            # vast offer field to sort by, ascending (default: dph_total, the cheapest first)
+  # allow_non_datacenter: false     # true allows non-datacenter hosts (default: false; read the security model first)
+
 head_node_type: head
 available_node_types:
   head:
-    resources: {CPU: 0}
-    node_config: {}
-    max_workers: 0
-  cpu32:
-    resources: {CPU: 32, GPU: 1}
-    min_workers: 0
-    max_workers: 3
+    resources: {CPU: 0}           # required: the head runs no tasks
     node_config:
-      offer_query:
+      region: us-west-2            # required: the AWS region of the EC2 head
+      # instance_type: t3.large    # EC2 instance type of the head (default: t3.large)
+  cpu32:
+    resources: {CPU: 32, GPU: 1}    # CPU: at least this many effective cores; GPU: exactly this many GPUs
+    min_workers: 0                  # the fewest workers of this type
+    max_workers: 3                  # the most workers of this type
+    node_config:
+      # disk_gb: 50                 # disk of the instance in GB (default: 50)
+      offer_query:                  # required: which vast offers this type can rent (vast API form)
         gpu_ram: {gte: 12000, lte: 24000}   # MB
         cpu_ram: {gte: 64000}               # MB
         dlperf: {gte: 20}

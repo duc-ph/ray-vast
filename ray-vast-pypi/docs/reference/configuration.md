@@ -7,34 +7,10 @@ Examples are in the package, in `ray_vast/examples/`: `gpu-24gb.yaml`, `gpu-80gb
 
 ## Full example
 
+Each example lists all fields. A field in a comment keeps its default, or does not apply.
+
 ```yaml
-cluster_name: gpu-24gb
-max_workers: 4
-idle_timeout_minutes: 5
-provider:
-  region: us-west-2
-  image: rayproject/ray:2.59.0-py311-gpu
-  max_dollars_per_hour: 3.0
-  key_name: my-ec2-key
-  key_file: ~/my-ec2-key.pem
-auth:
-  ssh_user: ray
-head_node_type: head
-available_node_types:
-  head:
-    resources: {CPU: 0}
-    node_config: {}
-    max_workers: 0
-  gpu24:
-    resources: {CPU: 8, GPU: 1}
-    min_workers: 0
-    max_workers: 4
-    node_config:
-      disk_gb: 80
-      offer_query:
-        gpu_ram: {gte: 24000, lte: 32000}   # MB
-        dlperf: {gte: 40}
-        inet_down: {gte: 500}
+--8<-- "src/ray_vast/examples/gpu-24gb.yaml"
 ```
 
 ## Top level
@@ -42,7 +18,7 @@ available_node_types:
 | Field | Type | Default | Meaning |
 |---|---|---|---|
 | `cluster_name` | string | required | 1 to 40 characters: letters, digits, `_` and `-`. It starts with a letter or digit. The AWS resources get the name `ray-vast-<cluster_name>`. The vast instances get the label `ray-vast:<cluster_name>`. |
-| `max_workers` | integer | Ray default | Ray field. The most workers in the cluster. |
+| `max_workers` | integer | the sum of `max_workers` of the worker types | Ray field. The most workers in the cluster. A worker type without `max_workers` counts as 0. |
 | `idle_timeout_minutes` | number | Ray default | Ray field. Ray removes a worker after it is idle for this time. |
 | `head_node_type` | string | required | The name of the head entry in `available_node_types`. |
 | `available_node_types` | mapping | required | The head type and the worker node types. |
@@ -54,37 +30,44 @@ ray-vast does not use the Ray fields `file_mounts`, `setup_commands`, `initializ
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
-| `region` | string | required | AWS region of the head. |
 | `image` | string | required | Docker image for the head and the workers. Read [Use GPU images](../how-to/gpu-images.md). |
 | `max_dollars_per_hour` | number above 0 | required | Limit for the sum of `dph_total` over all workers and candidates. The provider does not rent above it. A missing value is an error, not "no limit". |
-| `key_name` | string | none | EC2 key pair name. `up` needs it, here or in `--key-name`. |
-| `key_file` | path | none | Private key file for SSH to the head. `up`, `attach` and `dashboard` need it, here or in `--key-file`. ray-vast expands `~`. |
 | `candidate_factor` | integer | `2` | The provider rents up to this many candidates for each slot. It destroys the extra candidates when the slots are full. |
-| `image_size_gb` | number | measured by `up` | Size of the image in GB. It sets the pull limit of a candidate: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 minutes. Without a value, the limit is 15 minutes. If your YAML has a value, ray-vast uses it and not the measured value. |
-| `cert_max_age_days` | integer | `365` | Life of the CA and of every node certificate. |
 | `allow_non_datacenter` | boolean | `false` | If true, ray-vast does not add the `datacenter = true` filter, and `up` shows a warning. Read [Security model](../security.md). |
 | `order_by` | string | `dph_total` | The vast offer field to sort by, in ascending order. The default puts the cheapest offers first. |
-| `head_instance_type` | string | `t3.large` | EC2 instance type of the head. |
-| `port_a` | integer | `7443` | Head server port for the download and the enrollment (TLS). |
-| `port_b` | integer | `7444` | Head server port for the heartbeat and the reports (mTLS). |
 
 ray-vast sets `type`, `module` and `disable_node_updaters` itself. Do not set them.
-`up` removes `key_name` and `key_file` from the YAML that it writes to the head.
 
 The vast API key is not a config field. ray-vast reads it from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`.
 
-## `available_node_types`: the head
+### Fields of older versions
 
-The head type must declare `resources: {CPU: 0}`. It is an error if you omit `resources` or use another CPU value.
+A YAML with one of these `provider` fields gets an error. The error tells what to do.
+
+| Old field | Now |
+|---|---|
+| `region` | `node_config.region` of the head node type. |
+| `head_instance_type` | `node_config.instance_type` of the head node type. |
+| `key_name`, `key_file` | Removed. `up` makes an EC2 key pair for each cluster. |
+| `port_a`, `port_b` | Removed. The head server always uses ports 7443 and 7444. |
+| `cert_max_age_days` | Removed. The CA and the certificates always live 365 days. |
+| `image_size_gb` | Removed. `up` measures the image. |
+
+## `available_node_types`: the head
 
 ```yaml
 head:
   resources: {CPU: 0}
-  node_config: {}
-  max_workers: 0
+  node_config:
+    region: us-west-2
+    # instance_type: t3.large
 ```
 
-So Ray schedules no task with resources on the head.
+| Field | Type | Default | Meaning |
+|---|---|---|---|
+| `resources` | mapping | required | Must be `{CPU: 0}`. So Ray schedules no task with resources on the head. It is an error if you omit `resources` or use another CPU value. |
+| `node_config.region` | string | required | AWS region of the EC2 head. |
+| `node_config.instance_type` | string | `t3.large` | EC2 instance type of the head. It must be an x86_64 type. |
 
 ## `available_node_types`: worker types
 

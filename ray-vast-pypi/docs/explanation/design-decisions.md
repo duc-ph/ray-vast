@@ -17,6 +17,6 @@ This page gives a short summary. The full list, with the rejected options, is in
 | Is there a budget? | `max_dollars_per_hour` is required. | A missing budget must not mean "no limit". |
 | Does the head get an Elastic IP? | No. | A reboot keeps the IP. After a stop and start, run `down` and `up`. |
 | How many worker IPs? | Up to 5 security groups, about 299 worker IPs with the default quota. | 5 is the AWS default limit of groups for one network interface. An open head would let a DDoS stop the cluster. |
-| Do certificates renew? | No. They live `cert_max_age_days` (default 365). Run `down` and `up` to renew. | Ray loads certificate files only at process start. Short certificates make outages more likely. |
+| Do certificates renew? | No. They live 365 days. Run `down` and `up` to renew. | Ray loads certificate files only at process start. Short certificates make outages more likely. |
 | Which Ray versions? | `ray[default]>=2.59`. `up` warns for an untested version. | A hard pin would make pip change the image's Ray. |
 | Which autoscaler? | Ray autoscaler v2. | v2 matches a node to an instance by ID, not by IP. Two workers can share one public IP. |

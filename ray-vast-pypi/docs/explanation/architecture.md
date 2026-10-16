@@ -106,8 +106,8 @@ The head sends the shim to each worker when the worker enrolls.
 | 6384, 6385 | Job port, runtime-env agent | 127.0.0.1 only |
 | 8265 | Ray dashboard | 127.0.0.1 only (use `ray-vast dashboard`) |
 | 10002–10100 | Ray worker processes | Worker IPs |
-| 7443 (`port_a`) | Head server: bootstrap, CA, enrollment (TLS) | Worker IPs |
-| 7444 (`port_b`) | Head server: heartbeat, reports (mTLS) | Worker IPs |
+| 7443 | Head server: bootstrap, CA, enrollment (TLS) | Worker IPs |
+| 7444 | Head server: heartbeat, reports (mTLS) | Worker IPs |
 
 The provider adds one security group rule (all TCP) for each worker IP, before the worker enrolls. It removes the rule when no worker or candidate uses the IP any more.
 

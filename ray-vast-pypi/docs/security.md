@@ -21,6 +21,7 @@ For a short explanation, read [Enrollment and the join token](explanation/enroll
 | Cluster token | Head and every worker | Any code on a node, including your own tasks |
 | Node key and cert | The node, mode 600 | Any code on that node |
 | vast account API key | Head, mode 600 | Anyone with access to the head |
+| SSH key of the head (one EC2 key pair for each cluster) | Your laptop: `~/.ray-vast/<cluster_name>/ssh_key.pem`, mode 600. `down` deletes it and the key pair. | Your laptop user |
 | Join token (one for each candidate) | Provider memory; the instance env until enrollment | Read "The join token in the env" |
 | `CONTAINER_API_KEY` (vast key of one instance) | Worker: the bootstrap's memory and the instance env | Read "`CONTAINER_API_KEY` is readable by tasks" |
 | Job credentials (`runtime_env` `env_vars`) | Every worker that runs the job | Any code on those workers |
@@ -79,6 +80,8 @@ For a short explanation, read [Enrollment and the join token](explanation/enroll
 **Someone uses a stolen head credential on AWS** (design 7.1)
 
 - The IAM role of the head can only change the rules of the 5 security groups of the cluster, and describe EC2.
+- The role has the permissions boundary `ray-vast-head-boundary`. The role can never do more than the boundary allows: describe EC2, and change the rules of security groups with the tag `ray-vast-cluster`. This stays true if someone changes the role policy.
+- A restricted user with the policy `ray-vast-user` can make a head role only with this boundary. Read [IAM permissions](reference/iam.md).
 
 **A worker that the head no longer controls keeps running and costs money** (design 6)
 
@@ -166,7 +169,7 @@ vast puts the SSH keys of your account into `/root/.ssh/authorized_keys` of ever
 
 ### No automatic certificate renewal
 
-Certificates are valid for `cert_max_age_days` (default 365). Plan a `down` and an `up` before the CA expires.
+Certificates are valid for 365 days. Plan a `down` and an `up` before the CA expires.
 `up` and the head log warn 14 days before the CA expires (design.md 7.2). Read [Limits](reference/limits.md#certificates-do-not-renew).
 
 ## Reporting a problem

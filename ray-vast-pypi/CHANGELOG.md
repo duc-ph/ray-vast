@@ -15,6 +15,16 @@
     - When all its worker ports are in use, or its pids are above 90 % of the limit: at most once in 5 minutes.
 - A Ray Data CPU limit is no longer necessary to keep a worker alive. A hash shuffle (`groupby`) on a worker with few ports can still hang. To prevent this, set the CPU limit and `max_hash_shuffle_aggregators`.
 
+- Breaking: AWS setup and cluster YAML changes.
+    - `up` makes an EC2 key pair for each cluster (`ray-vast-<cluster_name>`) and saves the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem` (mode 600). `down` deletes both, also after a failed `up`. The options `--key-name` and `--key-file` and the fields `provider.key_name` and `provider.key_file` are removed.
+    - The head settings move to the head node type: `node_config.region` (required) and `node_config.instance_type` (default `t3.large`). They replace `provider.region` and `provider.head_instance_type`.
+    - The provider fields `port_a`, `port_b` (now always 7443 and 7444), `cert_max_age_days` (now always 365) and `image_size_gb` (always measured by `up`) are removed.
+    - A YAML with a removed or moved `provider` field gets an error that tells what to do.
+    - The top-level `max_workers` is optional. The default is the sum of `max_workers` of the worker types.
+    - The head role gets the permissions boundary `ray-vast-head-boundary`. Create this IAM policy once in your account (getting started, "Set up AWS"). Without it, `up` stops before it makes anything. The package has the policy files `ray_vast/iam/ray-vast-head-boundary.json` and `ray_vast/iam/ray-vast-user.json` (a least-privilege policy for a restricted IAM user).
+    - `up` saves the AWS profile. `down`, `attach` and `dashboard` use it when you give no `--profile` and no `AWS_PROFILE`.
+- The example YAMLs list all fields, each with a short comment.
+
 ## 0.1.0 (2026-10-15)
 
 Changes since 0.1.0rc1:

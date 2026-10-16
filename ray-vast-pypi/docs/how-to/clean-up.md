@@ -30,7 +30,11 @@ If something is still left after the second `down`, remove it by hand. Check eac
 | vast instances | label `ray-vast:<cluster_name>` | `vastai show instances`, or the vast console |
 | EC2 head | tag `ray-vast-cluster=<cluster_name>` | EC2 console, or `aws ec2 describe-instances` |
 | Security groups | `ray-vast-<cluster_name>-0` … `-4` | EC2 console |
+| EC2 key pair | `ray-vast-<cluster_name>` | EC2 console, **Key Pairs** |
 | IAM instance profile and role | `ray-vast-<cluster_name>` | IAM console |
+| Local state | `~/.ray-vast/<cluster_name>.json`, `~/.ray-vast/<cluster_name>/` (with the private SSH key) | Your laptop |
+
+Do not delete the policy `ray-vast-head-boundary`. All clusters use it.
 
 To destroy a vast instance, run `vastai destroy instance <instance id>`.
 

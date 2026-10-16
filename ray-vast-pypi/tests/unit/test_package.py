@@ -50,10 +50,11 @@ def test_package_data_is_found_after_install(installed):
         "from importlib.resources import files\n"
         "r = files('ray_vast')\n"
         "print((r/'shim'/'librayvast_shim.so').is_file(), (r/'worker'/'bootstrap.py').is_file(),"
-        " (r/'worker'/'bootloader.sh').is_file(), any((r/'examples').iterdir()))\n"
+        " (r/'worker'/'bootloader.sh').is_file(), any((r/'examples').iterdir()),"
+        " (r/'iam'/'ray-vast-head-boundary.json').is_file(), (r/'iam'/'ray-vast-user.json').is_file())\n"
     )
     result = subprocess.run([str(bin_dir / "python"), "-c", code], capture_output=True, text=True, check=True)
-    assert result.stdout.split() == ["True"] * 4
+    assert result.stdout.split() == ["True"] * 6
 
 
 @pytest.mark.slow  # builds a wheel or an sdist

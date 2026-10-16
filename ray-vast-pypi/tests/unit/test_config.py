@@ -11,10 +11,10 @@ EXAMPLES = sorted(pathlib.Path(__file__).parents[2].joinpath("src/ray_vast/examp
 
 BASE = {
     "cluster_name": "t",
-    "provider": {"region": "us-west-2", "image": "img", "max_dollars_per_hour": 2},
+    "provider": {"image": "img", "max_dollars_per_hour": 2},
     "head_node_type": "head",
     "available_node_types": {
-        "head": {"resources": {"CPU": 0}, "node_config": {}},
+        "head": {"resources": {"CPU": 0}, "node_config": {"region": "us-west-2"}},
         "w": {
             "resources": {"CPU": 4, "GPU": 2},
             "node_config": {"offer_query": {"gpu_ram": {"gte": 24000}}},
@@ -24,7 +24,7 @@ BASE = {
 
 
 def make(**edits):
-    """BASE with dotted-path edits, for example make(**{"provider.region": None}) deletes the key."""
+    """BASE with dotted-path edits, for example make(**{"provider.image": None}) deletes the key."""
     config = copy.deepcopy(BASE)
     for path, value in edits.items():
         *parents, key = path.split(".")
@@ -221,9 +221,9 @@ def test_bootstrap_sets_external_provider():
 def test_bootstrap_fills_defaults():
     config, _ = bootstrap_config(make())
     provider = config["provider"]
-    assert (provider["candidate_factor"], provider["cert_max_age_days"]) == (2, 365)
+    assert provider["candidate_factor"] == 2
     assert (provider["allow_non_datacenter"], provider["order_by"]) == (False, "dph_total")
-    assert provider["head_instance_type"] == "t3.large"
+    assert config["available_node_types"]["head"]["node_config"]["instance_type"] == "t3.large"
     assert config["available_node_types"]["w"]["node_config"]["disk_gb"] == 50
     assert config["auth"]["ssh_user"] == "ray"
 
@@ -240,7 +240,7 @@ def test_bootstrap_does_not_change_its_input():
     assert config == BASE
 
 
-@pytest.mark.parametrize("field", ["region", "image", "max_dollars_per_hour"])
+@pytest.mark.parametrize("field", ["image", "max_dollars_per_hour"])
 def test_bootstrap_requires_provider_field(field):
     with pytest.raises(ValueError, match=f"provider.{field}"):
         bootstrap_config(make(**{f"provider.{field}": None}))
@@ -381,3 +381,44 @@ def test_bootstrap_does_not_warn_when_cpu_equals_worker_ports():
     config = make()
     config["available_node_types"]["w"]["resources"]["CPU"] = 58
     assert bootstrap_config(config)[1] == []
+
+
+def test_bootstrap_requires_the_region_on_the_head_node_type():
+    config = make()
+    del config["available_node_types"]["head"]["node_config"]["region"]
+    with pytest.raises(ValueError, match=r"node type 'head' \(head\): node_config.region is required"):
+        bootstrap_config(config)
+
+
+def test_bootstrap_keeps_a_head_instance_type():
+    config = make()
+    config["available_node_types"]["head"]["node_config"]["instance_type"] = "m7i.xlarge"
+    assert bootstrap_config(config)[0]["available_node_types"]["head"]["node_config"]["instance_type"] == "m7i.xlarge"
+
+
+@pytest.mark.parametrize("field, new_place", [
+    ("region", "node_config.region of the head node type"),
+    ("head_instance_type", "node_config.instance_type of the head node type"),
+    ("port_a", "7443"), ("port_b", "7444"), ("cert_max_age_days", "365 days"),
+    ("image_size_gb", "measures the image"), ("key_name", "makes an EC2 key pair"), ("key_file", "makes an EC2 key pair"),
+])
+def test_bootstrap_rejects_a_moved_or_removed_provider_field_and_names_the_new_place(field, new_place):
+    with pytest.raises(ValueError, match=rf"provider.{field} .*{new_place}"):
+        bootstrap_config(make(**{f"provider.{field}": 1}))
+
+
+def test_bootstrap_sets_max_workers_to_the_sum_of_the_worker_types_when_missing():
+    config = make()
+    types = config["available_node_types"]
+    types["w"]["max_workers"] = 3
+    types["w2"] = copy.deepcopy(types["w"])
+    types["w2"]["max_workers"] = 4
+    types["w3"] = copy.deepcopy(types["w"])
+    del types["w3"]["max_workers"]  # Ray counts a missing per-type max_workers as 0
+    assert bootstrap_config(config)[0]["max_workers"] == 7
+
+
+def test_bootstrap_keeps_a_top_level_max_workers():
+    config = make(max_workers=2)
+    config["available_node_types"]["w"]["max_workers"] = 5
+    assert bootstrap_config(config)[0]["max_workers"] == 2

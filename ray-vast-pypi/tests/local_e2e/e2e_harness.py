@@ -101,17 +101,18 @@ class Cluster:
             "max_workers": max_workers,
             "idle_timeout_minutes": idle_timeout_minutes,
             "provider": {
-                "region": REGION, "image": RAY_IMAGE, "max_dollars_per_hour": 10, "head_ip": self.box_ip,
+                "image": RAY_IMAGE, "max_dollars_per_hour": 10, "head_ip": self.box_ip,
                 "secrets_dir": "/work/secrets", "security_group_ids": [self.sg_id], "vast_api_url": self.fake.url,
                 "candidate_factor": 1, **provider,
             },
             "head_node_type": "head",
             "available_node_types": {
-                "head": {"resources": {"CPU": 0}, "max_workers": 0, "node_config": {}},
+                "head": {"resources": {"CPU": 0}, "node_config": {"region": REGION}},
                 "cpu": {"resources": {"CPU": cpu, "GPU": 0}, "max_workers": max_workers,
                         "node_config": {"offer_query": {"inet_down": {"gte": 100}}}},
             },
         })
+        config["provider"]["region"] = REGION  # `up` writes it for the provider on the head
         if provider_module:
             config["provider"]["module"] = provider_module
         (self.work / "autoscaling.yaml").write_text(yaml.safe_dump(config))

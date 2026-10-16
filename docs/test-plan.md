@@ -39,10 +39,10 @@ The commands for the fast and the full run are in [CONTRIBUTING.md](../ray-vast-
 ## Common setup for C5, C6 and C8
 
 - **Operator machine:** the laptop, with a venv that has `ray[default]==2.59.0`, `build`, `boto3` and this package (`pip install -e ray-vast-pypi`).
-- **AWS:** profile `personal`, region `us-west-2`, EC2 key pair `phduc-personal`, key file `~/phduc-personal.pem`. The head is `t3.large`. Never touch the badminton box (50.112.112.27) or anything with the name `badminton`.
+- **AWS:** profile `personal`, region `us-west-2`. `up` makes the SSH key pair of each cluster. The account has the boundary policy `ray-vast-head-boundary`. The head is `t3.large`. Never touch the badminton box (50.112.112.27) or anything with the name `badminton`.
 - **Shell variables:**
   ```
-  OPS="--profile personal --key-file $HOME/phduc-personal.pem"   # up, attach, dashboard
+  OPS="--profile personal"   # up (the other commands use the saved profile)
   export VAST_API_KEY=$(cat ~/.config/vastai/vast_api_key)       # never echo it
   DATE=$(date -u +%F)
   ```
@@ -88,13 +88,12 @@ cluster_name: rvtest-c5
 max_workers: 1
 idle_timeout_minutes: 60
 provider:
-  region: us-west-2
   image: rayproject/ray:2.59.0-py311-cpu
   max_dollars_per_hour: 1.0
 auth: {ssh_user: ray}
 head_node_type: head
 available_node_types:
-  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2}}
   w:
     resources: {CPU: 4, GPU: 0}      # GPU: 1 if offers.py finds no CPU-only offer
     min_workers: 1
@@ -175,15 +174,13 @@ Expected: B's Ray node stays ALIVE until the destroy. B is gone at `t_last` + 30
    max_workers: 4
    idle_timeout_minutes: 2
    provider:
-     region: us-west-2
      image: rayproject/ray:2.59.0-py311-gpu
-     image_size_gb: 20          # the pull limit; the GPU image pulls slowly
      max_dollars_per_hour: 3.0
      candidate_factor: 2
    auth: {ssh_user: ray}
    head_node_type: head
    available_node_types:
-     head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+     head: {resources: {CPU: 0}, node_config: {region: us-west-2}}
      gpu-a:
        resources: {CPU: 4, GPU: 1}
        min_workers: 0

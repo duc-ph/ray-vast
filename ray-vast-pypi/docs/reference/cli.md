@@ -4,14 +4,14 @@
 ray-vast {up,down,attach,dashboard} CLUSTER_YAML [options]
 ```
 
-Every command takes the path of the cluster YAML. The YAML needs `cluster_name` and `provider.region`.
+Every command takes the path of the cluster YAML. The YAML needs `cluster_name` and `node_config.region` of the head node type.
 `ray-vast --help` and `ray-vast <command> --help` show the options.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `up` | Makes the IAM role, the 5 security groups, the instance profile and the EC2 head. Builds a derived image on the head. Starts Ray. |
+| `up` | Makes the IAM role, the SSH key pair, the 5 security groups, the instance profile and the EC2 head. Builds a derived image on the head. Starts Ray. |
 | `down` | Removes everything of the cluster. Prints `left: nothing` when done. |
 | `attach` | Opens an SSH shell on the head (user `ubuntu`). |
 | `dashboard` | Copies the cluster token to the laptop, prints the `export` line, and opens an SSH tunnel to port 8265 of the head. |
@@ -20,13 +20,9 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 
 | Option | Commands | Meaning |
 |---|---|---|
-| `--profile NAME` | all | AWS profile. Default: `AWS_PROFILE`, or the default credentials. |
-| `--key-file FILE` | `up`, `attach`, `dashboard` | Private SSH key file of the head. Or set `provider.key_file`. |
-| `--key-name NAME` | `up` | EC2 key pair name. Or set `provider.key_name`. |
+| `--profile NAME` | all | AWS profile. Default: `AWS_PROFILE`. Else, for `down`, `attach` and `dashboard`, the profile that `up` saved. Else the default credentials. |
 | `--wheel FILE` | `up` | For development. Install this ray-vast wheel on the head. |
 | `--index-url URL` | `up` | To test a release on TestPyPI. Not for normal use. Install ray-vast on the head from this package index, with PyPI as an extra index. |
-
-If you give an option and the YAML field, ray-vast uses the option.
 
 ## Exit codes
 
@@ -53,12 +49,15 @@ ray-vast up cluster.yaml --profile my-aws-profile
 `up` does these steps:
 
 1. It reads and checks the YAML. It shows the warnings. It stops at once if the cluster already exists: an EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`.
-2. It makes the IAM role `ray-vast-<cluster_name>`, the 5 security groups `ray-vast-<cluster_name>-0` … `-4`, the role policy and the instance profile. Group 0 gets one SSH rule for the public IP of your laptop.
-3. It starts the EC2 head: Ubuntu 24.04, `head_instance_type`, 60 GB gp3 disk, IMDSv2 required, no Elastic IP. User data installs Docker.
-4. It builds a derived image on the head: `provider.image` plus ray-vast. Read [Where the head gets ray-vast](#where-the-head-gets-ray-vast). It reads the Ray version of the image, and warns if it is not 2.59.
-5. It measures the image size and sets `image_size_gb`. If your YAML has a value, `up` uses your value.
-6. It copies the vast key to the head. It makes the CA, the cluster token and the head certificate on the head. The CA key never leaves the head.
-7. It starts the head container `ray-vast-head` and waits until `ray status` answers.
+2. It makes the IAM role `ray-vast-<cluster_name>` with the permissions boundary `ray-vast-head-boundary`. If the boundary policy does not exist, `up` stops here and makes nothing. Read [Getting started](../getting-started.md#aws-setup).
+3. It writes `~/.ray-vast/<cluster_name>.json` with the region and the AWS profile.
+4. It makes the EC2 key pair `ray-vast-<cluster_name>` and saves the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem` (mode 600).
+5. It makes the 5 security groups `ray-vast-<cluster_name>-0` … `-4`, the role policy and the instance profile. Group 0 gets one SSH rule for the public IP of your laptop.
+6. It starts the EC2 head: Ubuntu 24.04, the `instance_type` of the head node type, 60 GB gp3 disk, IMDSv2 required, no Elastic IP. User data installs Docker.
+7. It builds a derived image on the head: `provider.image` plus ray-vast. Read [Where the head gets ray-vast](#where-the-head-gets-ray-vast). It reads the Ray version of the image, and warns if it is not 2.59.
+8. It measures the image size. The size sets the pull limit of the workers.
+9. It copies the vast key to the head. It makes the CA, the cluster token and the head certificate on the head. The CA key never leaves the head.
+10. It starts the head container `ray-vast-head` and waits until `ray status` answers.
 
 Output:
 
@@ -80,7 +79,8 @@ cluster <cluster_name> is up. Head IP <head ip>.
 Rules:
 
 - `up` reads the vast key from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`. It sends the key to the head. The key is never in the YAML.
-- `up` needs an EC2 key pair (`--key-name` or `provider.key_name`) and its private key file (`--key-file` or `provider.key_file`).
+- `up` saves the AWS profile (`--profile` or `AWS_PROFILE`) in the state file. The other commands use it by default.
+- `attach` and `dashboard` use the SSH key that `up` made. So run them on the machine that ran `up`.
 - `up` makes no vast rental. Workers start when a job needs them, or for `min_workers`.
 - After an AWS error, `up` prints `Run ray-vast down CLUSTER_YAML to remove what was created.`
 
@@ -121,8 +121,8 @@ ray-vast down cluster.yaml
 
 1. It terminates the EC2 head first. So the autoscaler cannot rent new workers.
 2. It destroys every vast instance with the label `ray-vast:<cluster_name>`. It lists again until none is left.
-3. It deletes the 5 security groups, the instance profile and the role.
-4. It deletes the state files in `~/.ray-vast/`.
+3. It deletes the 5 security groups, the key pair, the instance profile and the role.
+4. It deletes the state files in `~/.ray-vast/`, with the private SSH key.
 5. It prints what is left.
 
 Output:
@@ -132,6 +132,7 @@ terminating head <instance id>
 destroyed 2 vast instance(s)
 deleted security group <group id>
 ...
+deleted key pair ray-vast-<cluster_name>
 deleted instance profile ray-vast-<cluster_name>
 deleted role ray-vast-<cluster_name>
 left: nothing
@@ -140,6 +141,7 @@ left: nothing
 Rules:
 
 - `down` needs no SSH key.
+- Without `--profile` and `AWS_PROFILE`, `down` uses the profile that `up` saved.
 - `down` finds everything by tag, name and label. It works after a failed `up`, when the head is gone, and when the state file is missing.
 - If something is left, `down` lists it and exits with code 1. Run `down` again.
 - Without a vast key, `down` cleans AWS, warns that the vast instances were not swept, and exits with code 0. Read [Clean up after a failure](../how-to/clean-up.md).
@@ -180,11 +182,12 @@ ray-vast keeps these files on your laptop, in `~/.ray-vast/`:
 
 | File | Content |
 |---|---|
-| `<cluster_name>.json` | Region, head instance ID and IP, security groups, role and instance profile names. `up` writes it. |
+| `<cluster_name>.json` | Region, AWS profile, head instance ID and IP, security groups, role and instance profile names. `up` writes it. |
+| `<cluster_name>/ssh_key.pem` | The private SSH key of the head. `up` writes it. Mode 600. |
 | `<cluster_name>.known_hosts` | SSH host keys of the head (`StrictHostKeyChecking=accept-new`). |
 | `<cluster_name>/token` | The cluster token. `dashboard` writes it. Mode 600. |
 
-`down` deletes all three.
+`down` deletes all of them.
 
 ## Cluster names
 
@@ -194,7 +197,7 @@ The cluster name must match `[A-Za-z0-9][A-Za-z0-9_-]{0,39}`: 1 to 40 letters, d
 
 | Variable | Use |
 |---|---|
-| `AWS_PROFILE` | The default of `--profile`. |
+| `AWS_PROFILE` | The default of `--profile`. It wins over the profile that `up` saved. |
 | `VAST_API_KEY` | The vast API key. If it is not set, ray-vast reads `~/.config/vastai/vast_api_key`. |
 
 ## Ray commands that do not work

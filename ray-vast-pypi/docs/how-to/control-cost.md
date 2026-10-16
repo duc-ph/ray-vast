@@ -52,7 +52,7 @@ Then a bad host costs a retry, and a worker can arrive later.
 ## The EC2 head
 
 The head runs until you run `ray-vast down`. The default `t3.large` costs about $0.08 per hour in `us-west-2`, plus the 60 GB disk.
-Change the type with `provider.head_instance_type`.
+Change the type with `node_config.instance_type` of the head node type.
 
 ## Watch the spend
 

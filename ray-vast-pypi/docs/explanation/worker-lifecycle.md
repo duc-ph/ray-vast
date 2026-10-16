@@ -32,7 +32,7 @@ A host without the image in its cache must pull the image first. For the 18 GB G
 
 | Limit | Value | Then |
 |---|---|---|
-| Pull | The pull limit. Read `image_size_gb` in [Configuration](../reference/configuration.md#provider). | The provider destroys the candidate. Blocklist `timeout`, 1 day. |
+| Pull | The pull limit. Read [Use GPU images](../how-to/gpu-images.md#image-size-and-the-pull-limit). | The provider destroys the candidate. Blocklist `timeout`, 1 day. |
 | Enrollment | 1 minute after the provider first sees the candidate `running` | The provider destroys the candidate. Blocklist `timeout`, 1 day. |
 | Missing from vast's list | 60 seconds | The provider forgets the candidate. |
 | vast status `exited` or an error | at once | The provider destroys the candidate. Blocklist `network`, 1 day. |

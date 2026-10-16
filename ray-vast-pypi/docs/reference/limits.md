@@ -71,7 +71,7 @@ Set `storage_path` to a cloud bucket, and give the workers credentials for it. R
 
 ## Certificates do not renew
 
-The CA and every node certificate live `cert_max_age_days` (default 365).
+The CA and every node certificate live 365 days.
 To renew, run `ray-vast down` and `ray-vast up`. `up` and the head log warn 14 days before the CA expires.
 
 ## The head has no Elastic IP
@@ -104,4 +104,4 @@ ray-vast sends no registry credentials. The head and vast must be able to pull `
 
 ## Linux x86_64 workers
 
-The networking shim is a Linux x86_64 library. `up` starts the head from an Ubuntu 24.04 amd64 image, so `head_instance_type` must be an x86_64 type (not a Graviton type such as `t4g`).
+The networking shim is a Linux x86_64 library. `up` starts the head from an Ubuntu 24.04 amd64 image, so the head `instance_type` must be an x86_64 type (not a Graviton type such as `t4g`).

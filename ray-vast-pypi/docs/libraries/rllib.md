@@ -9,7 +9,7 @@ Reinforcement learning with env runners and learners.
 
 ## Run it
 
-Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-24gb.yaml). For 2 learners on one worker, use a node type with `GPU: 2`, for example [`gpu-80gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-80gb.yaml). Add your EC2 key pair (`key_name`, `key_file`) to `provider`.
+Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-24gb.yaml). For 2 learners on one worker, use a node type with `GPU: 2`, for example [`gpu-80gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-80gb.yaml). Set the region of the head (`node_config.region` of the head node type).
 
 ```bash
 ray-vast up cluster.yaml --profile my-aws-profile

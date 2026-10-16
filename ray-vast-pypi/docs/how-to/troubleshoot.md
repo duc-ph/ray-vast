@@ -120,7 +120,7 @@ Run the `export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...` line that `ray-vast
 ## `ray-vast` cannot connect to the head
 
 - `up` adds an SSH rule for the public IP of your laptop when it starts. If your IP changes, SSH to the head times out. Add a rule for your new IP to the security group `ray-vast-<cluster_name>-0` (TCP 22, your IP /32).
-- `attach` and `dashboard` need `--key-file` or `provider.key_file`.
+- `attach` and `dashboard` use the SSH key that `up` made, `~/.ray-vast/<cluster_name>/ssh_key.pem`. Run them on the machine that ran `up`.
 
 ## `up` fails
 

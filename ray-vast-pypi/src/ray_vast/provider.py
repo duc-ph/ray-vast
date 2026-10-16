@@ -6,10 +6,13 @@ Ray loads it from `provider: {type: external, module: ray_vast.provider.VastNode
 `provider_config` keys (`ray-vast up` writes them, step 10):
 - `head_ip`: the head public IP (required).
 - `secrets_dir`: directory with `ca.pem`, `ca.key`, `head.pem`, `head.key`, `token` and `vast_api_key` (required).
-- `security_group_ids` (the cluster's 5 groups, in order), `region`, `image`, `max_dollars_per_hour`: required.
-- `candidate_factor`, `order_by`, `port_a`, `port_b`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
-- `vast_api_url` (optional, tests only): the vast API base URL; the local end-to-end tests point it at a fake vast.
-- `image_size_gb` (optional): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min. Without it, 15 min.
+- `security_group_ids` (the cluster's 5 groups, in order), `region` (of the head), `image`, `max_dollars_per_hour`: required.
+- `candidate_factor`, `order_by`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
+- `image_size_gb` (optional; `up` measures it): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min.
+  Without it, 15 min.
+- `vast_api_url`, `port_a`, `port_b` (optional, tests only): the vast API base URL (the local end-to-end tests point it at
+  a fake vast) and the head server ports (default `config.PORT_A`, `config.PORT_B`).
+`region` and `image_size_gb` are not fields of the user's YAML: `up` adds them to the copy on the head.
 Per node type, Ray passes `node_config` (`offer_query`, `disk_gb`) and `resources` to the create call.
 
 Slots are the nodes that Ray sees. A create call makes `count` slots and rents up to `candidate_factor x count`
@@ -41,7 +44,7 @@ from ray.autoscaler.tags import (
 
 from . import pki, state as cluster_state
 from .aws_sg import SecurityGroupRules, SgQuotaError, ec2_client_config
-from .config import PROVIDER_DEFAULTS, build_offer_query
+from .config import PORT_A, PORT_B, PROVIDER_DEFAULTS, build_offer_query
 from .head_server import HeadServer
 from .state import BREAKER_FAILED_SLOTS, Candidate, ClusterState, Slot
 from .vast_api import VastClient, VastError, label, sweep
@@ -65,7 +68,7 @@ class VastNodeProvider(NodeProvider):
         """`vast`, `ec2`, `clock` and `start_threads` are for tests: a fake vast client, an ec2 client, a clock, and
         False to skip the head server and the reconcile thread (tests then call `reconcile_once` themselves)."""
         super().__init__(provider_config, cluster_name)
-        cfg = {**PROVIDER_DEFAULTS, **provider_config}
+        cfg = {**PROVIDER_DEFAULTS, "port_a": PORT_A, "port_b": PORT_B, **provider_config}
         self._cfg, self._clock = cfg, clock
         self._label = label(cluster_name)
         self._head_ip = cfg["head_ip"]

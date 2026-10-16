@@ -9,7 +9,7 @@ Distributed training with PyTorch.
 
 ## Run it
 
-Use an example cluster YAML with 2 GPUs on one worker, for example [`gpu-80gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-80gb.yaml) (`GPU: 2`). Add your EC2 key pair (`key_name`, `key_file`) to `provider`.
+Use an example cluster YAML with 2 GPUs on one worker, for example [`gpu-80gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/ray-vast-pypi/src/ray_vast/examples/gpu-80gb.yaml) (`GPU: 2`). Set the region of the head (`node_config.region` of the head node type).
 
 ```bash
 ray-vast up cluster.yaml --profile my-aws-profile

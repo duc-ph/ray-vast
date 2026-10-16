@@ -17,12 +17,21 @@ RAY_EMPTY_FIELDS = (
 )
 PROVIDER_DEFAULTS = {
     "candidate_factor": 2,
-    "cert_max_age_days": 365,
     "allow_non_datacenter": False,
     "order_by": "dph_total",
-    "head_instance_type": "t3.large",
-    "port_a": 7443,
-    "port_b": 7444,
+}
+HEAD_INSTANCE_TYPE = "t3.large"
+PORT_A, PORT_B = 7443, 7444  # head server ports: download and enrollment (TLS); heartbeat and reports (mTLS)
+# Provider fields of older versions. A YAML that sets one gets an error that says what to do instead.
+OLD_PROVIDER_FIELDS = {
+    "region": "moved: set node_config.region of the head node type",
+    "head_instance_type": "moved: set node_config.instance_type of the head node type",
+    "port_a": f"removed: the head server always uses port {PORT_A}",
+    "port_b": f"removed: the head server always uses port {PORT_B}",
+    "cert_max_age_days": "removed: the CA and the certificates always live 365 days",
+    "image_size_gb": "removed: `ray-vast up` measures the image",
+    "key_name": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
+    "key_file": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
 }
 
 
@@ -91,7 +100,8 @@ def bootstrap_config(config):
     if not config.get("cluster_name"):
         raise ValueError("cluster_name is required")
     provider = config.get("provider") or {}
-    for field in ("region", "image", "max_dollars_per_hour"):
+    check_old_provider_fields(provider)
+    for field in ("image", "max_dollars_per_hour"):
         if field not in provider:
             raise ValueError(f"provider.{field} is required")
     budget = provider["max_dollars_per_hour"]
@@ -120,6 +130,12 @@ def bootstrap_config(config):
         raise ValueError(f"node type {head_type!r} (head): resources is required, with CPU: 0")
     if head_resources.get("CPU") != 0:
         raise ValueError(f"node type {head_type!r} (head): resources.CPU must be 0, got {head_resources.get('CPU')!r}")
+    head_node_config = node_types[head_type].setdefault("node_config", {})
+    if not head_node_config.get("region"):
+        raise ValueError(f"node type {head_type!r} (head): node_config.region is required (the AWS region of the head)")
+    head_node_config.setdefault("instance_type", HEAD_INSTANCE_TYPE)
+    # Ray's external provider has no default for the top-level max_workers. Ray counts a missing per-type value as 0.
+    config.setdefault("max_workers", sum(t.get("max_workers", 0) for name, t in node_types.items() if name != head_type))
 
     for name, node_type in node_types.items():
         if name == head_type:
@@ -137,6 +153,13 @@ def bootstrap_config(config):
             warnings.append(f"node type {name!r}: resources.CPU {resources['CPU']} is above the {WORKER_PORTS} worker ports")
 
     return config, warnings
+
+
+def check_old_provider_fields(provider):
+    """Raise ValueError for a provider field that an older version had (`OLD_PROVIDER_FIELDS`)."""
+    for field, what_to_do in OLD_PROVIDER_FIELDS.items():
+        if field in provider:
+            raise ValueError(f"provider.{field} is no longer a field ({what_to_do})")
 
 
 def load_and_bootstrap(path):

@@ -15,10 +15,7 @@ def main(argv=None):
         sub = subparsers.add_parser(name, help=help_text)
         sub.add_argument("cluster_yaml")
         sub.add_argument("--profile", default=os.environ.get("AWS_PROFILE"), help="AWS profile (default: AWS_PROFILE or the default credentials)")
-        if name in ("up", "attach", "dashboard"):
-            sub.add_argument("--key-file", help="SSH private key of the head (or provider.key_file)")
         if name == "up":
-            sub.add_argument("--key-name", help="EC2 key pair name (or provider.key_name)")
             sub.add_argument("--wheel", help="ray-vast wheel to install on the head, for development (default: in a source tree, build "
                                              "the wheel; else install this CLI's own version from PyPI)")
             sub.add_argument("--index-url", help="install ray-vast on the head from this package index, with PyPI as an extra index "
