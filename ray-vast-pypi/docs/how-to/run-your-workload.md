@@ -120,7 +120,7 @@ data_context.max_hash_shuffle_aggregators = 4  # for hash shuffles, for example 
 data_context.execution_options.resource_limits = ExecutionResources(cpu=16)
 ```
 
-Keep the CPU limit below the worker ports of your workers, minus the aggregators. The CPU limit is for the full cluster. The start line of each worker shows its worker ports. Read [A node is at its process limit](troubleshoot.md#a-node-is-at-its-process-limit).
+Keep the CPU limit below the worker ports of your workers, minus the aggregators. The CPU limit is for the full cluster. The start line of each worker shows its worker ports. Read [A worker is at its process limit](troubleshoot.md#a-worker-is-at-its-process-limit).
 
 A local output path (for example `write_parquet("/tmp/out")`) writes the files to the disk of each worker. Write shared output to a cloud bucket.
 

@@ -68,7 +68,7 @@ Facts from the Ray source and the spikes on Ray 2.59.0 ([spikes.md](spikes.md)).
 | F1 | `provider: {type: external, module: "ray_vast.provider.VastNodeProvider"}` loads our class (`_private/providers.py`). | The head image has ray-vast installed. |
 | F2 | The autoscaler is v2 (`RAY_enable_autoscaler_v2=1`, the default of `ray up` since 2.50). v2 wraps a normal `NodeProvider` in `NodeProviderAdapter` and calls the same methods. | One `NodeProvider` class. The head starts Ray with `RAY_enable_autoscaler_v2=1`. |
 | F3 | v2 matches a Ray node to an instance by `RAY_CLOUD_INSTANCE_ID`, not by IP. | Workers start Ray with `RAY_CLOUD_INSTANCE_ID=<slot id>` and `RAY_NODE_TYPE_NAME=<node type>`. Two workers can share one public IP (S1 check 1). |
-| F4 | v2 plans a new node with the declared resources, and a running node with the resources that Ray reports. | `CPU` is a minimum: the worker starts Ray with the real core count. `GPU` is exact. Before the first node reports its cores, v2 can start extra nodes (cold-start overshoot; they stay idle until the idle timeout). The container's pids limit does not change the Ray CPUs; it limits the worker ports (5.5). |
+| F4 | v2 plans a new node with the declared resources, and a running node with the resources that Ray reports. | `CPU` is a minimum: the worker starts Ray with the real core count. `GPU` is exact. Before the first node reports its cores, v2 can start extra nodes (cold-start overshoot; they stay idle until the idle timeout). The container's process limit does not change the Ray CPUs. It limits the worker ports (5.5). |
 | F5 | v2 needs the head in `non_terminated_nodes`, with the tags `ray-node-type: head` and `ray-user-node-type: head`. Without it, v2 marks the head TERMINATED and never scales, with no error. A node without a correct `ray-node-type` tag is skipped as "unmanaged". | The provider lists the node `head` (the head's `RAY_CLOUD_INSTANCE_ID`). |
 | F6 | Each 5 s loop calls `non_terminated_nodes` once, and `node_tags` and `is_running` for each node. `create_node_with_resources_and_labels` runs in the `NodeLauncherPool` threads; every exception becomes a `LaunchNodeError`. `terminate_nodes` runs in one adapter thread. v2 never calls `set_node_tags`, `is_terminated`, `internal_ip` or `external_ip`. | The read methods answer from memory, with no vast call. One `RLock` guards the state; no network call is made while it is held. |
 | F7 | v2 makes the provider once per monitor process and reads the config again each loop. | One provider object, so the head server thread is started once. |
@@ -168,13 +168,17 @@ The image's `ENTRYPOINT` stays. Docker runs it with the container command as its
 
 The bootstrap uses the host ports P (`VAST_TCP_PORT_700xx`), not the identity numbers.
 
-**Worker ports and the pids limit.** Many vast containers have a cgroup pids limit: every process and every thread counts (1280 on two cgroup v1 hosts, 3328 on a cgroup v2 host; `RLIMIT_NPROC` is unlimited). At the limit, a thread start fails (`EAGAIN`), the raylet aborts and the node dies. The bootstrap reads the limit from `/sys/fs/cgroup/pids.max` (cgroup v2, when `/sys/fs/cgroup/cgroup.controllers` exists), else from `/sys/fs/cgroup/pids/pids.max` (cgroup v1). `max` or no file means no limit. Three settings keep the node below the limit:
+**Worker ports and the process limit.** Many vast containers have a cgroup pids limit (the process limit). Every process and every thread counts. Measured: 1280 on two cgroup v1 hosts, 3328 on a cgroup v2 host. `RLIMIT_NPROC` is unlimited. At the limit, a thread start fails (`EAGAIN`). Then the raylet aborts, and the worker dies. The bootstrap reads the limit from `/sys/fs/cgroup/pids.max` (cgroup v2, when `/sys/fs/cgroup/cgroup.controllers` exists), else from `/sys/fs/cgroup/pids/pids.max` (cgroup v1). `max` or no file means no limit. Three settings keep the worker below the limit:
 
 1. `RAY_num_grpc_internal_threads=4`, always. Ray's gRPC sizes its thread pools by `sysconf(_SC_NPROCESSORS_CONF)` (the host cores) unless this variable is set. Every process of `ray start` inherits it. Measured on a simulated 48-core host: a worker process has 25 threads, not 50; the raylet 59, not 85.
 2. `RAY_worker_maximum_startup_concurrency=8`, always. The raylet starts at most 8 worker processes at the same time (without it: `min(cores, Ray CPUs)`, 48 on a 48-core host). The variable wins over the `--maximum_startup_concurrency` flag of `ray start` (measured: at most 2 starting processes with the value 2, 39 without it). A starting process has threads before it can find a free port, so this caps the burst.
-3. Worker ports = 58 with no limit, else `max(4, min(58, (pids.max − 400) // 35))`. 400 = the fixed Ray processes of a node (about 150: raylet, dashboard agent, runtime-env agent, log monitor, `ray start`), 8 starting worker processes (8 × 25) and the bootstrap, rounded up. 35 = the threads of one worker process (25 to 28) plus 7 to 10 for the user's own threads. With 1280: 25 ports; with 3328: 58 ports. The floor of 4 keeps a node with a very small limit useful (a Data map task and its aggregator need 2); below about 540 such a node can pass the limit, and the head warns (5.7a).
+3. Worker ports = 58 with no limit, else `max(4, min(58, (pids.max − 400) // 35))`.
+    - 400 = the threads of the fixed Ray processes (about 150: raylet, dashboard agent, runtime-env agent, log monitor, `ray start`), of 8 starting worker processes (8 × 25) and of the bootstrap, rounded up.
+    - 35 = the threads of one worker process (25 to 28), plus 7 to 10 for the user's own threads.
+    - With 1280, the worker gets 25 ports. With 3328, it gets 58 ports.
+    - The floor of 4 keeps a worker with a very small limit useful. A Data map task and its aggregator need 2 ports. Below a limit of about 540, such a worker can pass the limit. Then the head warns (5.7a).
 
-A worker process needs a free worker port. A process that finds none exits, and its task or actor waits for a port. So the port count caps the worker processes, and too much work queues or hangs on the node; it does not crash it. `RAY_num_workers_soft_limit` = min(Ray CPUs, worker ports): an idle process above it ends sooner and frees its port. The bootstrap decides all of these values alone; the head does not send them.
+A Ray worker process needs a free worker port. A process that finds no free port exits, and its task or actor waits for a port. So the port count caps the worker processes. Too much work queues or hangs on the worker. It does not crash the worker. `RAY_num_workers_soft_limit` = min(Ray CPUs, worker ports). An idle process above this limit ends sooner and frees its port. The bootstrap decides all these values. The head does not send them.
 
 ### 5.6 Head server endpoints
 
@@ -203,7 +207,7 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 
 ### 5.7a Heartbeat status
 
-The heartbeat carries the state of the pids limit (5.5). Only `instance_id` is required: the head accepts a heartbeat without the other fields, and treats a value that is not an integer as missing.
+The heartbeat carries the state of the process limit (5.5). Only `instance_id` is required: the head accepts a heartbeat without the other fields, and treats a value that is not an integer as missing.
 
 | Field | Source on the worker |
 |---|---|
@@ -213,10 +217,15 @@ The heartbeat carries the state of the pids limit (5.5). Only `instance_id` is r
 | `ports_in_use` | the worker ports with a listening socket in `/proc/net/tcp` and `/proc/net/tcp6`. A registered worker process listens on its port. Two small file reads; no process scan. |
 | `ports_total` | the number of worker ports (5.5) |
 
-The head logs one WARNING line in `monitor.log` for a node when `pids_refused` goes up, or, at most once in 5 minutes, when all worker ports are in use or `pids_current` is above 90 % of `pids_max`:
+The head logs one WARNING line in `monitor.log` for a worker in these cases:
+
+- `pids_refused` is higher than in the last warning. At most once a minute.
+- All worker ports are in use, or `pids_current` is above 90 % of `pids_max`. At most once in 5 minutes.
+
+`+<new>` is the rise of `pids_refused` since the last warning. The line:
 
 ```text
-node <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused forks/threads (+<new>), pids <current> of <max>, worker ports in use <in use> of <total>. Ray work on this node can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-node-is-at-its-process-limit
+worker <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused forks/threads (+<new>), pids <current> of <max>, worker ports in use <in use> of <total>. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
 ```
 
 ### 5.8 Bootstrap, after enrollment
@@ -224,7 +233,7 @@ node <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused for
 1. Close the listeners. Write the files in `/tmp/rayvast` (mode 700): `ca.pem`, `node.pem`, `node.key` (600), `token` (600), `librayvast_shim.so`.
 2. Keep `CONTAINER_API_KEY` and the join token in memory only, and remove both from the environment of the Ray child.
 3. Start `ray start --block` as a child, as the image's user, with: `--address` (the GCS), `--node-ip-address` (the public IP), the 6 fixed ports and `--worker-port-list` (5.5), `--num-cpus` = the real core count (the smaller of the `os.sched_getaffinity` size and the cgroup `cpu.max` quota / period), `--num-gpus` from the answer, `RAY_CLOUD_INSTANCE_ID=<slot id>`, `RAY_NODE_TYPE_NAME`, `RAY_num_workers_soft_limit` = min(cpu_count, worker ports), `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8` (5.5), the TLS and token env, and the shim env.
-   It logs one start line: `limits: pids.max <N or none> (cgroup v1|v2), cores <n>, ray cpus <n>, worker ports <n>, soft limit <n>, grpc threads 4, startup concurrency 8`.
+   It logs one start line: `limits: pids.max <N or none> (cgroup v1|v2), cpus <n>, worker ports <n>, soft limit <n>, grpc threads 4, startup concurrency 8`.
 4. Token check: without a token, both agent ports on 127.0.0.1 must answer 401. Send the result in `POST /report` (port B). Reason: without `RAY_AUTH_MODE=token`, the job agent runs any shell command for anyone.
 5. Become the watchdog (section 6).
 
@@ -234,7 +243,7 @@ node <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused for
 
 The bootstrap stays as PID 1 and is the watchdog.
 
-- It sends `POST /heartbeat` on port B every 30 s, with the status of the pids limit (5.7a). The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
+- It sends `POST /heartbeat` on port B every 30 s, with the status of the process limit (5.7a). The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
 - It collects its finished child processes.
 - **Destroy, never exit.** When PID 1 exits, vast starts the container again and runs the command again, and the instance keeps its full cost (C4: 7 restarts in 2 min). So the watchdog always destroys its instance: `DELETE {RAYVAST_VAST_API}/instances/<CONTAINER_ID>/` with `Authorization: Bearer <CONTAINER_API_KEY>`, retried every 5 s until 200 or 404. Vast calls do not follow redirects.
 - **Report first.** Before each destroy, it sends the reason to the head (port B if enrolled, else port A) and waits up to 10 s. Reason: after a destroy, vast keeps no container log (C4).

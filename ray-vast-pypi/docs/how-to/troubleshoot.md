@@ -16,7 +16,7 @@ The provider and the head server write to `monitor.log`. It has these lines:
 - each enrollment decision, with the instance ID, the machine ID, the IP and the reason. Examples: `enrolled instance <id> (machine <id>, ip <ip>) into <slot>` and `enroll refused for instance <id> from <ip>: <reason>`;
 - each end of an instance: `ending instance <id> (machine <id>, ip <ip>): <reason>`;
 - each reason that a worker sends before it destroys itself: `worker <id> asks to be destroyed: <reason>`;
-- a WARNING when a worker is at its process limit: `node <slot> (instance <id>, ip <ip>) is at its process limit: ...`. Read [A node is at its process limit](#a-node-is-at-its-process-limit).
+- a WARNING when a worker is at its process limit: `worker <slot> (instance <id>, ip <ip>) is at its process limit: ...`. Read [A worker is at its process limit](#a-worker-is-at-its-process-limit).
 
 The log never holds a secret.
 
@@ -47,34 +47,37 @@ The head container logs in the local time zone of the head.
 
 - The budget can stop new workers. Check `max_dollars_per_hour`.
 - `max_workers` can stop new workers.
-- A worker has a fixed number of ports for Ray worker processes. Tasks wait when no port is free. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker) and [A node is at its process limit](#a-node-is-at-its-process-limit).
+- A worker has a fixed number of ports for Ray worker processes. Tasks wait when no port is free. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker) and [A worker is at its process limit](#a-worker-is-at-its-process-limit).
 
-## A node is at its process limit
+## A worker is at its process limit
 
-A vast container has a limit on processes and threads (the pids limit). Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
-ray-vast keeps the worker below the limit with fewer worker ports. So too much work queues or hangs. It does not crash the node.
+A vast container has a limit on processes and threads (the process limit, `pids.max`). Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
+ray-vast keeps the worker below the limit with fewer worker ports. So too much work queues or hangs. It does not crash the worker.
 
 ### The warning in `monitor.log`
 
 ```text
-WARNING ... node slot-3-a1b2c3 (instance 27145501, ip 203.0.113.7) is at its process limit: 12 refused forks/threads (+12), pids 1279 of 1280, worker ports in use 25 of 25. Ray work on this node can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-node-is-at-its-process-limit
+WARNING ... worker slot-3-a1b2c3 (instance 27145501, ip 203.0.113.7) is at its process limit: 12 refused forks/threads (+12), pids 1279 of 1280, worker ports in use 25 of 25. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
 ```
 
 | Part | Meaning |
 |---|---|
-| `node slot-3-a1b2c3` | The Ray node (its `RAY_CLOUD_INSTANCE_ID`). `instance` is the vast instance ID. |
-| `12 refused forks/threads (+12)` | The container refused this many process or thread starts since it started (`+`: since the last heartbeat with a lower count). A value above 0 means that something failed to start a thread: a Ray process or your code. |
+| `worker slot-3-a1b2c3` | The slot of the worker (its `RAY_CLOUD_INSTANCE_ID`). `instance` is the vast instance ID. |
+| `12 refused forks/threads (+12)` | The container refused this many process or thread starts since it started. `+12`: the rise since the last warning. A value above 0 means that something failed to start a thread: a Ray process or your code. |
 | `pids 1279 of 1280` | Processes and threads now, and the limit. |
 | `worker ports in use 25 of 25` | Ray worker processes that hold a port, and the number of ports. When all are in use, new tasks and actors wait. |
 
-The head writes the line when the refused count goes up. It also writes it when all worker ports are in use, or the pids are above 90 % of the limit, at most once in 5 minutes for each node.
+The head writes the line for a worker in these cases:
+
+- The refused count goes up. At most once a minute.
+- All worker ports are in use, or the pids are above 90 % of the limit. At most once in 5 minutes.
 
 ### The start line of the worker
 
 The worker log has one line with the values that ray-vast chose:
 
 ```text
-bootstrap: limits: pids.max 1280 (cgroup v1), cores 48, ray cpus 48, worker ports 25, soft limit 25, grpc threads 4, startup concurrency 8
+bootstrap: limits: pids.max 1280 (cgroup v1), cpus 48, worker ports 25, soft limit 25, grpc threads 4, startup concurrency 8
 ```
 
 `pids.max none` means that the container has no limit. Then the worker gets all 58 worker ports.
@@ -83,19 +86,19 @@ bootstrap: limits: pids.max 1280 (cgroup v1), cores 48, ray cpus 48, worker port
 
 - **All ports in use, no refused forks:** the work queues. This is safe. To finish faster, use fewer worker processes at the same time, or rent bigger hosts with a higher limit.
 - **Refused forks or high pids:** your tasks start many threads, or too many processes run. Use the settings below.
-- **A job hangs with all ports in use:** the job needs more processes at the same time than the node has ports. Use the settings below.
+- **A job hangs with all ports in use:** the job needs more processes at the same time than the worker has ports. Use the settings below.
 
 Settings that use fewer worker processes:
 
 | Library | Setting |
 |---|---|
 | Ray Data | For `groupby` and other hash shuffles, use both: `DataContext.get_current().max_hash_shuffle_aggregators = 4` and `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`, with N below the worker ports minus the aggregators. Read [Ray Data: limit the CPUs](run-your-workload.md#ray-data-limit-the-cpus). For a map, `map_batches(..., concurrency=N)`. |
-| Ray Core | Give each actor `num_cpus=1`. An actor with the default `num_cpus` uses 0 CPUs when it runs, so many actors fit on one node. A task with a small `num_cpus` (for example 0.05) has the same effect. |
+| Ray Core | Give each actor `num_cpus=1`. An actor with the default `num_cpus` uses 0 CPUs when it runs, so many actors fit on one worker. A task with a small `num_cpus` (for example 0.05) has the same effect. |
 | Ray Tune | `tune.TuneConfig(max_concurrent_trials=N)`. |
 | Ray Serve | A smaller `num_replicas`. |
 | Your threads | Fewer threads in each task, for example `torch.set_num_threads(4)` and a small `DataLoader` `num_workers`. |
 
-Or rent hosts with fewer cores, so that one node gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
+Or rent hosts with fewer cores, so that one worker gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
 
 ## An actor fails with a misleading error
 

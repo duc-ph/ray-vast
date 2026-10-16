@@ -25,7 +25,7 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 
 ## The process limit of vast hosts
 
-A vast container has a limit on processes and threads together (the pids limit, `pids.max`).
+A vast container has a limit on processes and threads together (the process limit, `pids.max`).
 On many 1-GPU hosts, the limit is 1280. One 2-GPU host had 3328.
 At the limit, Ray cannot start a thread. The raylet can stop, and then the worker destroys itself.
 
@@ -45,7 +45,7 @@ The symptom of too much work is a queue, not a crash:
 
 Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit.
 
-The head log warns when a worker is at its limit. Read [A node is at its process limit](../how-to/troubleshoot.md#a-node-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
+The head log warns when a worker is at its limit. Read [A worker is at its process limit](../how-to/troubleshoot.md#a-worker-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
 
 ## No multi-node Ray Train
 
