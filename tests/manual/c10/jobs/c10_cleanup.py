@@ -1,9 +1,11 @@
 # C10 cleanup, after each test: shut Ray Serve down (its controller and replicas outlive the job that started them).
 # The other libraries end with the job's driver. Prints `C10_CLEANUP done`.
+import os
+
 import ray
 from ray import serve
 
-ray.init()
+ray.init(address=os.environ.get("RAY_ADDRESS", "auto"))
 try:
     serve.shutdown()
 except Exception as e:

@@ -1,0 +1,28 @@
+# C10 phase A (docs/test-plan.md, "Cycle C10"): the many/tuned pairs on ONE big worker. max_workers 1: the autoscaler cannot
+# add a second node for a pending demand, so every process of a test lands on the one node under test.
+cluster_name: rvtest-c10a
+max_workers: 1
+idle_timeout_minutes: 30
+provider:
+  region: us-west-2
+  image: rayproject/ray:2.59.0-py311-gpu   # torch for Train and RLlib comes from runtime_env pip (as in C9)
+  image_size_gb: 20
+  # Peak: 2 `big` candidates (k = 2) at about $0.40/h each. Steady state: 1 worker. Check the offers with offers.py at setup
+  # and write them here.
+  max_dollars_per_hour: 1.0
+  candidate_factor: 2
+  key_name: ray-vast-devbox
+  key_file: ~/ray-vast-devbox.pem
+auth: {ssh_user: ray}
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  # A big host: CPU 32 makes ray-vast add cpu_cores_effective >= 32 to the offer query. Ray gets all real cores (the bootstrap
+  # counts them), so the node can have 32 to 128 Ray CPUs. 1 cheap GPU: most vast hosts with many cores are GPU hosts.
+  # compute_cap 600-899: GPUs that the torch 2.7.1 wheel supports (as in C9). The pids limit is only known after the rental:
+  # run_c10.py reads it first (c10_probe.py).
+  big:
+    resources: {CPU: 32, GPU: 1}
+    min_workers: 1
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {num_gpus: {eq: 1}, gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, dph_total: {lte: 0.45}, inet_down: {gte: 500}, inet_up: {gte: 500}}}  # test-only speed floor (Mb/s)

@@ -1,13 +1,14 @@
 # C10 local check (no cost): run C10 jobs against a local one-node Ray in Docker that imitates a vast worker with the
 # pids/ports change of ray-vast: `docker run --pids-limit 1280`, `ray start --head --num-cpus 48`, a worker port list of
-# C10L_PORTS ports, RAY_num_grpc_internal_threads=4, RAY_worker_maximum_startup_concurrency=8.
+# C10L_PORTS ports, RAY_num_grpc_internal_threads=4, RAY_worker_maximum_startup_concurrency=8, RAY_num_workers_soft_limit =
+# the port count.
 # Each run gets a new container `c10-<job>-<mode>`. A sampler on the host reads the container's cgroup every second
 # (pids.current, Ray worker processes, threads). The verdict is run_c10.verdict() without the head log (no ray-vast head here).
 # Usage (dev box, from the repository root):
 #   docker build -t c10-local:torch <dir with a Dockerfile: FROM rayproject/ray:2.59.0-py311-cpu + pip torch==2.7.1 (CPU)>
 #   python3 tests/manual/c10/local_check.py <out dir> c10_core.py:tuned c10_core.py:many ...
-# Env: C10L_IMAGE (c10-local:torch), C10L_PORTS (30), C10L_CPUS (48), C10_GUARD_S (90), C10_SCALE (1), C10L_KEEP=1 (keep
-# the container). Every container is removed at the end, also after an error.
+# Env: C10L_IMAGE (c10-local:torch), C10L_PORTS (24), C10L_CPUS (48), C10L_KEEP=1 (keep the container). Every C10_* variable
+# goes to the job (C10_GUARD_S default 90, C10_SCALE default 1; C10_MIN_NODES=1 and C10_GPU=0 for the RLlib R1-R3). Every container is removed at the end, also after an error.
 import json
 import os
 import re
@@ -22,9 +23,9 @@ sys.path.insert(0, str(HERE))
 from run_c10 import events_max, verdict  # noqa: E402
 
 IMAGE = os.environ.get("C10L_IMAGE", "c10-local:torch")
-PORTS = int(os.environ.get("C10L_PORTS", "30"))
+PORTS = int(os.environ.get("C10L_PORTS", "24"))
 CPUS = int(os.environ.get("C10L_CPUS", "48"))
-JOB_ENV = {"C10_GUARD_S": os.environ.get("C10_GUARD_S", "90"), "C10_SCALE": os.environ.get("C10_SCALE", "1")}
+JOB_ENV = dict({"C10_GUARD_S": "90", "C10_SCALE": "1"}, **{k: v for k, v in os.environ.items() if k.startswith("C10_")})
 
 
 def sh(*command, timeout=600):
@@ -46,6 +47,7 @@ def run_one(out_root, script, mode):
     sh("docker", "rm", "-f", name)
     code, cid = sh("docker", "run", "-d", "--name", name, "--pids-limit", "1280", "--shm-size", "2g",
                    "-e", "RAY_num_grpc_internal_threads=4", "-e", "RAY_worker_maximum_startup_concurrency=8",
+                   "-e", f"RAY_num_workers_soft_limit={PORTS}",
                    "-v", f"{HERE / 'jobs'}:/c10/jobs:ro", "-v", f"{HERE.parent / 'c9' / 'jobs'}:/c9/jobs:ro", "-w", workdir, IMAGE,
                    "ray", "start", "--head", f"--num-cpus={CPUS}", "--object-store-memory=1000000000",
                    f"--worker-port-list={ports}", "--disable-usage-stats", "--block")
@@ -83,7 +85,8 @@ def run_one(out_root, script, mode):
                     except (OSError, AttributeError):
                         continue
                     workers += b"default_worker.py" in cmd or (cmd.startswith(b"ray::") and b"Agent" not in cmd.split(b"\0")[0])
-                peak.update(pids=max(peak["pids"], pids), workers=max(peak["workers"], workers), threads=max(peak["threads"], threads))
+                peak.update(pids=max(peak["pids"], pids), workers=max(peak["workers"], workers), threads=max(peak["threads"], threads),
+                            events=(cgroup / "pids.events").read_text().strip(), pids_peak=(cgroup / "pids.peak").read_text().strip())
             except OSError:
                 pass
             time.sleep(1)
@@ -96,19 +99,27 @@ def run_one(out_root, script, mode):
     seconds = round(time.time() - t, 1)
     stop.set()
     (out / "job.log").write_text(log)
-    sh("docker", "exec", name, "python", "/c10/jobs/c10_cleanup.py")
-    time.sleep(10)
-    post = probe()
-    events = (cgroup / "pids.events").read_text().strip()
-    row = {"script": script, "mode": mode, "seconds": seconds, "peak": peak, "pids.peak": (cgroup / "pids.peak").read_text().strip(),
-           "pids.events": events, "refused_forks": events_max(post.get(next(iter(post), ""), {})),
-           "no_port_errors": post.get(next(iter(post), ""), {}).get("no_port_errors")}
+    running = sh("docker", "inspect", "-f", "{{.State.Running}}", name)[1].strip() == "true"
+    if running:
+        sh("docker", "exec", name, "python", "/c10/jobs/c10_cleanup.py")
+        time.sleep(10)
+        post = probe()
+        try:
+            peak.update(events=(cgroup / "pids.events").read_text().strip(), pids_peak=(cgroup / "pids.peak").read_text().strip())
+        except OSError:  # the container ended after the check
+            running = False
+    if not running:  # the node crashed: `ray start --block` (PID 1) ended
+        post = {}
+        (out / "container.log").write_text(sh("docker", "logs", "--tail", "200", name)[1])
+    after = post.get(next(iter(post), ""), {})
+    row = {"script": script, "mode": mode, "seconds": seconds, "node_alive": running, "peak": peak,
+           "refused_forks": events_max({"pids.events": peak.get("events")}), "no_port_errors": after.get("no_port_errors")}
     job_line = last_json(log, "C10_JOB")
-    if job_line:
-        _, _, kind, payload = job_line.split(" ", 3)
+    if script.startswith("c10_") and mode in ("many", "tuned"):
+        _, _, kind, payload = job_line.split(" ", 3) if job_line else (None, None, None, "{}")
         job = {"kind": kind, **json.loads(payload)}
         node = next(iter(pre)) if pre else None
-        status, reasons = verdict("many" if mode == "many" else "tuned", job, pre.get(node), post.get(node), None)
+        status, reasons = verdict(mode, job, pre.get(node), post.get(node), None)
         row.update(verdict=status, reasons=reasons, job_kind=kind, job=job)
     else:
         found = last_json(log, "C10_RESULT") or last_json(log, "C9_RESULT")
@@ -128,7 +139,7 @@ def main():
             row = run_one(out_root, script, mode)
             with open(out_root / "local_results.jsonl", "a") as f:
                 f.write(json.dumps(row, default=str) + "\n")
-            short = {k: row.get(k) for k in ("verdict", "reasons", "job_kind", "result", "seconds", "peak", "pids.peak", "pids.events",
+            short = {k: row.get(k) for k in ("verdict", "reasons", "job_kind", "result", "seconds", "node_alive", "peak", "refused_forks",
                                              "no_port_errors")}
             print(f"   {json.dumps(short, default=str)[:900]}", flush=True)
     finally:

@@ -28,17 +28,20 @@ _lock = threading.Lock()
 _done = False
 
 
-def start(test_id, guard_s):
-    """Connect to Ray, start the wall-clock guard, print the start line. Returns the mode (sys.argv[1], default 'many')."""
+def start(test_id, guard_s, on_hang=None):
+    """Connect to Ray, start the wall-clock guard, print the start line. Returns the mode (sys.argv[1], default 'many').
+    When the guard fires, it calls on_hang(guard_s) if given (functional jobs), else it prints HUNG."""
     mode = sys.argv[1] if len(sys.argv) > 1 else "many"
     guard_s = float(os.environ.get("C10_GUARD_S", guard_s))
 
     def guard():
         time.sleep(guard_s)
+        if on_hang:
+            on_hang(guard_s)
         finish(test_id, mode, "HUNG", {"guard_s": guard_s, "progress": dict(PROGRESS)})
     threading.Thread(target=guard, daemon=True).start()
     print(f"C10_START {test_id} {mode} {T0:.1f} guard_s={guard_s}", flush=True)
-    ray.init()
+    ray.init(address=os.environ.get("RAY_ADDRESS", "auto"))  # never start a new local Ray
     return mode
 
 
