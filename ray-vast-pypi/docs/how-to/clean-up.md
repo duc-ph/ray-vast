@@ -15,6 +15,8 @@ ray-vast down cluster.yaml
 - the local state file `~/.ray-vast/<cluster_name>.json` is missing.
 
 `down` does not need an SSH key. You can run `down` again with no risk.
+
+`down` also removes a cluster that ray-vast 0.1.0 made. Use the 0.1.0 YAML as it is. Run `down` with the AWS credentials that made the cluster. A restricted `ray-vast-user` cannot delete a 0.1.0 head role, because that role has no permissions boundary.
 The steps of `down` are in [CLI](../reference/cli.md#ray-vast-down).
 
 ## 2. Run `down` again if something is left

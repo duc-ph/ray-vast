@@ -55,7 +55,7 @@ log = logging.getLogger(__name__)
 HEAD_ID = "head"
 RECONCILE_INTERVAL_S = 10
 ENROLL_TIMEOUT_S = 60
-HEARTBEAT_TIMEOUT_S = 300
+HEARTBEAT_TIMEOUT_S = 300  # the worker has the same limit (bootstrap.py); a test checks it
 PULL_LIMIT_MIN_S, PULL_LIMIT_MAX_S = 300.0, 900.0
 MISSING_GRACE_S = 60  # vast may list a new instance late; a missing instance counts only after this
 # vast `actual_status` values that mean the instance is dead or unusable. Unproven until C5 (live test): the only

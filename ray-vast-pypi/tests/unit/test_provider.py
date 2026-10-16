@@ -671,11 +671,13 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
     assert len(create(p)) == 1  # 2 failures since the enrollment: no stop
 
 
-@pytest.mark.parametrize("ca_days, warns", [(10, True), (365, False)])
-def test_provider_start_logs_a_warning_when_the_ca_expires_within_14_days(env, tmp_path, caplog, ca_days, warns):
+@pytest.mark.parametrize("ca_age_days, warns", [(355, True), (0, False)])
+def test_provider_start_logs_a_warning_when_the_ca_expires_within_14_days(env, tmp_path, caplog, ca_age_days, warns):
+    from datetime import datetime, timedelta, timezone
+
     from ray_vast import pki
 
-    pki.write_head_files(tmp_path / "short", "198.51.100.9", ca_days)
+    pki.write_head_files(tmp_path / "short", "198.51.100.9", now=datetime.now(timezone.utc) - timedelta(days=ca_age_days))
     (tmp_path / "short" / "vast_api_key").write_text("k\n")
     env.make(secrets_dir=str(tmp_path / "short"))
     warnings = [r for r in caplog.records if r.levelname == "WARNING" and "expire" in r.message]
@@ -866,3 +868,10 @@ def test_a_head_refusal_blocks_the_host_for_30_days_on_a_security_failure_and_1_
     assert p.state.is_blocked(11, env.clock())
     env.clock.now += 2 * 86400
     assert p.state.is_blocked(11, env.clock()) == blocked_after_2_days
+
+
+def test_the_head_and_the_worker_have_the_same_heartbeat_timeout():
+    """The worker cannot import head code, so each side has its own copy of the limit (docs/design.md, watchdog)."""
+    from ray_vast import provider
+    from ray_vast.worker import bootstrap
+    assert provider.HEARTBEAT_TIMEOUT_S == bootstrap.HEARTBEAT_TIMEOUT_S == 300

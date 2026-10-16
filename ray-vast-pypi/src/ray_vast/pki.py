@@ -16,6 +16,7 @@ from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 EXPIRY_WARNING_DAYS = 14
 # Not-before is set a little in the past so a worker clock that runs slow still accepts a fresh cert.
 CLOCK_SKEW = timedelta(minutes=5)
+CERT_MAX_AGE_DAYS = 365  # the CA and every cert live this long; to renew, make a new cluster
 
 
 def _new_key():
@@ -28,7 +29,7 @@ def _key_pem(key):
     )
 
 
-def make_ca(cert_max_age_days=365, now=None):
+def make_ca(now=None):
     """Return (ca_cert_pem, ca_key_pem)."""
     now = now or datetime.now(timezone.utc)
     key = _new_key()
@@ -40,7 +41,7 @@ def make_ca(cert_max_age_days=365, now=None):
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now - CLOCK_SKEW)
-        .not_valid_after(now + timedelta(days=cert_max_age_days))
+        .not_valid_after(now + timedelta(days=CERT_MAX_AGE_DAYS))
         .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
         .add_extension(
             x509.KeyUsage(
@@ -55,7 +56,7 @@ def make_ca(cert_max_age_days=365, now=None):
     return cert.public_bytes(serialization.Encoding.PEM), _key_pem(key)
 
 
-def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None, instance_id=None):
+def make_leaf(ca_cert_pem, ca_key_pem, ip, now=None, instance_id=None):
     """Return (cert_pem, key_pem) for a node or the head. SAN = ip and 127.0.0.1, plus the URI
     `rayvast:instance/<instance_id>` when `instance_id` is given (node certs: the head binds a cert to one instance).
 
@@ -76,7 +77,7 @@ def make_leaf(ca_cert_pem, ca_key_pem, ip, cert_max_age_days=365, now=None, inst
         .public_key(key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now - CLOCK_SKEW)
-        .not_valid_after(min(now + timedelta(days=cert_max_age_days), ca_cert.not_valid_after_utc))
+        .not_valid_after(min(now + timedelta(days=CERT_MAX_AGE_DAYS), ca_cert.not_valid_after_utc))
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         .add_extension(x509.SubjectAlternativeName(san), critical=False)
         .add_extension(
@@ -113,15 +114,15 @@ def expiry_warning(cert_pem, now=None):
     return None
 
 
-def write_head_files(directory, head_ip, cert_max_age_days=365, now=None):
+def write_head_files(directory, head_ip, now=None):
     """Make the CA, the head server cert and the token, and write them into `directory`.
 
     Keys and the token get mode 600 (set at creation), certs 644. Returns the CA cert PEM and the token.
     """
     directory = Path(directory)
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)  # `up` makes it first (mode 700)
-    ca_cert, ca_key = make_ca(cert_max_age_days, now)
-    head_cert, head_key = make_leaf(ca_cert, ca_key, head_ip, cert_max_age_days, now)
+    ca_cert, ca_key = make_ca(now)
+    head_cert, head_key = make_leaf(ca_cert, ca_key, head_ip, now)
     token = make_token()
     for name, data, mode in [
         ("ca.pem", ca_cert, 0o644),

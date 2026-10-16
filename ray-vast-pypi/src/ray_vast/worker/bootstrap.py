@@ -175,6 +175,8 @@ def destroy(state, reason):
     log(f"destroying this instance: {reason}")
     if state.report_ctx is not None:
         body = {"instance_id": state.instance_id, "kind": "destroy", "reason": reason[:2000]}
+        # The token check report uses the same URL. If its call thread still runs, this call fails at once (`call`
+        # allows one thread per URL). Accepted: the report is best effort, and the vast DELETE below has its own URL.
         try:
             call(state.report_url, state.report_ctx, body, timeout=DESTROY_REPORT_TIMEOUT_S)
         except Exception as e:

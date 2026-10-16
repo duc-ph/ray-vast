@@ -423,23 +423,28 @@ def run(args):
             raise CliError(f"bad YAML in {args.cluster_yaml}: {' '.join(str(e).split())}") from None
         if not isinstance(raw, dict):
             raise CliError(f"{args.cluster_yaml}: the YAML must be a mapping (cluster_name:, provider:, ...)")
-        cluster, provider = raw.get("cluster_name"), raw.get("provider") or {}
-        try:
-            config_module.check_old_provider_fields(provider)
-        except ValueError as e:
-            raise CliError(f"{args.cluster_yaml}: {e}") from None
-        head_type = (raw.get("available_node_types") or {}).get(raw.get("head_node_type")) or {}
-        region = (head_type.get("node_config") or {}).get("region")
-        if not cluster or not region:
-            raise CliError("the YAML needs cluster_name and node_config.region of the head node type")
+        cluster = raw.get("cluster_name")
+        if args.command == "up":
+            # Only `up` rejects the fields of older versions: `down` must remove a cluster that 0.1.0 made, with its YAML.
+            try:
+                config_module.check_old_provider_fields(raw.get("provider") or {})
+            except ValueError as e:
+                raise CliError(f"{args.cluster_yaml}: {e}") from None
+        if not cluster:
+            raise CliError("the YAML needs cluster_name")
         if not NAME_RE.match(cluster):
             raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
         state_dir = Path.home() / ".ray-vast"
         state_dir.mkdir(exist_ok=True)
-        # An explicit --profile (or AWS_PROFILE) wins; else the profile that `up` used for this cluster.
-        profile = args.profile
-        if profile is None and args.command != "up" and (state_dir / f"{cluster}.json").exists():
-            profile = json.loads((state_dir / f"{cluster}.json").read_text()).get("profile")
+        # The other commands take the region (and the profile) that `up` saved in the state file (0.1.0 saved the region
+        # too). Without a state file, the region comes from the YAML. An explicit --profile (or AWS_PROFILE) wins.
+        state_file = state_dir / f"{cluster}.json"
+        saved = json.loads(state_file.read_text()) if args.command != "up" and state_file.exists() else {}
+        head_type = (raw.get("available_node_types") or {}).get(raw.get("head_node_type")) or {}
+        region = saved.get("region") or (head_type.get("node_config") or {}).get("region")
+        if not region:
+            raise CliError("the YAML needs node_config.region of the head node type")
+        profile = args.profile if args.profile is not None else saved.get("profile")
         session = boto3.Session(profile_name=profile, region_name=region)
         ssh = Ssh(_key_file(state_dir, cluster), state_dir / f"{cluster}.known_hosts")
 

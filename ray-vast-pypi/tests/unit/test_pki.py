@@ -88,8 +88,8 @@ def test_write_head_files_modes_and_content(tmp_path):
 
 
 def test_leaf_never_outlives_its_ca():
-    ca_cert, ca_key = pki.make_ca(cert_max_age_days=10, now=T0)
-    leaf, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, cert_max_age_days=365, now=T0 + timedelta(days=5))
+    ca_cert, ca_key = pki.make_ca(now=T0)
+    leaf, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, now=T0 + timedelta(days=300))
     assert (
         x509.load_pem_x509_certificate(leaf).not_valid_after_utc
         == x509.load_pem_x509_certificate(ca_cert).not_valid_after_utc
@@ -110,12 +110,6 @@ def test_expiry_warning_starts_at_day_351_of_365(ca):
     assert "expired" in pki.expiry_warning(ca_cert, now=T0 + timedelta(days=366))
 
 
-def test_lifetime_follows_cert_max_age_days():
-    cert, _ = pki.make_ca(cert_max_age_days=30, now=T0)
-    assert pki.expiry_warning(cert, now=T0 + timedelta(days=15)) is None
-    assert pki.expiry_warning(cert, now=T0 + timedelta(days=16)) is not None
-
-
 def test_leaf_with_instance_id_has_a_uri_san(ca):
     ca_cert, ca_key = ca
     cert, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, now=T0, instance_id=42)
@@ -126,14 +120,14 @@ def test_leaf_with_instance_id_has_a_uri_san(ca):
     assert san.get_values_for_type(x509.UniformResourceIdentifier) == []
 
 
-def test_cert_lifetime_follows_cert_max_age_days_for_leaf_and_head_files(ca, tmp_path):
+def test_certs_live_365_days_for_leaf_and_head_files(ca, tmp_path):
     ca_cert, ca_key = ca
-    leaf, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, cert_max_age_days=30, now=T0)
-    assert x509.load_pem_x509_certificate(leaf).not_valid_after_utc == T0 + timedelta(days=30)
-    pki.write_head_files(tmp_path, HEAD_IP, cert_max_age_days=30, now=T0)
+    leaf, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, now=T0)
+    assert x509.load_pem_x509_certificate(leaf).not_valid_after_utc == T0 + timedelta(days=365)
+    pki.write_head_files(tmp_path, HEAD_IP, now=T0)
     for name in ("ca.pem", "head.pem"):
         cert = x509.load_pem_x509_certificate((tmp_path / name).read_bytes())
-        assert cert.not_valid_after_utc == T0 + timedelta(days=30), name
+        assert cert.not_valid_after_utc == T0 + timedelta(days=365), name
         assert cert.not_valid_before_utc == T0 - timedelta(minutes=5), name
 
 
