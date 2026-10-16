@@ -1,8 +1,8 @@
 # C10.serve: a Ray Serve deployment on one node, called 40 times through a DeploymentHandle.
-#   many:  REPLICAS replicas with num_cpus=0.1 (they fit the CPUs). Each replica is one worker process, and the node also
+#   many:  60 replicas with num_cpus = min(0.1, cpus / 61) (they fit the CPUs). Each replica is one worker process, and the node also
 #          runs a Serve proxy: more processes than worker ports. Some replicas never start, so serve.run never returns:
 #          the job hangs.
-#   tuned: num_replicas = budget // 2 (budget = ports - 4), ray_actor_options={"num_cpus": 1}.
+#   tuned: num_replicas = budget // 2 (budget = ports - 4), ray_actor_options={"num_cpus": min(1, cpus / (replicas + 1))}.
 # Ends with serve.shutdown() (run_c10.py also runs c10_cleanup.py after a hang).
 # Usage: python c10_serve.py many|tuned
 import time
@@ -14,7 +14,8 @@ from c10common import PROGRESS, SCALE, error_info, finish, start, target
 ID = "C10.serve"
 mode = start(ID, 600)
 cpus, ports, budget = target()
-replicas, replica_cpu = (max(8, int(60 * SCALE)), 0.1) if mode == "many" else (max(1, budget // 2), 1)
+replicas = max(ports + 4, int(60 * SCALE)) if mode == "many" else max(1, budget // 2)
+replica_cpu = round(min(0.1 if mode == "many" else 1, cpus / (replicas + 1)), 4)
 
 
 @serve.deployment(num_replicas=replicas, ray_actor_options={"num_cpus": replica_cpu})

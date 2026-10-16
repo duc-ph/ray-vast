@@ -1,6 +1,7 @@
 # C10.rllib: RLlib PPO on CartPole-v1 (new API stack, torch). Needs torch (runtime_env pip); the image has gymnasium.
 # Modes:
-#   many:  one node: num_env_runners = max(ports + 4, 40 * C10_SCALE), at most cpus - 1, 1 env per runner. Each env runner
+#   many:  one node: num_env_runners = max(ports + 4, 40 * C10_SCALE), 1 env per runner, CPU per runner
+#          min(1, (cpus - 1) / runners), so they fit the CPUs of any host. Each env runner
 #          is one worker process: more than the worker ports. Some runners never start; build or train hangs or fails.
 #   tuned: one node: the same number of environments on 2 env runners (num_envs_per_env_runner = that number / 2).
 #   r1:    functional, PASS expected: 4 env runners on 2 nodes (num_cpus_per_env_runner = half of the smallest node's
@@ -49,10 +50,12 @@ from ray.rllib.algorithms.ppo import PPOConfig  # noqa: E402  (after ray.init: t
 config = PPOConfig().environment("CartPole-v1").training(train_batch_size_per_learner=2000, minibatch_size=250, num_epochs=1)
 if mode in ("many", "tuned"):
     cpus, ports, budget = target()
-    envs = int(min(cpus - 1, max(ports + 4, 40 * SCALE)))
+    envs = int(max(ports + 4, 40 * SCALE))
     runners, per_runner = (envs, 1) if mode == "many" else (2, -(-envs // 2))
-    config = config.env_runners(num_env_runners=runners, num_envs_per_env_runner=per_runner, num_cpus_per_env_runner=1)
-    params = {"num_env_runners": runners, "num_envs_per_env_runner": per_runner, "environments": runners * per_runner}
+    runner_cpu = round(min(1, (cpus - 1) / runners), 4)
+    config = config.env_runners(num_env_runners=runners, num_envs_per_env_runner=per_runner, num_cpus_per_env_runner=runner_cpu)
+    params = {"num_env_runners": runners, "num_envs_per_env_runner": per_runner, "environments": runners * per_runner,
+              "num_cpus_per_env_runner": runner_cpu}
 elif mode == "r1":
     nodes = wait_for_nodes(f"{ID}.R1", MIN_NODES)
     runner_cpu = max(1, int(min(n["CPU"] for n in nodes.values()) // 2)) if MIN_NODES >= 2 else 1

@@ -272,7 +272,7 @@ Record: `T_submit`, first rental, first `running`, first and 4th node ALIVE, `C8
 
 ## Cycle C10: process limits of the Ray libraries (L8)
 
-**Goal:** find the exact advice for the user. A vast container can have a cgroup pids limit (`pids.max` 1280 on the C9 hosts). Each Ray worker process has threads (about 25 with `RAY_num_grpc_internal_threads=4`). With the pids/ports change of ray-vast, a worker node gets fewer worker ports when `pids.max` is set (ports = min(58, (pids.max − reserve) // threads per process)). The port count is a hard cap on the worker processes of a node. So the expected failure for "too many processes" is a hang or an error, not a node crash. For each library, C10 has a pair of tests:
+**Goal:** find the exact advice for the user. A vast container can have a cgroup pids limit (`pids.max` 1280 on the C9 hosts). Each Ray worker process has threads (about 25 with `RAY_num_grpc_internal_threads=4`). With the pids/ports change of ray-vast (branch `pids-tuning`, 2ab2adb), a worker node gets fewer worker ports when `pids.max` is set: ports = max(4, min(58, (pids.max − 400) // 60)), so 14 ports at 1280 and 48 at 3328; `RAY_num_workers_soft_limit` = min(CPUs, ports // 2). The port count is a hard cap on the worker processes of a node. So the expected failure for "too many processes" is a hang or an error, not a node crash. For each library, C10 has a pair of tests:
 
 - **many**: the library with its default settings, or a normal user setting, makes more worker processes on one node than the node has ports. Expected: the job fails (a hang that the guard catches, or an error); the head writes its pids/ports WARNING line for the node; the node does not crash.
 - **tuned**: the same work with the advised settings. Expected: the job completes; no refused fork.
@@ -289,7 +289,8 @@ The "tuned" settings of all pairs are the advice table for the user docs.
 - **ports**: the worker ports of a node: the size of the raylet's `--worker_port_list` (the probe reads it from the raylet command line).
 - **budget**: ports − 4. The 4 ports are for the worker processes that Ray's libraries start next to the user's work (Serve proxy, Data and Train helpers, the probe).
 - **Advice rule:** on each node, keep the worker processes of the user's work (tasks that run at the same time, actors, trials, replicas, Train workers, env runners) at or below the budget. A task or actor that waits for another task needs a process for both.
-- **Idle workers:** the raylet keeps idle worker processes up to `RAY_num_workers_soft_limit`, and an idle worker holds its port. In the local check, with the soft limit equal to the port count, 7 idle workers held 7 of 12 ports and C10.train.tuned hung; with a soft limit of 2 it passed. The tuned results are valid only for the soft limit that the probe records.
+- **Idle workers:** the raylet keeps idle worker processes up to `RAY_num_workers_soft_limit`, and an idle worker holds its port. In the first local check, with the soft limit equal to the port count, 7 idle workers held 7 of 12 ports and C10.train.tuned hung; with a soft limit of 2 it passed. `pids-tuning` sets the soft limit to half the ports. The tuned results are valid only for the soft limit that the probe records.
+- **Sizes of the many tests:** each many test must make more processes than 48 ports (a 3328 host), not only 14. So the many sizes are max(ports + 4, a fixed size) with CPU per process small enough to fit the node's CPUs (see C10.1). Exception: Data many uses Ray Data's defaults, which start min(CPUs, 128) shuffle aggregators. It fails only when the node's CPUs are more than its ports: always at 1280 (14 ports) on a `big` host, but at 3328 (48 ports) only with 49 or more CPUs. On a 3328 host with fewer CPUs, record C10.data.many as INCONCLUSIVE if it completes.
 
 ### C10.0 Node types and order
 - **Phase A** (`cluster_a.yaml`, cluster `rvtest-c10a`): one worker of type `big`, `max_workers: 1`. `resources: {CPU: 32, GPU: 1}`, so ray-vast adds `cpu_cores_effective >= 32`. Offer query: `num_gpus = 1`, `gpu_ram` 8–70 GB, `compute_cap` 600–899, `dph_total <= 0.45`, and the test-only `inet_down`/`inet_up >= 500`. All pair tests run here. With one worker, every process of a test lands on the node under test.
@@ -318,12 +319,12 @@ The probe counts these lines (`no_port_errors`, with one sample). Each many test
 
 | ID | many (Ray defaults or a normal user setting) | tuned (the advice) |
 |---|---|---|
-| C10.core | 200 work items on 200 actors (`num_cpus=0.1`), each actor call waits for a child task (`num_cpus=0.1`) | the same 200 items on a pool of budget // 2 actors; `num_cpus` = CPUs / budget for actors and tasks |
+| C10.core | max(ports + 4, 200) work items on as many actors, each actor call waits for a child task; `num_cpus` = min(0.1, CPUs / (2 × actors)) for both | the same items on a pool of budget // 2 actors; `num_cpus` = CPUs / budget for actors and tasks |
 | C10.data | `range` (400 blocks) → `map_batches(num_cpus=0.05)` → `groupby().count()`, Ray Data defaults (aggregators = min(CPUs, 128)) | a quarter of the budget each: `DataContext.max_hash_shuffle_aggregators`, read `concurrency`, `map_batches(compute=TaskPoolStrategy(size=...))`, `execution_options.resource_limits = ExecutionResources(cpu=...)` (the shuffle tasks) |
-| C10.tune | 60 trials, each a placement group of 2 bundles of 0.1 CPU (the trial and its evaluation task), all at once | `TuneConfig(max_concurrent_trials=budget // 2)` |
-| C10.serve | 60 replicas, `num_cpus=0.1` | `num_replicas` = budget // 2, `ray_actor_options={"num_cpus": 1}` |
-| C10.train | `TorchTrainer` (gloo, CPU), `num_workers` = max(ports + 4, 40), at most CPUs − 1; each worker has a `DataLoader` with 2 worker processes | `num_workers` = budget // 2 |
-| C10.rllib | PPO CartPole, `num_env_runners` = max(ports + 4, 40), at most CPUs − 1, 1 env each | 2 env runners with the same number of envs (`num_envs_per_env_runner`) |
+| C10.tune | max(ports + 4, 60) trials, each a placement group of 2 bundles of min(0.1, CPUs / (2 × trials)) CPU (the trial and its evaluation task, `num_cpus=0`), all at once | `TuneConfig(max_concurrent_trials=budget // 2)` |
+| C10.serve | max(ports + 4, 60) replicas, `num_cpus` = min(0.1, CPUs / (replicas + 1)) | `num_replicas` = budget // 2, `ray_actor_options={"num_cpus": min(1, CPUs / (replicas + 1))}` |
+| C10.train | `TorchTrainer` (gloo, CPU), `num_workers` = max(ports + 4, 40), CPU per worker min(1, (CPUs − 0.5) / workers); each worker has a `DataLoader` with 2 worker processes | `num_workers` = budget // 2, same CPU rule |
+| C10.rllib | PPO CartPole, `num_env_runners` = max(ports + 4, 40), 1 env each, CPU per runner min(1, (CPUs − 1) / runners) | 2 env runners with the same number of envs (`num_envs_per_env_runner`) |
 
 Train can go above the limit: Ray Train places one worker process for each worker in one placement group; with 1 CPU each, a 32+ core node accepts more workers than it has ports. So C10.train.many is a real test, not N/A.
 
@@ -343,10 +344,10 @@ C9.1.1, C9.1.3, C9.1.4 and C9.1.6 with the C9 scripts and settings, without `C9_
 | Phase B `gpu2` for R2 | about 0.3 h | $0.50–1.10/h | $0.15–0.35 |
 | EC2 `t3.large` head, 2 clusters | about 4 h | $0.083/h | $0.35 |
 | Host retry: up to 2 more `big` rentals (about 15 min each, incl. the image pull) | 0.5 h | $0.30–0.45/h | up to $0.25 |
-| Total | | | about $1.70–2.50; re-runs ×1.5: under $4 |
+| Total | | | about $1.70–2.50; re-runs ×1.5: under $4. The many tests now run to their guard (600–900 s) each: 6 × 15 min is already in the phase A row. |
 
 ### C10.5 Local check (dev box, before the rental)
-`local_check.py`, 2026-10-16: one container per run, `--pids-limit 1280`, 48 Ray CPUs, `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8`, soft limit = ports unless noted. The local node also runs the head and the driver (about 460 pids before the job), so it has about 160 fewer pids for workers than a vast worker with the same limit. The local verdict uses the "No available ports" lines in place of the head WARNING line.
+First check, before `pids-tuning` (`local_check.py`, a plain Ray node, no ray-vast), 2026-10-16: one container per run, `--pids-limit 1280`, 48 Ray CPUs, `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8`, soft limit = ports unless noted. The local node also runs the head and the driver (about 460 pids before the job), so it has about 160 fewer pids for workers than a vast worker with the same limit. The local verdict uses the "No available ports" lines in place of the head WARNING line.
 
 | Run | Ports | tuned | many | many: peak pids, worker processes, refused forks |
 |---|---|---|---|---|
@@ -362,13 +363,36 @@ C9.1.1, C9.1.3, C9.1.4 and C9.1.6 with the C9 scripts and settings, without `C9_
 
 Threads for each worker process (from these runs): Core actor or task about 25, Ray Train worker about 20, RLlib env runner about 26, **Serve replica about 35**. A raylet that cannot fork (`worker_pool.cc:731: Failed to start worker with return value system:11`) ends, so the node dies. A port count that uses 25 threads for each process is not safe for Serve replicas.
 
-**With the real head and bootstrap** (`test_c10_local_e2e.py`, on main e30ac68 with design (a)): the step 11 harness (fake vast, real head server and provider, real bootloader and bootstrap), one worker container with `--pids-limit 1280`, the jobs through `ray job submit --working-dir` in the head container. The bootstrap gave Ray 25 worker ports, soft limit 4 (the box has 4 cores, so the worker has 4 Ray CPUs).
+**With the real head and bootstrap** (`test_c10_local_e2e.py`, 2026-10-16, ray-vast at `pids-tuning` 2ab2adb): the step 11 harness (fake vast, real head server and provider, real bootloader and bootstrap), one worker container with `--pids-limit 1280` and 4 Ray CPUs (the box has 4 cores). The bootstrap gave Ray 14 worker ports and soft limit 4. The jobs ran through `ray job submit --working-dir` in the head container, `C10_SCALE=0.1` (many sizes = max(ports + 4, scaled size) = 18 to 20 processes). Guard 150–180 s. "Peak workers" counts the Ray worker processes in the worker container, with the processes that started and found no port.
 
-| Run | Result | Evidence |
-|---|---|---|
-| C10.core.many | PASS: HUNG at the 150 s guard, worker alive, `pids.events` max 0, 24 "No available ports" lines | `monitor.log`: `worker slot-1-… (instance 1000, ip …) is at its process limit: 0 refused forks/threads (+0), pids 783 of 1280, worker ports in use 25 of 25.` |
-| C10.data.many, pids.max 1280 | FAIL (as a many test): COMPLETED in 75 s, no WARNING. With 4 Ray CPUs Data starts only 4 aggregators, fewer than the 25 ports. On a `big` host (32+ CPUs) the aggregators are more than the ports. | |
-| C10.data.many, pids.max 560 (4 ports) | PASS: HUNG, worker alive, `pids.events` max 0, 18 "No available ports" lines | `... (instance 1000, ip ...) is at its process limit: 0 refused forks/threads (+0), pids 223 of 560, worker ports in use 4 of 4.` |
+| Test | Result | Time | Peak pids | Peak workers | Refused forks | WARNING line for the worker |
+|---|---|---|---|---|---|---|
+| core.tuned (5 actors, 0.4 CPU) | PASS | 16 s | 450 | 16 | 0 | no |
+| core.many (20 actors) | PASS: HUNG | 158 s | 508 | 21 | 0 | yes: ports in use 14 of 14, pids 479 of 1280 |
+| data.tuned (2 + 2 + 2 + 2) | PASS | 23 s | 387 | 11 | 0 | no |
+| data.many, 1280 | **FAIL (expected, xfail)**: COMPLETED; 4 Ray CPUs give 4 aggregators < 14 ports | 30 s | 474 | 18 | 0 | no |
+| data.many, 560 (4 ports) | PASS: HUNG | 159 s | 270 | 12 | 0 | yes: ports in use 4 of 4 |
+| tune.tuned (`max_concurrent_trials` 5) | PASS | 36 s | 435 | 15 | 0 | no |
+| tune.many (18 trials) | PASS: HUNG | 159 s | 530 | 21 | 0 | yes: ports in use 14 of 14 |
+| serve.tuned (5 replicas) | PASS | 22 s | 345 | 8 | 0 | no |
+| serve.many (18 replicas) | PASS: HUNG, no crash | 160 s | 628 | 21 | 0 | yes: ports in use 14 of 14, pids 601 of 1280 |
+| train.tuned (5 workers) | PASS | 34 s | 359 | 10 | 0 | no |
+| train.many (18 workers) | PASS: HUNG | 191 s | 503 | 21 | 0 | yes: ports in use 14 of 14 |
+| rllib.tuned (2 runners × 9 envs) | PASS | 21 s | 186 | 4 | 0 | no |
+| rllib.many (18 runners) | PASS: HUNG | 188 s | 513 | 20 | 0 | yes: ports in use 14 of 14 |
+
+In every many run, the worker stayed enrolled, `pids.events` stayed at `max 0`, and the worker's `worker-*.err` files had 16–24 "No available ports" lines. The tuned runs had 0–2 such lines and no WARNING line. The first tune.many run used 8 trials (scaled 60 × 0.1) and completed: the many sizes are now max(ports + 4, size).
+
+**Advice (the tuned settings), as a rule on the node's ports** (budget = ports − 4; 14 ports at pids.max 1280 → budget 10; 48 ports at 3328 → budget 44):
+
+| Library | Advice for each node |
+|---|---|
+| Core | Tasks and actors that run at the same time ≤ budget. An actor or task that waits for another task needs a process for both: an actor pool of budget // 2 when each actor calls tasks. Set `num_cpus` = CPUs / budget so the scheduler keeps the count. |
+| Data | `DataContext.max_hash_shuffle_aggregators`, the read `concurrency`, `map_batches(compute=TaskPoolStrategy(size=...))` and `execution_options.resource_limits = ExecutionResources(cpu=...)`: budget // 4 each. |
+| Tune | `TuneConfig(max_concurrent_trials = budget // (1 + tasks that a trial runs at the same time))`. |
+| Serve | `num_replicas` on one node ≤ budget // 2. |
+| Train | `num_workers` on one node ≤ budget // 2. |
+| RLlib | Few env runners (here 2) and more `num_envs_per_env_runner`; env runners + learners on one node ≤ budget // 2. |
 
 ### C10.6 Teardown and outputs
 - Teardown as for all cycles, for each cluster: copy the head logs, the secret scan, `ray-vast down`, `vast_tool.py sweep` until 0, the AWS check.

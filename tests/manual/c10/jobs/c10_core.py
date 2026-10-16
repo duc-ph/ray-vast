@@ -1,5 +1,5 @@
 # C10.core: actors that wait on tasks. Each work item is one actor call that submits a child task and waits for it.
-#   many:  ITEMS actors (num_cpus=0.1; they fit the node's CPUs), one item each. Every actor holds one worker process, so
+#   many:  ITEMS actors (num_cpus = min(0.1, cpus / (2 * ITEMS)): they and their tasks fit the node's CPUs), one item each. Every actor holds one worker process, so
 #          the actors take all worker ports, and the child tasks never get a process: the job hangs.
 #   tuned: the same ITEMS work items on an actor pool of budget // 2 actors (budget = ports - 4), num_cpus = cpus / budget
 #          for the actors and the child tasks. At most budget processes: the job completes.
@@ -13,7 +13,7 @@ from c10common import PROGRESS, SCALE, error_info, finish, start, target
 ID = "C10.core"
 mode = start(ID, 600)
 cpus, ports, budget = target()
-ITEMS = max(8, int(200 * SCALE))
+ITEMS = max(ports + 4, int(200 * SCALE))
 
 
 @ray.remote
@@ -32,8 +32,9 @@ class Worker:
 
 
 if mode == "many":
-    actors = [Worker.options(num_cpus=0.1).remote(0.1) for _ in range(min(ITEMS, int(cpus / 0.1)))]
-    params = {"actors": len(actors), "actor_cpus": 0.1, "child_cpus": 0.1}
+    share = min(0.1, cpus / (2 * ITEMS))
+    actors = [Worker.options(num_cpus=share).remote(share) for _ in range(ITEMS)]
+    params = {"actors": len(actors), "actor_cpus": round(share, 4), "child_cpus": round(share, 4)}
 else:
     share = cpus / budget
     actors = [Worker.options(num_cpus=share).remote(share) for _ in range(max(1, budget // 2))]
