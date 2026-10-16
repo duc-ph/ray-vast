@@ -293,7 +293,7 @@ def main():
             else:
                 with open(f"{CGROUP_DIR}/cpu/cpu.cfs_quota_us") as f, open(f"{CGROUP_DIR}/cpu/cpu.cfs_period_us") as g:
                     quota, period = int(f.read()), int(g.read())
-                quota_cores = quota / period if quota > 0 else None
+                quota_cores = quota / period if quota > 0 and period > 0 else None
         except (OSError, ValueError):
             quota_cores = None
         if quota_cores is not None:

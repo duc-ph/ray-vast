@@ -71,7 +71,7 @@ trainer.fit()
 | Setting | Value (B = 10, CPUS = 24) | Formula |
 |---|---|---|
 | `ScalingConfig(resources_per_worker={"CPU": ...})` | 2.4 | CPUS / B |
-| `ScalingConfig(num_workers=...)` | at most 5 | B // 2, and at most the GPUs of one worker |
+| `ScalingConfig(num_workers=...)` | 2 (tested) | B // 2 or fewer, and at most the GPUs of one worker |
 | `ScalingConfig(placement_strategy=...)` | `"STRICT_PACK"` | All Train worker processes on one worker |
 | `DataLoader(num_workers=...)` | 2 | 2 or fewer. These processes count against the process limit. They do not use ports. |
 | `RunConfig(storage_path=...)` | `s3://...` | A cloud bucket |

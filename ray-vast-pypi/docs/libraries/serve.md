@@ -79,7 +79,7 @@ ray-vast gives each worker as many worker ports as its process limit (`pids.max`
 Each Ray actor, task or replica needs a port.
 Too many at the same time make the work hang, or fail after 5 worker-start retries, but they do not crash the worker.
 Each worker also runs a Serve proxy. One of the 4 free ports is for it.
-A replica has about 50 threads (read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts)). ray-vast sizes the worker ports for this, so B replicas stay under the process limit.
+A Serve replica with a FastAPI ingress has 50 threads. We measured this with `RAY_num_grpc_internal_threads=4` on a simulated 48-core host (2026-10-16). Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts). ray-vast sizes the worker ports for this, so B replicas stay under the process limit.
 
 ## What does not work
 

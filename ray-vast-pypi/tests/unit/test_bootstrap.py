@@ -214,11 +214,13 @@ def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_lim
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("quota, cpus", [("150000\n", 1), ("-1\n", len(os.sched_getaffinity(0)))])
-def test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_1_is_no_limit(world, tmp_path, quota, cpus):
+@pytest.mark.parametrize("quota, period, cpus", [("150000\n", "100000\n", 1), ("-1\n", "100000\n", len(os.sched_getaffinity(0))),
+                                                ("150000\n", "0\n", len(os.sched_getaffinity(0)))])
+def test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_1_is_no_limit(world, tmp_path, quota, period, cpus):
     # cgroup v1 (no cgroup.controllers): the CPU controller is in cpu/, with the quota and the period in microseconds.
     cgroup = cgroup_dir(tmp_path, "v1", "max\n")
     (cgroup / "cpu" / "cpu.cfs_quota_us").write_text(quota)
+    (cgroup / "cpu" / "cpu.cfs_period_us").write_text(period)
     run = world.run(RAYVAST_CGROUP_DIR=str(cgroup))
     assert wait_for(lambda: world.head.bodies("A", "/enroll")), run.stdout
     assert world.head.bodies("A", "/enroll")[0]["cpu_count"] == cpus

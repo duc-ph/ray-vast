@@ -314,6 +314,8 @@ def test_a_candidate_ended_between_its_first_running_pass_and_its_rule_leaves_no
     (slot_id,) = create(p)
     env.vast.run(101, "198.51.100.55")
 
+    # No public seam reaches the gap between step 1 and step 2 of a pass (the clock is not read there, and a boto hook
+    # fires after the check), so the test wraps `_sg_lock`. The assertions are on public behaviour only.
     class EndFirst:  # the autoscaler ends the slot just before the reconcile pass adds the rule
         def __init__(self, lock):
             self.lock, self.hook = lock, lambda: p.terminate_node(slot_id)

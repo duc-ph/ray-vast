@@ -51,6 +51,7 @@ A YAML with one of these `provider` fields gets an error. The error tells what t
 | `port_a`, `port_b` | Removed. The head server always uses ports 7443 and 7444. |
 | `cert_max_age_days` | Removed. The CA and the certificates always live 365 days. |
 | `image_size_gb` | Removed. `up` measures the image. |
+| `order_by` | Removed. The provider always rents the cheapest offers first (`dph_total`). Remove the field before you run any command, also `down`. |
 
 ## `available_node_types`: the head
 
