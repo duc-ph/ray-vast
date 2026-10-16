@@ -1,0 +1,98 @@
+2026-10-16 09:34:04,785	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-16 09:34:04,804	INFO cli.py:569 -- 2026-10-16 02:33:33,642	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c10-c9-1-1-1792143212: python c9_1_1_data_cpu.py
+C9_START C9.1.1 1792143215.8 small=False min_nodes=2
+2026-10-16 02:33:35,778	INFO worker.py:1686 -- Using address 54.244.79.191:6379 set in the environment variable RAY_ADDRESS
+2026-10-16 02:33:35,783	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.244.79.191:6379...
+2026-10-16 02:33:35,817	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+/home/ray/anaconda3/lib/python3.11/site-packages/ray/data/dataset.py:2229: UserWarning: Use 'expr' instead of 'fn' when possible for performant filters.
+  warnings.warn(
+2026-10-16 02:33:37,275	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034gqJtiTpqcvBz97c0VPE_0. Full logs are in /tmp/ray/session_2026-10-16_02-30-36_928474_8/logs/ray-data
+2026-10-16 02:33:37,275	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034gqJtiTpqcvBz97c0VPE_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->MapBatches(double)->Filter(<lambda>)->Project] -> AggregateNumRows[AggregateNumRows]
+2026-10-16 02:33:37,635	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-16 02:33:37,795	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034gqJtiTpqcvBz97c0VPE_0 =======
+2026-10-16 02:33:37,798	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 02:33:37,798	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-16 02:33:37,798	INFO logging_progress.py:181 -- 
+2026-10-16 02:33:37,798	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>)->Project: 0/1
+2026-10-16 02:33:37,798	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 112 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 02:33:37,798	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-16 02:33:37,798	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 02:33:37,798	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 02:33:47,849	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034gqJtiTpqcvBz97c0VPE_0 =======
+2026-10-16 02:33:47,849	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 02:33:47,849	INFO logging_progress.py:227 -- Active & requested resources: 56/56 CPU, 0.0B/14.7GiB object store
+2026-10-16 02:33:47,849	INFO logging_progress.py:181 -- 
+2026-10-16 02:33:47,850	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>)->Project: 119047/3363078
+2026-10-16 02:33:47,850	INFO logging_progress.py:233 --   Tasks: 56 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 53 (0.0B); Resources: 56.0 CPU, 0.0B object store
+2026-10-16 02:33:47,850	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-16 02:33:47,850	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 02:33:47,850	INFO logging_progress.py:192 -- =================================================================
+[36m(pid=1950, ip=185.62.108.226)[0m [2026-10-16 02:33:51,066 E 1950 1950] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=abcb8e4b2d5eae6b98295c8bec630bc7b4e3a3230a522b42c5f41a02
+[36m(pid=2236, ip=185.62.108.226)[0m [2026-10-16 02:33:56,331 E 2236 2236] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=041bcb6ae40aebd1656d2ea00ef9abd3beb712f2de25c1fdd5c19d95[32m [repeated 8x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+2026-10-16 02:33:57,712	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034gqJtiTpqcvBz97c0VPE_0 execution finished in 20.43 seconds
+2026-10-16 02:33:57,748	INFO dataset.py:4508 -- Tip: Use `take_batch()` instead of `take() / show()` to return records in pandas or numpy batch format.
+2026-10-16 02:33:57,757	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034gqKQAfOSHfoxihJbGD4_0. Full logs are in /tmp/ray/session_2026-10-16_02-30-36_928474_8/logs/ray-data
+2026-10-16 02:33:57,757	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034gqKQAfOSHfoxihJbGD4_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->MapBatches(double)->Filter(<lambda>)] -> LimitOperator[limit=3]
+2026-10-16 02:33:58,036	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034gqKQAfOSHfoxihJbGD4_0 =======
+2026-10-16 02:33:58,036	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 02:33:58,036	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-16 02:33:58,036	INFO logging_progress.py:181 -- 
+2026-10-16 02:33:58,037	INFO logging_progress.py:231 -- ReadRange->MapBatches(double)->Filter(<lambda>): 0/1
+2026-10-16 02:33:58,037	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 112 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 02:33:58,038	INFO logging_progress.py:231 -- limit=3: 0/1
+2026-10-16 02:33:58,038	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 02:33:58,038	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 02:33:59,564	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034gqKQAfOSHfoxihJbGD4_0 execution finished in 1.81 seconds
+Operator 1 ReadRange->MapBatches(double)->Filter(<lambda>): 1 tasks executed, 1 blocks produced in 0.64s
+* Remote wall time: 640.39ms min, 640.39ms max, 640.39ms mean, 640.39ms total
+* Remote cpu time: 648.6ms min, 648.6ms max, 648.6ms mean, 648.6ms total
+* UDF time: 694.77ms min, 694.77ms max, 694.77ms mean, 694.77ms total
+* Output num rows per block: 29762 min, 29762 max, 29762 mean, 29762 total
+* Output size bytes per block: 238096 min, 238096 max, 238096 mean, 238096 total
+* Output rows per task: 29762 min, 29762 max, 29762 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 29762 rows
+	* Ray Data throughput: 46474.955805375044 rows/s
+	* Estimated single task throughput: 46474.955805375044 rows/s
+
+Operator 2 limit=3: 1 tasks executed, 1 blocks produced in 0.64s
+* Remote wall time: 640.39ms min, 640.39ms max, 640.39ms mean, 640.39ms total
+* Remote cpu time: 648.6ms min, 648.6ms max, 648.6ms mean, 648.6ms total
+* UDF time: 694.77ms min, 694.77ms max, 694.77ms mean, 694.77ms total
+* Output num rows per block: 3 min, 3 max, 3 mean, 3 total
+* Output size bytes per block: 24 min, 24 max, 24 mean, 24 total
+* Output rows per task: 3 min, 3 max, 3 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 29762 rows
+	* Total output num rows: 3 rows
+	* Ray Data throughput: 4.684660554268031 rows/s
+	* Estimated single task throughput: 4.684660554268031 rows/s
+
+Dataset iterator time breakdown:
+* Total time overall: 1.84s
+    * Total time in Ray Data iterator initialization code: 1.8s
+    * Total time user thread is blocked by Ray Data iter_batches: 39.17ms
+    * Total time spent waiting for the first batch after starting iteration: 39.02ms
+    * Total execution time for user thread: 1.58ms
+* Batch iteration time breakdown (summed across prefetch threads):
+    * In get RefBundles: 9.91us min, 34.13ms max, 17.07ms avg, 34.14ms total
+    * In ray.get(): 513.78us min, 513.78us max, 513.78us avg, 513.78us total
+    * In batch creation: 7.3us min, 7.3us max, 7.3us avg, 7.3us total
+    * In batch formatting: 9.94us min, 9.94us max, 9.94us avg, 9.94us total
+
+Per-stage training-thread blocked time breakdown:
+    * production wait: 34.32ms
+    * data transfer (ray.get): 513.78us
+    * batching: 7.3us
+    * format: 9.94us
+Total batches consumed: 1
+Total rows consumed: 3
+
+Dataset throughput:
+	* Ray Data throughput: 4.684660554268031 rows/s
+
+C9_RESULT C9.1.1 PASS {"count": 3333334, "elapsed_s": 24.0, "expected": 3333334, "first": [{"id": 0}, {"id": 6}, {"id": 12}], "rows": 10000000, "rows_per_s": 843634, "seconds": 23.71, "task_nodes": {"1ddb6531": 35, "6a405163": 43, "7d014468": 71}}

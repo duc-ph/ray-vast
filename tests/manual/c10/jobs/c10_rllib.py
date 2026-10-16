@@ -61,8 +61,47 @@ elif mode == "r1":
     runner_cpu = max(1, int(min(n["CPU"] for n in nodes.values()) // 2)) if MIN_NODES >= 2 else 1
     config = config.env_runners(num_env_runners=4, num_cpus_per_env_runner=runner_cpu)
     params = {"num_env_runners": 4, "num_cpus_per_env_runner": runner_cpu}
+elif mode == "r2":
+    # Live-run change (2026-10-16): the first R2 waited for a 2-GPU node, but nothing asked for one, so the autoscaler never
+    # started `gpu2`. Now Tune runs PPO with the algorithm's own placement group, STRICT_PACK: 2 learner bundles {GPU 1, CPU 1}
+    # and the driver bundle on ONE node. Only `gpu2` (2 GPUs) can hold it, so the autoscaler starts it. No remote env
+    # runners (the gpu2 type declares 4 CPUs).
+    config = (config.env_runners(num_env_runners=0).learners(num_learners=2, num_gpus_per_learner=GPU, num_cpus_per_learner=1)
+              .resources(placement_strategy="STRICT_PACK"))
+    params = {"num_learners": 2, "num_gpus_per_learner": GPU, "num_env_runners": 0, "placement_strategy": "STRICT_PACK", "via": "Tune"}
+    print(f"C10_PARAMS {params}", flush=True)
+    import threading
+    from ray import tune
+    seen = {}
+
+    def watch():  # the learner actors live inside the trial: sample their nodes while it runs
+        while True:
+            try:
+                now = actor_nodes("_WrappedExecutable")
+                if sum(now.values()) >= sum(seen.values()):
+                    seen.clear()
+                    seen.update(now)
+            except Exception:
+                pass
+            time.sleep(5)
+    threading.Thread(target=watch, daemon=True).start()
+    try:
+        t = time.time()
+        grid = tune.Tuner(config.algo_class, param_space=config, run_config=tune.RunConfig(
+            stop={"training_iteration": 2},
+            # R2 run 2 (live): Tune saved a checkpoint at the end, and Ray refused the local storage on a multi-node cluster
+            # (the C9.2.4 limit). R2 tests the learners, so no checkpoint.
+            checkpoint_config=tune.CheckpointConfig(checkpoint_at_end=False, checkpoint_frequency=0))).fit()
+        seconds = time.time() - t
+    except Exception as e:
+        result(f"{ID}.R2", "FAIL", dict(error_info(e), learner_nodes=dict(seen)))
+    metrics = (grid[0].metrics or {}) if len(grid) else {}
+    data = dict(params, seconds=round(seconds, 1), learner_nodes=dict(seen), errors=grid.num_errors,
+                iterations=metrics.get("training_iteration"), returns=(metrics.get("env_runners") or {}).get("episode_return_mean"))
+    ok = grid.num_errors == 0 and metrics.get("training_iteration") == 2 and len(seen) == 1 and sum(seen.values()) == 2
+    result(f"{ID}.R2", "PASS" if ok else "FAIL", data)
 else:
-    nodes = wait_for_nodes(f"{ID}.{mode.upper()}", 1 if mode == "r2" else MIN_NODES, gpus_per_node=GPU * (2 if mode == "r2" else 1))
+    nodes = wait_for_nodes(f"{ID}.R3", MIN_NODES, gpus_per_node=GPU)
     config = config.env_runners(num_env_runners=2).learners(num_learners=2, num_gpus_per_learner=GPU)
     params = {"num_learners": 2, "num_gpus_per_learner": GPU, "num_env_runners": 2}
 print(f"C10_PARAMS {params}", flush=True)
@@ -93,8 +132,6 @@ if mode in ("many", "tuned"):
 ok = returns[-1] is not None
 if mode == "r1":
     ok = ok and len(runner_nodes) >= MIN_NODES
-elif mode == "r2":
-    ok = ok and len(learner_nodes) == 1 and sum(learner_nodes.values()) == 2
 else:  # r3 that worked: unexpected on vast (a LIMIT is expected), PASS in a local check on one node (C10_MIN_NODES=1)
     ok = ok and sum(learner_nodes.values()) == 2 and len(learner_nodes) >= min(2, MIN_NODES)
 result(f"{ID}.{mode.upper()}", "PASS" if ok else "FAIL", data)

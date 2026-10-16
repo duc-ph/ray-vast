@@ -45,6 +45,7 @@ PLAN = {
         ("C10.core.many", "c10_core.py", ["many"], "many", False, 900),
         ("C10.data.tuned", "c10_data.py", ["tuned"], "tuned", False, 1200),
         ("C10.data.many", "c10_data.py", ["many"], "many", False, 1200),
+        ("C10.data.tuned2", "c10_data.py", ["tuned2"], "tuned", False, 1200),  # added in the live run (see c10_data.py)
         ("C10.tune.tuned", "c10_tune.py", ["tuned"], "tuned", False, 900),
         ("C10.tune.many", "c10_tune.py", ["many"], "many", False, 900),
         ("C10.serve.tuned", "c10_serve.py", ["tuned"], "tuned", False, 900),
@@ -60,7 +61,7 @@ PLAN = {
         ("C10.c9.1.4", "c9_1_4_data_gpu.py", [], "c9", True, 2700),
         ("C10.c9.1.6", "c9_1_6_data_many.py", [], "c9", False, 2100),
         ("C10.rllib.R1", "c10_rllib.py", ["r1"], "functional", True, 2400),
-        ("C10.rllib.R3", "c10_rllib.py", ["r3"], "functional", True, 1500),
+        ("C10.rllib.R3", "c10_rllib.py", ["r3"], "functional", True, 2400),  # longer than its guard (1500 s)
         ("C10.rllib.R2", "c10_rllib.py", ["r2"], "functional", True, 3600),  # last: it starts the gpu2 node
     ],
 }
@@ -148,7 +149,7 @@ def head_log_lines(cluster, start_line=1):
     return p.stdout.splitlines()
 
 
-def run_job(test_id, script, args, torch, timeout, out_dir, env=None, jobs=JOBS):
+def run_job(test_id, script, args, torch, timeout, out_dir, env=None, jobs=JOBS, name="job"):
     """Submit one job, wait for its end (or stop it at the timeout), keep its log. Returns (job state, log text, submission id)."""
     sid = f"{test_id.replace('.', '-').lower()}-{int(time.time())}"
     runtime_env = dict(TORCH_ENV) if torch else {}
@@ -159,11 +160,11 @@ def run_job(test_id, script, args, torch, timeout, out_dir, env=None, jobs=JOBS)
     if runtime_env:
         command += ["--runtime-env-json", json.dumps(runtime_env)]
     command += ["--", "python", script, *args]
-    (out_dir / "submit.txt").write_text(f"ray job submit --address {ADDRESS} " + " ".join(command[1:]) + "\n")
+    (out_dir / f"{name}_submit.txt").write_text(f"ray job submit --address {ADDRESS} " + " ".join(command[1:]) + "\n")
     shutil.copy(jobs / script, out_dir / script)
     t0 = time.time()
     code, out = ray_cli(*command, timeout=600)
-    (out_dir / "submit.out").write_text(out)
+    (out_dir / f"{name}_submit.out").write_text(out)
     if code != 0:
         return "SUBMIT_FAILED", out, sid
     status = job_status(sid)
@@ -174,7 +175,7 @@ def run_job(test_id, script, args, torch, timeout, out_dir, env=None, jobs=JOBS)
         ray_cli("stop", sid, timeout=120)
         status = f"TIMEOUT({job_status(sid)})"
     _, log = ray_cli("logs", sid, timeout=300)
-    (out_dir / "job.log").write_text(log)
+    (out_dir / f"{name}.log").write_text(log)
     return status, log, sid
 
 
@@ -191,8 +192,7 @@ def probe(out_dir, name):
     """Run c10_probe.py; save and return {node_id: limits}. Again every 30 s for up to 5 min while a node gives an error (the
     ports of a stopped job free up slowly)."""
     for attempt in range(10):
-        _, log, _ = run_job("C10.probe", "c10_probe.py", [], False, 300, out_dir)
-        os.replace(out_dir / "job.log", out_dir / f"probe_{name}_{attempt}.log")
+        _, log, _ = run_job("C10.probe", "c10_probe.py", [], False, 300, out_dir, name=f"probe_{name}_{attempt}")
         lines = [line for line in log.splitlines() if line.startswith("C10_PROBE ")]
         found = json.loads(lines[-1].split(" ", 1)[1]) if lines else {}
         if found and not any("error" in v for v in found.values()):
@@ -255,8 +255,7 @@ def main():
         env = {"C10_PORTS": str(pre[target]["ports"]), "C10_CPUS": str(pre[target]["CPU"])} if kind in ("tuned", "many") and target else {}
         log_start = len(head_log_lines(cluster)) + 1
         state, log, sid = run_job(test_id, script, args, torch, timeout, out_dir, env, C9_JOBS if kind == "c9" else JOBS)
-        run_job("C10.cleanup", "c10_cleanup.py", [], False, 300, out_dir)
-        os.replace(out_dir / "job.log", out_dir / "cleanup.log")
+        run_job("C10.cleanup", "c10_cleanup.py", [], False, 300, out_dir, name="cleanup")
         time.sleep(30)  # the raylet ends the job's worker processes
         post = probe(out_dir, "post")
         head = head_log_lines(cluster, log_start)

@@ -1,0 +1,22 @@
+2026-10-16 10:22:26,387	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-16 10:22:26,414	INFO cli.py:569 -- 2026-10-16 03:12:30,726	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c10-rllib-r3-1792145549: python c10_rllib.py r3
+C10_START C10.rllib.R3 r3 1792145553.4 guard_s=1500.0
+2026-10-16 03:12:33,405	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.244.79.191:6379...
+2026-10-16 03:12:33,442	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_PARAMS {'num_learners': 2, 'num_gpus_per_learner': 1.0, 'num_env_runners': 2}
+2026-10-16 03:12:37,845	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+[2026-10-16 03:12:37,996 E 7502 7502] core_worker.cc:2297: Actor with class name: 'SingleAgentEnvRunner' and ID: '9b38238a767c6e759cd8048018000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(SingleAgentEnvRunner pid=40808, ip=143.55.45.86)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+2026-10-16 03:12:48,482	WARNING rl_module.py:463 -- DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+[36m(_WrappedExecutable pid=41016, ip=143.55.45.86)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[36m(SingleAgentEnvRunner pid=40815, ip=143.55.45.86)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+[36m(_WrappedExecutable pid=41016, ip=143.55.45.86)[0m [W1016 03:12:59.665670649 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:15:10.840063970 socket.cpp:929] [c10d] The server socket on [fdff:ffff:3a66:6666:663a:6665:3766:3a3a]:54603 has timed out, will retry.
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:15:11.937172276 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:17:24.960050300 socket.cpp:929] [c10d] The server socket on [fdff:ffff:3a66:6666:663a:3635:363a:303a]:54603 has timed out, will retry.
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:17:25.067849971 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3[32m [repeated 2x across cluster][0m
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:19:37.076070794 socket.cpp:929] [c10d] The server socket on [fdff:ffff:3a66:6666:663a:3635:363a:303a]:54603 has timed out, will retry.
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:19:38.362630719 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3[32m [repeated 2x across cluster][0m
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:21:50.196065160 socket.cpp:929] [c10d] The server socket on [fdff:ffff:3a66:6666:663a:3635:363a:303a]:54603 has timed out, will retry.
+[36m(_WrappedExecutable pid=42262, ip=185.62.108.226)[0m [W1016 03:21:51.014897635 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3[32m [repeated 2x across cluster][0m

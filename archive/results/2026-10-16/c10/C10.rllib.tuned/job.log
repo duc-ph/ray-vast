@@ -1,0 +1,15 @@
+2026-10-16 09:04:01,256	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-16 09:04:01,271	INFO cli.py:569 -- 2026-10-16 02:03:30,088	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c10-rllib-tuned-1792141409: python c10_rllib.py tuned
+C10_START C10.rllib tuned 1792141412.2 guard_s=900.0
+2026-10-16 02:03:32,157	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 44.252.8.102:6379...
+2026-10-16 02:03:32,190	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=24.0 ports=14 budget=10
+C10_PARAMS {'num_env_runners': 2, 'num_envs_per_env_runner': 20, 'environments': 40, 'num_cpus_per_env_runner': 1}
+2026-10-16 02:03:36,693	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+[2026-10-16 02:03:36,831 E 17539 17539] core_worker.cc:2297: Actor with class name: 'SingleAgentEnvRunner' and ID: '3686195d00bbea2b917cfc1b32000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(SingleAgentEnvRunner pid=90856, ip=143.55.45.86)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+2026-10-16 02:03:48,343	WARNING rl_module.py:463 -- DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+2026-10-16 02:03:50,790	INFO trainable.py:154 -- Trainable.setup took 14.072 seconds. If your trainable is slow to initialize, consider setting reuse_actors=True to reduce actor creation overheads.
+2026-10-16 02:03:50,790	WARNING util.py:62 -- Install gputil for GPU system monitoring.
+C10_JOB C10.rllib COMPLETED {"alive_nodes": ["dae192fcef64a12b6e77035f2d47a71d6e91797083bccd227d6a0151"], "elapsed_s": 20.8, "environments": 40, "learner_nodes": {}, "mode": "tuned", "num_cpus_per_env_runner": 1, "num_env_runners": 2, "num_envs_per_env_runner": 20, "returns": [20.23015873015873], "runner_nodes": {"dae192fc": 2}, "seconds": 16.0, "worker_nodes": 1}

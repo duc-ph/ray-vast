@@ -541,3 +541,77 @@ Product bugs from C9:
 1. `--num-cpus` = the real core count ignores the container's pids limit. On hosts with many cores, a normal Data job kills the node. A possible fix: cap `--num-cpus` (or the worker count) by `pids.max`, for example (pids.max − 400) / 50.
 2. The bootstrap destroys the worker when it cannot start a thread for a heartbeat call (`RuntimeError` is not in `NET_ERRORS`).
 3. The head log cuts a worker's destroy reason at 300 characters, so the traceback of bug 2 is cut before the error line.
+
+## Live cycle C10: process limits of the Ray libraries (2026-10-16)
+
+Setup: `ray-vast up --wheel` of main f258c78 (design (a) with the `pids-tuning` constants: 60 threads for each worker port, reserve 400, soft limit = ports // 2) from the dev box. EC2 `t3.large` heads, us-west-2, image `rayproject/ray:2.59.0-py311-gpu`. Phase A: cluster `rvtest-c10a`, one worker. Phase B: cluster `rvtest-c10b` (2 `gpu` workers, `gpu2` for R2). All jobs used `ray job submit --working-dir` through the `dashboard` tunnel and `run_c10.py`. Data: `archive/results/2026-10-16/` (`progress.md`, `spend.md`, `c10/`; `c10/results.jsonl` has one row for each run).
+
+Hosts and limits (from `c10_probe.py` and the bootstrap log):
+
+| Host | Where | pids.max | Ray CPUs | Worker ports | Soft limit |
+|---|---|---|---|---|---|
+| m33638 RTX 5060 Ti (phase A, host retry, rented 3 times) | TX | 7680 | 128 | 58 | 29 |
+| m3969 Tesla P100 (phase A worker; phase B worker) | TX | 1280 (cgroup v1) | 24 | 14 | 7 |
+| m8966 RTX 3090 (phase B worker) | CZ | 1280 | 32 | 14 | 7 |
+| m55704 2x CMP 170HX (phase B `gpu2`, R2) | HU | not probed (it came after the probes) | | | |
+
+### Phase A: the pairs (m3969, pids.max 1280, 14 ports, budget 10)
+
+"WARNING" is the head's process-limit line for the worker (`... is at its process limit: 0 refused forks/threads (+0), pids N of 1280, worker ports in use 14 of 14 ...`). "pids" is the highest value in those lines (cgroup v1 has no `pids.peak`). Every run: the worker stayed enrolled, `pids.events` stayed `max 0`, no node crash.
+
+| Test | Result | Settings | Time | WARNING lines (pids) | Evidence |
+|---|---|---|---|---|---|
+| C10.core.tuned | PASS | 200 items on 5 actors, `num_cpus` 2.4 | 17 s | 0 | `c10/C10.core.tuned/` |
+| C10.core.many | PASS (HUNG at the 600 s guard, 0 of 200 done) | 200 actors, `num_cpus` 0.06 | 600 s | 2 (496) | `c10/C10.core.many/` |
+| C10.data.tuned | **FAIL**: `RaySystemError: Failed to startup worker after retrying 5 times ... name=_shuffle_block` | aggregators 2, read 2, map 2, `resource_limits` cpu 2, 400 blocks | 560 s | 2 (511) | `c10/C10.data.tuned/` |
+| C10.data.many | PASS (HUNG at the 900 s guard) | Ray Data defaults, 400 blocks | 900 s | 3 (527) | `c10/C10.data.many/` |
+| C10.data.tuned2 (added) | PASS | as tuned, plus `override_num_blocks` = budget // 2 = 5 | 16 s | 0 | `c10/C10.data.tuned2/` |
+| C10.tune.tuned | PASS (60 trials, 0 errors) | `max_concurrent_trials` 5 | 119 s | 0 | `c10/C10.tune.tuned/` |
+| C10.tune.many | PASS (HUNG) | 60 trials at once | 600 s | 2 (546) | `c10/C10.tune.many/` |
+| C10.serve.tuned | PASS (40 answers) | 5 replicas, `num_cpus` 1 | 23 s | 0 | `c10/C10.serve.tuned/` |
+| C10.serve.many | PASS (HUNG in `serve.run`, no crash) | 60 replicas, `num_cpus` 0.1 | 600 s | 2 (812) | `c10/C10.serve.many/` |
+| C10.train.tuned | PASS | 5 workers, 1 CPU, DataLoader 2 | 133 s (incl. the torch install) | 0 | `c10/C10.train.tuned/` |
+| C10.train.many | PASS (HUNG) | 40 workers, 0.59 CPU | 900 s | 3 (533) | `c10/C10.train.many/` |
+| C10.rllib.tuned | PASS (1 iteration) | 2 env runners × 20 envs | 21 s | 0 | `c10/C10.rllib.tuned/` |
+| C10.rllib.many | PASS (HUNG in the build) | 40 env runners, 0.575 CPU | 900 s | 3 (500) | `c10/C10.rllib.many/` |
+
+Cause of C10.data.tuned: the hash shuffle starts one `_shuffle_block` task (1 CPU) for each input block that arrives. `execution_options.resource_limits` does not cap these tasks: the job log shows 16 of them at once ("Resources: 16.5 CPU") with a limit of 2. With 24 Ray CPUs they needed more processes than the 14 ports. A task that cannot get a worker process fails after 5 start tries. So a port shortage can make a task fail, not only wait. The local check (4 Ray CPUs) did not show this. With fewer, larger blocks (`override_num_blocks` = budget // 2), at most 5 shuffle tasks run at once, and the job passed.
+
+### Phase B: C9 Data re-runs without `C9_DATA_CPU`, RLlib (m3969 and m8966, both pids.max 1280, 14 ports)
+
+| Test | Result | Key numbers | Evidence |
+|---|---|---|---|
+| C10.c9.1.1 (C9.1.1) | PASS | 10M rows, 24 s, 843 634 rows/s, tasks on 3 nodes | `c10/C10.c9.1.1/` |
+| C10.c9.1.3 (C9.1.3) | FAIL, no crash | `RaySystemError: Failed to startup worker after retrying 5 times ... _shuffle_block` after 695 s; WARNING on both workers (ports 14 of 14) | `c10/C10.c9.1.3/` |
+| C10.c9.1.4 (C9.1.4) | FAIL, no crash | the same error in its `groupby` after 838 s | `c10/C10.c9.1.4/` |
+| C10.c9.1.6 (C9.1.6) | PASS (FAIL in C9) | 400 blocks in 45 s, 13 processes per node, 24 tasks at once | `c10/C10.c9.1.6/` |
+| C10.rllib.R1 | PASS | PPO CartPole, 4 env runners (12 CPUs each), 2 on each node, 2 iterations, return 24.1 → 32.5 | `c10/C10.rllib.R1/` |
+| C10.rllib.R3 | LIMIT | 2 learners (1 GPU each) on 2 nodes; no answer in 900 s at the build stage. Run 1 log: `[c10d] The server socket on [...]:54603 has timed out, will retry` (a random port, as in C9.3.2) | `c10/C10.rllib.R3/`, `c10/C10.rllib.R3-run1/` |
+| C10.rllib.R2 | PASS (run 3) | Tune + `placement_strategy="STRICT_PACK"`: the autoscaler started `gpu2` (m55704); 2 learners on 1 node, 2 iterations, 0 errors, 115 s | `c10/C10.rllib.R2/`, `-run1/`, `-run2/` |
+
+No node crashed in C10 (no "asks to be destroyed" line, no ERROR line in the head logs). In C9 the same Data jobs killed nodes.
+
+### Every workaround, test-script change, and failed or INCONCLUSIVE run
+
+1. **Offer query (phase A).** The spec query (`compute_cap` 600–899, `gpu_ram`, `dph_total` ≤ 0.45, CPU 32) had 0 offers. First change: `num_gpus` = 1, `dph_total` ≤ 0.70 (4 offers).
+2. **Host retry did not find a limited host.** The first `big` worker (m33638) had pids.max 7680. The retry destroyed it, and the provider rented the same machine again (twice): the provider does not block a destroyed host, so the retry rents the cheapest offer again. I stopped `run_c10.py` and ran `down` (`c10/a1_host_retry/`).
+3. **Phase A node type changed** to `offer_query: {machine_id: {in: [3969, 32816]}}`, `resources: {CPU: 4, GPU: 1}`: the 2 hosts with pids.max 1280 in C9. So phase A ran on a 24-CPU host, not a 32+ core host.
+4. **Runner bug: lost job logs.** `run_c10.py` wrote `job.log`, then the cleanup job overwrote it. For core.tuned, core.many, data.tuned and data.many, I fetched the logs again with `ray job logs`. Fixed: one file name for each job.
+5. **C10.data.tuned FAIL** (above). Added sub-test C10.data.tuned2 (`override_num_blocks` = budget // 2): PASS.
+6. **Runner restarted** after data.many with the fixed script and the new test. A started tune.tuned job was stopped (`c10/C10.tune.tuned-stopped/`), then tune.tuned ran again in full.
+7. **"No available ports" count is not a delta.** Ray removes old `worker-*.err` files, so post − pre is sometimes negative (serve.many −27, train.many −5, rllib.many −11). The verdict on vast does not use it (it uses the head WARNING line).
+8. **cgroup v1 hosts have no `pids.peak`.** The pids numbers come from the WARNING lines (one sample per heartbeat).
+9. **R3 run 1 stopped by hand:** the runner timeout (1500 s) was equal to the R3 guard (1500 s), so the runner would stop the job first. Re-run with `C10_GUARD_S=900`: LIMIT. The runner timeout for R3 is now 2400 s.
+10. **R2 run 1 FAIL (test bug):** the job waited for a 2-GPU node, but nothing asked for one, so the autoscaler never started `gpu2`; the guard printed HUNG and no `C10_RESULT` line. Change: run PPO through Tune (`config.algo_class`) with `placement_strategy="STRICT_PACK"`, no remote env runners; checked locally first.
+11. **R2 run 2 FAIL (Ray limit, as C9.2.4):** 2 iterations ran on 2 GPUs of one node, then Tune's checkpoint at the end failed: `Unable to set up cluster storage` (local storage on a multi-node cluster). Change: `CheckpointConfig(checkpoint_at_end=False)`. Run 3: PASS.
+12. **C10.c9.1.3 and C10.c9.1.4 FAIL** (the hash shuffle error of item 5; no crash).
+13. **C10.rllib.R3 LIMIT** (expected).
+14. No many test was INCONCLUSIVE in the final runs. The 3 rentals of item 2 were the host retry, not results.
+
+Cost: vast $1.5618 (credit 7.7294 → 6.1676, no top-up; the poll estimate is $1.19). 14 rentals, peak about $1.48/h. EC2 about $0.35 (3 heads, about 4 h).
+
+Product bugs: none found in ray-vast. Findings for the design and the docs:
+- The port cap works: every many test hung or failed, the worker stayed alive with 0 refused forks, and the head WARNING named the worker. pids stayed at 466–812 of 1280.
+- A port shortage can also make a task fail: after 5 failed worker starts, Ray fails the task (`RaySystemError: Failed to startup worker after retrying 5 times`). The user docs say "queue, hang or fail"; this is the "fail" case.
+- Ray Data's hash shuffle (`groupby`, and C9's `random_shuffle` and `groupby`) does not respect `execution_options.resource_limits` for its `_shuffle_block` tasks. On a node with more CPUs than ports, a `groupby` fails unless the user also limits the blocks (`override_num_blocks`).
+- The host retry of the test cannot avoid the same machine (the provider does not block a destroyed host). A test that needs a property of a host (here a pids limit) must name the machines.
