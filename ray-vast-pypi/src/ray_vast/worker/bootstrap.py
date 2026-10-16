@@ -30,8 +30,10 @@ CGROUP_DIR = os.environ.get("RAYVAST_CGROUP_DIR", "/sys/fs/cgroup")  # the overr
 # raylet starts at most this many worker processes at the same time. The worker port count follows from pids.max.
 GRPC_THREADS = 4
 STARTUP_CONCURRENCY = 8
-PIDS_RESERVE = 400  # threads of the fixed Ray processes (about 150), STARTUP_CONCURRENCY starting processes, the bootstrap
-PIDS_PER_WORKER = 35  # threads of one Ray worker process (25 to 28) plus 7 to 10 for the user's own threads
+# PIDS_RESERVE: the fixed Ray processes and the bootstrap (about 160), STARTUP_CONCURRENCY starting processes (8 x 25; a
+# process that finds no free port also starts before it exits) and 40 of headroom.
+PIDS_RESERVE = 400
+PIDS_PER_WORKER = 60  # the heaviest worker process (a Serve replica: 50 threads) plus 10 for the user's own threads
 MIN_WORKER_PORTS = 4
 WORKER_PORT_IDS = range(70006, 70064)  # the identity ports for Ray worker processes (5.5)
 # Inode of the initial network namespace (new kernels, old kernels). A container with its own netns has another one.
@@ -75,11 +77,13 @@ def worker_ports_and_soft_limit(cpus, pids_max):
 
     A worker process needs a free worker port, so the port count caps the registered worker processes. A process that
     finds no free port exits, and its task or actor waits: the worker queues work instead of a failed thread start.
+    The raylet keeps idle workers up to the soft limit, and it never ends an idle worker to free a port. So the soft
+    limit is at most half the ports: a job that needs a new kind of worker (another runtime env) finds a free port.
     """
     ports = len(WORKER_PORT_IDS)
     if pids_max is not None:
         ports = max(MIN_WORKER_PORTS, min(ports, (pids_max - PIDS_RESERVE) // PIDS_PER_WORKER))
-    return ports, min(cpus, ports)
+    return ports, min(cpus, ports // 2)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
