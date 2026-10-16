@@ -89,7 +89,7 @@ Settings that use fewer worker processes:
 
 | Library | Setting |
 |---|---|
-| Ray Data | `DataContext.get_current().max_hash_shuffle_aggregators = 4` (for `groupby` and other hash shuffles). `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`. `map_batches(..., concurrency=N)`. |
+| Ray Data | For `groupby` and other hash shuffles, use both: `DataContext.get_current().max_hash_shuffle_aggregators = 4` and `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`, with N below the worker ports minus the aggregators. Read [Ray Data: limit the CPUs](run-your-workload.md#ray-data-limit-the-cpus). For a map, `map_batches(..., concurrency=N)`. |
 | Ray Core | Give each actor `num_cpus=1`. An actor with the default `num_cpus` uses 0 CPUs when it runs, so many actors fit on one node. A task with a small `num_cpus` (for example 0.05) has the same effect. |
 | Ray Tune | `tune.TuneConfig(max_concurrent_trials=N)`. |
 | Ray Serve | A smaller `num_replicas`. |
