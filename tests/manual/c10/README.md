@@ -75,7 +75,10 @@ python3 tests/manual/c10/local_check.py /tmp/c10local c10_core.py:tuned c10_core
 
 One container `c10-<job>-<mode>` for each run: `--pids-limit 1280`, `ray start --head --num-cpus 48`, 24 worker ports
 (`C10L_PORTS`), `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8`,
-`RAY_num_workers_soft_limit` = the port count. The local node also runs the head processes and the driver (about 470 pids
+`RAY_num_workers_soft_limit` = the port count (`C10L_SOFT`). The local node also runs the head processes and the driver (about 470 pids
 when idle, a vast worker has about 300), so it has fewer pids for workers than a vast worker with the same limit. There is
 no ray-vast head, so the local verdict uses the "No available ports" lines in the node's `worker-*.err` logs in place of
 the head WARNING line. GPU jobs (R2, R3 with GPUs) cannot run here: `C10_GPU=0` runs them on CPU on one node.
+The torch jobs use much memory (one torch process for each Train worker or env runner). On the dev box (4 cores, 16 GB) run them on
+a smaller node: `C10L_PORTS=12 C10_SCALE=0.1`, and for R1 to R3 also `C10_MIN_NODES=1 C10_GPU=0`. Use `C10_GUARD_S=180` (Tune
+tuned needs about 75 s; use 400). The results of the local check are in the test plan (C10.5).

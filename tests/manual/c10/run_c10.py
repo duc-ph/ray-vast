@@ -204,12 +204,19 @@ def main():
     print(f"== probe {json.dumps(first)[:600]}", flush=True)
     limited = [n for n, v in first.items() if pids_max(v) is not None and pids_max(v) <= PIDS_LIMIT_MAX]
     if phase == "a" and not limited:
-        print(f"!! no worker has pids.max <= {PIDS_LIMIT_MAX}: the many tests will be INCONCLUSIVE", flush=True)
+        print(f"!! no worker has pids.max <= {PIDS_LIMIT_MAX}: the many tests are INCONCLUSIVE and do not run", flush=True)
     for test_id, script, args, kind, torch, timeout in PLAN[phase]:
         if wanted and test_id not in wanted:
             continue
         out_dir = root / test_id
         out_dir.mkdir(exist_ok=True)
+        if kind == "many" and not limited:  # no node with a pids limit: the test cannot show the limit; do not run it
+            row = {"id": test_id, "status": "INCONCLUSIVE", "data": {"reasons": [f"no worker has pids.max <= {PIDS_LIMIT_MAX}"],
+                                                                      "probe": first}}
+            with open(root / "results.jsonl", "a") as f:
+                f.write(json.dumps(row, default=str) + "\n")
+            print(f"C10_RESULT {test_id} INCONCLUSIVE {json.dumps(row['data'], default=str)[:600]}", flush=True)
+            continue
         print(f"== {test_id} {script} {' '.join(args)} (timeout {timeout} s) {time.strftime('%H:%M:%S')}", flush=True)
         t0 = time.time()
         pre = probe(out_dir, "pre")

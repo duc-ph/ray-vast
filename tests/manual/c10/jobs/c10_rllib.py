@@ -36,7 +36,7 @@ def actor_nodes(word):
 
 
 def r3_guard(guard_s):
-    learners = actor_nodes("RayTrainWorker")
+    learners = actor_nodes("_WrappedExecutable")  # the learner actors (Ray Train worker group)
     status = "LIMIT" if PROGRESS.get("stage") == "build" and len(learners) >= 2 else "FAIL"
     result(f"{ID}.R3", status, {"error": f"no answer in {guard_s} s at stage {PROGRESS.get('stage')}", "learner_nodes": learners})
 
@@ -68,7 +68,9 @@ try:
     t = time.time()
     algo = config.build_algo()
     PROGRESS["stage"] = "train"
-    learner_nodes, runner_nodes = actor_nodes("RayTrainWorker"), actor_nodes("EnvRunner")
+    group = getattr(algo.learner_group, "_backend_executor", None)  # None: one local learner in the driver
+    learner_nodes = dict(collections.Counter(group.worker_group.execute(lambda: ray.get_runtime_context().get_node_id()[:8]))) if group else {}
+    runner_nodes = actor_nodes("EnvRunner")
     returns = []
     for _ in range(1 if mode in ("many", "tuned") else 2):
         out = algo.train()
@@ -90,6 +92,6 @@ if mode == "r1":
     ok = ok and len(runner_nodes) >= MIN_NODES
 elif mode == "r2":
     ok = ok and len(learner_nodes) == 1 and sum(learner_nodes.values()) == 2
-else:  # r3 that worked: unexpected on vast (a LIMIT is expected), PASS in a local check on one node
-    ok = ok and sum(learner_nodes.values()) == 2
+else:  # r3 that worked: unexpected on vast (a LIMIT is expected), PASS in a local check on one node (C10_MIN_NODES=1)
+    ok = ok and sum(learner_nodes.values()) == 2 and len(learner_nodes) >= min(2, MIN_NODES)
 result(f"{ID}.{mode.upper()}", "PASS" if ok else "FAIL", data)

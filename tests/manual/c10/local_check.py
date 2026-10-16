@@ -7,8 +7,9 @@
 # Usage (dev box, from the repository root):
 #   docker build -t c10-local:torch <dir with a Dockerfile: FROM rayproject/ray:2.59.0-py311-cpu + pip torch==2.7.1 (CPU)>
 #   python3 tests/manual/c10/local_check.py <out dir> c10_core.py:tuned c10_core.py:many ...
-# Env: C10L_IMAGE (c10-local:torch), C10L_PORTS (24), C10L_CPUS (48), C10L_KEEP=1 (keep the container). Every C10_* variable
-# goes to the job (C10_GUARD_S default 90, C10_SCALE default 1; C10_MIN_NODES=1 and C10_GPU=0 for the RLlib R1-R3). Every container is removed at the end, also after an error.
+# Env: C10L_IMAGE (c10-local:torch), C10L_PORTS (24), C10L_CPUS (48), C10L_SOFT (the port count), C10L_KEEP=1 (keep the container). Every C10_* variable
+# goes to the job (C10_GUARD_S default 90, C10_SCALE default 1; C10_MIN_NODES=1 and C10_GPU=0 for the RLlib R1-R3).
+# Every container is removed at the end, also after an error.
 import json
 import os
 import re
@@ -25,6 +26,7 @@ from run_c10 import events_max, verdict  # noqa: E402
 IMAGE = os.environ.get("C10L_IMAGE", "c10-local:torch")
 PORTS = int(os.environ.get("C10L_PORTS", "24"))
 CPUS = int(os.environ.get("C10L_CPUS", "48"))
+SOFT = int(os.environ.get("C10L_SOFT", PORTS))  # RAY_num_workers_soft_limit: idle workers above it end
 JOB_ENV = dict({"C10_GUARD_S": "90", "C10_SCALE": "1"}, **{k: v for k, v in os.environ.items() if k.startswith("C10_")})
 
 
@@ -47,7 +49,7 @@ def run_one(out_root, script, mode):
     sh("docker", "rm", "-f", name)
     code, cid = sh("docker", "run", "-d", "--name", name, "--pids-limit", "1280", "--shm-size", "2g",
                    "-e", "RAY_num_grpc_internal_threads=4", "-e", "RAY_worker_maximum_startup_concurrency=8",
-                   "-e", f"RAY_num_workers_soft_limit={PORTS}",
+                   "-e", f"RAY_num_workers_soft_limit={SOFT}",
                    "-v", f"{HERE / 'jobs'}:/c10/jobs:ro", "-v", f"{HERE.parent / 'c9' / 'jobs'}:/c9/jobs:ro", "-w", workdir, IMAGE,
                    "ray", "start", "--head", f"--num-cpus={CPUS}", "--object-store-memory=1000000000",
                    f"--worker-port-list={ports}", "--disable-usage-stats", "--block")

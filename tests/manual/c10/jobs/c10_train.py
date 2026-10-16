@@ -54,6 +54,6 @@ try:
     seconds = time.time() - t
 except Exception as e:
     finish(ID, mode, "ERROR", dict(error_info(e), progress=dict(PROGRESS)))
-kind = "COMPLETED" if res.error is None and "loss" in (res.metrics or {}) else "ERROR"
+kind = "COMPLETED" if res.error is None else "ERROR"  # Train V2 keeps metrics only with a checkpoint (C9): no loss check
 finish(ID, mode, kind, dict(params, loss=(res.metrics or {}).get("loss"), error=str(res.error)[:500] if res.error else None,
                             seconds=round(seconds, 1)))

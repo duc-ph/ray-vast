@@ -15,6 +15,7 @@ Before a cycle runs, it must be written here with: setup, steps, expected output
 | L5 Live vast | C5, C6 | EC2 head + vast | ~$1 | step 12 |
 | L6 Live scale | C8 | EC2 head + vast | ~$3 | step 12, before release |
 | L7 Ray libraries | C9 | EC2 head + vast | ~$2 | step 12, before the docs of step 13 |
+| L8 Process limits | C10 | EC2 head + vast | ~$3 | after the pids/ports change of ray-vast |
 
 The commands for the fast and the full run are in [CONTRIBUTING.md](../ray-vast-pypi/CONTRIBUTING.md).
 
@@ -269,6 +270,99 @@ Record: `T_submit`, first rental, first `running`, first and 4th node ALIVE, `C8
 - A "Ray library support" table for the user docs: library, what works, what does not, what the user must do (for example shared storage for Tune and Train checkpoints, a tunnel for Serve HTTP).
 - Teardown as for all cycles: `down`, sweep to 0, AWS check, secret scan.
 
+## Cycle C10: process limits of the Ray libraries (L8)
+
+**Goal:** find the exact advice for the user. A vast container can have a cgroup pids limit (`pids.max` 1280 on the C9 hosts). Each Ray worker process has threads (about 25 with `RAY_num_grpc_internal_threads=4`). With the pids/ports change of ray-vast, a worker node gets fewer worker ports when `pids.max` is set (ports = min(58, (pids.max − reserve) // threads per process)). The port count is a hard cap on the worker processes of a node. So the expected failure for "too many processes" is a hang or an error, not a node crash. For each library, C10 has a pair of tests:
+
+- **many**: the library with its default settings, or a normal user setting, makes more worker processes on one node than the node has ports. Expected: the job fails (a hang that the guard catches, or an error); the head writes its pids/ports WARNING line for the node; the node does not crash.
+- **tuned**: the same work with the advised settings. Expected: the job completes; no refused fork.
+
+The "tuned" settings of all pairs are the advice table for the user docs.
+
+**Scripts:** `tests/manual/c10/` (see its README). `run_c10.py` runs the tests and decides; `local_check.py` is the local check.
+**Image:** `rayproject/ray:2.59.0-py311-gpu`. Train and RLlib need PyTorch: `runtime_env` `pip` `torch==2.7.1`, as in C9. The image has `gymnasium` 1.2.2 for RLlib (checked in the CPU image of the same tag; R1 records it on the GPU image).
+**Budget:** vast $5.00 (more is allowed); EC2 about $0.40. Estimate below.
+**Data:** `archive/results/$DATE/c10/`, one directory for each test (see the README).
+**Rule:** do not fix product code during the cycle. Report.
+
+### C10.0 Terms and the advice rule
+- **ports**: the worker ports of a node: the size of the raylet's `--worker_port_list` (the probe reads it from the raylet command line).
+- **budget**: ports − 4. The 4 ports are for the worker processes that Ray's libraries start next to the user's work (Serve proxy, Data and Train helpers, the probe).
+- **Advice rule:** on each node, keep the worker processes of the user's work (tasks that run at the same time, actors, trials, replicas, Train workers, env runners) at or below the budget. A task or actor that waits for another task needs a process for both.
+- **Idle workers:** the raylet keeps idle worker processes up to `RAY_num_workers_soft_limit`, and an idle worker holds its port. In the local check, with the soft limit equal to the port count, 7 idle workers held 7 of 12 ports and C10.train.tuned hung; with a soft limit of 2 it passed. The tuned results are valid only for the soft limit that the probe records.
+
+### C10.0 Node types and order
+- **Phase A** (`cluster_a.yaml`, cluster `rvtest-c10a`): one worker of type `big`, `max_workers: 1`. `resources: {CPU: 32, GPU: 1}`, so ray-vast adds `cpu_cores_effective >= 32`. Offer query: `num_gpus = 1`, `gpu_ram` 8–70 GB, `compute_cap` 600–899, `dph_total <= 0.45`, and the test-only `inet_down`/`inet_up >= 500`. All pair tests run here. With one worker, every process of a test lands on the node under test.
+- **Phase B** (`cluster_b.yaml`, cluster `rvtest-c10b`): the C9 layout. 2 workers of type `gpu` (`{CPU: 4, GPU: 1}`), and type `gpu2` (`{CPU: 4, GPU: 2}`, `min_workers: 0`) for R2. Phase B starts after the teardown of phase A.
+- **pids.max is known only after the rental.** `run_c10.py` first runs `c10_probe.py` on each worker: `pids.max`, `pids.current`, `pids.peak`, `pids.events`, the ports, the threads, the Ray worker processes. The probe also records `RAY_num_workers_soft_limit`, `RAY_num_grpc_internal_threads` and `RAY_worker_maximum_startup_concurrency` from the raylet's environment. If no worker has `pids.max` ≤ 3328, the runner does not run the many tests and records them as INCONCLUSIVE (never a false PASS). It still runs the tuned tests. Then, if the budget allows, end the phase, rent again (`ray-vast down` and `up`) and run the many tests on the new host.
+- **Order in phase A:** for each library, tuned first, then many (a many test can leave the node in a bad state): Core, Data, Tune, Serve, Train, RLlib.
+- **Order in phase B:** C9.1.1, C9.1.3, C9.1.4, C9.1.6 (C9 jobs without `C9_DATA_CPU`), then R1, R3, R2 (R2 starts `gpu2`, so it is last).
+
+### C10.0 For each test (run_c10.py)
+1. Probe the worker nodes (pre). Note the line count of the head log (`monitor.log` in `ray-vast-head`, by SSH).
+2. Submit the job with `C10_PORTS` and `C10_CPUS` of the node from the probe. Wait for its end. At the runner timeout, `ray job stop`.
+3. Run `c10_cleanup.py` (Serve shutdown). Wait 30 s. Probe again (post; again every 30 s for up to 5 min while the probe fails).
+4. Keep the new head log lines (`head_slice.log`). The head pids/ports WARNING lines for the node: lines that match `WARNING_PATTERN` (one constant in `run_c10.py`: `WARNING` and `pid`/`pids`/`port`/`ports`) and that name the node (Ray node ID, vast instance ID or IP).
+5. Decide and print `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>`.
+
+**Guards:** each job has a wall-clock guard (`C10_GUARD_S`; default 600 s, Data and Train 900 s, R1–R3 1500 s). The guard prints `C10_JOB <id> HUNG` with the job's progress. The runner timeout is longer than the guard (900–3600 s).
+
+**Verdict of a many test:** PASS = the job failed as expected (HUNG or ERROR) AND the head pids/ports WARNING line names the node AND the node did not crash (the same Ray node ID is alive in the post probe). FAIL if the job completed (no advice is needed at that size; record the numbers), if the node crashed, or if the WARNING line is missing. INCONCLUSIVE if `pids.max` of the node is unset or above 3328.
+**Verdict of a tuned test:** PASS = the job completed AND the node is alive AND `pids.events` ("max N") did not change AND no head WARNING line about refused forks or pids for the node.
+**Root cause for the user:** each many test also records the "No available ports" lines in the node's `worker-*.err` logs (`Failed to register worker to Raylet: Invalid: No available ports`). With the head WARNING line, the user finds the cause in two places. Record whether the error that the driver shows names the cause (it usually does not: the job only hangs).
+
+### C10.1 Pairs (phase A)
+
+| ID | many (Ray defaults or a normal user setting) | tuned (the advice) |
+|---|---|---|
+| C10.core | 200 work items on 200 actors (`num_cpus=0.1`), each actor call waits for a child task (`num_cpus=0.1`) | the same 200 items on a pool of budget // 2 actors; `num_cpus` = CPUs / budget for actors and tasks |
+| C10.data | `range` (400 blocks) → `map_batches(num_cpus=0.05)` → `groupby().count()`, Ray Data defaults (aggregators = min(CPUs, 128)) | a quarter of the budget each: `DataContext.max_hash_shuffle_aggregators`, read `concurrency`, `map_batches(compute=TaskPoolStrategy(size=...))`, `execution_options.resource_limits = ExecutionResources(cpu=...)` (the shuffle tasks) |
+| C10.tune | 60 trials, each a placement group of 2 bundles of 0.1 CPU (the trial and its evaluation task), all at once | `TuneConfig(max_concurrent_trials=budget // 2)` |
+| C10.serve | 60 replicas, `num_cpus=0.1` | `num_replicas` = budget // 2, `ray_actor_options={"num_cpus": 1}` |
+| C10.train | `TorchTrainer` (gloo, CPU), `num_workers` = max(ports + 4, 40), at most CPUs − 1; each worker has a `DataLoader` with 2 worker processes | `num_workers` = budget // 2 |
+| C10.rllib | PPO CartPole, `num_env_runners` = max(ports + 4, 40), at most CPUs − 1, 1 env each | 2 env runners with the same number of envs (`num_envs_per_env_runner`) |
+
+Train can go above the limit: Ray Train places one worker process for each worker in one placement group; with 1 CPU each, a 32+ core node accepts more workers than it has ports. So C10.train.many is a real test, not N/A.
+
+### C10.2 C9 Data re-runs (phase B)
+C9.1.1, C9.1.3, C9.1.4 and C9.1.6 with the C9 scripts and settings, without `C9_DATA_CPU`. Expected: no node crash (no worker destroyed, no "asks to be destroyed" line). Record PASS or hang for each, the WARNING lines and the refused forks of each node.
+
+### C10.3 RLlib functional (phase B, first RLlib tests)
+1. **R1:** PPO CartPole, 4 env runners on 2 nodes (`num_cpus_per_env_runner` = half of the smallest node's CPUs), 2 training iterations. PASS expected.
+2. **R3:** 2 learners with 1 GPU each on 2 nodes. Expected: LIMIT (RLlib's learners use `torch.distributed` through Ray Train's `TorchConfig`; the rendezvous uses a random port, as in C9.3.2). RLlib has no setting for the rendezvous timeout (1800 s), so the guard (1500 s) gives LIMIT when the learners are on 2 nodes in the build stage.
+3. **R2:** 2 learners with 1 GPU each on one `gpu2` node. PASS expected.
+
+### C10.4 Cost estimate
+| Item | Time | Rate | Cost |
+|---|---|---|---|
+| Phase A worker (`big`), incl. 2 candidates at `up` | about 2 h (6 many tests × up to 15 min, 6 tuned, torch install) | $0.30–0.45/h | $0.60–0.90 |
+| Phase B 2 `gpu` workers | about 1.5 h | $0.35/h | $0.55 |
+| Phase B `gpu2` for R2 | about 0.3 h | $0.50–1.10/h | $0.15–0.35 |
+| EC2 `t3.large` head, 2 clusters | about 4 h | $0.083/h | $0.35 |
+| Total | | | about $1.70–2.20; re-runs ×1.5: under $3.50 |
+
+### C10.5 Local check (dev box, before the rental)
+`local_check.py`, 2026-10-16: one container per run, `--pids-limit 1280`, 48 Ray CPUs, `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8`, soft limit = ports unless noted. The local node also runs the head and the driver (about 460 pids before the job), so it has about 160 fewer pids for workers than a vast worker with the same limit. The local verdict uses the "No available ports" lines in place of the head WARNING line.
+
+| Run | Ports | tuned | many | many: peak pids, worker processes, refused forks |
+|---|---|---|---|---|
+| Core | 24 | PASS, 10 s | HUNG at the guard | 1144, 32 (incl. failed starts), 0 |
+| Data | 24 | PASS, 38 s | HUNG | 1161, 32, 0 |
+| Tune | 24 | PASS, 74 s | HUNG | 1186, 30, 0 |
+| Serve | 24 | PASS, 13 s | node CRASH (2 of 3 runs) or HUNG with 23 refused forks | 1280, 31, 15–23 |
+| Serve | 20 | PASS, 12 s | HUNG | 1198, 27, 0 |
+| Train | 12 | HUNG (idle workers hold the ports) | HUNG | 813, 19, 0 |
+| Train, soft limit 2 | 12 | PASS, 24 s | HUNG | 824, 19, 0 |
+| RLlib | 12 | PASS, 13 s | HUNG | 809, 18, 0 |
+| RLlib R1, R2, R3 (1 node, CPU) | 12 | R1, R2, R3 PASS (code path only) | | |
+
+Threads for each worker process (from these runs): Core actor or task about 25, Ray Train worker about 20, RLlib env runner about 26, **Serve replica about 35**. A raylet that cannot fork (`worker_pool.cc:731: Failed to start worker with return value system:11`) ends, so the node dies. A port count that uses 25 threads for each process is not safe for Serve replicas.
+
+### C10.6 Teardown and outputs
+- Teardown as for all cycles, for each cluster: copy the head logs, the secret scan, `ray-vast down`, `vast_tool.py sweep` until 0, the AWS check.
+- Each test has a row in the Results table of `test-results.md`: id, status, key numbers (ports, `pids.max`, processes, threads, pids peak, time), the evidence path.
+- The advice table for the user docs (Reference → Limits): the tuned setting of each library, as a rule relative to the node's port count.
+
 ## Results
 
 Fill one row for each test after its cycle, with a link to the data in `archive/results/<date>/`.
@@ -284,3 +378,4 @@ Fill one row for each test after its cycle, with a link to the data in `archive/
 | Restart | | | C6.3 |
 | L6 | | submit → all workers running; peak $/h; scale-down time; cost | C8 |
 | L7 | | each C9 sub-test: PASS / FAIL / LIMIT, key numbers | C9 |
+| L8 | | each C10 test: PASS / FAIL / LIMIT / INCONCLUSIVE; ports, pids.max, processes, threads, pids peak, time | C10 |

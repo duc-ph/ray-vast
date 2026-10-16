@@ -111,6 +111,12 @@ def read_limits():
             ports = re.search(r"--worker_port_list=(\S+)", cmd)
             low, high = re.search(r"--min_worker_port=(\d+)", cmd), re.search(r"--max_worker_port=(\d+)", cmd)
             out["ports"] = len(ports.group(1).split(",")) if ports else int(high.group(1)) - int(low.group(1)) + 1
+            try:  # the Ray settings of the pids/ports change, from the raylet's environment
+                env = dict(x.split("=", 1) for x in open(f"/proc/{pid}/environ", "rb").read().decode(errors="replace").split("\0") if "=" in x)
+                out["ray_env"] = {k: env.get(k) for k in ("RAY_num_workers_soft_limit", "RAY_num_grpc_internal_threads",
+                                                          "RAY_worker_maximum_startup_concurrency")}
+            except OSError:
+                pass
     out.update(threads=threads, worker_processes=workers, cpu_count=os.cpu_count())
     # Root cause in Ray's own logs: a worker process that the raylet started but could not give a port to ends with
     # "Failed to register worker to Raylet: Invalid: No available ports" in its worker-*.err file.
