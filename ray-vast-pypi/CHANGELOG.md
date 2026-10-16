@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- The process limit of vast containers (`pids.max`) no longer kills a worker under load. Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`, about 25 threads for each worker process, not about 50). The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`). A worker with a pids limit gets fewer worker ports: `(pids.max - 400) // 35`, from 4 to 58 (25 with a limit of 1280). Ray still gets all the cores as `CPU`. Too much work now waits for a port; it does not crash the node.
+- The worker decides `RAY_num_workers_soft_limit` (the smaller of the cores and the worker ports). The `/enroll` answer no longer has `num_workers_soft_limit`.
+- The worker logs one start line with the pids limit, the cgroup version, the cores, the Ray CPUs, the worker ports, the gRPC threads and the startup concurrency.
+- The heartbeat carries `pids_current`, `pids_max`, `pids_refused` and the worker ports in use. The head logs a WARNING in `monitor.log` when a worker's refused forks go up, all its worker ports are in use, or its pids are above 90 % of the limit (at most once in 5 minutes for each node). Read "A node is at its process limit" in the troubleshooting page.
+- A Ray Data CPU limit is no longer needed to keep a worker alive.
+
 ## 0.1.0 (2026-10-15)
 
 Changes since 0.1.0rc1:

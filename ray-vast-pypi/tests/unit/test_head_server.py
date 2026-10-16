@@ -404,3 +404,63 @@ def test_wrong_source_ip_and_wrong_token_gives_the_source_ip_reason(env):
     add_candidate(env, 11, ip="10.9.9.9")
     resp = enroll(env, 11, token="b2" * 32)
     assert resp.status_code == 403 and resp.json()["reason"] == "source IP does not match the instance public IP"
+
+
+def heartbeat(env, session, **status):
+    return requests.post(f"https://127.0.0.1:{env.port_b}/heartbeat", json={"instance_id": 11, **status}, **session)
+
+
+CALM = dict(pids_current=400, pids_max=1280, pids_refused=0, ports_in_use=3, ports_total=25)
+
+
+def pressure_lines(caplog):
+    return [r for r in caplog.records if "process limit" in r.getMessage()]
+
+
+def test_a_heartbeat_without_the_status_fields_is_still_accepted(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    assert heartbeat(env, worker_session(env, "10.0.0.5")).status_code == 200
+    assert heartbeat(env, worker_session(env, "10.0.0.5"), pids_current="x", ports_total=None).status_code == 200
+    assert env.state.candidates[11].last_heartbeat is not None and pressure_lines(caplog) == []
+
+
+def test_refused_forks_give_one_warning_that_names_the_node_and_the_numbers(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    heartbeat(env, session, **CALM)
+    assert pressure_lines(caplog) == []
+    heartbeat(env, session, **{**CALM, "pids_current": 1279, "pids_refused": 7, "ports_in_use": 25})
+    [record] = pressure_lines(caplog)
+    line = record.getMessage()
+    assert record.levelno == logging.WARNING
+    assert "slot-11" in line and "instance 11" in line and "10.0.0.5" in line
+    assert "7 refused" in line and "1279 of 1280" in line and "25 of 25" in line
+    assert "how-to/troubleshoot" in line
+
+
+@pytest.mark.parametrize("status", [
+    {**CALM, "ports_in_use": 25},  # all worker ports in use
+    {**CALM, "pids_current": 1200},  # above 90 % of pids.max
+])
+def test_full_ports_or_high_pids_warn_at_most_once_in_five_minutes(env, caplog, status):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    now = [1000.0]
+    env.server.clock = lambda: now[0]
+    heartbeat(env, session, **status)
+    now[0] += 290
+    heartbeat(env, session, **status)
+    assert len(pressure_lines(caplog)) == 1
+    now[0] += 20
+    heartbeat(env, session, **status)
+    assert len(pressure_lines(caplog)) == 2
+
+
+def test_more_refusals_warn_again_at_once(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    heartbeat(env, session, **{**CALM, "pids_refused": 3})
+    heartbeat(env, session, **{**CALM, "pids_refused": 3})
+    assert len(pressure_lines(caplog)) == 1
+    heartbeat(env, session, **{**CALM, "pids_refused": 9})
+    assert len(pressure_lines(caplog)) == 2 and "9 refused" in pressure_lines(caplog)[1].getMessage()

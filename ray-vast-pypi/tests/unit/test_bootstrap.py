@@ -44,10 +44,12 @@ class Run:
         self.ray_out = tmp_path / "ray_out.json"
         self.dir = tmp_path / "rayvast"  # RAYVAST_DIR: not the fixed /tmp/rayvast, so test runs can overlap
         self.stdout_path = tmp_path / "stdout.txt"
+        no_pids_limit = tmp_path / "cgroup-none"  # RAYVAST_CGROUP_DIR: the host's own cgroup must not decide the test
+        no_pids_limit.mkdir(exist_ok=True)
         env = world.env()
         env.update(
             PATH=os.environ["PATH"], PYTHONPATH=str(FAKE_RAY_DIR), FAKE_RAY_OUT=str(self.ray_out),
-            RAYVAST_DIR=str(self.dir), **FAST
+            RAYVAST_DIR=str(self.dir), RAYVAST_CGROUP_DIR=str(no_pids_limit), **FAST
         )
         env.update(env_overrides)
         self.proc = subprocess.Popen(
@@ -150,7 +152,8 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert env["LD_PRELOAD"] == f"{run.dir}/librayvast_shim.so"
     assert env["RAYVAST_PUBLIC_IP"] == "127.0.0.1" and env["RAYVAST_PRIVATE_IP"] == "127.0.0.1"
     assert env["RAYVAST_LOCALHOST_PORTS"] == f"{p + 4},{p + 5}"
-    assert env["RAY_num_workers_soft_limit"] == "10"
+    assert env["RAY_num_workers_soft_limit"] == str(min(enroll["cpu_count"], 58))  # no pids limit: all 58 ports
+    assert env["RAY_num_grpc_internal_threads"] == "4" and env["RAY_worker_maximum_startup_concurrency"] == "8"
     assert "CONTAINER_API_KEY" not in env and "RAYVAST_JOIN_TOKEN" not in env
     assert world.api_key not in env.values() and world.join_token not in env.values()
 
@@ -158,6 +161,45 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     for name in ("ca.pem", "node.pem", "node.key", "token", "librayvast_shim.so"):
         assert oct(os.stat(f"{run.dir}/{name}").st_mode & 0o777) == "0o600", name
     assert Path(run.dir / "token").read_text() == world.token
+
+
+@pytest.mark.parametrize("pids_max, ports", [(None, 58), (3328, 58), (1280, 25), (900, 14), (500, 4), (100, 4)])
+def test_worker_ports_fit_the_pids_limit(pids_max, ports):
+    assert bootstrap.worker_port_count(pids_max) == ports
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("layout", ["v2", "v1"])
+def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_pressure(world, tmp_path, layout):
+    cgroup = tmp_path / "cgroup"
+    pids = cgroup if layout == "v2" else cgroup / "pids"
+    pids.mkdir(parents=True)
+    if layout == "v2":
+        (cgroup / "cgroup.controllers").write_text("cpu pids\n")
+    (pids / "pids.max").write_text("1280\n")
+    (pids / "pids.current").write_text("1203\n")
+    (pids / "pids.events").write_text("max 17\n")
+    run = world.run(RAYVAST_CGROUP_DIR=str(cgroup), FAKE_RAY_LISTEN_WORKER_PORTS="3")
+    assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), run.stdout
+    p = world.port_base
+    assert "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 6 + 25)) in run.ray["argv"]
+    cpus = world.head.bodies("A", "/enroll")[0]["cpu_count"]
+    assert run.ray["env"]["RAY_num_workers_soft_limit"] == str(min(cpus, 25))
+    beat = world.head.bodies("B", "/heartbeat")[-1]
+    assert beat == {"instance_id": 424242, "pids_current": 1203, "pids_max": 1280, "pids_refused": 17,
+                    "ports_in_use": 3, "ports_total": 25}
+    start_line = next(line for line in run.stdout.splitlines() if "pids.max" in line)
+    assert f"pids.max 1280 (cgroup {layout})" in start_line and f"ray cpus {cpus}" in start_line
+    assert "worker ports 25" in start_line and "grpc threads 4" in start_line and "startup concurrency 8" in start_line
+
+
+@pytest.mark.slow
+def test_without_a_pids_limit_the_heartbeat_says_so(world, tmp_path):
+    run = world.run()
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), run.stdout
+    beat = world.head.bodies("B", "/heartbeat")[-1]
+    assert beat["pids_max"] is None and beat["pids_refused"] is None and beat["ports_total"] == 58
+    assert "pids.max none" in run.stdout
 
 
 @pytest.mark.slow

@@ -78,7 +78,7 @@ Ray advertises the public IP of the host and the ports P. So other nodes reach t
 | 70003 | Dashboard agent gRPC |
 | 70004 | Dashboard agent HTTP (job port, 127.0.0.1 only) |
 | 70005 | Runtime-env agent (127.0.0.1 only) |
-| 70006–70063 | 58 Ray worker processes |
+| 70006–70063 | up to 58 Ray worker processes (fewer with a pids limit) |
 
 The provider adds `direct_port_count >= 64` to every offer query, so every host can give the 64 ports.
 Before a candidate enrolls, the head connects to all 64 ports from outside (the port check).

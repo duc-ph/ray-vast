@@ -107,20 +107,19 @@ The sections below show only what is different on ray-vast.
 
 ### Ray Data: limit the CPUs
 
-A vast container has a limit on processes and threads. A Ray Data job that uses all CPUs of a worker can pass this limit. Then the worker dies. Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
-
-Limit the CPUs that Ray Data uses. Put this code in your driver script, after `ray.init()`:
+You do not need a CPU limit to keep a worker alive. A worker with a process limit gets fewer worker ports, so too much work waits (read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts)).
+But a hash shuffle (for example `groupby`) can hang when its map tasks and its aggregators do not all get a port. Use fewer aggregators, and optionally limit the CPUs of Ray Data. Put this code in your driver script, after `ray.init()`:
 
 ```python
 from ray.data import DataContext, ExecutionResources
 
 data_context = DataContext.get_current()
-data_context.execution_options.resource_limits = ExecutionResources(cpu=12)
 data_context.max_hash_shuffle_aggregators = 4  # for hash shuffles, for example groupby
+data_context.execution_options.resource_limits = ExecutionResources(cpu=12)  # optional
 ```
 
-The limit is for the full cluster. In a live test on 2026-10-14, a limit of 12 CPUs worked on 2 to 3 workers.
-Each hash shuffle aggregator is one more worker process. So also limit `max_hash_shuffle_aggregators`.
+The CPU limit is for the full cluster. Each hash shuffle aggregator is one more worker process.
+Read [A node is at its process limit](troubleshoot.md#a-node-is-at-its-process-limit).
 
 A local output path (for example `write_parquet("/tmp/out")`) writes the files to the disk of each worker. Write shared output to a cloud bucket.
 
