@@ -1,0 +1,1 @@
+Evidence: _session/local_e2e/local_e2e.txt and .xml, test test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again

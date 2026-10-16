@@ -4,18 +4,14 @@ cluster_name: rvtest-c10b
 max_workers: 3
 idle_timeout_minutes: 10
 provider:
-  region: us-west-2
   image: rayproject/ray:2.59.0-py311-gpu
-  image_size_gb: 20
   # Peak: 4 `gpu` candidates + 2 `gpu2` candidates, about $2/h (C9 offers). Steady state: 2 workers, about $0.35/h.
   max_dollars_per_hour: 2.5
   candidate_factor: 2
-  key_name: ray-vast-devbox
-  key_file: ~/ray-vast-devbox.pem
 auth: {ssh_user: ray}
 head_node_type: head
 available_node_types:
-  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2}, max_workers: 0}
   gpu:
     resources: {CPU: 4, GPU: 1}
     min_workers: 2

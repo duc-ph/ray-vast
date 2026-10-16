@@ -43,20 +43,24 @@ pytest -o addopts="" -m local_e2e tests/local_e2e
 
 ### Live tests
 
-The live tests use real AWS and, in some cycles, real vast.ai. They cost money.
+The live suite in `tests/live/` proves the claims of the docs on real AWS and vast.ai. The claim matrix (one scenario for each claim) is in `docs/test-plan.md` at the repository root. Some groups cost money.
 
 ```
-pytest -m live tests/live/test_up_down.py -s
+pytest tests/live -m free                      # no cost: unit, Docker, local e2e, the package, the offer search
+pytest tests/live -m aws                       # AWS only, no vast rental
+pytest tests/live -m "lifecycle or libraries"  # vast rentals
+python tests/live/summarize.py                 # the results table into docs/test-results.md
 ```
 
-Read the docstring of each live test before you run it. It gives the cost and the environment variables.
+Each test writes `archive/results/<UTC date>/<ID>/result.json` and its evidence. The cluster fixtures run `ray-vast up` once and `ray-vast down` at the end of the session, also after a failure or Ctrl-C. Read the docstring of each test module before you run it. It gives the time and the cost.
 
 ### Markers
 
 | Marker | Meaning | Default run |
 |---|---|---|
 | `slow` | Starts processes, containers, TLS servers or wheel builds, or waits on real timers. | Skipped |
-| `live` | Uses real AWS or vast.ai. | Skipped |
+| `live` | Uses real AWS or vast.ai (every test in `tests/live`). | Skipped |
+| `free`, `aws`, `lifecycle`, `libraries`, `release`, `failure`, `security`, `limits` | The groups of the live suite (`docs/test-plan.md`). | Skipped (with `live`) |
 | `local_e2e` | Runs a Ray head and workers in Docker on the dev box. | Skipped |
 
 ### Rules for slow tests

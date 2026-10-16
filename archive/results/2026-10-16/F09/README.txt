@@ -1,0 +1,1 @@
+Evidence: _session/local_e2e/local_e2e.txt and .xml, test test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed

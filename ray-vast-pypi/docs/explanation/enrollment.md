@@ -27,7 +27,7 @@ sequenceDiagram
   W->>W: local host checks, open listeners on the 64 ports
   W->>H: POST /enroll (instance ID, join token, checks, port map)
   H->>W: port check: TCP connect to all 64 ports
-  H->>W: 200: node cert and key, CA, cluster token, shim, Ray parameters
+  H->>W: 200: node cert and key, cluster token, shim, Ray parameters
   W->>W: start Ray (TLS, token, shim)
   loop every 30 s
     W->>H: POST /heartbeat (port B, mTLS)
@@ -44,7 +44,7 @@ sequenceDiagram
     - `/dev/shm` is empty.
 5. **Enroll.** The bootstrap sends `POST /enroll` with its instance ID, the join token, the check results and its port map.
 6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results and the GPU count. Then it connects to all 64 ports from outside (the port check).
-7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the CA, the cluster token, the shim and the Ray parameters.
+7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the cluster token, the shim and the Ray parameters. The worker already has the CA: it pinned it in step 3.
 8. **Ray.** The bootstrap removes the secrets from Ray's environment, and starts Ray. Ray joins the head with TLS and the token.
 
 ## The join token

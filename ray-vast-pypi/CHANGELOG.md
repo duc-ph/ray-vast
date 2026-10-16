@@ -27,7 +27,8 @@
     - The `up` option `--index-url` is removed. To test a release on TestPyPI, download the wheel with `pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`, then run `ray-vast up --wheel <file>`.
 - The example YAMLs list all fields, each with a short comment.
 - Fixes:
-    - `down`, `attach` and `dashboard` accept a 0.1.0 YAML. They take the region from the state file of the cluster. Only `up` rejects the old `provider` fields. Tear down a 0.1.0 cluster with the AWS credentials that made it: a restricted `ray-vast-user` cannot delete a 0.1.0 head role (it has no permissions boundary).
+    - `down`, `attach` and `dashboard` accept a 0.1.0 YAML. They take the region from the state file of the cluster, else from `provider.region` of the 0.1.0 YAML. Only `up` rejects the old `provider` fields. Tear down a 0.1.0 cluster with the AWS credentials that made it: a restricted `ray-vast-user` cannot delete a 0.1.0 head role (it has no permissions boundary).
+    - An unknown AWS profile or missing AWS credentials give a one-line error, not a traceback.
     - One vast list without a worker no longer ends it. The provider ends an instance 60 s after the last list that showed it.
     - The worker reads the CPU quota on cgroup v1 hosts too (`cpu.cfs_quota_us`).
     - A worker that ended just before its security group rule was made no longer leaves the rule until `down`.

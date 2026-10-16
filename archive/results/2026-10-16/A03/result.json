@@ -1,0 +1,53 @@
+{
+ "id": "A03",
+ "markers": [
+  "aws",
+  "failure"
+ ],
+ "fixture": "none",
+ "started": 1792183678.9756212,
+ "checks": [
+  {
+   "name": "(a) up was stopped after the key pair",
+   "ok": true,
+   "detail": "fer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+  },
+  {
+   "name": "(a) down: left nothing",
+   "ok": true,
+   "detail": "deleted security group sg-0ee83a772f2aaba04\ndeleted security group sg-0cfbc2b13b435d0ee\ndeleted key pair ray-vast-rvtest-a03a-5358\ndeleted role ray-vast-rvtest-a03a-5358\nleft: nothing\n"
+  },
+  {
+   "name": "(a) AWS check",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "(c) a head exists",
+   "ok": true,
+   "detail": "['i-03524ed1ae7e7850f']"
+  },
+  {
+   "name": "attach without a running head: one-line error",
+   "ok": true,
+   "detail": "ray-vast attach: no running head for cluster rvtest-a03b-fb12\n"
+  },
+  {
+   "name": "(b, c, d) down without state file, key or head: left nothing",
+   "ok": true,
+   "detail": "sg-09833654b8e9fd7b7\ndeleted security group sg-0b74856ce4d2ab5e0\ndeleted security group sg-0f8bea447c7364fc2\ndeleted security group sg-061bae228181639be\ndeleted key pair ray-vast-rvtest-a03b-fb12\ndeleted instance profile ray-vast-rvtest-a03b-fb12\ndeleted role ray-vast-rvtest-a03b-fb12\nleft: nothing\n"
+  },
+  {
+   "name": "(b) AWS check",
+   "ok": true,
+   "detail": "[]"
+  }
+ ],
+ "data": {
+  "a_up_output_tail": "^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1252, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792183730.5122294,
+ "wall_s": 51.5
+}

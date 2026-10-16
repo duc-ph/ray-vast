@@ -4,18 +4,14 @@ cluster_name: rvtest-c10a
 max_workers: 1
 idle_timeout_minutes: 30
 provider:
-  region: us-west-2
   image: rayproject/ray:2.59.0-py311-gpu   # torch for Train and RLlib comes from runtime_env pip (as in C9)
-  image_size_gb: 20
   # Peak: 2 `big` candidates (k = 2): $0.337 + $0.671 = $1.01/h for about a minute. Steady state: 1 worker.
   max_dollars_per_hour: 1.0
   candidate_factor: 2
-  key_name: ray-vast-devbox
-  key_file: ~/ray-vast-devbox.pem
 auth: {ssh_user: ray}
 head_node_type: head
 available_node_types:
-  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2}, max_workers: 0}
   # A big host: CPU 32 makes ray-vast add cpu_cores_effective >= 32 to the offer query. Ray gets all real cores (the bootstrap
   # counts them), so the node can have 32 to 128 Ray CPUs. 1 cheap GPU: most vast hosts with many cores are GPU hosts.
   # Phase A uses no GPU (Train and RLlib run on CPU), so there is no compute_cap or gpu_ram filter. 2026-10-16T07:05Z: with

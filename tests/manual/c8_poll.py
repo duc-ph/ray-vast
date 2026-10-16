@@ -1,7 +1,7 @@
 # C8 poller (docs/test-plan.md): every <period> s, one JSON line with the cluster's vast instances (ID, actual_status,
 # dph_total, machine_id), the sum of their dph_total, the number of worker rules in the cluster's 5 security groups,
 # and the Ray nodes (`ray list nodes` in the container ray-vast-head). Runs on the operator machine until Ctrl-C.
-# AWS: profile `personal` (or AWS_PROFILE). SSH key: RAYVAST_KEY_FILE or ~/ray-vast-devbox.pem.
+# AWS: profile `personal` (or AWS_PROFILE). SSH key: RAYVAST_KEY_FILE or ~/.ray-vast/<cluster>/ssh_key.pem (made by `up`).
 # Usage: python c8_poll.py [<cluster, default rvtest-c8>] [<period s, default 5>]
 import json
 import os
@@ -18,7 +18,7 @@ import vast_tool
 cluster = sys.argv[1] if len(sys.argv) > 1 else "rvtest-c8"
 period = float(sys.argv[2]) if len(sys.argv) > 2 else 5
 state_dir = Path.home() / ".ray-vast"
-key_file = os.environ.get("RAYVAST_KEY_FILE", str(Path.home() / "ray-vast-devbox.pem"))
+key_file = os.environ.get("RAYVAST_KEY_FILE", str(Path.home() / ".ray-vast" / cluster / "ssh_key.pem"))
 ec2 = boto3.Session(profile_name=os.environ.get("AWS_PROFILE", "personal"), region_name="us-west-2").client("ec2")
 while True:
     row = {"utc": vast_tool.utc()}

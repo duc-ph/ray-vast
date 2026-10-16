@@ -1,0 +1,1 @@
+Evidence: _session/local_e2e/local_e2e.txt and .xml, test test_monitor_crash_stops_the_head_and_every_worker_destroys_itself

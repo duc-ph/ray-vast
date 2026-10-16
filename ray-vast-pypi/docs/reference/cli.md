@@ -30,13 +30,14 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 |---|---|
 | 0 | Success. |
 | 1 | An error. For `down`: something is left. |
+| 2 | A bad command line, for example an unknown option such as the removed `--index-url`, `--key-name` or `--key-file`. |
 
 `attach` and `dashboard` return the exit code of `ssh`.
 
 ## Errors
 
 - A user error prints one line on stderr: `ray-vast <command>: <message>`. The exit code is 1.
-- User errors include a missing YAML file, bad YAML syntax and a bad YAML field value. The message names the file or the field.
+- User errors include a missing YAML file, bad YAML syntax, a bad YAML field value, an unknown AWS profile and missing AWS credentials. The message names the file, the field or the profile.
 - An AWS error adds more lines: a hint about missing permissions, and for `up`, the `ray-vast down` command.
 - An unexpected error (a bug) prints a Python traceback. The last line of the traceback has the message.
 

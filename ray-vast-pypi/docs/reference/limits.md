@@ -14,7 +14,7 @@ The default AWS quota is 60 rules for each group, and the SSH rule uses one. So 
 ## 58 worker ports for each worker
 
 Each worker has 64 ports. Ray uses 6 fixed ports. The other 58 are for Ray worker processes.
-Each Ray worker process (a task, an actor or a driver) needs one port.
+Each Ray worker process (a task or an actor) needs one port. A driver runs on the head and uses no worker port.
 A worker with a process limit gets fewer worker ports. Read [The process limit of vast hosts](#the-process-limit-of-vast-hosts).
 
 - When no port is free, tasks wait.

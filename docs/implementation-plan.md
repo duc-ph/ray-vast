@@ -56,6 +56,7 @@ ray-vast-pypi/
 | 12 | Live tests on vast (paid) | Done: C5, C6, C8, C9 on 2026-10-14 (C9 found the process limit, `pids.max`. Fix: design (a), decisions.md 2026-10-16. Next: live cycle C10. The branch `pids-limit-review` is rejected.) |
 | 13 | Docs and release | Docs site live; TestPyPI 0.1.0rc1 tested; PyPI 0.1.0 published 2026-10-15 |
 | 14 | Config and AWS setup changes of 2026-10-16 (key pair per cluster, head settings in the head node type, fewer provider options, IAM boundary, saved profile) | Done; live IAM test with a restricted user passed (test-results.md) |
+| 15 | The live suite (`ray-vast-pypi/tests/live/`, claim matrix in test-plan.md) | Built 2026-10-16 (61 scenarios); results in test-results.md, "Live suite <date>" |
 
 
 ## Step 10b — Spec changes of 2026-10-13

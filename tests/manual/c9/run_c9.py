@@ -5,7 +5,7 @@
 # checks C9.4.2 (curl on the head, by SSH) and C9.4.3 (SSH tunnel to port 8000 of the head) run here, not as jobs.
 # It never prints the cluster token. Needs RAY_AUTH_MODE and RAY_AUTH_TOKEN_PATH (the export line of `dashboard`).
 # Usage: python tests/manual/c9/run_c9.py <R> [<id> ...]      (R = archive/results/<date>; ids default to all, in order)
-# Env: RAY_ADDRESS (default http://127.0.0.1:8265), C9_KEY_FILE (default ~/ray-vast-devbox.pem), C9_TUNNEL_PORT (18000).
+# Env: RAY_ADDRESS (default http://127.0.0.1:8265), C9_KEY_FILE (default ~/.ray-vast/rvtest-c9/ssh_key.pem), C9_TUNNEL_PORT (18000).
 # Other C9_* variables (for example C9_MAX_GB, C9_OBJECT_GB, C9_STORAGE; see jobs/c9common.py) go to every job as
 # runtime_env env_vars. Do not put credentials there: submit.txt keeps the runtime_env.
 import json
@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 JOBS = HERE / "jobs"
 CLUSTER = "rvtest-c9"
 ADDRESS = os.environ.get("RAY_ADDRESS", "http://127.0.0.1:8265")
-KEY_FILE = os.path.expanduser(os.environ.get("C9_KEY_FILE", "~/ray-vast-devbox.pem"))
+KEY_FILE = os.path.expanduser(os.environ.get("C9_KEY_FILE", "~/.ray-vast/rvtest-c9/ssh_key.pem"))
 TUNNEL_PORT = int(os.environ.get("C9_TUNNEL_PORT", "18000"))
 TORCH_ENV = {"pip": {"packages": ["torch==2.7.1"], "pip_check": False}, "config": {"setup_timeout_seconds": 1800}}
 JOB_ENV = {k: v for k, v in os.environ.items() if k.startswith("C9_") and k not in ("C9_KEY_FILE", "C9_TUNNEL_PORT")}

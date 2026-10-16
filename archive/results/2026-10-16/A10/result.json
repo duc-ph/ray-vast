@@ -1,0 +1,51 @@
+{
+ "id": "A10",
+ "markers": [
+  "aws",
+  "security"
+ ],
+ "fixture": "none",
+ "started": 1792183754.3213346,
+ "checks": [
+  {
+   "name": "CreateRole ray-vast-negtest without a boundary is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "CreateRole ray-vast-negtest with AdministratorAccess as the boundary is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "CreateRole negtest-other with the right boundary is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "PutRolePolicy on a role not named ray-vast-* is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "CreatePolicy is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "DeleteRolePermissionsBoundary is denied",
+   "ok": true,
+   "detail": "AccessDenied"
+  },
+  {
+   "name": "CreateSecurityGroup without the ray-vast-cluster tag is denied",
+   "ok": true,
+   "detail": "UnauthorizedOperation"
+  }
+ ],
+ "data": {},
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792183755.2418559,
+ "wall_s": 0.9
+}

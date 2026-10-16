@@ -1,0 +1,1 @@
+Evidence: _session/local_e2e/local_e2e.txt and .xml, test test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero

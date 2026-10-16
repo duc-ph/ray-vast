@@ -959,3 +959,43 @@ def test_main_down_removes_a_cluster_that_version_0_1_0_made(aws, home, fake_ssh
     cluster_yaml.write_text(yaml.safe_dump(old_yaml))
     assert cli.main(["down", str(cluster_yaml)]) == 0, capsys.readouterr().err
     assert what_is_left(aws, FakeVast()) == []
+
+
+def test_main_down_of_a_0_1_0_yaml_without_the_state_file_takes_the_region_from_provider_region(aws, home, fake_ssh, cluster_yaml, wheel,
+                                                                                                monkeypatch, capsys):
+    """cli.md: `down` works when the state file is missing; clean-up.md: use the 0.1.0 YAML as it is."""
+    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
+    assert main_up(cluster_yaml, wheel) == 0
+    (home / ".ray-vast" / f"{CLUSTER}.json").unlink()
+    old_yaml = dict(CLUSTER_YAML, provider={"region": REGION, "key_name": "my-key", "image": "rayproject/ray:2.59.0-py311-cpu",
+                                            "max_dollars_per_hour": 1.0})
+    old_yaml["available_node_types"] = dict(CLUSTER_YAML["available_node_types"], head={"resources": {"CPU": 0}, "node_config": {}})
+    cluster_yaml.write_text(yaml.safe_dump(old_yaml))
+    assert cli.main(["down", str(cluster_yaml)]) == 0, capsys.readouterr().err
+    assert what_is_left(aws, FakeVast()) == []
+
+
+@pytest.mark.parametrize("command", ["down", "attach", "dashboard"])
+def test_main_with_an_unknown_profile_prints_one_line_without_a_traceback(tmp_path, monkeypatch, cluster_yaml, capsys, command):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "none"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "none"))
+    assert cli.main([command, str(cluster_yaml), "--profile", "bogus"]) == 1
+    err = capsys.readouterr().err
+    assert err.strip().splitlines() == [f"ray-vast {command}: the AWS profile 'bogus' does not exist (--profile, AWS_PROFILE or the profile "
+                                        "that `up` saved)"]
+
+
+def test_main_down_without_aws_credentials_prints_one_line_without_a_traceback(tmp_path, monkeypatch, cluster_yaml, capsys):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("AWS_PROFILE", raising=False)
+    for name in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "none"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "none"))
+    monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+    monkeypatch.setenv("VAST_API_KEY", "x")
+    assert cli.main(["down", str(cluster_yaml)]) == 1
+    err = capsys.readouterr().err
+    assert err.strip().splitlines() == ["ray-vast down: no AWS credentials. Give --profile, set AWS_PROFILE, or set up the default "
+                                        "credentials"]

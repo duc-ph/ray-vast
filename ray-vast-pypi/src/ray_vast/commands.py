@@ -442,6 +442,8 @@ def run(args):
         saved = json.loads(state_file.read_text()) if args.command != "up" and state_file.exists() else {}
         head_type = (raw.get("available_node_types") or {}).get(raw.get("head_node_type")) or {}
         region = saved.get("region") or (head_type.get("node_config") or {}).get("region")
+        if not region and args.command != "up":  # a 0.1.0 YAML has the region in `provider` (`up` rejects that field)
+            region = (raw.get("provider") or {}).get("region")
         if not region:
             raise CliError("the YAML needs node_config.region of the head node type")
         profile = args.profile if args.profile is not None else saved.get("profile")
@@ -490,6 +492,14 @@ def run(args):
         if args.command == "up":
             message += f"\nRun `ray-vast down {args.cluster_yaml}` to remove what was created."
         print(message, file=sys.stderr)
+        return 1
+    except botocore.exceptions.ProfileNotFound as e:  # user errors: one line, no traceback
+        print(f"ray-vast {args.command}: the AWS profile {e.kwargs.get('profile')!r} does not exist (--profile, AWS_PROFILE or the "
+              "profile that `up` saved)", file=sys.stderr)
+        return 1
+    except botocore.exceptions.NoCredentialsError:
+        print(f"ray-vast {args.command}: no AWS credentials. Give --profile, set AWS_PROFILE, or set up the default credentials",
+              file=sys.stderr)
         return 1
     except subprocess.TimeoutExpired as e:
         print(f"ray-vast {args.command}: timed out after {e.timeout} s: {shlex.join(map(str, e.cmd))}", file=sys.stderr)

@@ -1,0 +1,157 @@
+{
+ "id": "A01",
+ "markers": [
+  "aws"
+ ],
+ "fixture": "aws_only",
+ "started": 1792185528.7933786,
+ "checks": [
+  {
+   "name": "up: first line names the source",
+   "ok": true,
+   "detail": "installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/ray-vast-pypi"
+  },
+  {
+   "name": "up output line ^head instance i-\\w+ starting$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^head IP [\\d.]+$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^cluster rvtest-aws-b842 is up\\. Head IP [\\d.]+\\.$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^  dashboard: ray-vast dashboard \\S+   \\(then open http://127\\.0\\.0\\.1:8265\\)$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "up output line ^  shell:     ray-vast attach \\S+$",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "state file: region, profile, head, groups, role, instance profile",
+   "ok": true,
+   "detail": "{'cluster': 'rvtest-aws-b842', 'region': 'us-west-2', 'profile': 'personal', 'head_instance_id': 'i-08c1f7ff7868c1f43', 'head_ip': '16.148.197.128', 'role_name': 'ray-vast-rvtest-aws-b842', 'instance_profile_name': 'ray-vast-rvtest-aws-b842'}"
+  },
+  {
+   "name": "ssh_key.pem mode 600, its directory 700",
+   "ok": true,
+   "detail": "('0o600', '0o700')"
+  },
+  {
+   "name": "head: t3.large (the default), Ubuntu 24.04 amd64",
+   "ok": true,
+   "detail": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004"
+  },
+  {
+   "name": "head: 60 GiB gp3, IMDSv2 required, no Elastic IP",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "instance has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "volume has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "key pair has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-b842-0 has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-b842-4 has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-b842-2 has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-b842-3 has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ray-vast-rvtest-aws-b842-1 has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "role has the tag ray-vast-cluster=rvtest-aws-b842",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the head role has the boundary",
+   "ok": true,
+   "detail": "arn:aws:iam::491085427508:policy/ray-vast-head-boundary"
+  },
+  {
+   "name": "head /dev/shm = 0.33 x RAM",
+   "ok": true,
+   "detail": "0.33"
+  },
+  {
+   "name": "the head YAML has the measured image_size_gb",
+   "ok": true,
+   "detail": "7"
+  },
+  {
+   "name": "attach with the saved profile opens a shell on the head",
+   "ok": true,
+   "detail": " can be applied with ESM Apps.\nLearn more about enabling ESM Apps service at https://ubuntu.com/esm\n\nNew release '26.04.1 LTS' available.\nRun 'do-release-upgrade' to upgrade to it.\n\n\nATTACH_OK ubuntu\n"
+  },
+  {
+   "name": "dashboard prints the export line before the tunnel ends",
+   "ok": true,
+   "detail": "['for `ray job submit` set:\\n', '  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/tmp/pytest-of-ubuntu/pytest-206/home-aws_only0/.ray-vast/rvtest-aws-b842/token\\n', 'dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265\\n']"
+  },
+  {
+   "name": "the tunnel opens 8265",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "token file mode 600",
+   "ok": true,
+   "detail": "0o600"
+  }
+ ],
+ "data": {
+  "up_s": 479.6,
+  "head": {
+   "type": "t3.large",
+   "image": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004",
+   "volume": [
+    60,
+    "gp3"
+   ],
+   "imds": "required",
+   "eips": 0
+  }
+ },
+ "outcome": "failed",
+ "message": "subprocess.TimeoutExpired: Command '['/home/ubuntu/ray-vast/ray-vast-pypi/.venv/bin/ray-vast', 'dashboard', '/home/ubuntu/ray-vast/archive/results/2026-10-16/_session/aws_only/cluster.yaml']' timed out after 60 seconds",
+ "ended": 1792185593.8662598,
+ "wall_s": 65.1
+}

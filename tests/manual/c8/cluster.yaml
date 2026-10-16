@@ -3,17 +3,13 @@ cluster_name: rvtest-c8
 max_workers: 4
 idle_timeout_minutes: 2
 provider:
-  region: us-west-2
   image: rayproject/ray:2.59.0-py311-gpu
-  image_size_gb: 20          # the pull limit; the GPU image pulls slowly
   max_dollars_per_hour: 3.0
   candidate_factor: 2
-  key_name: ray-vast-devbox
-  key_file: ~/ray-vast-devbox.pem
 auth: {ssh_user: ray}
 head_node_type: head
 available_node_types:
-  head: {resources: {CPU: 0}, node_config: {}, max_workers: 0}
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2}, max_workers: 0}
   # C8 setup 2026-10-14T05:41Z: 16000-24570 gave gpu-a only 5 offers (rule: >= 6 offers on >= 4 machines). With the
   # speed floor, vast had 29 one-GPU offers in all. gpu-a 8000-24570: 6 offers on 6 machines (RTX 3060, P100, 2 A5000,
   # 4090, 5070 Ti). gpu-b 24570-70000: 12 offers on 12 machines (4 RTX 3090 at $0.30/h, CMP 170HX, A100, 5090s); the

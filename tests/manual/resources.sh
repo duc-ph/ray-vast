@@ -2,7 +2,7 @@
 # Safety rule 5 of docs/test-plan.md: append one line to archive/results/<UTC date>/resources.csv with the time, the
 # cycle, the step, the CPU and memory of the container ray-vast-head, the number of the cycle's vast instances
 # (label ray-vast:rvtest-<cycle>) and the sum of their dph_total. Runs on the operator machine.
-# The head IP comes from ~/.ray-vast/rvtest-<cycle>.json (written by `ray-vast up`). Key: RAYVAST_KEY_FILE or ~/ray-vast-devbox.pem.
+# The head IP comes from ~/.ray-vast/rvtest-<cycle>.json (written by `ray-vast up`). Key: RAYVAST_KEY_FILE or ~/.ray-vast/rvtest-<cycle>/ssh_key.pem.
 # Usage: bash resources.sh CYCLE STEP      (for example: bash resources.sh c5 C5.2)
 set -euo pipefail
 cycle=$1 step=$2
@@ -14,7 +14,7 @@ mkdir -p "$(dirname "$out")"
 head_ip=$(python3 -c "import json, sys; print(json.load(open(sys.argv[1]))['head_ip'])" "$HOME/.ray-vast/$cluster.json" 2>/dev/null || true)
 head_stats=","
 if [ -n "$head_ip" ]; then
-  head_stats=$(ssh -i "${RAYVAST_KEY_FILE:-$HOME/ray-vast-devbox.pem}" -o BatchMode=yes -o ConnectTimeout=10 \
+  head_stats=$(ssh -i "${RAYVAST_KEY_FILE:-$HOME/.ray-vast/rvtest-$1/ssh_key.pem}" -o BatchMode=yes -o ConnectTimeout=10 \
     -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="$HOME/.ray-vast/$cluster.known_hosts" "ubuntu@$head_ip" \
     "sudo docker stats --no-stream --format '{{.CPUPerc}},{{.MemUsage}}' ray-vast-head" 2>/dev/null | tr -d ' ' || echo ",")
 fi

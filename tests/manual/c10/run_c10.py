@@ -7,7 +7,7 @@
 # node, and the node did not crash (same Ray node alive, no refused fork in pids.events). The verdict rules are in verdict().
 # It never prints the cluster token. Needs RAY_AUTH_MODE and RAY_AUTH_TOKEN_PATH (the export line of `dashboard`).
 # Usage: python tests/manual/c10/run_c10.py <R> a|b [<id> ...]   (phase a: cluster rvtest-c10a; phase b: rvtest-c10b)
-# Env: RAY_ADDRESS (default http://127.0.0.1:8265), C10_KEY_FILE (default ~/ray-vast-devbox.pem), C10_GUARD_S (overrides
+# Env: RAY_ADDRESS (default http://127.0.0.1:8265), C10_KEY_FILE (default ~/.ray-vast/<cluster>/ssh_key.pem), C10_GUARD_S (overrides
 # every job guard). Other C10_* variables go to every job as runtime_env env_vars (never credentials: submit.txt keeps them).
 import json
 import os
@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 JOBS = HERE / "jobs"
 C9_JOBS = HERE.parent / "c9" / "jobs"
 ADDRESS = os.environ.get("RAY_ADDRESS", "http://127.0.0.1:8265")
-KEY_FILE = os.path.expanduser(os.environ.get("C10_KEY_FILE", "~/ray-vast-devbox.pem"))
+KEY_FILE = os.environ.get("C10_KEY_FILE")  # default: the key that `up` made for the cluster (head_ssh)
 HEAD_LOG = "/tmp/ray/session_latest/logs/monitor.log"  # in the container ray-vast-head
 # The head's process-limit WARNING line (head_server.py, design 5.7a), for example: `worker 2 (instance 55900080, ip 1.2.3.4)
 # is at its process limit: 3 refused forks/threads (+3), pids 1190 of 1280, worker ports in use 25 of 25. ...`.
@@ -138,7 +138,7 @@ def job_status(sid):
 def head_ssh(cluster, command):
     head_ip = json.loads((Path.home() / ".ray-vast" / f"{cluster}.json").read_text())["head_ip"]
     known_hosts = Path.home() / ".ray-vast" / f"{cluster}.known_hosts"
-    return ["ssh", "-i", KEY_FILE, "-o", f"UserKnownHostsFile={known_hosts}", "-o", "StrictHostKeyChecking=accept-new",
+    return ["ssh", "-i", KEY_FILE or str(Path.home() / ".ray-vast" / cluster / "ssh_key.pem"), "-o", f"UserKnownHostsFile={known_hosts}", "-o", "StrictHostKeyChecking=accept-new",
             "-o", "ConnectTimeout=15", "-o", "BatchMode=yes", f"ubuntu@{head_ip}", command]
 
 

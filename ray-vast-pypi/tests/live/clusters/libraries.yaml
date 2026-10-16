@@ -1,0 +1,43 @@
+# Fixture libraries (docs/test-plan.md, claim matrix LB00-LB14). One cluster, 4 worker types, all with min_workers 0.
+# The tests choose the workers of each scenario: libraries_setup.set_shape() writes min_workers = max_workers of every
+# type into the head's copy of this YAML, and the autoscaler reads that file again in each loop. So only the hosts of
+# one scenario run, and the library code (the doc snippets, the C9 and C10 jobs) needs no node pinning.
+#   h1:   H1, a 48-CPU host with pids.max 1280 and cgroup v1. C9: m32816 (RTX 3060, CZ, 48 Ray CPUs, 1280, v1).
+#   h2:   H2, a cgroup v2 host. C9: m51706 (CMP 170HX, 72 Ray CPUs, 3328, v2). C10: m55704 (CMP 170HX, 15 Ray CPUs, 3840,
+#         v2). Both hosts also rent 1 GPU.
+#   gpu:  H3, the C9 layout: 2 workers, compute_cap 600-899 (torch 2.7.1). The pinned hosts are left out.
+#   gpu2: one 2-GPU host (Train and RLlib learners on 2 GPUs of one worker).
+# libraries_setup.make_libraries_cluster() checks the h1 and h2 pins with an offer search before `up`; a host that does
+# not match its probe is ended and blocked (livekit.find_host). inet_down/inet_up are a test-only speed floor (Mb/s).
+cluster_name: rvtest-lib
+idle_timeout_minutes: 5
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  # Peak: LB00 rents gpu x 2 and gpu2 together, 2 candidates each (k = 2): about $1.5/h for a minute.
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2, instance_type: t3.large}}
+  h1:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [32816]}}}
+  h2:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [51706, 55704]}}}
+  gpu:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 2
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
+                                             inet_up: {gte: 500}, machine_id: {notin: [32816, 51706, 55704]}}}
+  gpu2:
+    resources: {CPU: 4, GPU: 2}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
+                                             inet_up: {gte: 500}, machine_id: {notin: [32816, 51706, 55704]}}}
