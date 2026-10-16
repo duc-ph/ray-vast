@@ -14,30 +14,38 @@ The default AWS quota is 60 rules for each group, and the SSH rule uses one. So 
 
 Each worker has 64 ports. Ray uses 6 fixed ports. The other 58 are for Ray worker processes.
 Each Ray worker process (a task, an actor or a driver) needs one port.
+A worker with a process limit gets fewer worker ports. Read [The process limit of vast hosts](#the-process-limit-of-vast-hosts).
 
 - When no port is free, tasks wait.
 - A driver fails at once with `No available ports`.
 - An actor fails after about 6 minutes. The error is misleading: `ActorUnschedulableError ... Failed to startup worker after retrying 5 times ... Python environment setup`. The real cause (`No available ports`) is only in the worker log.
 - Actors use ports too. An idle worker process keeps its port for about 60 seconds.
-- Ray has no setting for the total number of worker processes. ray-vast sets `RAY_num_workers_soft_limit` to `min(cores, 58)`. Then idle processes release their ports sooner.
+- Ray has no setting for the total number of worker processes. ray-vast sets `RAY_num_workers_soft_limit` to the smaller of the cores and the worker ports. Then idle processes release their ports sooner.
 - Do not set `CPU` above 58.
 
 ## The process limit of vast hosts
 
-A vast container has a limit on processes and threads together (the pids limit).
-On many 1-GPU hosts, the limit is about 1280. One 2-GPU host had 3328.
+A vast container has a limit on processes and threads together (the process limit, `pids.max`).
+On many 1-GPU hosts, the limit is 1280. One 2-GPU host had 3328.
+At the limit, Ray cannot start a thread. The raylet can stop, and then the worker destroys itself.
 
-Each Ray worker process has about 50 threads. The raylet has about 70. An idle worker has about 300 threads.
-ray-vast starts Ray with the real core count of the host as `CPU`. A job that uses all CPUs of a 24-core or 48-core host starts 24 to 48 worker processes. That is more threads than the limit allows.
+ray-vast keeps each worker below its limit:
 
-When the worker reaches the limit:
+- Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). A Ray worker process has about 25 threads, not about 50.
+- The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
+- The worker gives Ray fewer worker ports: `(pids.max - 400) // 35`, at most 58 and at least 4. With 1280, that is 25 ports. With 3328, it is 58.
+- Ray still gets all the cores as `CPU`.
 
-- Tasks fail with `RuntimeError: can't start new thread` or `pthread_create failed: Resource temporarily unavailable`.
-- The raylet aborts, and the Ray node on the worker dies.
-- The worker destroys itself. The autoscaler rents a replacement.
+Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
+The symptom of too much work is a queue, not a crash:
 
-So keep the number of busy worker processes on one worker low (about 20 on a host with a limit of 1280).
-For Ray Data, limit its CPUs. Read [Run your Ray workload](../how-to/run-your-workload.md#ray-data-limit-the-cpus).
+- Tasks wait for a free port. A job takes longer.
+- An actor that waits for a port fails after about 6 minutes with a misleading error. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
+- A job that needs more processes at the same time than the ports allow can hang. For example, a Ray Data `groupby` needs its map tasks and its aggregator actors at the same time.
+
+Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit.
+
+The head log warns when a worker is at its limit. Read [A worker is at its process limit](../how-to/troubleshoot.md#a-worker-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
 
 ## No multi-node Ray Train
 

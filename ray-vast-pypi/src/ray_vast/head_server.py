@@ -30,6 +30,10 @@ PORT_CHECK_TIMEOUT_S = 5
 HEARTBEAT_INTERVAL_S = 30
 HEARTBEAT_TIMEOUT_S = 300
 SECURITY_CHECKS = ("no_net_raw_admin", "own_netns", "shm_empty")
+# The process-limit warning of a worker: at most once a minute while its refused forks rise, else at most once in 5 min.
+PROCESS_LIMIT_REFUSALS_WARNING_S = 60
+PROCESS_LIMIT_WARNING_S = 300
+PROCESS_LIMIT_DOCS_URL = "https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
 
 
 def _clip(text):
@@ -247,7 +251,6 @@ class HeadServer:
             "num_gpus": cand.gpus,
             "heartbeat_interval_s": HEARTBEAT_INTERVAL_S,
             "heartbeat_timeout_s": HEARTBEAT_TIMEOUT_S,
-            "num_workers_soft_limit": min(cpu_count, len(IDENTITY_PORTS) - 6),
         }
 
     def report_before_enrollment(self, body, source_ip):
@@ -272,8 +275,36 @@ class HeadServer:
             log.warning("port B request %s refused for instance %s", path, instance_id)
             return 403, {"reason": "unknown"}
         if path == "/heartbeat":
+            now = self.clock()
+            # The status fields are optional (a heartbeat without them, or with bad values, is still a heartbeat).
+            status = {k: body.get(k) for k in ("pids_current", "pids_max", "pids_refused", "ports_in_use", "ports_total")}
+            status = {k: v if type(v) is int else None for k, v in status.items()}  # type(): a bool is not a count
             with self.state.lock:
-                cand.last_heartbeat = self.clock()
+                cand.last_heartbeat = now
+                refused = status["pids_refused"]
+                refused_before = cand.limit_warned_refused
+                since_warning = None if cand.limit_warned_at is None else now - cand.limit_warned_at
+                refusals_rose = refused is not None and refused > refused_before
+                ports_all_used = (status["ports_total"] is not None and status["ports_in_use"] is not None
+                                  and status["ports_in_use"] >= status["ports_total"])
+                pids_near_limit = (status["pids_max"] is not None and status["pids_current"] is not None
+                                   and status["pids_current"] > 0.9 * status["pids_max"])
+                log_warning = (
+                    (refusals_rose and (since_warning is None or since_warning >= PROCESS_LIMIT_REFUSALS_WARNING_S))
+                    or ((ports_all_used or pids_near_limit)
+                        and (since_warning is None or since_warning >= PROCESS_LIMIT_WARNING_S)))
+                if log_warning:
+                    cand.limit_warned_at = now
+                    if refused is not None:
+                        cand.limit_warned_refused = refused
+                slot_id = next((s.id for s in self.state.slots.values() if s.instance_id == instance_id), cand.slot_id)
+            if log_warning:
+                log.warning(
+                    "worker %s (instance %s, ip %s) is at its process limit: %s refused forks/threads (+%s), "
+                    "pids %s of %s, worker ports in use %s of %s. Ray work on this worker can queue, hang or fail. "
+                    "See %s", slot_id, instance_id, cand.public_ip, refused,
+                    refused - refused_before if refusals_rose else 0, status["pids_current"], status["pids_max"],
+                    status["ports_in_use"], status["ports_total"], PROCESS_LIMIT_DOCS_URL)
         elif body.get("kind") == "token_check" and body.get("ok") is not True:
             self.end(cand, "token check failed: " + str(body.get("reason", ""))[:200])
         elif body.get("kind") == "destroy":

@@ -25,6 +25,15 @@ from types import SimpleNamespace
 
 NET_ERRORS = (OSError, http.client.HTTPException)  # OSError covers URLError, SSLError and timeouts
 RAYVAST_DIR = os.environ.get("RAYVAST_DIR", "/tmp/rayvast")  # the override is for tests only
+CGROUP_DIR = os.environ.get("RAYVAST_CGROUP_DIR", "/sys/fs/cgroup")  # the override is for tests only
+# The container's process limit (pids.max, design 5.5): Ray's gRPC pools are sized by these threads, not by the host cores, and the
+# raylet starts at most this many worker processes at the same time. The worker port count follows from pids.max.
+GRPC_THREADS = 4
+STARTUP_CONCURRENCY = 8
+PIDS_RESERVE = 400  # threads of the fixed Ray processes (about 150), STARTUP_CONCURRENCY starting processes, the bootstrap
+PIDS_PER_WORKER = 35  # threads of one Ray worker process (25 to 28) plus 7 to 10 for the user's own threads
+MIN_WORKER_PORTS = 4
+WORKER_PORT_IDS = range(70006, 70064)  # the identity ports for Ray worker processes (5.5)
 # Inode of the initial network namespace (new kernels, old kernels). A container with its own netns has another one.
 HOST_NETNS_INODES = (0xEFFFFFF9, 0xF0000000)
 ENROLL_DEADLINE_S = 600
@@ -58,6 +67,19 @@ def parse_cpu_max(text):
     """Return the CPU quota in cores from the text of a cgroup v2 `cpu.max` file, or None if there is no limit."""
     quota, period = text.split()
     return None if quota == "max" else int(quota) / int(period)
+
+
+def worker_ports_and_soft_limit(cpus, pids_max):
+    """Return (the number of worker ports that Ray gets, RAY_num_workers_soft_limit) (5.5). `pids_max` is the
+    container's process limit (pids.max), or None.
+
+    A worker process needs a free worker port, so the port count caps the registered worker processes. A process that
+    finds no free port exits, and its task or actor waits: the worker queues work instead of a failed thread start.
+    """
+    ports = len(WORKER_PORT_IDS)
+    if pids_max is not None:
+        ports = max(MIN_WORKER_PORTS, min(ports, (pids_max - PIDS_RESERVE) // PIDS_PER_WORKER))
+    return ports, min(cpus, ports)
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -244,7 +266,7 @@ def main():
         # 4. Enroll. The real core count is the smaller of the affinity and the cgroup quota.
         cpu_count = len(os.sched_getaffinity(0))
         try:
-            with open("/sys/fs/cgroup/cpu.max") as f:
+            with open(f"{CGROUP_DIR}/cpu.max") as f:
                 quota_cores = parse_cpu_max(f.read())
         except OSError:
             quota_cores = None
@@ -298,7 +320,16 @@ def main():
         private_ip = probe.getsockname()[0]
         probe.close()
         agent_ports = [ports["70004"], ports["70005"]]
-        worker_ports = [ports[str(p)] for p in range(70006, 70064)]
+        # The container's process limit (pids.max): cgroup v2 file, else cgroup v1 file. "max" (a ValueError) or no file: no limit.
+        cgroup_version = "v2" if os.path.exists(f"{CGROUP_DIR}/cgroup.controllers") else "v1"
+        pids_dir = CGROUP_DIR if cgroup_version == "v2" else f"{CGROUP_DIR}/pids"
+        try:
+            with open(f"{pids_dir}/pids.max") as f:
+                pids_max = int(f.read())
+        except (OSError, ValueError):
+            pids_max = None
+        port_count, soft_limit = worker_ports_and_soft_limit(cpu_count, pids_max)
+        worker_ports = [ports[str(p)] for p in WORKER_PORT_IDS[:port_count]]
         ray_cmd = [
             sys.executable, "-c", "from ray.scripts.scripts import main; main()", "start", "--block",
             f"--address={answer['gcs_address']}", f"--node-ip-address={public_ip}",
@@ -317,10 +348,15 @@ def main():
             LD_PRELOAD=f"{RAYVAST_DIR}/librayvast_shim.so",
             RAYVAST_PUBLIC_IP=public_ip, RAYVAST_PRIVATE_IP=private_ip,
             RAYVAST_LOCALHOST_PORTS=",".join(map(str, agent_ports)),
-            RAY_num_workers_soft_limit=str(answer["num_workers_soft_limit"]),
+            RAY_num_workers_soft_limit=str(soft_limit),
+            RAY_num_grpc_internal_threads=str(GRPC_THREADS),
+            RAY_worker_maximum_startup_concurrency=str(STARTUP_CONCURRENCY),
         )
         ray = subprocess.Popen(ray_cmd, env=ray_env, stdin=subprocess.DEVNULL)
         log(f"enrolled as slot {answer['slot_id']}; started ray (pid {ray.pid}) with {cpu_count} cpus")
+        log(f"limits: pids.max {pids_max or 'none'} (cgroup {cgroup_version}), cpus {cpu_count}, "
+            f"worker ports {len(worker_ports)}, soft limit {soft_limit}, grpc threads {GRPC_THREADS}, "
+            f"startup concurrency {STARTUP_CONCURRENCY}")
 
         # 6. Watchdog: heartbeat, token check, reap children, destroy on any exit.
         heartbeat_interval = answer["heartbeat_interval_s"] / state.scale
@@ -366,8 +402,36 @@ def main():
 
             if now >= next_heartbeat:
                 next_heartbeat = now + heartbeat_interval
+                # Status for the head's process-limit warning (design 5.7a). pids_refused: the forks and thread starts
+                # that the process limit refused (`max N` in pids.events). ports_in_use: worker ports with a listening
+                # socket, from the kernel's socket tables (a Ray worker process listens on its port once registered).
+                beat = {"instance_id": state.instance_id, "pids_current": None, "pids_max": pids_max,
+                        "pids_refused": None, "ports_in_use": None, "ports_total": len(worker_ports)}
+                if pids_max is not None:
+                    try:
+                        with open(f"{pids_dir}/pids.current") as f:
+                            beat["pids_current"] = int(f.read())
+                        with open(f"{pids_dir}/pids.events") as f:
+                            for line in f.read().splitlines():  # cgroup v2 can also have a `max.imposed` line
+                                key, _, value = line.partition(" ")
+                                if key == "max":
+                                    beat["pids_refused"] = int(value)
+                                    break
+                    except (OSError, ValueError):
+                        pass
                 try:
-                    status, _ = call(f"{base_b}/heartbeat", node_ctx, {"instance_id": state.instance_id})
+                    listening = set()
+                    for table in ("/proc/net/tcp", "/proc/net/tcp6"):
+                        with open(table) as f:
+                            for row in f.read().splitlines()[1:]:
+                                fields = row.split()
+                                if fields[3] == "0A":  # LISTEN
+                                    listening.add(int(fields[1].rsplit(":", 1)[1], 16))
+                    beat["ports_in_use"] = len(listening & set(worker_ports))
+                except (OSError, ValueError, IndexError):
+                    pass
+                try:
+                    status, _ = call(f"{base_b}/heartbeat", node_ctx, beat)
                     if status == 200:
                         last_ok = now
                     elif status == 403:

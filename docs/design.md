@@ -68,7 +68,7 @@ Facts from the Ray source and the spikes on Ray 2.59.0 ([spikes.md](spikes.md)).
 | F1 | `provider: {type: external, module: "ray_vast.provider.VastNodeProvider"}` loads our class (`_private/providers.py`). | The head image has ray-vast installed. |
 | F2 | The autoscaler is v2 (`RAY_enable_autoscaler_v2=1`, the default of `ray up` since 2.50). v2 wraps a normal `NodeProvider` in `NodeProviderAdapter` and calls the same methods. | One `NodeProvider` class. The head starts Ray with `RAY_enable_autoscaler_v2=1`. |
 | F3 | v2 matches a Ray node to an instance by `RAY_CLOUD_INSTANCE_ID`, not by IP. | Workers start Ray with `RAY_CLOUD_INSTANCE_ID=<slot id>` and `RAY_NODE_TYPE_NAME=<node type>`. Two workers can share one public IP (S1 check 1). |
-| F4 | v2 plans a new node with the declared resources, and a running node with the resources that Ray reports. | `CPU` is a minimum: the worker starts Ray with the real core count. `GPU` is exact. Before the first node reports its cores, v2 can start extra nodes (cold-start overshoot; they stay idle until the idle timeout). |
+| F4 | v2 plans a new node with the declared resources, and a running node with the resources that Ray reports. | `CPU` is a minimum: the worker starts Ray with the real core count. `GPU` is exact. Before the first node reports its cores, v2 can start extra nodes (cold-start overshoot; they stay idle until the idle timeout). The container's process limit does not change the Ray CPUs. It limits the worker ports (5.5). |
 | F5 | v2 needs the head in `non_terminated_nodes`, with the tags `ray-node-type: head` and `ray-user-node-type: head`. Without it, v2 marks the head TERMINATED and never scales, with no error. A node without a correct `ray-node-type` tag is skipped as "unmanaged". | The provider lists the node `head` (the head's `RAY_CLOUD_INSTANCE_ID`). |
 | F6 | Each 5 s loop calls `non_terminated_nodes` once, and `node_tags` and `is_running` for each node. `create_node_with_resources_and_labels` runs in the `NodeLauncherPool` threads; every exception becomes a `LaunchNodeError`. `terminate_nodes` runs in one adapter thread. v2 never calls `set_node_tags`, `is_terminated`, `internal_ip` or `external_ip`. | The read methods answer from memory, with no vast call. One `RLock` guards the state; no network call is made while it is held. |
 | F7 | v2 makes the provider once per monitor process and reads the config again each loop. | One provider object, so the head server thread is started once. |
@@ -119,7 +119,7 @@ The provider sets these in the create request (`env`):
 
 vast sets: `CONTAINER_ID` (the instance ID), `CONTAINER_API_KEY` (secret, one for each instance), `PUBLIC_IPADDR`, and `VAST_TCP_PORT_70000` … `VAST_TCP_PORT_70063` (the host port P for each identity port; vast maps P→P).
 
-For tests only, the bootstrap reads these when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (a float; all bootstrap timers are divided by it), `RAYVAST_DIR` (the directory for the files, default `/tmp/rayvast`), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; for local Docker tests, where the egress IP is not `PUBLIC_IPADDR`).
+For tests only, the bootstrap reads these when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (a float; all bootstrap timers are divided by it), `RAYVAST_DIR` (the directory for the files, default `/tmp/rayvast`), `RAYVAST_CGROUP_DIR` (the cgroup directory for `cpu.max` and the pids files, default `/sys/fs/cgroup`), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; for local Docker tests, where the egress IP is not `PUBLIC_IPADDR`).
 
 ### 5.2 Join token
 
@@ -164,9 +164,21 @@ The image's `ENTRYPOINT` stays. Docker runs it with the container command as its
 | 70003 | agent gRPC | `--dashboard-agent-grpc-port` |
 | 70004 | agent HTTP (job port, 127.0.0.1 through the shim) | `--dashboard-agent-listen-port` |
 | 70005 | runtime-env agent (127.0.0.1 through the shim) | `--runtime-env-agent-port` |
-| 70006–70063 | 58 worker processes | `--worker-port-list` |
+| 70006–70063 | up to 58 worker processes | `--worker-port-list` |
 
 The bootstrap uses the host ports P (`VAST_TCP_PORT_700xx`), not the identity numbers.
+
+**Worker ports and the process limit.** Many vast containers have a cgroup pids limit (the process limit). Every process and every thread counts. Measured: 1280 on two cgroup v1 hosts, 3328 on a cgroup v2 host. `RLIMIT_NPROC` is unlimited. At the limit, a thread start fails (`EAGAIN`). Then the raylet aborts, and the worker dies. The bootstrap reads the limit from `/sys/fs/cgroup/pids.max` (cgroup v2, when `/sys/fs/cgroup/cgroup.controllers` exists), else from `/sys/fs/cgroup/pids/pids.max` (cgroup v1). `max` or no file means no limit. Three settings keep the worker below the limit:
+
+1. `RAY_num_grpc_internal_threads=4`, always. Ray's gRPC sizes its thread pools by `sysconf(_SC_NPROCESSORS_CONF)` (the host cores) unless this variable is set. Every process of `ray start` inherits it. Measured on a simulated 48-core host: a worker process has 25 threads, not 50; the raylet 59, not 85.
+2. `RAY_worker_maximum_startup_concurrency=8`, always. The raylet starts at most 8 worker processes at the same time (without it: `min(cores, Ray CPUs)`, 48 on a 48-core host). The variable wins over the `--maximum_startup_concurrency` flag of `ray start` (measured: at most 2 starting processes with the value 2, 39 without it). A starting process has threads before it can find a free port, so this caps the burst.
+3. Worker ports = 58 with no limit, else `max(4, min(58, (pids.max − 400) // 35))`.
+    - 400 = the threads of the fixed Ray processes (about 150: raylet, dashboard agent, runtime-env agent, log monitor, `ray start`), of 8 starting worker processes (8 × 25) and of the bootstrap, rounded up.
+    - 35 = the threads of one worker process (25 to 28), plus 7 to 10 for the user's own threads.
+    - With 1280, the worker gets 25 ports. With 3328, it gets 58 ports.
+    - The floor of 4 keeps a worker with a very small limit useful. A Data map task and its aggregator need 2 ports. Below a limit of about 540, such a worker can pass the limit. Then the head warns (5.7a).
+
+A Ray worker process needs a free worker port. A process that finds no free port exits, and its task or actor waits for a port. So the port count caps the worker processes. Too much work queues or hangs on the worker. It does not crash the worker. `RAY_num_workers_soft_limit` = min(Ray CPUs, worker ports). An idle process above this limit ends sooner and frees its port. The bootstrap decides all these values. The head does not send them.
 
 ### 5.6 Head server endpoints
 
@@ -176,9 +188,9 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300, "num_workers_soft_limit": int}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
+| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
 | A | `POST /report` | `{"instance_id": int, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` if it can be parsed. The head only logs it. |
-| B | `POST /heartbeat` | `{"instance_id": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
+| B | `POST /heartbeat` | `{"instance_id": int, "pids_current": int\|null, "pids_max": int\|null, "pids_refused": int\|null, "ports_in_use": int\|null, "ports_total": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
 | B | `POST /report` | `{"instance_id": int, "kind": "token_check" \| "destroy", "ok": bool, "reason": str}` | 200 `{}` |
 
 ### 5.7 Head rules for `/enroll`
@@ -193,11 +205,35 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 - **Lost answer:** if an `/enroll` answer is lost, the retry gets 403 "already enrolled", and the worker destroys itself. This is rare and safe.
 - **Log:** the head logs each decision with the instance ID, machine ID, IP and reason, never a secret.
 
+### 5.7a Heartbeat status
+
+The heartbeat carries the state of the process limit (5.5). Only `instance_id` is required: the head accepts a heartbeat without the other fields, and treats a value that is not an integer as missing.
+
+| Field | Source on the worker |
+|---|---|
+| `pids_current` | `pids.current` (null without a limit) |
+| `pids_max` | `pids.max` (null without a limit) |
+| `pids_refused` | the number in the `max N` line of `pids.events`: forks and thread starts that the limit refused (null without a limit) |
+| `ports_in_use` | the worker ports with a listening socket in `/proc/net/tcp` and `/proc/net/tcp6`. A registered worker process listens on its port. Two small file reads; no process scan. |
+| `ports_total` | the number of worker ports (5.5) |
+
+The head logs one WARNING line in `monitor.log` for a worker in these cases:
+
+- `pids_refused` is higher than in the last warning. At most once a minute.
+- All worker ports are in use, or `pids_current` is above 90 % of `pids_max`. At most once in 5 minutes.
+
+`+<new>` is the rise of `pids_refused` since the last warning. The line:
+
+```text
+worker <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused forks/threads (+<new>), pids <current> of <max>, worker ports in use <in use> of <total>. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
+```
+
 ### 5.8 Bootstrap, after enrollment
 
 1. Close the listeners. Write the files in `/tmp/rayvast` (mode 700): `ca.pem`, `node.pem`, `node.key` (600), `token` (600), `librayvast_shim.so`.
 2. Keep `CONTAINER_API_KEY` and the join token in memory only, and remove both from the environment of the Ray child.
-3. Start `ray start --block` as a child, as the image's user, with: `--address` (the GCS), `--node-ip-address` (the public IP), the 6 fixed ports and `--worker-port-list` (5.5), `--num-cpus` = the real core count (the smaller of the `os.sched_getaffinity` size and the cgroup `cpu.max` quota / period), `--num-gpus` from the answer, `RAY_CLOUD_INSTANCE_ID=<slot id>`, `RAY_NODE_TYPE_NAME`, `RAY_num_workers_soft_limit` = min(cpu_count, 58), the TLS and token env, and the shim env.
+3. Start `ray start --block` as a child, as the image's user, with: `--address` (the GCS), `--node-ip-address` (the public IP), the 6 fixed ports and `--worker-port-list` (5.5), `--num-cpus` = the real core count (the smaller of the `os.sched_getaffinity` size and the cgroup `cpu.max` quota / period), `--num-gpus` from the answer, `RAY_CLOUD_INSTANCE_ID=<slot id>`, `RAY_NODE_TYPE_NAME`, `RAY_num_workers_soft_limit` = min(cpu_count, worker ports), `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8` (5.5), the TLS and token env, and the shim env.
+   It logs one start line: `limits: pids.max <N or none> (cgroup v1|v2), cpus <n>, worker ports <n>, soft limit <n>, grpc threads 4, startup concurrency 8`.
 4. Token check: without a token, both agent ports on 127.0.0.1 must answer 401. Send the result in `POST /report` (port B). Reason: without `RAY_AUTH_MODE=token`, the job agent runs any shell command for anyone.
 5. Become the watchdog (section 6).
 
@@ -207,7 +243,7 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 
 The bootstrap stays as PID 1 and is the watchdog.
 
-- It sends `POST /heartbeat` on port B every 30 s. The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
+- It sends `POST /heartbeat` on port B every 30 s, with the status of the process limit (5.7a). The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
 - It collects its finished child processes.
 - **Destroy, never exit.** When PID 1 exits, vast starts the container again and runs the command again, and the instance keeps its full cost (C4: 7 restarts in 2 min). So the watchdog always destroys its instance: `DELETE {RAYVAST_VAST_API}/instances/<CONTAINER_ID>/` with `Authorization: Bearer <CONTAINER_API_KEY>`, retried every 5 s until 200 or 404. Vast calls do not follow redirects.
 - **Report first.** Before each destroy, it sends the reason to the head (port B if enrolled, else port A) and waits up to 10 s. Reason: after a destroy, vast keeps no container log (C4).

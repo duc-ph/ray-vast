@@ -120,7 +120,7 @@ class FakeHead:
                         "token": (head.pki_dir / "token").read_text().strip(), "shim_b64": head.shim_b64,
                         "gcs_address": head.gcs_address, "num_gpus": head.num_gpus,
                         "heartbeat_interval_s": head.heartbeat_interval_s,
-                        "heartbeat_timeout_s": head.heartbeat_timeout_s, "num_workers_soft_limit": 10,
+                        "heartbeat_timeout_s": head.heartbeat_timeout_s,
                     }
                     self._send(200, json.dumps(answer).encode())
                 elif self.path == "/report":

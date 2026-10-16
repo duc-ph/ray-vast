@@ -55,14 +55,14 @@ These are the user's rules from the earlier sessions. Follow them.
 - TestPyPI: `0.1.0rc1` is at https://test.pypi.org/project/ray-vast/0.1.0rc1/. A clean install ran `up`/`down` with `--index-url`.
 - PyPI: `0.1.0` is at https://pypi.org/project/ray-vast/0.1.0/ (2026-10-15). A clean venv installed it from PyPI. The README and the docs home page say "(work in progress)".
 - Docs site: https://duc-ph.github.io/ray-vast/ (MkDocs Material; `.github/workflows/docs.yml` publishes on push).
+- The process limit (`pids.max`): design (a) is implemented (decisions.md 2026-10-16, design.md 5.5 and 5.7a). gRPC threads 4, startup concurrency 8, worker ports from `pids.max`, Ray CPUs unchanged, a heartbeat status and a head WARNING line. The branch `pids-limit-review` (shim v4 and a CPU cap) is rejected. Do not merge it.
 - **Waits on the user:**
-  1. The pids-limit fix on branch `pids-limit-review` (not merged). Part 1 (shim v4) makes `sysconf(_SC_NPROCESSORS_CONF)` return 4 in worker containers, so gRPC pools stay small (user code also sees 4 cores: OpenBLAS uses at most 4 threads). Part 2 (commit marked DESIGN CHANGE) caps Ray CPUs and worker ports by `pids.max`. Live: C9.1.1/1.3/1.6 pass without a CPU limit on a 1280-pid host. Without the fix, `main` documents a Ray Data CPU limit as the workaround.
-  2. A private contact for security reports (`security.md` has a TODO).
+  1. A private contact for security reports (`security.md` has a TODO).
 - The box has AWS credentials (`~/.aws`, profile `personal`), the EC2 key pair `ray-vast-devbox` (`~/ray-vast-devbox.pem`), the vast key, and the TestPyPI and PyPI tokens in `~/.pypirc`. The deploy key can push branches and workflows.
 
 ## Next work
 
-1. The user reviews the branch `pids-limit-review` and chooses: merge both parts, merge part 1 only, or keep the documented workaround. Then run local_e2e and C9.1 again on the result.
+1. The live C10 cycle on vast: test design (a) for the process limit on hosts with many cores. Then set the Ray library support table from its results.
 2. Step 13: a live `ray-vast up` from the PyPI install (no `--index-url`) on a clean machine.
 
 When a step is done: update the status table in `docs/implementation-plan.md`, add the results to `docs/test-results.md` if it ran a cycle, commit, push, and give the user a short report.

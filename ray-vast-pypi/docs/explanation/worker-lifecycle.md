@@ -44,7 +44,7 @@ Some faults affect every host, for example a broken image. The breaker stops the
 
 After it starts Ray, the bootstrap stays as PID 1 and becomes the watchdog.
 
-- It sends a heartbeat to the head every 30 seconds, on port B (mTLS).
+- It sends a heartbeat to the head every 30 seconds, on port B (mTLS). The heartbeat carries the state of the process limit (pids and worker ports in use).
 - The provider serves the heartbeat. So the heartbeat fails when the head is down, and also when only the provider is down.
 - **Destroy, never exit.** When PID 1 of a vast container exits, vast starts the container again, and the instance keeps its full cost. So the watchdog always destroys its own instance through the vast API. It retries every 5 seconds until vast confirms.
 - **Report first.** Before each destroy, the worker sends the reason to the head, and waits up to 10 seconds. vast keeps no container log after a destroy, so the head log is the only record.

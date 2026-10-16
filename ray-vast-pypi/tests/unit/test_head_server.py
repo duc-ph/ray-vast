@@ -404,3 +404,101 @@ def test_wrong_source_ip_and_wrong_token_gives_the_source_ip_reason(env):
     add_candidate(env, 11, ip="10.9.9.9")
     resp = enroll(env, 11, token="b2" * 32)
     assert resp.status_code == 403 and resp.json()["reason"] == "source IP does not match the instance public IP"
+
+
+
+
+def heartbeat(env, session, **status):
+    return requests.post(f"https://127.0.0.1:{env.port_b}/heartbeat", json={"instance_id": 11, **status}, **session)
+
+
+CALM = dict(pids_current=400, pids_max=1280, pids_refused=0, ports_in_use=3, ports_total=25)
+
+
+def limit_lines(caplog):
+    return [r for r in caplog.records if "process limit" in r.getMessage()]
+
+
+@pytest.fixture
+def clock(env):
+    now = [1000.0]
+    env.server.clock = lambda: now[0]
+    return now
+
+
+def test_a_heartbeat_without_the_status_fields_is_still_accepted(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    assert heartbeat(env, worker_session(env, "10.0.0.5")).status_code == 200
+    assert env.state.candidates[11].last_heartbeat is not None and limit_lines(caplog) == []
+
+
+@pytest.mark.parametrize("bad", [
+    {"pids_current": "x"},  # with an integer pids_max
+    {"pids_refused": True},  # a bool is not a count
+    {"ports_total": None, "ports_in_use": "25"},
+])
+def test_status_values_that_are_not_integers_count_as_missing(env, caplog, bad):
+    enrolled_worker(env, 11, "10.0.0.5")
+    assert heartbeat(env, worker_session(env, "10.0.0.5"), **{**CALM, **bad}).status_code == 200
+    assert env.state.candidates[11].last_heartbeat is not None and limit_lines(caplog) == []
+
+
+def test_refused_forks_give_one_warning_that_names_the_worker_and_the_numbers(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    heartbeat(env, session, **CALM)
+    assert limit_lines(caplog) == []
+    heartbeat(env, session, **{**CALM, "pids_current": 1279, "pids_refused": 7, "ports_in_use": 25})
+    [record] = limit_lines(caplog)
+    assert record.levelno == logging.WARNING
+    assert record.getMessage() == (
+        "worker slot-11 (instance 11, ip 10.0.0.5) is at its process limit: 7 refused forks/threads (+7), "
+        "pids 1279 of 1280, worker ports in use 25 of 25. Ray work on this worker can queue, hang or fail. "
+        "See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit")
+
+
+def test_the_warning_names_the_slot_that_the_worker_fills_when_its_own_slot_is_gone(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    env.state.slots["slot-11"].instance_id = None
+    env.state.add_slot(Slot("slot-99", "gpu", instance_id=11))
+    heartbeat(env, worker_session(env, "10.0.0.5"), **{**CALM, "pids_refused": 1})
+    [record] = limit_lines(caplog)
+    assert record.getMessage().startswith("worker slot-99 (instance 11")
+
+
+@pytest.mark.parametrize("status", [
+    {**CALM, "ports_in_use": 25},  # all worker ports in use
+    {**CALM, "pids_current": 1153},  # above 90 % of pids.max
+])
+def test_full_ports_or_high_pids_warn_at_most_once_in_five_minutes(env, caplog, clock, status):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    heartbeat(env, session, **status)
+    clock[0] += 299
+    heartbeat(env, session, **status)
+    assert len(limit_lines(caplog)) == 1
+    clock[0] += 1  # exactly 300 s after the first warning
+    heartbeat(env, session, **status)
+    assert len(limit_lines(caplog)) == 2
+
+
+def test_pids_at_exactly_90_percent_do_not_warn(env, caplog):
+    enrolled_worker(env, 11, "10.0.0.5")
+    heartbeat(env, worker_session(env, "10.0.0.5"), **{**CALM, "pids_current": 1152})
+    assert limit_lines(caplog) == []
+
+
+def test_rising_refusals_warn_at_most_once_a_minute_with_the_rise_since_the_last_warning(env, caplog, clock):
+    enrolled_worker(env, 11, "10.0.0.5")
+    session = worker_session(env, "10.0.0.5")
+    heartbeat(env, session, **{**CALM, "pids_refused": 3})
+    clock[0] += 30
+    heartbeat(env, session, **{**CALM, "pids_refused": 9})
+    assert len(limit_lines(caplog)) == 1
+    clock[0] += 30  # 60 s after the first warning; the count did not rise since the last heartbeat
+    heartbeat(env, session, **{**CALM, "pids_refused": 9})
+    assert len(limit_lines(caplog)) == 2
+    assert "9 refused forks/threads (+6)" in limit_lines(caplog)[1].getMessage()
+    clock[0] += 60
+    heartbeat(env, session, **{**CALM, "pids_refused": 9})
+    assert len(limit_lines(caplog)) == 2
