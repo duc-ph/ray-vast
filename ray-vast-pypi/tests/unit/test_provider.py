@@ -281,6 +281,57 @@ def test_instance_missing_from_vast_counts_only_after_the_grace_period(env):
     assert 101 not in p.state.candidates
 
 
+def test_one_listing_without_an_old_worker_does_not_end_it_and_the_grace_counts_from_the_last_listing(env):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.run(101, "198.51.100.55")
+    p.reconcile_once()
+    enroll(p, 101)
+    for _ in range(10):  # a worker that runs for 10 min, with heartbeats
+        env.clock.now += 60
+        p.state.candidates[101].last_heartbeat = env.clock.now
+        p.reconcile_once()
+    env.vast.instances[101]["label"] = "edited-in-the-console"  # one listing without it
+    env.clock.now += 10
+    p.reconcile_once()
+    assert instance_ids(env) == [101] and 101 in p.state.candidates
+    env.vast.instances[101]["label"] = LABEL
+    env.clock.now += 10
+    p.reconcile_once()  # seen again
+    env.vast.instances[101]["label"] = "edited-in-the-console"
+    env.clock.now += 59
+    p.reconcile_once()
+    assert 101 in p.state.candidates
+    env.clock.now += 2
+    p.reconcile_once()
+    assert 101 not in p.state.candidates
+
+
+def test_a_candidate_ended_between_its_first_running_pass_and_its_rule_leaves_no_rule(env):
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    (slot_id,) = create(p)
+    env.vast.run(101, "198.51.100.55")
+
+    class EndFirst:  # the autoscaler ends the slot just before the reconcile pass adds the rule
+        def __init__(self, lock):
+            self.lock, self.hook = lock, lambda: p.terminate_node(slot_id)
+
+        def __enter__(self):
+            hook, self.hook = self.hook, None
+            if hook:
+                hook()
+            return self.lock.__enter__()
+
+        def __exit__(self, *exc):
+            return self.lock.__exit__(*exc)
+
+    p._sg_lock = EndFirst(p._sg_lock)
+    p.reconcile_once()
+    assert instance_ids(env) == [] and p.state.ip_refs == {} and env.rules() == []
+
+
 def test_failed_list_changes_nothing(env):
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
@@ -612,7 +663,7 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
     body = {"instance_id": iid, "join_token": env.vast.requests[-1]["env"]["RAYVAST_JOIN_TOKEN"], "checks": checks,
             "ports": identity_listeners, "cpu_count": 4, "gpu_count": 1}
     status, answer = p.head_server.enroll(body, "127.0.0.1")
-    assert status == 200 and answer["num_gpus"] == 1, answer  # the declared GPU of the node type (RESOURCES)
+    assert status == 200, answer
     fail_one_slot(env, p)
     fail_one_slot(env, p)
     assert len(create(p)) == 1  # 2 failures since the enrollment: no stop

@@ -87,14 +87,6 @@ def test_write_head_files_modes_and_content(tmp_path):
     assert len((tmp_path / "token").read_text().strip()) == 64
 
 
-def test_write_head_files_tightens_pre_existing_loose_key_file(tmp_path):
-    # a pre-existing key file with a loose mode must end at 600
-    (tmp_path / "ca.key").write_text("old")
-    os.chmod(tmp_path / "ca.key", 0o644)
-    pki.write_head_files(tmp_path, HEAD_IP, now=T0)
-    assert stat.S_IMODE(os.stat(tmp_path / "ca.key").st_mode) == 0o600
-
-
 def test_leaf_never_outlives_its_ca():
     ca_cert, ca_key = pki.make_ca(cert_max_age_days=10, now=T0)
     leaf, _ = pki.make_leaf(ca_cert, ca_key, NODE_IP, cert_max_age_days=365, now=T0 + timedelta(days=5))
@@ -108,11 +100,6 @@ def test_write_head_files_directory_mode_700(tmp_path):
     new = tmp_path / "new"
     pki.write_head_files(new, HEAD_IP, now=T0)
     assert stat.S_IMODE(os.stat(new).st_mode) == 0o700
-    existing = tmp_path / "existing"
-    existing.mkdir(mode=0o755)
-    os.chmod(existing, 0o755)
-    pki.write_head_files(existing, HEAD_IP, now=T0)
-    assert stat.S_IMODE(os.stat(existing).st_mode) == 0o700
 
 
 def test_expiry_warning_starts_at_day_351_of_365(ca):

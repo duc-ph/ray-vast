@@ -45,6 +45,9 @@ DESTROY_RETRY_S = 5
 CA_RETRY_S = 5
 ENROLL_RETRY_S = 10
 TOKEN_CHECK_TIMEOUT_S = 180
+HEARTBEAT_INTERVAL_S = 30
+HEARTBEAT_TIMEOUT_S = 300  # no successful heartbeat for this long: destroy (the head side has the same limit)
+CALL_THREADS = {}  # url -> the thread of the last call to it (`call`); only the main thread calls `call`
 
 
 class Stop(Exception):
@@ -107,7 +110,12 @@ def call(url, ctx, body=None, method=None, headers=None, timeout=10):
 
     `timeout` is a limit on the whole call (not only on each socket read), so a server that sends 1 byte per second
     cannot hold it: the call runs in a daemon thread, and a call that is not done in time raises TimeoutError.
+    That thread can go on reading the trickle, and each thread counts against pids.max. So a URL has at most one call
+    thread: while the last one still runs, a new call to the URL fails at once (the next heartbeat, for example).
     """
+    previous = CALL_THREADS.get(url)
+    if previous is not None and previous.is_alive():
+        raise OSError("the last call to this URL has not ended yet")
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(
         url, data=data, method=method or ("POST" if data is not None else "GET"), headers=headers or {}
@@ -132,6 +140,7 @@ def call(url, ctx, body=None, method=None, headers=None, timeout=10):
         worker.start()
     except RuntimeError:  # "can't start new thread" (the container's pids limit): a failed call, not a fatal error
         raise OSError("cannot start a thread for the call") from None
+    CALL_THREADS[url] = worker
     worker.join(timeout)
     if not outcome:
         raise TimeoutError(f"no complete answer within {timeout} s")
@@ -166,8 +175,6 @@ def destroy(state, reason):
     log(f"destroying this instance: {reason}")
     if state.report_ctx is not None:
         body = {"instance_id": state.instance_id, "kind": "destroy", "reason": reason[:2000]}
-        if state.node_ctx is not None:
-            body["ok"] = False
         try:
             call(state.report_url, state.report_ctx, body, timeout=DESTROY_REPORT_TIMEOUT_S)
         except Exception as e:
@@ -191,13 +198,20 @@ def destroy(state, reason):
 
 def main():
     env = os.environ
+    missing = [name for name in ("CONTAINER_ID", "CONTAINER_API_KEY") if not env.get(name)]
+    if missing:
+        # Without them this instance cannot destroy itself. PID 1 must not exit (vast would start the container again in
+        # a loop), so it waits; the provider's time limits end the instance.
+        log(f"{' and '.join(missing)} is not set; waiting for the provider to end this instance")
+        while True:
+            time.sleep(3600)
     state = SimpleNamespace(
         instance_id=int(env["CONTAINER_ID"]),
         api_key=env.pop("CONTAINER_API_KEY"),  # in memory only, only for our own DELETE; never sent to the head (D7)
         join_token=env.pop("RAYVAST_JOIN_TOKEN", ""),  # in memory only; sent only inside /enroll (design 5.2)
         vast_api=env.get("RAYVAST_VAST_API", "https://console.vast.ai/api/v0").rstrip("/"),
         scale=float(env.get("RAYVAST_TIME_SCALE", "1")),
-        report_url=None, report_ctx=None, node_ctx=None,
+        report_url=None, report_ctx=None,
     )
     start = time.monotonic()
 
@@ -268,12 +282,19 @@ def main():
             listener.listen(16)
             listeners.append(listener)
 
-        # 4. Enroll. The real core count is the smaller of the affinity and the cgroup quota.
+        # 4. Enroll. The real core count is the smaller of the affinity and the cgroup CPU quota: cgroup v2 `cpu.max`,
+        # else cgroup v1 `cpu/cpu.cfs_quota_us` and `cpu/cpu.cfs_period_us` (microseconds; a quota of -1 is no limit).
+        cgroup_version = "v2" if os.path.exists(f"{CGROUP_DIR}/cgroup.controllers") else "v1"
         cpu_count = len(os.sched_getaffinity(0))
         try:
-            with open(f"{CGROUP_DIR}/cpu.max") as f:
-                quota_cores = parse_cpu_max(f.read())
-        except OSError:
+            if cgroup_version == "v2":
+                with open(f"{CGROUP_DIR}/cpu.max") as f:
+                    quota_cores = parse_cpu_max(f.read())
+            else:
+                with open(f"{CGROUP_DIR}/cpu/cpu.cfs_quota_us") as f, open(f"{CGROUP_DIR}/cpu/cpu.cfs_period_us") as g:
+                    quota, period = int(f.read()), int(g.read())
+                quota_cores = quota / period if quota > 0 else None
+        except (OSError, ValueError):
             quota_cores = None
         if quota_cores is not None:
             cpu_count = min(cpu_count, max(1, math.floor(quota_cores)))
@@ -317,7 +338,7 @@ def main():
             listener.close()
         node_ctx = ssl.create_default_context(cadata=ca_pem.decode())
         node_ctx.load_cert_chain(f"{RAYVAST_DIR}/node.pem", f"{RAYVAST_DIR}/node.key")
-        state.report_url, state.report_ctx, state.node_ctx = f"{base_b}/report", node_ctx, node_ctx
+        state.report_url, state.report_ctx = f"{base_b}/report", node_ctx
 
         # The private IP is the interface address that routes to the head.
         probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -326,7 +347,6 @@ def main():
         probe.close()
         agent_ports = [ports["70004"], ports["70005"]]
         # The container's process limit (pids.max): cgroup v2 file, else cgroup v1 file. "max" (a ValueError) or no file: no limit.
-        cgroup_version = "v2" if os.path.exists(f"{CGROUP_DIR}/cgroup.controllers") else "v1"
         pids_dir = CGROUP_DIR if cgroup_version == "v2" else f"{CGROUP_DIR}/pids"
         try:
             with open(f"{pids_dir}/pids.max") as f:
@@ -342,7 +362,7 @@ def main():
             f"--metrics-export-port={ports['70002']}", f"--dashboard-agent-grpc-port={ports['70003']}",
             f"--dashboard-agent-listen-port={ports['70004']}", f"--runtime-env-agent-port={ports['70005']}",
             f"--worker-port-list={','.join(map(str, worker_ports))}",
-            f"--num-cpus={cpu_count}", f"--num-gpus={answer['num_gpus']}",
+            f"--num-cpus={cpu_count}", f"--num-gpus={gpu_count}",  # the head refuses a count other than the node type's GPU
         ]
         ray_env = dict(
             env,
@@ -364,8 +384,8 @@ def main():
             f"startup concurrency {STARTUP_CONCURRENCY}")
 
         # 6. Watchdog: heartbeat, token check, reap children, destroy on any exit.
-        heartbeat_interval = answer["heartbeat_interval_s"] / state.scale
-        heartbeat_timeout = answer["heartbeat_timeout_s"] / state.scale
+        heartbeat_interval = HEARTBEAT_INTERVAL_S / state.scale
+        heartbeat_timeout = HEARTBEAT_TIMEOUT_S / state.scale
         last_ok = next_heartbeat = time.monotonic()
         token_deadline = last_ok + TOKEN_CHECK_TIMEOUT_S / state.scale
         token_result = None  # (ok, reason) once decided; any answer but 401 (also 503, no answer) is tried again

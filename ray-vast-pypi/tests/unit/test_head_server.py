@@ -45,12 +45,14 @@ def listeners():
 def env(tmp_path, listeners):
     ca_cert, ca_key = pki.make_ca()
     head_cert, head_key = pki.make_leaf(ca_cert, ca_key, "127.0.0.1")
+    (tmp_path / "head.pem").write_bytes(head_cert)
+    (tmp_path / "head.key").write_bytes(head_key)
     state = ClusterState()
     end = StubEnd()
     for _ in range(20):  # parallel test runs on the same box share the range 20000-20999
         port_a, port_b = random.sample(range(20000, 21000), 2)
         server = HeadServer(
-            state, end, ca_cert, ca_key, head_cert, head_key, TOKEN, b"SHIM", b"print('boot')", "127.0.0.1",
+            state, end, ca_cert, ca_key, tmp_path / "head.pem", tmp_path / "head.key", TOKEN, b"SHIM", b"print('boot')", "127.0.0.1",
             port_a, port_b, "c1",
         )
         try:
@@ -74,7 +76,7 @@ def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN
     with env.state.lock:
         if slot_id not in env.state.slots:
             env.state.add_slot(Slot(slot_id, node_type))
-        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, public_ip=ip, join_token=token,
+        env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, node_type, public_ip=ip, join_token=token,
                                          gpus=gpus))
         if ip:
             env.state.ip_ref_add(ip)
@@ -95,9 +97,10 @@ def test_good_enrollment_gives_files_and_a_verifiable_cert(env):
     resp = enroll(env, 11)
     assert resp.status_code == 200
     answer = resp.json()
-    assert answer["slot_id"] == "slot-1" and answer["node_type"] == "gpu" and answer["num_gpus"] == 1
+    # The worker has the CA (pinned), its own GPU count (the head checked it) and the heartbeat constants already.
+    assert set(answer) == {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address"}
+    assert answer["slot_id"] == "slot-1" and answer["node_type"] == "gpu"
     assert answer["token"] == TOKEN and answer["gcs_address"] == "127.0.0.1:6379"
-    assert answer["ca_pem"].encode() == env.ca_cert
     (env.tmp / "node.pem").write_text(answer["cert_pem"])
     out = subprocess.run(["openssl", "verify", "-CAfile", env.ca_file, str(env.tmp / "node.pem")],
                          capture_output=True, text=True)
@@ -181,7 +184,6 @@ def test_out_of_range_cpu_or_gpu_count_is_a_400(env, cpu, gpu):
 def test_candidate_whose_slot_is_gone_takes_a_free_slot_of_its_node_type(env):
     add_candidate(env, 11, slot_id="slot-gone")
     env.state.remove_slot("slot-gone")
-    env.state.candidates[11].node_type = "gpu"
     env.state.add_slot(Slot("slot-2", "gpu"))
     env.state.add_slot(Slot("slot-3", "cpu"))
     assert enroll(env, 11).json()["slot_id"] == "slot-2"
@@ -246,10 +248,9 @@ def test_a_gpu_count_other_than_the_declared_one_is_refused_and_ends_the_candida
     assert env.end.ended == [11] and 11 not in env.state.enrolled
 
 
-def test_a_cpu_node_type_enrolls_with_num_gpus_0(env):
+def test_a_cpu_node_type_enrolls_a_container_with_0_gpus(env):
     add_candidate(env, 11, gpus=0)
-    resp = enroll(env, 11, gpu_count=0)
-    assert resp.status_code == 200 and resp.json()["num_gpus"] == 0
+    assert enroll(env, 11, gpu_count=0).status_code == 200
 
 
 def worker_session(env, ip, instance_id=11, tmp_name="w"):

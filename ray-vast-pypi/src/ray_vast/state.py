@@ -6,7 +6,7 @@ Times are epoch seconds and always passed in by the caller.
 
 Rules for callers:
 - `Candidate.public_ip` is set once, when vast first reports the instance running, and is never refreshed. The provider compares vast's current `public_ipaddr` with it to detect an IP change (plan step 9).
-- Candidate status: `rented` -> `running` -> `enrolled`. Slot status: `uninitialized` -> `setting-up` -> `up-to-date` (written into the slot's `ray-node-status` tag).
+- Slot status: `uninitialized` -> `setting-up` -> `up-to-date` (written into the slot's `ray-node-status` tag).
 - Compound changes (claim a free slot and mark enrolled; add a candidate and its IP ref) are done by the caller under `state.lock`.
 """
 import secrets
@@ -34,12 +34,12 @@ class Candidate:
     slot_id: str
     offer_id: int
     machine_id: int
+    node_type: str  # the node type that the provider rented it for; it enrolls into any free slot of this type
     public_ip: Optional[str] = None
-    status: str = "created"
     rented_at: float = 0.0
     running_at: Optional[float] = None
+    last_seen_at: Optional[float] = None  # the last reconcile pass whose vast listing had the instance
     dph_total: float = 0.0
-    node_type: Optional[str] = None  # set by the provider at rent time; used when the candidate's own slot is gone
     gpus: int = 0  # the declared GPU of the node type, set by the provider at rent time (design F4: GPU is exact)
     last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
     limit_warned_at: Optional[float] = None  # when the head server last logged the process-limit warning
@@ -109,8 +109,6 @@ class ClusterState:
             return count
 
     def block(self, machine_id, reason, kind, now):
-        if kind not in BLOCK_TTL:
-            raise ValueError("unknown blocklist kind %r; expected one of %s" % (kind, sorted(BLOCK_TTL)))
         with self.lock:
             self.blocklist[machine_id] = BlockEntry(reason, kind, now + BLOCK_TTL[kind])
 

@@ -32,9 +32,6 @@ class FakeHead:
         self.refuse_enroll = False
         self.enroll_503s = 0  # answer 503 to this many /enroll calls first
         self.answer_heartbeats = True
-        self.num_gpus = 0
-        self.heartbeat_interval_s = 30
-        self.heartbeat_timeout_s = 300
         self.events = []
         self.enrolled = set()
         self._servers = []
@@ -116,11 +113,9 @@ class FakeHead:
                     head.enrolled.add(body["instance_id"])
                     answer = {
                         "slot_id": "slot-1", "node_type": "worker", "cert_pem": cert_pem.decode(),
-                        "key_pem": key_pem.decode(), "ca_pem": ca_pem.decode(),
+                        "key_pem": key_pem.decode(),
                         "token": (head.pki_dir / "token").read_text().strip(), "shim_b64": head.shim_b64,
-                        "gcs_address": head.gcs_address, "num_gpus": head.num_gpus,
-                        "heartbeat_interval_s": head.heartbeat_interval_s,
-                        "heartbeat_timeout_s": head.heartbeat_timeout_s,
+                        "gcs_address": head.gcs_address,
                     }
                     self._send(200, json.dumps(answer).encode())
                 elif self.path == "/report":

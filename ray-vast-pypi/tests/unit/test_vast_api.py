@@ -28,7 +28,7 @@ def client(sleeps):
 @responses.activate
 def test_search_offers_sends_query_and_returns_offers(client):
     responses.post(f"{BASE_URL}/bundles/", json={"offers": [{"id": 1}, {"id": 2}]})
-    offers = client.search_offers({"num_gpus": {"eq": 0}}, order_by="dph_total", limit=5)
+    offers = client.search_offers({"num_gpus": {"eq": 0}}, limit=5)
     sent = json.loads(responses.calls[0].request.body)
     assert offers == [{"id": 1}, {"id": 2}]
     assert sent == {"num_gpus": {"eq": 0}, "order": [["dph_total", "asc"]], "type": "on-demand", "limit": 5}
@@ -207,9 +207,9 @@ def test_live_search_offers_returns_offers():
 def test_live_search_with_gpu_24gb_example_query():
     import yaml
 
-    from ray_vast.config import build_offer_query, load_and_bootstrap
+    from ray_vast.config import bootstrap_config, build_offer_query
 
-    config, _ = load_and_bootstrap(pathlib.Path(ray_vast.__file__).parent / "examples" / "gpu-24gb.yaml")
+    config, _ = bootstrap_config(yaml.safe_load((pathlib.Path(ray_vast.__file__).parent / "examples" / "gpu-24gb.yaml").read_text()))
     query = build_offer_query(config["available_node_types"]["gpu24"], config["provider"]["allow_non_datacenter"], "gpu24")
     key = os.environ.get("VAST_API_KEY") or LIVE_KEY.read_text().strip()
     offers = VastClient(key).search_offers(query)  # raises on HTTP 400 if the body (type: on-demand) is not accepted

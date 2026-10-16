@@ -119,8 +119,7 @@ def write_head_files(directory, head_ip, cert_max_age_days=365, now=None):
     Keys and the token get mode 600 (set at creation), certs 644. Returns the CA cert PEM and the token.
     """
     directory = Path(directory)
-    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
-    directory.chmod(0o700)  # also covers a directory that already existed (and a umask)
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)  # `up` makes it first (mode 700)
     ca_cert, ca_key = make_ca(cert_max_age_days, now)
     head_cert, head_key = make_leaf(ca_cert, ca_key, head_ip, cert_max_age_days, now)
     token = make_token()
@@ -131,9 +130,7 @@ def write_head_files(directory, head_ip, cert_max_age_days=365, now=None):
         ("head.key", head_key, 0o600),
         ("token", token.encode(), 0o600),
     ]:
-        path = directory / name
-        path.unlink(missing_ok=True)  # an old file may have a looser mode; O_EXCL makes the mode apply
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+        fd = os.open(directory / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
         with os.fdopen(fd, "wb") as f:
             f.write(data)
         # umask can only remove bits; a 0o644 request under a stricter umask stays stricter, which is fine

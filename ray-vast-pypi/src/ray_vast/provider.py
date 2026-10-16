@@ -7,11 +7,12 @@ Ray loads it from `provider: {type: external, module: ray_vast.provider.VastNode
 - `head_ip`: the head public IP (required).
 - `secrets_dir`: directory with `ca.pem`, `ca.key`, `head.pem`, `head.key`, `token` and `vast_api_key` (required).
 - `security_group_ids` (the cluster's 5 groups, in order), `region` (of the head), `image`, `max_dollars_per_hour`: required.
-- `candidate_factor`, `order_by`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
+- `candidate_factor`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
 - `image_size_gb` (optional; `up` measures it): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min.
   Without it, 15 min.
 - `vast_api_url`, `port_a`, `port_b` (optional, tests only): the vast API base URL (the local end-to-end tests point it at
-  a fake vast) and the head server ports (default `config.PORT_A`, `config.PORT_B`).
+  a fake vast) and the head server ports (default `config.PORT_A`, `config.PORT_B`). A unit test starts the real head
+  server on free ports: a local end-to-end head or a parallel test run on the same host network can hold 7443 and 7444.
 `region` and `image_size_gb` are not fields of the user's YAML: `up` adds them to the copy on the head.
 Per node type, Ray passes `node_config` (`offer_query`, `disk_gb`) and `resources` to the create call.
 
@@ -103,7 +104,8 @@ class VastNodeProvider(NodeProvider):
         self._sg.revoke_all()
 
         self.head_server = HeadServer(
-            self.state, self._end, ca_cert, ca_key, read("head.pem"), read("head.key"), read("token").decode().strip(),
+            self.state, self._end, ca_cert, ca_key, secrets_dir / "head.pem", secrets_dir / "head.key",
+            read("token").decode().strip(),
             (package / "shim" / "librayvast_shim.so").read_bytes(), (package / "worker" / "bootstrap.py").read_bytes(),
             self._head_ip, cfg["port_a"], cfg["port_b"], cluster_name, clock=clock)
         if start_threads:
@@ -190,7 +192,7 @@ class VastNodeProvider(NodeProvider):
         }
         rented, over_budget = 0, False
         try:
-            offers = self._vast.search_offers(query, self._cfg["order_by"])
+            offers = self._vast.search_offers(query)
             for offer in offers:
                 if rented >= self._cfg["candidate_factor"] * count:
                     break
@@ -211,8 +213,7 @@ class VastNodeProvider(NodeProvider):
                 try:
                     instance_id = self._vast.create_instance(
                         offer["id"], self._cfg["image"], {**env, "RAYVAST_JOIN_TOKEN": join_token},
-                        ["sh", "-c", self._bootloader], self._label,
-                        node_config.get("disk_gb", 50))
+                        ["sh", "-c", self._bootloader], self._label, node_config["disk_gb"])
                 except VastError as e:
                     log.warning("renting offer %s failed: %s", offer["id"], e)
                 finally:
@@ -220,8 +221,8 @@ class VastNodeProvider(NodeProvider):
                         self._reserved_dph -= dph
                         if instance_id is not None:
                             self.state.add_candidate(Candidate(
-                                instance_id, slots[rented % count].id, offer["id"], offer["machine_id"],
-                                status="rented", rented_at=self._clock(), dph_total=dph, node_type=node_type,
+                                instance_id, slots[rented % count].id, offer["id"], offer["machine_id"], node_type,
+                                rented_at=self._clock(), dph_total=dph,
                                 gpus=int(resources.get("GPU", 0)), pull_limit_s=pull_limit, join_token=join_token))
                 if instance_id is None:
                     continue
@@ -324,9 +325,13 @@ class VastNodeProvider(NodeProvider):
                 enrolled = cand.instance_id in self.state.enrolled
                 status = instance.get("actual_status") if instance else None
                 vast_ip = instance.get("public_ipaddr") if instance else None
+                if instance is not None:
+                    cand.last_seen_at = now
                 reason, block = None, None
                 if instance is None:
-                    if now - cand.rented_at > MISSING_GRACE_S:
+                    # One listing can miss an instance (a partial answer, a label edited in the console). So the grace
+                    # counts from the last listing that had it, not from the rental.
+                    if now - (cand.last_seen_at or cand.rented_at) > MISSING_GRACE_S:
                         reason = "instance is gone from vast"
                 elif status in FAILED_STATUSES or str(instance.get("status_msg") or "").lower().startswith("error"):
                     reason, block = f"instance status {status!r}: {str(instance.get('status_msg'))[:100]}", \
@@ -338,7 +343,7 @@ class VastNodeProvider(NodeProvider):
                         reason = "no heartbeat for 5 min"
                 elif status == "running" and vast_ip and cand.running_at is None:
                     # first time running: record the IP (never refreshed) and its ref count
-                    cand.public_ip, cand.status, cand.running_at = vast_ip, "running", now
+                    cand.public_ip, cand.running_at = vast_ip, now
                     self.state.ip_ref_add(vast_ip)
                     newly_running.append(cand)
                 elif cand.running_at is not None:
@@ -356,7 +361,12 @@ class VastNodeProvider(NodeProvider):
         for cand in newly_running:
             try:
                 with self._sg_lock:
-                    self._sg.allow_ip(cand.public_ip)
+                    # The candidate can end between step 1 and here (terminate_node, the head server). Then its
+                    # `_end` has already removed the rule; a rule added now would stay until `down`.
+                    with self.state.lock:
+                        in_use = self.state.ip_refs.get(cand.public_ip, 0) > 0
+                    if in_use:
+                        self._sg.allow_ip(cand.public_ip)
             except SgQuotaError as e:
                 to_end.append((cand, str(e), None))
             except botocore.exceptions.ClientError as e:

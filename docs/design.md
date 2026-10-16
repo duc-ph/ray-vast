@@ -84,7 +84,7 @@ Facts from the Ray source and the spikes on Ray 2.59.0 ([spikes.md](spikes.md)).
 - **Time limits for each candidate:**
   - Pull: `2 × image_size_gb × 8000 / inet_down` seconds, between 5 and 15 min (15 min when `image_size_gb` is not set). `up` measures the image size; the user cannot set it.
   - Enrollment: 1 min after the provider first sees `running`.
-  - Missing from vast's list: ended after 60 s.
+  - Missing from vast's list: ended 60 s after the last list that showed it (60 s after the rental if no list showed it). One list without it does not end it: a list can be partial, or a user can edit the label in the console.
   - An `exited` or error status ends the candidate at once.
 - **Slots.** A slot with a worker stays until the worker ends. A free slot is removed when no pending candidate of its node type is left. v2 then asks again.
 - **Budget.** `max_dollars_per_hour` (required) is a limit on the sum of `dph_total` over workers, candidates and rentals in progress. The provider does not rent above it.
@@ -119,7 +119,7 @@ The provider sets these in the create request (`env`):
 
 vast sets: `CONTAINER_ID` (the instance ID), `CONTAINER_API_KEY` (secret, one for each instance), `PUBLIC_IPADDR`, and `VAST_TCP_PORT_70000` … `VAST_TCP_PORT_70063` (the host port P for each identity port; vast maps P→P).
 
-For tests only, the bootstrap reads these when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (a float; all bootstrap timers are divided by it), `RAYVAST_DIR` (the directory for the files, default `/tmp/rayvast`), `RAYVAST_CGROUP_DIR` (the cgroup directory for `cpu.max` and the pids files, default `/sys/fs/cgroup`), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; for local Docker tests, where the egress IP is not `PUBLIC_IPADDR`).
+For tests only, the bootstrap reads these when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (a float; all bootstrap timers are divided by it), `RAYVAST_DIR` (the directory for the files, default `/tmp/rayvast`), `RAYVAST_CGROUP_DIR` (the cgroup directory for the CPU quota files and the pids files, default `/sys/fs/cgroup`), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; for local Docker tests, where the egress IP is not `PUBLIC_IPADDR`).
 
 ### 5.2 Join token
 
@@ -188,15 +188,15 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "ca_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_gpus": int, "heartbeat_interval_s": 30, "heartbeat_timeout_s": 300}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
+| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379"}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
 | A | `POST /report` | `{"instance_id": int, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` if it can be parsed. The head only logs it. |
 | B | `POST /heartbeat` | `{"instance_id": int, "pids_current": int\|null, "pids_max": int\|null, "pids_refused": int\|null, "ports_in_use": int\|null, "ports_total": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
-| B | `POST /report` | `{"instance_id": int, "kind": "token_check" \| "destroy", "ok": bool, "reason": str}` | 200 `{}` |
+| B | `POST /report` | `{"instance_id": int, "kind": "token_check", "ok": bool, "reason": str}` or `{"instance_id": int, "kind": "destroy", "reason": str}` | 200 `{}` |
 
 ### 5.7 Head rules for `/enroll`
 
 - **Order of the checks:** the body (400 if it is not valid); a known candidate that is not enrolled yet; the source IP equals the candidate's public IP; the join token equals the candidate's token; the host checks; the GPU count; the port check; a free slot. The head makes no vast call during `/enroll`.
-- **GPUs:** the worker's `gpu_count` is the number of `/dev/nvidia<N>` device nodes in its container. `/proc/driver/nvidia/gpus` is not used: it shows every GPU of the host (C5). The answer's `num_gpus` is the node type's `GPU` (F4).
+- **GPUs:** the worker's `gpu_count` is the number of `/dev/nvidia<N>` device nodes in its container. `/proc/driver/nvidia/gpus` is not used: it shows every GPU of the host (C5). The head accepts only a `gpu_count` equal to the node type's `GPU` (F4). So the worker starts Ray with its own `gpu_count`, and the answer has no GPU field.
 - **Body limits:** `ports` holds 64 different values in 1–65535; `cpu_count` is 1–4096; `gpu_count` is 0–64. Other values give 400.
 - **Refusals without a destroy:** an unknown instance, an instance that is already enrolled, a wrong source IP, a missing or wrong join token. Reason: a stranger must not be able to kill our candidates. The provider's time limits end such candidates.
 - **Refusals with a destroy:** after a valid token, a failed host check, a `gpu_count` other than the node type's `GPU` (in both directions; blocklist `security`), a failed port check or no free slot destroys the candidate. A host fault also puts the host on the blocklist (section 4).
@@ -232,7 +232,7 @@ worker <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused f
 
 1. Close the listeners. Write the files in `/tmp/rayvast` (mode 700): `ca.pem`, `node.pem`, `node.key` (600), `token` (600), `librayvast_shim.so`.
 2. Keep `CONTAINER_API_KEY` and the join token in memory only, and remove both from the environment of the Ray child.
-3. Start `ray start --block` as a child, as the image's user, with: `--address` (the GCS), `--node-ip-address` (the public IP), the 6 fixed ports and `--worker-port-list` (5.5), `--num-cpus` = the real core count (the smaller of the `os.sched_getaffinity` size and the cgroup `cpu.max` quota / period), `--num-gpus` from the answer, `RAY_CLOUD_INSTANCE_ID=<slot id>`, `RAY_NODE_TYPE_NAME`, `RAY_num_workers_soft_limit` = min(cpu_count, worker ports // 2), `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8` (5.5), the TLS and token env, and the shim env.
+3. Start `ray start --block` as a child, as the image's user, with: `--address` (the GCS), `--node-ip-address` (the public IP), the 6 fixed ports and `--worker-port-list` (5.5), `--num-cpus` = the real core count (the smaller of the `os.sched_getaffinity` size and the cgroup CPU quota / period: `cpu.max` on cgroup v2; `cpu/cpu.cfs_quota_us` and `cpu/cpu.cfs_period_us` on cgroup v1, where a quota of -1 is no limit), `--num-gpus` = its own `gpu_count` (5.7), `RAY_CLOUD_INSTANCE_ID=<slot id>`, `RAY_NODE_TYPE_NAME`, `RAY_num_workers_soft_limit` = min(cpu_count, worker ports // 2), `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8` (5.5), the TLS and token env, and the shim env.
    It logs one start line: `limits: pids.max <N or none> (cgroup v1|v2), cpus <n>, worker ports <n>, soft limit <n>, grpc threads 4, startup concurrency 8`.
 4. Token check: without a token, both agent ports on 127.0.0.1 must answer 401. Send the result in `POST /report` (port B). Reason: without `RAY_AUTH_MODE=token`, the job agent runs any shell command for anyone.
 5. Become the watchdog (section 6).
@@ -243,11 +243,12 @@ worker <slot id> (instance <id>, ip <ip>) is at its process limit: <N> refused f
 
 The bootstrap stays as PID 1 and is the watchdog.
 
-- It sends `POST /heartbeat` on port B every 30 s, with the status of the process limit (5.7a). The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
+- It sends `POST /heartbeat` on port B every 30 s, with the status of the process limit (5.7a). The interval (30 s) and the timeout (300 s) are constants of the bootstrap. The head does not send them. The provider serves this endpoint, so the heartbeat fails when the head is down and also when only the provider is down.
 - It collects its finished child processes.
 - **Destroy, never exit.** When PID 1 exits, vast starts the container again and runs the command again, and the instance keeps its full cost (C4: 7 restarts in 2 min). So the watchdog always destroys its instance: `DELETE {RAYVAST_VAST_API}/instances/<CONTAINER_ID>/` with `Authorization: Bearer <CONTAINER_API_KEY>`, retried every 5 s until 200 or 404. Vast calls do not follow redirects.
 - **Report first.** Before each destroy, it sends the reason to the head (port B if enrolled, else port A) and waits up to 10 s. Reason: after a destroy, vast keeps no container log (C4).
-- Every HTTP call of the worker has a limit on the total time, not only on each read, so a slow server cannot hang PID 1.
+- Every HTTP call of the worker has a limit on the total time, not only on each read, so a slow server cannot hang PID 1. The call runs in a thread. After the limit, that thread can still read a slow answer, and each thread counts against `pids.max`. So a URL has at most one call thread: while it runs, a new call to the URL fails at once (for example, the next heartbeat).
+- If `CONTAINER_ID` or `CONTAINER_API_KEY` is not set, the bootstrap cannot destroy its instance. It logs the names of the missing variables and waits. It does not exit, because vast would start the container again in a loop. The provider's time limits end the instance.
 
 ### 6.2 All the ways a worker ends
 
@@ -264,7 +265,7 @@ The bootstrap stays as PID 1 and is the watchdog.
 | No heartbeat for 5 min (head side) | provider | Destroy. |
 | The public IP in vast changes | provider | Destroy (the Ray node cannot keep its address). |
 | vast status `exited` or an error | provider | Destroy. Reason: vast starts a stopped container again and keeps the cost (C4). |
-| Gone from vast's list for 60 s | provider | Forget it; the slot goes. |
+| Gone from vast's list for 60 s after the last list that showed it | provider | Destroy (through `_end`); the slot goes. Reason: if the instance still runs, a forgotten instance costs money. A destroy of an instance that is gone is harmless (404 is a success). |
 | An instance with the cluster label that the provider does not know | provider (orphan sweep, each reconcile pass) | Destroy. |
 | `ray-vast down` | CLI | Terminate the head, then destroy every instance with the label. |
 
@@ -286,14 +287,13 @@ The kernel drops `SIGKILL` to PID 1 from inside the container. Ray runs as the s
 6. Start the EC2 head: Ubuntu 24.04, the head node type's `node_config.instance_type` (default `t3.large`) in its `node_config.region`, 60 GiB gp3, IMDSv2 required, no Elastic IP, Docker installed by user data. All 5 groups go on its network interface.
 7. Build the derived image `FROM <image>` plus ray-vast. The first source that applies wins:
     - `--wheel FILE`. `up` copies the wheel to the head.
-    - `--index-url URL`, for TestPyPI. The image runs `pip install --index-url URL --extra-index-url https://pypi.org/simple ray-vast==<the CLI's version>`. `URL` must be a plain `http://` or `https://` URL with no spaces. `up` masks a user name and a password in `URL` in its output.
     - The source tree, when the CLI runs from a git clone. `up` builds the wheel on the laptop. This is for development.
     - PyPI, in all other cases. The image runs `pip install ray-vast==<the CLI's version>`.
 
-    The first output line names the source. A failed build on an index path stops `up`. The message names the version and the index, and the end of the build output follows. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`).
+    The first output line names the source. A failed build from PyPI stops `up`. The message names the version, and the end of the build output follows. To test a release on TestPyPI, download its wheel (`pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`) and pass it with `--wheel`. Read the image's Ray version (warn if it is not in the tested list, now 2.59) and the shim path: `docker run` with the image's ENTRYPOINT prints one line `RAYVAST_IMAGE_INFO <ray version> <shim path>`, and `up` reads only that line, because an ENTRYPOINT can write other text to stdout first (C8). No such line stops `up` with an error. Read the image's size (`image_size_gb`).
 8. Copy the vast key to the head (mode 600). Make the CA, the cluster token and the head cert on the head (`pki.py`). Write the final YAML. Its `provider` gets the internal keys `head_ip`, `secrets_dir`, `security_group_ids`, `region` and `image_size_gb`; they are not fields of the user's YAML.
 9. Start the head container: `docker run --init --network host` with no restart policy, `--shm-size` = 0.33 × the head's RAM (Ray's object store rule; Docker's default is 64 MB), main process `ray start --head --block --num-cpus=0 --autoscaling-config …`, with `RAY_enable_autoscaler_v2=1`, `RAY_CLOUD_INSTANCE_ID=head`, the TLS, token and shim env, and the fixed ports below.
-10. Wait until `ray status` works. Warn if the CA expires within 14 days.
+10. Wait until `ray status` works.
 
 `down` deletes the key pair (found by name and tag, like the security groups) and the private key file, also after a failed `up`.
 
@@ -305,7 +305,7 @@ The provider and the head server log to `/tmp/ray/session_latest/logs/monitor.lo
 
 - Each cluster gets a new CA and a new token. The CA key stays on the head. TLS and `RAY_AUTH_MODE=token` are on for all nodes.
 - RSA-2048 keys. Leaf certs have serverAuth and clientAuth. `not_before` is 5 min in the past (worker clock skew). The CA has `pathlen:0`.
-- Cert life: 365 days (a constant) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). `up` and the head log warn 14 days before the CA expires (a leaf cert never lives longer than the CA). Reason: when a cert expires, all TLS handshakes with that node fail, and Ray loads cert files only at process start. Short certs make outages more likely, and they do not add much security.
+- Cert life: 365 days (a constant) for the CA and for every node cert. There is no automatic renewal: to renew, make a new cluster (`down` + `up`). The head log warns 14 days before the CA expires (a leaf cert never lives longer than the CA). Reason: when a cert expires, all TLS handshakes with that node fail, and Ray loads cert files only at process start. Short certs make outages more likely, and they do not add much security.
 - Files on the head: `ca.pem` and `head.pem` mode 644; keys and the token mode 600; the directory mode 700.
 - The CA fingerprint is the SHA-256 of the CA cert's DER bytes, lowercase hex (S5).
 
@@ -334,7 +334,7 @@ Reason: without it, the runtime-env agent and the dashboard agent bind to the ad
 ### 8.3 Security group rules
 
 - Rules are kept for each public IP, not for each worker. Two workers can share one public IP: two instances on one host, or two hosts of one vast operator behind one NAT IP (seen in C2–C4: 85.10.218.46).
-- The provider adds a rule (/32, all TCP) for an IP when it first sees a candidate `running`, before enrollment. The rule goes into the first of the 5 groups that has room (when AWS refuses a rule because a group is full, it tries the next group). When all 5 groups are full, the candidate is ended, and the error says to raise the quota.
+- The provider adds a rule (/32, all TCP) for an IP when it first sees a candidate `running`, before enrollment. Under the security group lock, it checks the IP's ref count again first: if the candidate ended in the meantime, it adds no rule. The rule goes into the first of the 5 groups that has room (when AWS refuses a rule because a group is full, it tries the next group). When all 5 groups are full, the candidate is ended, and the error says to raise the quota.
 - It removes the rule only when no worker or candidate uses the IP any more (a ref count).
 - The rules have the description `ray-vast:<cluster>`, so the start-up sweep and `down` can find them.
 - Capacity: 5 groups (the AWS default limit for one network interface), 60 rules each by default: about 299 worker IPs (group 0 also holds the SSH rule). The user can raise the per-group quota in AWS Service Quotas.
@@ -345,7 +345,7 @@ This section is about how the provider uses a node type. How to write one is in 
 
 - A node type has declared resources (`CPU`, `GPU`) and an `offer_query` in the vast API JSON form (a YAML mapping, MB units). There is no parser for the vast CLI syntax.
 - The provider adds these filters: `num_gpus = GPU`, `cpu_cores_effective >= CPU`, `direct_port_count >= 64`, `verified = true`, `rentable = true`, `datacenter = true` (unless `allow_non_datacenter`). A user filter on an added field must be at least as strict, and is merged.
-- The search sends `type: on-demand`, `limit: 100`, and sorts by `order_by` (default `dph_total`).
+- The search sends `type: on-demand`, `limit: 100`, and sorts by `dph_total` ascending (the cheapest first). The user cannot change the order.
 - `up` stops with an error if the declared resources contradict the query, or if the head type does not declare `resources: {CPU: 0}`.
 
 ## 10. CLI

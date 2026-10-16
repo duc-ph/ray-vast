@@ -23,7 +23,16 @@
     - The top-level `max_workers` is optional. The default is the sum of `max_workers` of the worker types.
     - The head role gets the permissions boundary `ray-vast-head-boundary`. Create this IAM policy once in your account (getting started, "Set up AWS"). Without it, `up` stops before it makes anything. The package has the policy files `ray_vast/iam/ray-vast-head-boundary.json` and `ray_vast/iam/ray-vast-user.json` (a least-privilege policy for a restricted IAM user).
     - `up` saves the AWS profile. `down`, `attach` and `dashboard` use it when you give no `--profile` and no `AWS_PROFILE`.
+    - The provider field `order_by` is removed. The provider always rents the cheapest offers first (`dph_total`).
+    - The `up` option `--index-url` is removed. To test a release on TestPyPI, download the wheel with `pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`, then run `ray-vast up --wheel <file>`.
 - The example YAMLs list all fields, each with a short comment.
+- Fixes:
+    - One vast list without a worker no longer ends it. The provider ends an instance 60 s after the last list that showed it.
+    - The worker reads the CPU quota on cgroup v1 hosts too (`cpu.cfs_quota_us`).
+    - A worker that ended just before its security group rule was made no longer leaves the rule until `down`.
+    - A slow answer from the head can hold at most one thread for each URL on the worker. Before, each heartbeat could leave one more thread.
+    - A container without `CONTAINER_ID` or `CONTAINER_API_KEY` waits for the provider to end it. Before, PID 1 crashed and vast restarted the container in a loop.
+- Protocol: the `/enroll` answer no longer has `ca_pem`, `num_gpus`, `heartbeat_interval_s` and `heartbeat_timeout_s`. The worker uses its pinned CA, its own GPU count and fixed heartbeat times. The destroy report no longer has `ok`. A worker and a head of different versions do not work together.
 
 ## 0.1.0 (2026-10-15)
 

@@ -15,7 +15,7 @@ import yaml
 from botocore.awsrequest import AWSResponse
 from moto import mock_aws
 
-from ray_vast import cli, commands, pki
+from ray_vast import cli, commands
 from ray_vast.vast_api import VastError
 
 CLUSTER = "rvtest-ab12"
@@ -36,14 +36,13 @@ CLUSTER_YAML = {
 class FakeSsh:
     """Records every call. `fail_at` is the index of the call that raises; `ray_version` is what the image reports."""
 
-    def __init__(self, fail_at=None, ray_version="2.59.0", ca_days=365, image_bytes="4500000000", image_info=None):
+    def __init__(self, fail_at=None, ray_version="2.59.0", image_bytes="4500000000", image_info=None):
         """`image_info`: the stdout of the image probe; by default the marker line with `ray_version` and a shim path."""
         self.calls = []  # (kind, ip, command or remote path, stdin)
         self.fail_at = fail_at
         self.ray_version = ray_version
         self.image_info = image_info
         self.image_bytes = image_bytes
-        self.ca_pem = pki.make_ca(ca_days)[0].decode()
         self.interactive_calls = []
         self.timeouts = {}  # command -> timeout it was run with
 
@@ -55,8 +54,6 @@ class FakeSsh:
     def run(self, ip, command, stdin=None, timeout=900):
         self._record("run", ip, command, stdin)
         self.timeouts[command] = timeout
-        if command.startswith("cat ") and command.endswith("/ca.pem"):
-            return self.ca_pem
         if command.startswith("cat ") and command.endswith("/token"):
             return "tok-0123456789abcdef\n"
         if "docker image inspect" in command:
@@ -122,7 +119,7 @@ def wheel(tmp_path):
 
 def run_up(aws, cluster_yaml, wheel, tmp_path, ssh=None, out=None):
     ssh = ssh or FakeSsh()
-    commands.up(str(cluster_yaml), aws, ssh, profile="my-profile", wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
+    commands.up(str(cluster_yaml), yaml.safe_load(cluster_yaml.read_text()), aws, ssh, profile="my-profile", wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
            state_dir=tmp_path / "state", sleep=lambda s: None, out=out or (lambda m: None))
     return ssh
 
@@ -444,13 +441,6 @@ def test_up_does_not_retry_other_invalid_parameters(aws, cluster_yaml, wheel, tm
     with pytest.raises(botocore.exceptions.ClientError, match="Invalid instance type"):
         run_up(aws, cluster_yaml, wheel, tmp_path)
     assert len(calls) == 1
-
-
-@pytest.mark.parametrize("ca_days, warns", [(365, False), (5, True)])
-def test_up_prints_the_ca_expiry_warning(aws, cluster_yaml, wheel, tmp_path, ca_days, warns):
-    messages = []
-    run_up(aws, cluster_yaml, wheel, tmp_path, ssh=FakeSsh(ca_days=ca_days), out=messages.append)
-    assert any("CA expires" in m for m in messages) == warns
 
 
 def test_dashboard_fetches_the_token_and_opens_the_tunnel(tmp_path):
@@ -777,7 +767,7 @@ def test_down_goes_on_after_a_failed_destroy_and_tries_again(aws, tmp_path, capl
     assert "HTTP 500: busy" in caplog.text
 
 
-# --- where the head image gets ray-vast: `--wheel` > `--index-url` > the source tree > PyPI ---------------------------------
+# --- where the head image gets ray-vast: `--wheel` > the source tree > PyPI ------------------------------------------------
 
 @pytest.fixture
 def installed(monkeypatch, tmp_path):
@@ -800,22 +790,12 @@ def test_main_up_from_an_installed_package_installs_its_own_version_from_pypi(aw
     assert f"installing {pin} from PyPI" in capsys.readouterr().out
 
 
-def test_main_up_with_an_index_url_installs_from_that_index_and_takes_the_dependencies_from_pypi(
-        aws, home, fake_ssh, cluster_yaml, installed, capsys):
-    test_pypi = "https://test.pypi.org/simple/"
-    assert cli.main(["up", str(cluster_yaml), "--index-url", test_pypi]) == 0
-    pin = f"ray-vast=={importlib.metadata.version('ray-vast')}"
-    run_line = dockerfile_of(fake_ssh.fake).splitlines()[1]
-    assert run_line == f"RUN pip install --no-cache-dir --index-url {test_pypi} --extra-index-url https://pypi.org/simple {pin}"
-    assert f"installing {pin} from {test_pypi}" in capsys.readouterr().out
-
-
-def test_main_up_with_an_index_url_in_a_source_tree_still_installs_from_the_index(aws, home, fake_ssh, cluster_yaml, monkeypatch):
-    def no_build(argv, **kwargs):
-        raise AssertionError(f"`up` built a wheel: {argv}")
-    monkeypatch.setattr(subprocess, "run", no_build)
-    assert cli.main(["up", str(cluster_yaml), "--index-url", "https://test.pypi.org/simple/"]) == 0
-    assert "--index-url https://test.pypi.org/simple/" in dockerfile_of(fake_ssh.fake)
+def test_main_up_has_no_index_url_flag(aws, home, fake_ssh, cluster_yaml, installed, capsys):
+    # A release test downloads the wheel from TestPyPI (`pip download`) and passes it with --wheel.
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main(["up", str(cluster_yaml), "--index-url", "https://test.pypi.org/simple/"])
+    assert exit_info.value.code == 2 and "unrecognized arguments: --index-url" in capsys.readouterr().err
+    assert fake_ssh.fake.calls == []
 
 
 def test_main_up_with_a_wheel_copies_it_and_says_so(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
@@ -835,9 +815,7 @@ def test_main_up_in_a_source_tree_builds_the_wheel_there_and_says_so(aws, home, 
     assert f"installing ray-vast from a wheel built from the source tree {commands.SOURCE_TREE}" in capsys.readouterr().out
 
 
-@pytest.mark.parametrize("extra, index", [([], "PyPI"), (["--index-url", "https://test.pypi.org/simple/"], "https://test.pypi.org/simple/")])
-def test_main_up_with_a_failed_head_image_build_names_the_version_and_the_index(
-        aws, home, fake_ssh, cluster_yaml, installed, capsys, extra, index):
+def test_main_up_with_a_failed_head_image_build_names_the_version(aws, home, fake_ssh, cluster_yaml, installed, capsys):
     class PipFails(FakeSsh):
         def run(self, ip, command, stdin=None, timeout=900):
             if "docker build" in command:
@@ -845,45 +823,12 @@ def test_main_up_with_a_failed_head_image_build_names_the_version_and_the_index(
                 raise commands.SshError("ssh: exit 1: sudo docker build\nERROR: No matching distribution found for ray-vast==0.1.0rc1")
             return super().run(ip, command, stdin, timeout)
     fake_ssh.fake = PipFails()
-    assert cli.main(["up", str(cluster_yaml), *extra]) == 1
+    assert cli.main(["up", str(cluster_yaml)]) == 1
     err = capsys.readouterr().err
-    assert (f"the head image build failed while installing ray-vast=={importlib.metadata.version('ray-vast')} from {index}; "
+    assert (f"the head image build failed while installing ray-vast=={importlib.metadata.version('ray-vast')} from PyPI; "
             "see the build output below") in err
     assert "No matching distribution found" in err  # the build output stays in the message
     assert f"ray-vast down {cluster_yaml}" in err
-
-
-def test_main_up_with_both_a_wheel_and_an_index_url_fails_before_creating_anything(aws, home, fake_ssh, cluster_yaml, wheel, capsys):
-    assert main_up(cluster_yaml, wheel, "--index-url", "https://test.pypi.org/simple/") == 1
-    assert "--wheel and --index-url do not go together" in capsys.readouterr().err
-    assert what_is_left(aws, FakeVast()) == []
-
-
-@pytest.mark.parametrize("url", ["ftp://test.pypi.org/simple/", "test.pypi.org/simple/", "https://test.pypi.org/simple/ x",
-                                 "https://test.pypi.org/simple/\nRUN echo injected", "https://"])
-def test_main_up_with_an_index_url_that_is_not_a_plain_http_url_fails_before_creating_anything(
-        aws, home, fake_ssh, cluster_yaml, installed, capsys, url):
-    assert cli.main(["up", str(cluster_yaml), "--index-url", url]) == 1
-    assert "--index-url must be a plain http:// or https:// URL without spaces" in capsys.readouterr().err
-    assert what_is_left(aws, FakeVast()) == [] and fake_ssh.fake.calls == []
-
-
-def test_main_up_never_prints_the_user_and_password_of_the_index_url(aws, home, fake_ssh, cluster_yaml, installed, capsys):
-    url = "https://alice:s3cr3t-token@pypi.example.com/simple/"
-
-    class BuildFails(FakeSsh):
-        def run(self, ip, command, stdin=None, timeout=900):
-            if "docker build" in command:
-                # The kept stderr tail can start in the middle of the URL; the RUN line repeats it in full.
-                raise commands.SshError("ssh: exit 1: sudo docker build\ncr3t-token@pypi.example.com/simple/ --extra-index-url x\n"
-                                        f"#5 [2/2] RUN pip install --no-cache-dir --index-url {url} ray-vast\nERROR: failed")
-            return super().run(ip, command, stdin, timeout)
-    fake_ssh.fake = BuildFails()
-    assert cli.main(["up", str(cluster_yaml), "--index-url", url]) == 1
-    out, err = capsys.readouterr()
-    assert "from https://***@pypi.example.com/simple/" in out and "from https://***@pypi.example.com/simple/" in err
-    assert "#5 [2/2] RUN pip install --no-cache-dir --index-url https://***@pypi.example.com/simple/ ray-vast" in err
-    assert "cr3t" not in out + err and "alice" not in out + err
 
 
 # --- SSH key per cluster, head settings in the head node type, the IAM boundary, the saved profile (2026-10-16) ---------
@@ -991,3 +936,11 @@ def test_main_with_the_old_provider_region_names_the_new_place(home, cluster_yam
     cluster_yaml.write_text(yaml.safe_dump(raw))
     assert cli.main([command, str(cluster_yaml)]) == 1
     assert "provider.region is no longer a field (moved: set node_config.region of the head node type)" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("command", ["up", "down"])
+def test_main_with_a_bad_cluster_name_prints_one_line_and_creates_nothing(aws, home, fake_ssh, cluster_yaml, capsys, command):
+    cluster_yaml.write_text(yaml.safe_dump(dict(CLUSTER_YAML, cluster_name="bad name")))
+    assert cli.main([command, str(cluster_yaml)]) == 1
+    assert "cluster_name 'bad name' must match" in capsys.readouterr().err
+    assert fake_ssh.fake.calls == []

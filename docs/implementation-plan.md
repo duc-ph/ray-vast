@@ -137,7 +137,7 @@ Done when:
 Work:
 - Check the README, `security.md` and `CHANGELOG.md` against the code. Version `0.1.0rc1` for TestPyPI, `0.1.0` for PyPI.
 - Publish to TestPyPI, install in a clean venv on the dev box, and run the live no-worker cycle from that install. Then publish to PyPI, only with the user.
-- `up` installs `ray-vast==<the CLI's own version>` from PyPI by default (`--index-url` for TestPyPI); `--wheel` and the source tree stay for development. Done 2026-10-14, before the release, so the TestPyPI cycle tests it.
+- `up` installs `ray-vast==<the CLI's own version>` from PyPI by default (`--index-url` for TestPyPI; removed 2026-10-16, a release test now passes the downloaded TestPyPI wheel with `--wheel`); `--wheel` and the source tree stay for development. Done 2026-10-14, before the release, so the TestPyPI cycle tests it.
 
 Done when:
 - [ ] `pip install ray-vast` from PyPI and `ray-vast up` work on a clean machine.

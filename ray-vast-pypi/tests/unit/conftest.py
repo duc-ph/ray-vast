@@ -23,7 +23,7 @@ class FakeVast:
         assert self.state is None or not self.state.lock._is_owned(), f"{name} called with state.lock held"
         self.calls.append(name)
 
-    def search_offers(self, query, order_by="dph_total", limit=100):
+    def search_offers(self, query, limit=100):
         self._call("search_offers")
         self.last_query = query
         return list(self.offers)

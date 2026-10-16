@@ -44,16 +44,18 @@ class Run:
         self.ray_out = tmp_path / "ray_out.json"
         self.dir = tmp_path / "rayvast"  # RAYVAST_DIR: not the fixed /tmp/rayvast, so test runs can overlap
         self.stdout_path = tmp_path / "stdout.txt"
-        # RAYVAST_CGROUP_DIR: the host's own cgroup must not decide the test. Default: 2 cores, no process limit.
+        # RAYVAST_CGROUP_DIR: the host's own cgroup must not decide the test. Default: cgroup v1, 2 cores, no process limit.
         no_pids_limit = tmp_path / "cgroup-none"
-        no_pids_limit.mkdir(exist_ok=True)
-        (no_pids_limit / "cpu.max").write_text("200000 100000\n")
+        (no_pids_limit / "cpu").mkdir(parents=True, exist_ok=True)
+        (no_pids_limit / "cpu" / "cpu.cfs_quota_us").write_text("200000\n")
+        (no_pids_limit / "cpu" / "cpu.cfs_period_us").write_text("100000\n")
         env = world.env()
         env.update(
             PATH=os.environ["PATH"], PYTHONPATH=str(FAKE_RAY_DIR), FAKE_RAY_OUT=str(self.ray_out),
             RAYVAST_DIR=str(self.dir), RAYVAST_CGROUP_DIR=str(no_pids_limit), **FAST
         )
         env.update(env_overrides)
+        env = {k: v for k, v in env.items() if v is not None}  # an override of None removes the variable
         self.proc = subprocess.Popen(
             argv or [sys.executable, "-I", "-S", str(BOOTSTRAP_PATH)], env=env,
             stdout=open(self.stdout_path, "w"), stderr=subprocess.STDOUT, start_new_session=True,
@@ -180,9 +182,13 @@ def cgroup_dir(tmp_path, layout, pids_max, events="max 17\n"):
     cgroup = tmp_path / "cgroup"
     pids = cgroup if layout == "v2" else cgroup / "pids"
     pids.mkdir(parents=True)
-    (cgroup / "cpu.max").write_text("200000 100000\n")
     if layout == "v2":
+        (cgroup / "cpu.max").write_text("200000 100000\n")
         (cgroup / "cgroup.controllers").write_text("cpu pids\n")
+    else:
+        (cgroup / "cpu").mkdir()
+        (cgroup / "cpu" / "cpu.cfs_quota_us").write_text("200000\n")
+        (cgroup / "cpu" / "cpu.cfs_period_us").write_text("100000\n")
     (pids / "pids.max").write_text(pids_max)
     (pids / "pids.current").write_text("1203\n")
     (pids / "pids.events").write_text(events)
@@ -208,6 +214,17 @@ def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_lim
 
 
 @pytest.mark.slow
+@pytest.mark.parametrize("quota, cpus", [("150000\n", 1), ("-1\n", len(os.sched_getaffinity(0)))])
+def test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_1_is_no_limit(world, tmp_path, quota, cpus):
+    # cgroup v1 (no cgroup.controllers): the CPU controller is in cpu/, with the quota and the period in microseconds.
+    cgroup = cgroup_dir(tmp_path, "v1", "max\n")
+    (cgroup / "cpu" / "cpu.cfs_quota_us").write_text(quota)
+    run = world.run(RAYVAST_CGROUP_DIR=str(cgroup))
+    assert wait_for(lambda: world.head.bodies("A", "/enroll")), run.stdout
+    assert world.head.bodies("A", "/enroll")[0]["cpu_count"] == cpus
+
+
+@pytest.mark.slow
 def test_a_pids_max_of_max_is_no_limit(world, tmp_path):
     run = world.run(RAYVAST_CGROUP_DIR=str(cgroup_dir(tmp_path, "v2", "max\n")))
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), run.stdout
@@ -225,6 +242,17 @@ def test_without_a_pids_limit_the_heartbeat_says_so(world, tmp_path):
     beat = world.head.bodies("B", "/heartbeat")[-1]
     assert beat["pids_max"] is None and beat["pids_refused"] is None and beat["ports_total"] == 58
     assert "pids.max none (cgroup v1)" in run.stdout
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("missing", ["CONTAINER_ID", "CONTAINER_API_KEY"])
+def test_without_the_vast_instance_variables_pid_1_logs_and_waits_instead_of_exiting(world, tmp_path, missing):
+    # PID 1 must not exit: vast would start the container again in a loop. The provider's time limits end the instance.
+    run = world.run(**{missing: None})
+    assert wait_for(lambda: "is not set" in run.stdout, timeout=10), run.stdout
+    time.sleep(2)
+    assert run.proc.poll() is None and world.head.events == [] and world.vast.destroys == []
+    assert missing in run.stdout and world.api_key not in run.stdout
 
 
 @pytest.mark.slow
@@ -469,7 +497,6 @@ def test_destroy_keeps_retrying_through_any_exception(monkeypatch):
     monkeypatch.setattr(bootstrap.time, "sleep", fake_sleep)
     state = bootstrap.SimpleNamespace(
         instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=1.0, report_url=None, report_ctx=None,
-        node_ctx=None,
     )
     try:
         with pytest.raises(Done):
@@ -511,7 +538,7 @@ def run_destroy(monkeypatch, state, answers):
 def test_destroy_before_enrollment_reports_without_the_container_key_then_deletes(monkeypatch):
     state = bootstrap.SimpleNamespace(
         instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=30.0, report_url="https://head/report",
-        report_ctx=object(), node_ctx=None,
+        report_ctx=object(),
     )
     calls, _ = run_destroy(monkeypatch, state, [(200, b""), (200, b"{}")])
     assert calls[0] == ("https://head/report", {"instance_id": 7, "kind": "destroy", "reason": "the reason"}, None)
@@ -522,10 +549,10 @@ def test_destroy_after_enrollment_reports_without_the_key_and_retries_on_the_sca
     ctx = object()
     state = bootstrap.SimpleNamespace(
         instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=30.0, report_url="https://head/report",
-        report_ctx=ctx, node_ctx=ctx,
+        report_ctx=ctx,
     )
     calls, sleeps = run_destroy(monkeypatch, state, [(200, b""), (500, b""), (429, b""), (404, b"")])
-    assert calls[0][1] == {"instance_id": 7, "kind": "destroy", "reason": "the reason", "ok": False}
+    assert calls[0][1] == {"instance_id": 7, "kind": "destroy", "reason": "the reason"}
     assert [c[2] for c in calls[1:]] == ["DELETE"] * 3  # 500 and 429 are retried, 404 counts as done
     assert sleeps == [bootstrap.DESTROY_RETRY_S / 30.0] * 2 + [3600]
 
@@ -533,7 +560,6 @@ def test_destroy_after_enrollment_reports_without_the_key_and_retries_on_the_sca
 def test_destroy_without_a_report_channel_still_deletes(monkeypatch):
     state = bootstrap.SimpleNamespace(
         instance_id=7, api_key="k", vast_api="http://vast.invalid", scale=1.0, report_url=None, report_ctx=None,
-        node_ctx=None,
     )
     calls, _ = run_destroy(monkeypatch, state, [(200, b"{}")])
     assert [c[2] for c in calls] == ["DELETE"]
@@ -646,6 +672,34 @@ def test_bootloader_gives_up_a_trickling_download_after_its_total_time_limit(new
     downloads = lambda: [e for e in world.head.events if e[2] == "/bootstrap"]
     assert wait_for(lambda: len(downloads()) >= 2, timeout=70), run.stdout  # 30 s limit + 10 s pause, then a retry
     assert run.proc.poll() is None and world.vast.destroys == []
+
+
+@pytest.mark.slow
+def test_a_trickling_server_holds_at_most_one_thread_for_each_url():
+    # Each call thread counts against pids.max. A call that timed out leaves its thread reading the trickle; the next
+    # call to the same URL (the next heartbeat) must fail at once and not start a second thread.
+    import threading
+
+    def trickle(handler):
+        handler.send_response(200)
+        handler.send_header("Content-Length", "1000")
+        handler.end_headers()
+        for _ in range(1000):
+            handler.wfile.write(b"x")
+            handler.wfile.flush()
+            time.sleep(0.5)
+
+    server, url = serve_once(trickle)
+    try:
+        with pytest.raises(TimeoutError):
+            bootstrap.call(url, None, timeout=1)
+        threads = threading.active_count()
+        for _ in range(3):
+            with pytest.raises(bootstrap.NET_ERRORS):
+                bootstrap.call(url, None, timeout=1)
+        assert threading.active_count() == threads
+    finally:
+        server.shutdown()
 
 
 def test_a_call_that_cannot_start_its_thread_is_a_transient_network_error(monkeypatch):

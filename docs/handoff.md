@@ -48,7 +48,7 @@ These are the user's rules from the earlier sessions. Follow them.
   - the image ENTRYPOINT is kept, and `up` reads one `RAYVAST_IMAGE_INFO` line;
   - the GPU count comes from `/dev/nvidia<N>`, and the head refuses a mismatch;
   - the head container gets `--shm-size` = 0.33 × RAM;
-  - `pip install ray-vast` then `ray-vast up` installs the same version on the head from PyPI; `--index-url` tests a release from TestPyPI;
+  - `pip install ray-vast` then `ray-vast up` installs the same version on the head from PyPI. (`--index-url` was removed on 2026-10-16: a release test downloads the TestPyPI wheel and passes it with `--wheel`.)
   - a clean Ctrl-C on `dashboard`, and line-buffered output.
 - Tests: the full run has about 405 tests; local_e2e passes 8 of 8 (3 runs in a row after the refactor).
 - Live cycles of 2026-10-14 on the final code: C5, C6, C8 (with `rayproject/ray:*-gpu`) and C9 (Ray libraries) pass. Results: `docs/test-results.md`. The vast spend of the day is about $3.82.

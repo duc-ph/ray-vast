@@ -1,5 +1,4 @@
 import copy
-import yaml
 
 QUERY_OPS = {"eq", "neq", "gt", "gte", "lt", "lte", "in", "notin"}
 MB_FIELDS = ("gpu_ram", "cpu_ram", "gpu_total_ram")
@@ -18,7 +17,6 @@ RAY_EMPTY_FIELDS = (
 PROVIDER_DEFAULTS = {
     "candidate_factor": 2,
     "allow_non_datacenter": False,
-    "order_by": "dph_total",
 }
 HEAD_INSTANCE_TYPE = "t3.large"
 PORT_A, PORT_B = 7443, 7444  # head server ports: download and enrollment (TLS); heartbeat and reports (mTLS)
@@ -32,6 +30,7 @@ OLD_PROVIDER_FIELDS = {
     "image_size_gb": "removed: `ray-vast up` measures the image",
     "key_name": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
     "key_file": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
+    "order_by": "removed: ray-vast always rents the cheapest offers first (dph_total)",
 }
 
 
@@ -100,7 +99,6 @@ def bootstrap_config(config):
     if not config.get("cluster_name"):
         raise ValueError("cluster_name is required")
     provider = config.get("provider") or {}
-    check_old_provider_fields(provider)
     for field in ("image", "max_dollars_per_hour"):
         if field not in provider:
             raise ValueError(f"provider.{field} is required")
@@ -160,8 +158,3 @@ def check_old_provider_fields(provider):
     for field, what_to_do in OLD_PROVIDER_FIELDS.items():
         if field in provider:
             raise ValueError(f"provider.{field} is no longer a field ({what_to_do})")
-
-
-def load_and_bootstrap(path):
-    with open(path) as f:
-        return bootstrap_config(yaml.safe_load(f))

@@ -12,11 +12,9 @@ import json
 import logging
 import socket
 import ssl
-import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 from . import pki
 from .vast_api import IDENTITY_PORTS
@@ -27,8 +25,6 @@ HANDSHAKE_TIMEOUT_S = 10
 REQUEST_TIMEOUT_S = 30
 MAX_BODY_BYTES = 1 << 20
 PORT_CHECK_TIMEOUT_S = 5
-HEARTBEAT_INTERVAL_S = 30
-HEARTBEAT_TIMEOUT_S = 300
 SECURITY_CHECKS = ("no_net_raw_admin", "own_netns", "shm_empty")
 # The process-limit warning of a worker: at most once a minute while its refused forks rise, else at most once in 5 min.
 PROCESS_LIMIT_REFUSALS_WARNING_S = 60
@@ -117,7 +113,7 @@ class HeadServer:
     """`end(cand, reason, block_kind=None)` is the provider's one ending path (rule 9): the head server ends a
     candidate or worker only through it, and makes no vast or AWS call of its own. Call it without `state.lock`."""
 
-    def __init__(self, state, end, ca_cert_pem, ca_key_pem, head_cert_pem, head_key_pem, token, shim_bytes,
+    def __init__(self, state, end, ca_cert_pem, ca_key_pem, head_cert_path, head_key_path, token, shim_bytes,
                  bootstrap_bytes, head_ip, port_a, port_b, cluster, clock=time.time):
         self.state, self.end, self.clock = state, end, clock
         self.ca_cert_pem, self.ca_key_pem, self.token = ca_cert_pem, ca_key_pem, token
@@ -125,19 +121,14 @@ class HeadServer:
         self.head_ip, self.cluster = head_ip, cluster
         self.bootstrap_sha256 = hashlib.sha256(bootstrap_bytes).hexdigest()
         self.port_a, self.port_b = port_a, port_b
-        self._head_cert_pem, self._head_key_pem = head_cert_pem, head_key_pem
+        self._head_cert_path, self._head_key_path = head_cert_path, head_key_path
         self._servers = []
 
     def start(self):
-        with tempfile.TemporaryDirectory() as tmp:  # load_cert_chain needs files; the key file is 600 and short-lived
-            cert_path, key_path = Path(tmp, "head.pem"), Path(tmp, "head.key")
-            cert_path.write_bytes(self._head_cert_pem)
-            key_path.touch(mode=0o600)
-            key_path.write_bytes(self._head_key_pem)
-            ctx_a = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx_a.load_cert_chain(cert_path, key_path)
-            ctx_b = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx_b.load_cert_chain(cert_path, key_path)
+        ctx_a = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx_a.load_cert_chain(self._head_cert_path, self._head_key_path)
+        ctx_b = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx_b.load_cert_chain(self._head_cert_path, self._head_key_path)
         ctx_b.verify_mode = ssl.CERT_REQUIRED
         ctx_b.load_verify_locations(cadata=self.ca_cert_pem.decode())
         for role, port, ctx in (("A", self.port_a, ctx_a), ("B", self.port_b, ctx_b)):
@@ -222,12 +213,11 @@ class HeadServer:
             if instance_id in state.enrolled or instance_id not in state.candidates:
                 return 403, {"reason": "already enrolled"}  # a parallel request won; keep the instance
             wanted = state.slots.get(cand.slot_id)
-            node_type = cand.node_type or (wanted.node_type if wanted else None)
-            slot = None
             if wanted is not None and wanted.instance_id is None:
                 slot = wanted
-            elif node_type is not None:
-                slot = next((s for s in state.slots.values() if s.node_type == node_type and s.instance_id is None), None)
+            else:
+                slot = next((s for s in state.slots.values() if s.node_type == cand.node_type and s.instance_id is None),
+                            None)
             if slot is not None:
                 state.mark_enrolled(instance_id)
                 slot.instance_id, slot.status = instance_id, "setting-up"
@@ -244,13 +234,9 @@ class HeadServer:
             "node_type": slot.node_type,
             "cert_pem": cert_pem.decode(),
             "key_pem": key_pem.decode(),
-            "ca_pem": self.ca_cert_pem.decode(),
             "token": self.token,
             "shim_b64": base64.b64encode(self.shim_bytes).decode(),
             "gcs_address": f"{self.head_ip}:6379",
-            "num_gpus": cand.gpus,
-            "heartbeat_interval_s": HEARTBEAT_INTERVAL_S,
-            "heartbeat_timeout_s": HEARTBEAT_TIMEOUT_S,
         }
 
     def report_before_enrollment(self, body, source_ip):

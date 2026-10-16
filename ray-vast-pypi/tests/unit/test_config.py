@@ -5,7 +5,7 @@ import pytest
 import requests
 import yaml
 
-from ray_vast.config import bootstrap_config, build_offer_query, load_and_bootstrap
+from ray_vast.config import bootstrap_config, build_offer_query, check_old_provider_fields
 
 EXAMPLES = sorted(pathlib.Path(__file__).parents[2].joinpath("src/ray_vast/examples").glob("*.yaml"))
 
@@ -222,7 +222,7 @@ def test_bootstrap_fills_defaults():
     config, _ = bootstrap_config(make())
     provider = config["provider"]
     assert provider["candidate_factor"] == 2
-    assert (provider["allow_non_datacenter"], provider["order_by"]) == (False, "dph_total")
+    assert provider["allow_non_datacenter"] is False and "order_by" not in provider
     assert config["available_node_types"]["head"]["node_config"]["instance_type"] == "t3.large"
     assert config["available_node_types"]["w"]["node_config"]["disk_gb"] == 50
     assert config["auth"]["ssh_user"] == "ray"
@@ -304,7 +304,7 @@ def test_bootstrap_warns_on_non_datacenter():
 def test_example_passes_validation_and_ray_validate_config(path):
     from ray.autoscaler._private.util import validate_config
 
-    config, warnings = load_and_bootstrap(path)
+    config, warnings = bootstrap_config(yaml.safe_load(path.read_text()))
     validate_config(config)
     assert warnings == []
 
@@ -316,7 +316,7 @@ def test_examples_exist():
 @pytest.mark.live
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.name)
 def test_live_example_query_returns_offers(path):
-    config, _ = load_and_bootstrap(path)
+    config, _ = bootstrap_config(yaml.safe_load(path.read_text()))
     for name, node_type in config["available_node_types"].items():
         if name == config["head_node_type"]:
             continue
@@ -401,10 +401,11 @@ def test_bootstrap_keeps_a_head_instance_type():
     ("head_instance_type", "node_config.instance_type of the head node type"),
     ("port_a", "7443"), ("port_b", "7444"), ("cert_max_age_days", "365 days"),
     ("image_size_gb", "measures the image"), ("key_name", "makes an EC2 key pair"), ("key_file", "makes an EC2 key pair"),
+    ("order_by", "cheapest offers first"),
 ])
-def test_bootstrap_rejects_a_moved_or_removed_provider_field_and_names_the_new_place(field, new_place):
+def test_an_old_provider_field_is_rejected_with_its_new_place(field, new_place):
     with pytest.raises(ValueError, match=rf"provider.{field} .*{new_place}"):
-        bootstrap_config(make(**{f"provider.{field}": 1}))
+        check_old_provider_fields({field: 1})
 
 
 def test_bootstrap_sets_max_workers_to_the_sum_of_the_worker_types_when_missing():

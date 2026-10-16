@@ -7,7 +7,8 @@ from ray_vast.state import Candidate, ClusterState, Slot
 
 
 def make_candidate(instance_id, ip="192.0.2.4", dph=0.5, machine_id=7):
-    return Candidate(instance_id=instance_id, slot_id="s", offer_id=1, machine_id=machine_id, public_ip=ip, dph_total=dph)
+    return Candidate(instance_id=instance_id, slot_id="s", offer_id=1, machine_id=machine_id, node_type="worker",
+                     public_ip=ip, dph_total=dph)
 
 
 def test_concurrent_changes_lose_no_update():
@@ -65,11 +66,6 @@ def test_ip_ref_counts():
     assert state.ip_ref_remove("192.0.2.4") == 0
     assert state.ip_ref_remove("192.0.2.4") == 0
     assert state.ip_ref_add("192.0.2.4") == 1
-
-
-def test_block_rejects_unknown_kind():
-    with pytest.raises(ValueError, match="unknown blocklist kind"):
-        ClusterState().block(1, "x", "bogus", now=0.0)
 
 
 def test_single_calls_are_atomic_without_caller_lock():
@@ -155,12 +151,11 @@ def test_remove_returns_the_removed_entry_or_none():
     assert state.remove_candidate(5) is None
 
 
-def test_total_dph_counts_candidates_in_every_status():
+def test_total_dph_counts_every_candidate_and_worker():
     state = ClusterState()
-    for iid, status in enumerate(["created", "rented", "running", "enrolled"]):
-        candidate = make_candidate(iid, dph=0.25)
-        candidate.status = status
-        state.add_candidate(candidate)
+    for iid in range(4):
+        state.add_candidate(make_candidate(iid, dph=0.25))
+    state.mark_enrolled(3)
     assert state.total_dph() == 1.0
 
 

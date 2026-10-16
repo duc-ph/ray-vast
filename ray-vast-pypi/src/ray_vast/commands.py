@@ -7,8 +7,7 @@ arguments and calls `run`; the split keeps `ray-vast --help` free of boto3, yaml
 when `~/.ray-vast/<cluster>.json` is missing.
 
 Decisions:
-- The derived image gets ray-vast from, in this order: `--wheel FILE` (copied to the head); `--index-url URL` (pip
-  installs `ray-vast==<this CLI's version>` from that index, with PyPI as an extra index); the source tree, when
+- The derived image gets ray-vast from, in this order: `--wheel FILE` (copied to the head); the source tree, when
   the CLI runs from a git checkout (`python -m build` on the laptop, for development); else `ray-vast==<this CLI's
   version>` from PyPI. Without `--wheel`, the head runs the same code as the CLI.
 - `down` terminates the head first, so its autoscaler cannot rent new workers while the vast sweep runs.
@@ -32,7 +31,6 @@ import yaml
 
 from . import __version__
 from . import config as config_module
-from . import pki
 from .aws_sg import ec2_client_config
 from .vast_api import VastClient, label, sweep
 
@@ -69,7 +67,7 @@ DOCKERFILE = """FROM {image}
 COPY {wheel} /tmp/{wheel}
 RUN pip install --no-cache-dir /tmp/{wheel}
 """
-DOCKERFILE_INDEX = """FROM {image}
+DOCKERFILE_PYPI = """FROM {image}
 RUN pip install --no-cache-dir {requirement}
 """
 # Prints one line `RAYVAST_IMAGE_INFO <Ray version> <shim path>` inside the derived image. `up` keeps the image's
@@ -143,10 +141,6 @@ def _key_file(state_dir, cluster):
     return Path(state_dir) / cluster / "ssh_key.pem"
 
 
-def _vast_instances(vast, cluster):
-    return [i for i in vast.list_instances() if i.get("label") == label(cluster)]
-
-
 def _read_vast_key():
     key = os.environ.get("VAST_API_KEY")
     if not key:
@@ -157,23 +151,13 @@ def _read_vast_key():
     return key.strip()
 
 
-def _mask_userinfo(text, url):
-    """Replace the user and password of `url` (`https://user:token@host/...`) in `text` with `***`. The pattern
-    also masks the end of them when `text` starts in the middle (an stderr tail)."""
-    _, at, host = (url or "").partition("://")[2].partition("/")[0].rpartition("@")
-    if not at:
-        return text
-    return re.sub(r"[^\s/]*@" + re.escape(host), lambda m: "***@" + host, text)
-
-
-def up(config_path, session, ssh, *, profile, wheel=None, index_url=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
+def up(config_path, raw_config, session, ssh, *, profile, wheel=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
+    """`raw_config` is the YAML of `config_path`, which `run` has read and checked (cluster name, old fields)."""
     try:
-        config, warnings = config_module.load_and_bootstrap(config_path)
+        config, warnings = config_module.bootstrap_config(raw_config)
     except ValueError as e:  # a field check failed: a user error, so one line and no traceback
         raise CliError(f"{config_path}: {e}") from None
     cluster, provider = config["cluster_name"], config["provider"]
-    if not NAME_RE.match(cluster):
-        raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
     for warning in warnings:
         out(f"warning: {warning}")
     head_node_config = config["available_node_types"][config["head_node_type"]]["node_config"]
@@ -257,7 +241,7 @@ def up(config_path, session, ssh, *, profile, wheel=None, index_url=None, vast_k
                 raise
             sleep(5)
 
-    # 3. Derived image: provider.image + ray-vast (the wheel, or this CLI's own version from the package index).
+    # 3. Derived image: provider.image + ray-vast (the wheel, or this CLI's own version from PyPI).
     # Read the Ray version and the shim path from it.
     work = f"/home/{SSH_USER}/{name}"
     secrets, build, image_tag = f"{work}/secrets", f"{work}/build", f"{name}:head"
@@ -266,19 +250,15 @@ def up(config_path, session, ssh, *, profile, wheel=None, index_url=None, vast_k
         ssh.copy(head_ip, wheel, f"{build}/{wheel.name}")
         dockerfile = DOCKERFILE.format(image=provider["image"], wheel=wheel.name)
     else:
-        # TestPyPI does not hold all of ray-vast's dependencies, so PyPI is an extra index. pip takes the highest version
-        # of each package from either index: this is for release tests only.
-        index = f"--index-url {shlex.quote(index_url)} --extra-index-url https://pypi.org/simple " if index_url else ""
-        dockerfile = DOCKERFILE_INDEX.format(image=provider["image"], requirement=f"{index}ray-vast=={__version__}")
+        dockerfile = DOCKERFILE_PYPI.format(image=provider["image"], requirement=f"ray-vast=={__version__}")
     ssh.run(head_ip, f"cat > {build}/Dockerfile", stdin=dockerfile)
     try:
         ssh.run(head_ip, f"sudo docker build -t {image_tag} {build}", timeout=1800)
     except SshError as e:
         if wheel:
             raise
-        raise CliError(_mask_userinfo(
-            f"the head image build failed while installing ray-vast=={__version__} from {index_url or 'PyPI'}; see the "
-            f"build output below. Run `ray-vast down {config_path}` to remove what was created.\n{e}", index_url)) from None
+        raise CliError(f"the head image build failed while installing ray-vast=={__version__} from PyPI; see the build "
+                       f"output below. Run `ray-vast down {config_path}` to remove what was created.\n{e}") from None
     stdout = ssh.run(head_ip, f"sudo docker run --rm {image_tag} python -c {shlex.quote(IMAGE_INFO)}")
     info = [line.split() for line in stdout.splitlines() if line.startswith(IMAGE_INFO_MARKER + " ")]
     if len(info) != 1 or len(info[0]) != 3:
@@ -327,9 +307,6 @@ def up(config_path, session, ssh, *, profile, wheel=None, index_url=None, vast_k
             if attempt == 59:
                 raise
             sleep(5)
-    expiry = pki.expiry_warning(ssh.run(head_ip, f"cat {secrets}/ca.pem").encode())
-    if expiry:
-        out(f"warning: {expiry}")
     out(f"cluster {cluster} is up. Head IP {head_ip}.")
     out(f"  dashboard: ray-vast dashboard {config_path}   (then open http://127.0.0.1:8265)")
     out(f"  shell:     ray-vast attach {config_path}")
@@ -394,7 +371,7 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
         path.unlink(missing_ok=True)
     shutil.rmtree(Path(state_dir) / cluster, ignore_errors=True)
 
-    left = [f"vast instance {i['id']}" for i in _vast_instances(vast, cluster)] if vast else []
+    left = [f"vast instance {i['id']}" for i in vast.list_instances() if i.get("label") == label(cluster)] if vast else []
     left += [f"EC2 instance {i['InstanceId']}" for i in _head_instances(ec2, cluster)]
     left += [f"security group {g['GroupId']}" for g in _our_groups(ec2, cluster)]
     left += [f"key pair {p['KeyName']}" for p in _our_key_pairs(ec2, cluster)]
@@ -467,15 +444,10 @@ def run(args):
         ssh = Ssh(_key_file(state_dir, cluster), state_dir / f"{cluster}.known_hosts")
 
         if args.command == "up":
-            if args.wheel and args.index_url:
-                raise CliError("--wheel and --index-url do not go together: pass one of them")
-            # The URL goes into a Dockerfile RUN line: a space or a newline there would change the instruction.
-            if args.index_url and not re.fullmatch(r"https?://\S+", args.index_url):
-                raise CliError("--index-url must be a plain http:// or https:// URL without spaces")
-            # Where the head image gets ray-vast: --wheel, else --index-url, else the source tree (development), else PyPI.
+            # Where the head image gets ray-vast: --wheel, else the source tree (development), else PyPI.
             wheel = Path(args.wheel).expanduser() if args.wheel else None
             with tempfile.TemporaryDirectory() as tmp:
-                if wheel is None and not args.index_url and (SOURCE_TREE / "pyproject.toml").exists():
+                if wheel is None and (SOURCE_TREE / "pyproject.toml").exists():
                     subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", tmp, str(SOURCE_TREE)],
                                    check=True, capture_output=True, timeout=BUILD_TIMEOUT)
                     wheel = next(Path(tmp).glob("ray_vast-*.whl"))
@@ -483,8 +455,8 @@ def run(args):
                 elif wheel:
                     print(f"installing ray-vast from the wheel {wheel}")
                 else:
-                    print(f"installing ray-vast=={__version__} from {_mask_userinfo(args.index_url or 'PyPI', args.index_url)}")
-                up(args.cluster_yaml, session, ssh, profile=args.profile, wheel=wheel, index_url=args.index_url, vast_key=_read_vast_key(),
+                    print(f"installing ray-vast=={__version__} from PyPI")
+                up(args.cluster_yaml, raw, session, ssh, profile=args.profile, wheel=wheel, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":
             try:

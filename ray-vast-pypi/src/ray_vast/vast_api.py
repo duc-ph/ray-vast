@@ -91,9 +91,9 @@ class VastClient:
                         attempt, TRIES - 1, delay)
             self._sleep(delay)
 
-    def search_offers(self, query, order_by="dph_total", limit=100):
-        """Return the offers matching `query` (vast filter dict), cheapest first by default."""
-        body = {**query, "order": [[order_by, "asc"]], "type": "on-demand", "limit": limit}
+    def search_offers(self, query, limit=100):
+        """Return the offers matching `query` (vast filter dict), cheapest first."""
+        body = {**query, "order": [["dph_total", "asc"]], "type": "on-demand", "limit": limit}
         resp = self._request("POST", "/bundles/", json=body)
         if resp is None:
             raise VastError("POST /bundles/: HTTP 404", status=404)
