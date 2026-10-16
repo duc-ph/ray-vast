@@ -109,7 +109,7 @@ The sections below show only what is different on ray-vast.
 
 You do not need a CPU limit to keep a worker alive. A worker with a process limit gets fewer worker ports, so too much work waits (read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts)).
 
-But a hash shuffle (for example `groupby`) can hang. Its map tasks can take all worker ports, and then its aggregator actors get no port. A test on a worker with 48 cores and 25 worker ports hung without settings and with only fewer aggregators. It passed with both settings below, also with 14 worker ports.
+But a hash shuffle (for example `groupby`) can hang. Its map tasks can take all worker ports, and then its aggregator actors get no port. In a test on one worker with 48 cores, a `groupby` hung without settings and with only fewer aggregators. It passed with both settings below: 4 aggregators and a CPU limit of 12, on a worker with 14 worker ports.
 Put this code in your driver script, after `ray.init()`:
 
 ```python
@@ -117,10 +117,10 @@ from ray.data import DataContext, ExecutionResources
 
 data_context = DataContext.get_current()
 data_context.max_hash_shuffle_aggregators = 4  # for hash shuffles, for example groupby
-data_context.execution_options.resource_limits = ExecutionResources(cpu=16)
+data_context.execution_options.resource_limits = ExecutionResources(cpu=12)
 ```
 
-The CPU limit is for the full cluster. Keep it near the total worker ports of your workers. The start line of each worker shows its worker ports. Read [A worker is at its process limit](troubleshoot.md#a-worker-is-at-its-process-limit).
+The CPU limit is for the full cluster. Set it to at most the total worker ports of your workers, minus the aggregators. The start line of each worker shows its worker ports. Read [A worker is at its process limit](troubleshoot.md#a-worker-is-at-its-process-limit).
 
 A local output path (for example `write_parquet("/tmp/out")`) writes the files to the disk of each worker. Write shared output to a cloud bucket.
 
