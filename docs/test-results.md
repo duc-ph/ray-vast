@@ -615,3 +615,38 @@ Product bugs: none found in ray-vast. Findings for the design and the docs:
 - A port shortage can also make a task fail: after 5 failed worker starts, Ray fails the task (`RaySystemError: Failed to startup worker after retrying 5 times`). The user docs say "queue, hang or fail"; this is the "fail" case.
 - Ray Data's hash shuffle (`groupby`, and C9's `random_shuffle` and `groupby`) does not respect `execution_options.resource_limits` for its `_shuffle_block` tasks. On a node with more CPUs than ports, a `groupby` fails unless the user also limits the blocks (`override_num_blocks`).
 - The host retry of the test cannot avoid the same machine (the provider does not block a destroyed host). A test that needs a property of a host (here a pids limit) must name the machines.
+
+## Live IAM test: a restricted user (2026-10-16)
+
+Goal: prove the policy `ray-vast-user` live, with the generated SSH key and the saved profile. No vast rental (all node types `min_workers: 0`). AWS profile `personal`, `us-west-2`. EC2 cost about $0.02.
+
+Setup (as `personal`):
+
+- The account had no `ray-vast-*` policy before. The test created `ray-vast-head-boundary` and `ray-vast-user` from `src/ray_vast/iam/`.
+- The first `create-policy` of `ray-vast-user` failed: `MalformedPolicyDocument: The policy failed legacy parsing`. Cause: `ArnEquals` (and `ArnLike`) with the policy variable `${aws:PrincipalAccount}`. Fix: `StringEquals` with the variable. IAM accepted it. `iam:PermissionsBoundary` has the type ARN in the Service Authorization Reference.
+- The IAM user `ray-vast-iamtest-20261016` with only `ray-vast-user` attached, and an access key in a temporary credentials file (mode 600, deleted at the end).
+
+Negative tests, as the test user:
+
+| Call | Result |
+|---|---|
+| `iam:CreateRole` `ray-vast-negtest` without a boundary | `AccessDenied` |
+| `iam:CreateRole` `ray-vast-negtest` with `AdministratorAccess` as the boundary | `AccessDenied` |
+| `iam:CreateRole` `negtest-other` (name not `ray-vast-*`) with the right boundary | `AccessDenied` |
+| `iam:CreatePolicy` | `AccessDenied` |
+| `iam:DeleteRolePermissionsBoundary` | `AccessDenied` |
+| `ec2:CreateSecurityGroup` without the `ray-vast-cluster` tag | `UnauthorizedOperation` |
+
+`AWS_SHARED_CREDENTIALS_FILE` in the test process hid the `personal` profile of the final leftover check. The test now takes `RAY_VAST_LIVE_CREDENTIALS_FILE` for the `ray-vast` commands only.
+
+Runs of `tests/live/test_up_down.py` as the test user (`up --profile ray-vast-iamtest`, `dashboard` without `--profile`, `ray job submit`, `down` without `--profile` and without `AWS_PROFILE`):
+
+| Run | Cluster | Result |
+|---|---|---|
+| 1 | `rvtest-b97a` | `up` (about 2.5 min), `dashboard` over SSH with the generated key, job printed `12345`, `down` printed `left: nothing` (key pair, 5 groups, instance profile, role). The test then failed in its own leftover check (`NoCredentialsError`, the credentials file problem above). A manual check as `personal` found nothing left. |
+| 2 | `rvtest-532a` | Interrupted by an accidental stop after `up`. The cluster stayed. Later, `ray-vast down` from the run's state directory, without `--profile`, used the saved profile `ray-vast-iamtest` and printed `left: nothing`. |
+| 3 | `rvtest-54c0` | PASS in 205 s: `up`, `dashboard`, job `12345`, `down` `left: nothing`, and the test's own check as `personal` (no instance, group, volume, key pair, role or instance profile). |
+
+So `iam:DeleteRole` with the boundary condition works live: `down` deleted the role as the restricted user in all three runs. `up` with the generated key, `dashboard` with the generated key, and `down` with the saved profile all worked.
+
+Teardown: the test user and its access key were deleted. No `ray-vast-rvtest-*` instance, security group, volume, key pair, role or instance profile is left. vast: 0 instances. The two policies `ray-vast-head-boundary` and `ray-vast-user` stay in the account (it had none before), so the account is set up for ray-vast.

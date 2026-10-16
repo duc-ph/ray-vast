@@ -474,6 +474,9 @@ def test_down_removes_the_cluster_directory(aws, tmp_path):
 
 # --- the public seam: `ray_vast.cli.main(argv)` -> `commands.run` -----------------------------------------------------
 
+PROFILES = []  # the profile_name of each boto3.Session that `run` built (the `home` fixture records them)
+
+
 @pytest.fixture
 def home(aws, monkeypatch, tmp_path):
     """A fake home (state dir `~/.ray-vast`), no AWS_PROFILE, a vast key in the environment, a fixed operator IP."""
@@ -487,8 +490,6 @@ def home(aws, monkeypatch, tmp_path):
     PROFILES.clear()
     return tmp_path / "home"
 
-
-PROFILES = []  # the profile_name of each boto3.Session that `run` built
 
 
 @pytest.fixture

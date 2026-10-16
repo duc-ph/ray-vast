@@ -44,13 +44,13 @@ Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59
 All of them have the name `ray-vast-<cluster_name>` and the tag `ray-vast-cluster=<cluster_name>`.
 The full list of AWS actions is in [IAM permissions](reference/iam.md).
 
-### Create the boundary policy (one time, for every user)
+### Create the boundary policy (one time in each AWS account)
 
 The head role has a permissions boundary: the IAM policy `ray-vast-head-boundary`.
 The boundary is a limit. The head role can never do more than the boundary allows, even if its own policy changes.
 The boundary allows only what the head needs: read EC2, and change the rules of the ray-vast security groups.
 
-Create the policy once in your AWS account. `ray-vast up` does not create it. If it is missing, `up` stops before it makes anything, with a link to this section.
+Every user must do this step once in each AWS account. `ray-vast up` does not create the policy. If it is missing, `up` stops before it makes anything, with a link to this section.
 
 This is the policy:
 
