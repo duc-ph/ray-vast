@@ -24,10 +24,14 @@ C9_JOBS = HERE.parent / "c9" / "jobs"
 ADDRESS = os.environ.get("RAY_ADDRESS", "http://127.0.0.1:8265")
 KEY_FILE = os.path.expanduser(os.environ.get("C10_KEY_FILE", "~/ray-vast-devbox.pem"))
 HEAD_LOG = "/tmp/ray/session_latest/logs/monitor.log"  # in the container ray-vast-head
-# The head pids/ports WARNING line (its exact text comes from the pids/ports change of ray-vast). One constant, easy to change.
-WARNING_PATTERN = re.compile(r"WARNING.*\b(pids?|ports?)\b", re.IGNORECASE)
-REFUSED_PATTERN = re.compile(r"WARNING.*(refused|pids)", re.IGNORECASE)  # a tuned test must not have one for its node
+# The head's process-limit WARNING line (head_server.py, design 5.7a), for example: `worker 2 (instance 55900080, ip 1.2.3.4)
+# is at its process limit: 3 refused forks/threads (+3), pids 1190 of 1280, worker ports in use 25 of 25. ...`.
+# One constant each, easy to change. NODE_NAMES gives the names that tie a line to one node.
+WARNING_PATTERN = re.compile(r"WARNING.*is at its process limit")
+REFUSED_PATTERN = re.compile(r"refused forks/threads \(\+[1-9]")  # refusals rose: a tuned test must not have one
+NODE_NAMES = lambda instance_id, ip: [f"(instance {instance_id}, ", f", ip {ip})"]
 PIDS_LIMIT_MAX = 3328  # a "many" test is INCONCLUSIVE on a node with no pids limit or a higher one
+HOST_RENTALS_MAX = 3  # phase A: rent a new big worker up to this many times in all to find a pids limit
 TORCH_ENV = {"pip": {"packages": ["torch==2.7.1"], "pip_check": False}, "config": {"setup_timeout_seconds": 1800}}
 JOB_ENV = {k: v for k, v in os.environ.items() if k.startswith("C10_") and k != "C10_KEY_FILE"}
 TERMINAL = ("SUCCEEDED", "FAILED", "STOPPED")
@@ -106,8 +110,14 @@ def verdict(kind, job, pre, post, warnings):
     if refused:
         reasons.append(f"pids.events: {refused} refused forks")
     if warnings and any(REFUSED_PATTERN.search(w) for w in warnings):
-        reasons.append("a head WARNING line about refused forks or pids")
+        reasons.append("a head WARNING line with new refused forks or thread starts")
     return ("FAIL" if reasons else "PASS"), reasons or ["completed, node alive, no refused fork"]
+
+
+def node_warnings(lines, instance_id, ip):
+    """The head process-limit WARNING lines of one node (by its vast instance ID or its public IP)."""
+    names = NODE_NAMES(instance_id, ip) if instance_id or ip else []
+    return [line for line in lines if WARNING_PATTERN.search(line) and any(n in line for n in names)]
 
 
 def ray_cli(command, *args, timeout=120):
@@ -203,6 +213,27 @@ def main():
     first = probe(root, f"start_{phase}_{int(time.time())}")
     print(f"== probe {json.dumps(first)[:600]}", flush=True)
     limited = [n for n, v in first.items() if pids_max(v) is not None and pids_max(v) <= PIDS_LIMIT_MAX]
+    rentals = [first]
+    while phase == "a" and not limited and len(rentals) < HOST_RENTALS_MAX:
+        # Host retry: destroy the worker; the autoscaler rents a replacement (min_workers 1). vast_tool.py has the vast call.
+        sys.path.insert(0, str(HERE.parent))
+        import vast_tool
+        old = {v.get("container_id") for v in first.values()}
+        machines = {i["id"]: i.get("machine_id") for i in vast_tool.instances() if i.get("label") == f"ray-vast:{cluster}"}
+        print(f"!! no pids.max <= {PIDS_LIMIT_MAX} (machines {machines}); destroying the worker for rental {len(rentals) + 1}", flush=True)
+        for instance_id in old:
+            vast_tool.call("DELETE", f"/instances/{instance_id}/")
+        deadline = time.time() + 1800
+        while time.time() < deadline:
+            time.sleep(60)
+            first = probe(root, f"rental{len(rentals) + 1}_{int(time.time())}")
+            if first and not {v.get("container_id") for v in first.values()} & old:
+                break
+        rentals.append(first)
+        print(f"== probe {json.dumps(first)[:600]}", flush=True)
+        limited = [n for n, v in first.items() if pids_max(v) is not None and pids_max(v) <= PIDS_LIMIT_MAX]
+    (root / f"rentals_{phase}.json").write_text(json.dumps([{n[:8]: {k: v.get(k) for k in ("container_id", "pids.max", "ports", "CPU")}
+                                                           for n, v in r.items()} for r in rentals], indent=1))
     if phase == "a" and not limited:
         print(f"!! no worker has pids.max <= {PIDS_LIMIT_MAX}: the many tests are INCONCLUSIVE and do not run", flush=True)
     for test_id, script, args, kind, torch, timeout in PLAN[phase]:
@@ -231,8 +262,7 @@ def main():
         head = head_log_lines(cluster, log_start)
         (out_dir / "head_slice.log").write_text("\n".join(head) + "\n")
         node = pre.get(target) or {}
-        ids = [x for x in (target, (target or "")[:8], node.get("container_id"), node.get("ip")) if x]  # names of the node
-        warnings = [line for line in head if WARNING_PATTERN.search(line) and any(x in line for x in ids)]
+        warnings = node_warnings(head, node.get("container_id"), node.get("ip"))
         if kind in ("tuned", "many"):
             job_line = last_line(log, "C10_JOB")
             job = {"kind": job_line[1], **job_line[2]} if job_line else {"kind": None, "log_tail": log.splitlines()[-15:]}

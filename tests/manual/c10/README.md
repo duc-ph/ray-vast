@@ -7,7 +7,10 @@ The scripts for cycle C10 in [docs/test-plan.md](../../../docs/test-plan.md). Th
 - `jobs/`: the `--working-dir` of every C10 job. `c10common.py` is the shared part. `c10_probe.py` reads the limits of
   each worker node. `c10_cleanup.py` shuts Serve down after each test.
 - `run_c10.py`: the driver. It runs on the operator machine.
-- `local_check.py`: the local check in Docker (no cost).
+- `local_check.py`: the local check in Docker (no cost), one plain Ray node.
+- `test_c10_local_e2e.py`: the local check with the real ray-vast head and worker bootstrap (the step 11 harness). It checks
+  the head's process-limit WARNING line. Run it from `ray-vast-pypi/`:
+  `PYTHONPATH=src .venv/bin/python -m pytest -o addopts="" -p no:cacheprovider -s ../tests/manual/c10/test_c10_local_e2e.py`.
 
 A pair job takes the mode as its argument: `python c10_<lib>.py many|tuned`. It prints one last line:
 `C10_JOB <id> COMPLETED|HUNG|ERROR <json>`. `run_c10.py` decides and prints `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>`.
@@ -53,8 +56,8 @@ PATH=$(dirname $PY):$PATH $PY tests/manual/c10/run_c10.py $R b 2>&1 | tee -a $R/
 
 Give ids after the phase to run only some tests, for example `... $R a C10.core.tuned C10.core.many`.
 `C10_GUARD_S` changes the guard of every job (default: 600 s for many/tuned, 900 s for Data and Train, 1500 s for R1 to R3).
-The head pids/ports WARNING line is matched by `WARNING_PATTERN` in `run_c10.py`. Change that one constant if the
-log text of ray-vast changes.
+The head's process-limit WARNING line is matched by `WARNING_PATTERN` and tied to the node by `NODE_NAMES` (`run_c10.py`).
+Phase A has a host retry: without a pids limit ≤ 3328, the runner destroys the worker and probes its replacement, up to 3 hosts.
 
 ## Data
 

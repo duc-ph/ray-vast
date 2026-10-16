@@ -294,7 +294,7 @@ The "tuned" settings of all pairs are the advice table for the user docs.
 ### C10.0 Node types and order
 - **Phase A** (`cluster_a.yaml`, cluster `rvtest-c10a`): one worker of type `big`, `max_workers: 1`. `resources: {CPU: 32, GPU: 1}`, so ray-vast adds `cpu_cores_effective >= 32`. Offer query: `num_gpus = 1`, `gpu_ram` 8–70 GB, `compute_cap` 600–899, `dph_total <= 0.45`, and the test-only `inet_down`/`inet_up >= 500`. All pair tests run here. With one worker, every process of a test lands on the node under test.
 - **Phase B** (`cluster_b.yaml`, cluster `rvtest-c10b`): the C9 layout. 2 workers of type `gpu` (`{CPU: 4, GPU: 1}`), and type `gpu2` (`{CPU: 4, GPU: 2}`, `min_workers: 0`) for R2. Phase B starts after the teardown of phase A.
-- **pids.max is known only after the rental.** `run_c10.py` first runs `c10_probe.py` on each worker: `pids.max`, `pids.current`, `pids.peak`, `pids.events`, the ports, the threads, the Ray worker processes. The probe also records `RAY_num_workers_soft_limit`, `RAY_num_grpc_internal_threads` and `RAY_worker_maximum_startup_concurrency` from the raylet's environment. If no worker has `pids.max` ≤ 3328, the runner does not run the many tests and records them as INCONCLUSIVE (never a false PASS). It still runs the tuned tests. Then, if the budget allows, end the phase, rent again (`ray-vast down` and `up`) and run the many tests on the new host.
+- **pids.max is known only after the rental.** `run_c10.py` first runs `c10_probe.py` on each worker: `pids.max`, `pids.current`, `pids.peak`, `pids.events`, the ports, the threads, the Ray worker processes. The probe also records `RAY_num_workers_soft_limit`, `RAY_num_grpc_internal_threads` and `RAY_worker_maximum_startup_concurrency` from the raylet's environment. **Host retry:** if no worker has `pids.max` ≤ 3328, the runner destroys the worker with the vast API (`vast_tool.call`). The cluster label stays, and the autoscaler rents a replacement (`min_workers: 1`). The runner probes the new worker. It does this until it has rented 3 hosts in all (`HOST_RENTALS_MAX`). The provider does not block the destroyed host, so vast can give the same machine again: `rentals_a.json` records each instance with its `pids.max`. If no host of the 3 has a limit, the runner does not run the many tests and records them as INCONCLUSIVE (never a false PASS). It still runs the tuned tests.
 - **Order in phase A:** for each library, tuned first, then many (a many test can leave the node in a bad state): Core, Data, Tune, Serve, Train, RLlib.
 - **Order in phase B:** C9.1.1, C9.1.3, C9.1.4, C9.1.6 (C9 jobs without `C9_DATA_CPU`), then R1, R3, R2 (R2 starts `gpu2`, so it is last).
 
@@ -302,14 +302,17 @@ The "tuned" settings of all pairs are the advice table for the user docs.
 1. Probe the worker nodes (pre). Note the line count of the head log (`monitor.log` in `ray-vast-head`, by SSH).
 2. Submit the job with `C10_PORTS` and `C10_CPUS` of the node from the probe. Wait for its end. At the runner timeout, `ray job stop`.
 3. Run `c10_cleanup.py` (Serve shutdown). Wait 30 s. Probe again (post; again every 30 s for up to 5 min while the probe fails).
-4. Keep the new head log lines (`head_slice.log`). The head pids/ports WARNING lines for the node: lines that match `WARNING_PATTERN` (one constant in `run_c10.py`: `WARNING` and `pid`/`pids`/`port`/`ports`) and that name the node (Ray node ID, vast instance ID or IP).
+4. Keep the new head log lines (`head_slice.log`). The head's process-limit WARNING lines for the node: lines that match `WARNING_PATTERN` (`is at its process limit`) and name the node by `(instance <id>, ` or `, ip <ip>)` (`NODE_NAMES`). Both are constants in `run_c10.py`. The line (head server, design 5.7a): `worker <slot> (instance <id>, ip <ip>) is at its process limit: <N> refused forks/threads (+<new>), pids <cur> of <max>, worker ports in use <n> of <total>. Ray work on this worker can queue, hang or fail. See <docs URL>`. The head writes it at once for new refusals, then at most once a minute; for full ports or pids above 90 %, at most once in 5 min for each worker. The worker reports these numbers in its heartbeat (every 30 s), so a hang must last more than 30 s to show the line.
 5. Decide and print `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>`.
 
 **Guards:** each job has a wall-clock guard (`C10_GUARD_S`; default 600 s, Data and Train 900 s, R1–R3 1500 s). The guard prints `C10_JOB <id> HUNG` with the job's progress. The runner timeout is longer than the guard (900–3600 s).
 
 **Verdict of a many test:** PASS = the job failed as expected (HUNG or ERROR) AND the head pids/ports WARNING line names the node AND the node did not crash (the same Ray node ID is alive in the post probe). FAIL if the job completed (no advice is needed at that size; record the numbers), if the node crashed, or if the WARNING line is missing. INCONCLUSIVE if `pids.max` of the node is unset or above 3328.
 **Verdict of a tuned test:** PASS = the job completed AND the node is alive AND `pids.events` ("max N") did not change AND no head WARNING line about refused forks or pids for the node.
-**Root cause for the user:** each many test also records the "No available ports" lines in the node's `worker-*.err` logs (`Failed to register worker to Raylet: Invalid: No available ports`). With the head WARNING line, the user finds the cause in two places. Record whether the error that the driver shows names the cause (it usually does not: the job only hangs).
+**Root cause for the user:** the driver usually shows only a hang. The user finds the cause in two places:
+1. The head's `monitor.log` (`ray-vast attach`, then `sudo docker exec ray-vast-head grep "process limit" /tmp/ray/session_latest/logs/monitor.log`): the WARNING line above names the worker and gives the pids and the ports in use.
+2. The worker's Ray logs: each worker process that the raylet started but could not give a port ends with `Failed to register worker to Raylet: Invalid: No available ports` in its `worker-*.err` file in `/tmp/ray/session_latest/logs/` on that worker. Through the `dashboard` tunnel: `ray logs cluster 'worker-*.err' --node-id <node id>` lists the files, and `ray logs cluster <file> --node-id <node id>` prints one. The Ray dashboard (Logs tab) shows the same files.
+The probe counts these lines (`no_port_errors`, with one sample). Each many test records both. Record also whether the driver's own error names the cause.
 
 ### C10.1 Pairs (phase A)
 
@@ -339,7 +342,8 @@ C9.1.1, C9.1.3, C9.1.4 and C9.1.6 with the C9 scripts and settings, without `C9_
 | Phase B 2 `gpu` workers | about 1.5 h | $0.35/h | $0.55 |
 | Phase B `gpu2` for R2 | about 0.3 h | $0.50–1.10/h | $0.15–0.35 |
 | EC2 `t3.large` head, 2 clusters | about 4 h | $0.083/h | $0.35 |
-| Total | | | about $1.70–2.20; re-runs ×1.5: under $3.50 |
+| Host retry: up to 2 more `big` rentals (about 15 min each, incl. the image pull) | 0.5 h | $0.30–0.45/h | up to $0.25 |
+| Total | | | about $1.70–2.50; re-runs ×1.5: under $4 |
 
 ### C10.5 Local check (dev box, before the rental)
 `local_check.py`, 2026-10-16: one container per run, `--pids-limit 1280`, 48 Ray CPUs, `RAY_num_grpc_internal_threads=4`, `RAY_worker_maximum_startup_concurrency=8`, soft limit = ports unless noted. The local node also runs the head and the driver (about 460 pids before the job), so it has about 160 fewer pids for workers than a vast worker with the same limit. The local verdict uses the "No available ports" lines in place of the head WARNING line.
@@ -357,6 +361,14 @@ C9.1.1, C9.1.3, C9.1.4 and C9.1.6 with the C9 scripts and settings, without `C9_
 | RLlib R1, R2, R3 (1 node, CPU) | 12 | R1, R2, R3 PASS (code path only) | | |
 
 Threads for each worker process (from these runs): Core actor or task about 25, Ray Train worker about 20, RLlib env runner about 26, **Serve replica about 35**. A raylet that cannot fork (`worker_pool.cc:731: Failed to start worker with return value system:11`) ends, so the node dies. A port count that uses 25 threads for each process is not safe for Serve replicas.
+
+**With the real head and bootstrap** (`test_c10_local_e2e.py`, on main e30ac68 with design (a)): the step 11 harness (fake vast, real head server and provider, real bootloader and bootstrap), one worker container with `--pids-limit 1280`, the jobs through `ray job submit --working-dir` in the head container. The bootstrap gave Ray 25 worker ports, soft limit 4 (the box has 4 cores, so the worker has 4 Ray CPUs).
+
+| Run | Result | Evidence |
+|---|---|---|
+| C10.core.many | PASS: HUNG at the 150 s guard, worker alive, `pids.events` max 0, 24 "No available ports" lines | `monitor.log`: `worker slot-1-… (instance 1000, ip …) is at its process limit: 0 refused forks/threads (+0), pids 783 of 1280, worker ports in use 25 of 25.` |
+| C10.data.many, pids.max 1280 | FAIL (as a many test): COMPLETED in 75 s, no WARNING. With 4 Ray CPUs Data starts only 4 aggregators, fewer than the 25 ports. On a `big` host (32+ CPUs) the aggregators are more than the ports. | |
+| C10.data.many, pids.max 560 (4 ports) | PASS: HUNG, worker alive, `pids.events` max 0, 18 "No available ports" lines | `... (instance 1000, ip ...) is at its process limit: 0 refused forks/threads (+0), pids 223 of 560, worker ports in use 4 of 4.` |
 
 ### C10.6 Teardown and outputs
 - Teardown as for all cycles, for each cluster: copy the head logs, the secret scan, `ray-vast down`, `vast_tool.py sweep` until 0, the AWS check.
