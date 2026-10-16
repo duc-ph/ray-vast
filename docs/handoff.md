@@ -35,7 +35,7 @@ These are the user's rules from the earlier sessions. Follow them.
 
 ## The dev box
 
-- EC2 `ray-vast-dev`: i-023a693e150d1890f, t3.xlarge, Ubuntu 24.04, user `ubuntu`, us-west-2. It has Docker and git. It has **no** `gcc` and no `gh`: build C in the `quay.io/pypa/manylinux2014_x86_64` container (`ray-vast-pypi/scripts/build_shim.sh`).
+- EC2 `ray-vast-dev`: i-023a693e150d1890f, c6i.4xlarge (16 vCPU, 32 GB) with Elastic IP 52.34.69.95, Ubuntu 24.04, user `ubuntu`, us-west-2. It has Docker and git. It has **no** `gcc` and no `gh`: build C in the `quay.io/pypa/manylinux2014_x86_64` container (`ray-vast-pypi/scripts/build_shim.sh`).
 - Clone the repo (`github.com/duc-ph/ray-vast`) and work in the clone. Make a venv in `ray-vast-pypi/.venv` (Python 3.11 or 3.12) and `pip install -e '.[test]'`. Run the tests directly; no rsync is needed on the box.
 - `~/ray-vast-pypi/` on the box is an old rsync copy from the laptop, with a venv. Do not edit it. Use the clone.
 - `ray-vast up/down` (paid live tests) need AWS credentials (profile `personal`) and the vast key in `~/.config/vastai/vast_api_key` on the box. Check with the user before the first paid run on the box.
