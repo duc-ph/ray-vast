@@ -73,7 +73,7 @@ The reasons for the design. The spec itself is in [design.md](design.md). Rule f
 - 2026-10-14 — The pids limit (C9 live finding): vast containers have `pids.max` 1280 on many hosts; gRPC sizes its thread pools in every Ray process by the host's core count, so a Ray Data job with all CPUs goes past the limit and the node dies. **Superseded** by the 2026-10-16 line (design (a)). Was open: branch `pids-limit-review` (shim v4 reports 4 processors to gRPC and all other code in the worker; and a cap of Ray CPUs and worker ports by `pids.max`, a change of F4). Until then, the user docs give a Ray Data CPU limit as the workaround. The two small bugs of C9 (a failed thread start ends a worker; the destroy reason lost its error line) are fixed on `main`. (Step 12)
 - 2026-10-16 — The process limit (`pids.max`): design (a), agreed with the user. Details: design.md 5.5 and 5.7a.
     - The worker starts Ray with `RAY_num_grpc_internal_threads=4` and `RAY_worker_maximum_startup_concurrency=8`. Both are always set.
-    - Worker ports = `max(4, min(58, (pids.max − 400) // 35))`. Without a limit, 58. `RAY_num_workers_soft_limit` = min(Ray CPUs, worker ports).
+    - Worker ports = `max(4, min(58, (pids.max − 400) // 60))`. Without a limit, 58. `RAY_num_workers_soft_limit` = min(Ray CPUs, worker ports // 2). (The first version used 35 and min(Ray CPUs, worker ports); see the tuning bullets below.)
     - Ray CPUs stay the real core count. F4 does not change.
     - The bootstrap decides these values. The `/enroll` answer no longer has `num_workers_soft_limit`.
     - The heartbeat carries `pids_current`, `pids_max`, `pids_refused`, `ports_in_use` and `ports_total`. The head logs one WARNING line for a worker. On new refusals, at most once a minute. When all ports are in use or pids are above 90 %, at most once in 5 minutes.
@@ -81,9 +81,23 @@ The reasons for the design. The spec itself is in [design.md](design.md). Rule f
     - Threads: a worker process has 50 threads by default, and 25 to 28 with gRPC threads 4. The raylet has 85, and 59 to 66 with gRPC threads 4. The fixed Ray processes have about 150.
     - The startup variable wins over the `ray start` flag. With the value 2, at most 2 processes started at the same time. Without it, 39.
     - Before (58 ports, no startup cap, gRPC threads 4): 48 tasks of 1 CPU reached 1280. `pids.events` showed `max 269`.
-    - With 25 ports and the startup cap 8, `pids.events` stayed at `max 0` in every run, and the worker never died. 400 tasks of 0.05 CPU: PASS, peak 843. 60 actors with default CPUs: 25 ran, the others waited (`No available ports`), peak 862.
-    - Data `groupby` (97 partitions) on 48 CPUs hung, peak 887. The map-side shuffle tasks held all 25 ports, so the aggregator actors got none. With `max_hash_shuffle_aggregators=4` only, it also hung (peak 888). With that and `resource_limits cpu=16`: PASS in 36 s, peak 830.
-    - With pids.max 3328 (58 ports): 400 tasks of 0.05 CPU: PASS. 60 actors: 58 ran, and 2 failed after 415 s with `ActorUnschedulableError` (no free port). Peak 1779, `max 0`.
+    - First version (35 threads per process), with 25 ports and the startup cap 8: `pids.events` stayed at `max 0` in every run, and the worker never died. 400 tasks of 0.05 CPU: PASS, peak 843. 60 actors with default CPUs: 25 ran, the others waited (`No available ports`), peak 862.
+    - First version: Data `groupby` (97 partitions) on 48 CPUs hung, peak 887. The map-side shuffle tasks held all 25 ports, so the aggregator actors got none. With `max_hash_shuffle_aggregators=4` only, it also hung (peak 888). With that and `resource_limits cpu=16`: PASS in 36 s, peak 830.
+    - First version, with pids.max 3328 (58 ports): 400 tasks of 0.05 CPU: PASS. 60 actors: 58 ran, and 2 failed after 415 s with `ActorUnschedulableError` (no free port). Peak 1779, `max 0`.
     - Reasons: the port count is a hard cap on registered worker processes. So too much work becomes a queue, not a crash. The CPUs stay correct for the autoscaler.
     - Rejected: shim v4. It fakes `sysconf` for all code, also user code. A Ray setting does the same for gRPC only.
     - Rejected: the CPU cap of `pids-limit-review`. It changes F4, and v2 then plans with wrong CPUs.
+    - Tuning (same day, after local C10 checks): the first version had two faults.
+    - Fault 1: idle worker processes held all ports. The raylet keeps idle worker processes while their count is at or below the soft limit. It never ends an idle worker process to free a port. With 25 ports and the soft limit 25: 60 tasks left 25 idle worker processes, and 4 tasks with another runtime env waited until the timeout. With the soft limit 12 or 6: PASS. Decision: soft limit = min(Ray CPUs, ports // 2).
+    - Fault 2: 35 threads per port was too few for Serve. Threads per process with gRPC threads 4 on a simulated 48-core host: a Serve replica with FastAPI 50 (its Python `grpcio` adds an event-engine pool of 16), the Serve proxy 35, a Ray Train worker process 35, plus 3 for each `DataLoader` worker process, a Data actor 29, an RLlib env runner 28, a task or an idle worker process 25 to 28. The C10 check saw 60 Serve replicas of 0.1 CPU crash a worker with 24 ports (a failed fork ends the raylet). Decision: 60 per port (the Serve replica plus 10 of the user's threads). Reserve stays 400: about 160 fixed, 8 × 25 starting processes (also the ones that find no port), 40 of headroom.
+    - Result: 14 ports at 1280, 48 at 3328, soft limit 7 and 24 (with 48 CPUs).
+    - Proof setup: a separate head container, a worker with `--pids-limit 1280`, 48 CPUs, 14 ports and the soft limit 7. In every run, `pids.events` stayed at `max 0`, and the worker never died.
+    - Serve, 60 replicas of 0.1 CPU, 3 runs: the application stayed in DEPLOYING (a hang). Peaks 860, 860 and 864.
+    - Train, 2 workers with `DataLoader(num_workers=2)`: PASS, peak 228.
+    - 400 tasks of 0.05 CPU: PASS, peak 542.
+    - 60 actors: 14 ran, and the others waited. Peak 562.
+    - Data `groupby` with 4 aggregators: PASS with `cpu=12` (peak 584) and with `cpu=16` (peak 586).
+    - Two runtime envs (fault 1): PASS, peak 539.
+    - RLlib PPO with 4 env runners: PASS, peak 256.
+    - Data actors with `concurrency=8`: PASS, peak 525.
+    - Proof at pids.max 3328 (48 ports, soft limit 24): Serve with 60 replicas hung in DEPLOYING, peak 2561, `max 0`. 400 tasks of 0.05 CPU: PASS, peak 1483.

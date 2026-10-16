@@ -2,15 +2,15 @@
 
 ## Unreleased
 
-- The process limit of vast containers (`pids.max`) no longer kills a worker under load. Too much work now waits for a port. It does not crash the worker.
-    - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). A worker process has about 25 threads, not about 50.
+- The process limit of vast containers (`pids.max`) no longer kills a worker under load. Too much work now waits for a port. It does not crash the worker. Read [The process limit of vast hosts](https://duc-ph.github.io/ray-vast/reference/limits/#the-process-limit-of-vast-hosts).
+    - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`).
     - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
-    - A worker with a process limit gets fewer worker ports: `(pids.max - 400) // 35`, from 4 to 58. With a limit of 1280, it gets 25 ports.
+    - A worker with a process limit gets fewer worker ports. The count comes from `pids.max`.
     - Ray still gets all the cores as `CPU`.
-- The worker decides `RAY_num_workers_soft_limit`: the smaller of the CPUs and the worker ports. The `/enroll` answer no longer has `num_workers_soft_limit`.
+- The worker sets `RAY_num_workers_soft_limit` to at most half its worker ports. Then idle worker processes cannot hold all ports, and a job that needs a new kind of worker process (for example, another runtime env) finds a free port. The `/enroll` answer no longer has `num_workers_soft_limit`.
 - The worker logs one start line. It shows the process limit, the cgroup version, the CPUs, the worker ports, the soft limit, the gRPC threads and the startup concurrency.
 - The heartbeat carries `pids_current`, `pids_max`, `pids_refused`, `ports_in_use` and `ports_total`.
-- The head logs a WARNING in `monitor.log` when a worker is at its process limit. Read "A worker is at its process limit" in the troubleshooting page.
+- The head logs a WARNING in `monitor.log` when a worker is at its process limit. Read [A worker is at its process limit](https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit).
     - When the refused forks of the worker go up: at most once a minute.
     - When all its worker ports are in use, or its pids are above 90 % of the limit: at most once in 5 minutes.
 - A Ray Data CPU limit is no longer necessary to keep a worker alive. A hash shuffle (`groupby`) on a worker with few ports can still hang. To prevent this, set the CPU limit and `max_hash_shuffle_aggregators`.

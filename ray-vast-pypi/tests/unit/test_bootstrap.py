@@ -166,11 +166,12 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
 
 
 @pytest.mark.parametrize("cpus, pids_max, ports, soft_limit", [
-    (48, None, 58, 48), (64, None, 58, 58), (48, 3328, 58, 48),
-    (48, 1280, 25, 25), (4, 1280, 25, 4), (48, 1274, 24, 24), (48, 1275, 25, 25),
-    (48, 900, 14, 14), (48, 500, 4, 4), (48, 100, 4, 4),
+    # The soft limit is at most half the ports: idle workers must leave ports free for a new kind of worker.
+    (48, None, 58, 29), (4, None, 58, 4), (48, 3328, 48, 24),
+    (48, 1280, 14, 7), (4, 1280, 14, 4), (48, 1299, 14, 7), (48, 1300, 15, 7),
+    (48, 900, 8, 4), (48, 500, 4, 2), (48, 100, 4, 2),
 ])
-def test_worker_ports_fit_the_pids_limit_and_the_soft_limit_fits_the_ports(cpus, pids_max, ports, soft_limit):
+def test_worker_ports_fit_the_pids_limit_and_the_soft_limit_leaves_free_ports(cpus, pids_max, ports, soft_limit):
     assert bootstrap.worker_ports_and_soft_limit(cpus, pids_max) == (ports, soft_limit)
 
 
@@ -196,13 +197,13 @@ def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_lim
     run = world.run(RAYVAST_CGROUP_DIR=str(cgroup), FAKE_RAY_LISTEN_WORKER_PORTS="3")  # 1 on IPv6, 2 on IPv4
     assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), run.stdout
     p = world.port_base
-    assert "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 6 + 25)) in run.ray["argv"]
+    assert "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 6 + 14)) in run.ray["argv"]
     assert run.ray["env"]["RAY_num_workers_soft_limit"] == "2"
     beat = world.head.bodies("B", "/heartbeat")[-1]
     assert beat == {"instance_id": 424242, "pids_current": 1203, "pids_max": 1280, "pids_refused": 17,
-                    "ports_in_use": 3, "ports_total": 25}
+                    "ports_in_use": 3, "ports_total": 14}
     start_line = next(line for line in run.stdout.splitlines() if "pids.max" in line)
-    assert start_line == (f"bootstrap: limits: pids.max 1280 (cgroup {layout}), cpus 2, worker ports 25, soft limit 2, "
+    assert start_line == (f"bootstrap: limits: pids.max 1280 (cgroup {layout}), cpus 2, worker ports 14, soft limit 2, "
                           "grpc threads 4, startup concurrency 8")
 
 
