@@ -57,7 +57,7 @@ ray-vast keeps the worker below the limit with fewer worker ports. So too much w
 ### The warning in `monitor.log`
 
 ```text
-WARNING ... worker slot-3-a1b2c3 (instance 27145501, ip 203.0.113.7) is at its process limit: 12 refused forks/threads (+12), pids 1279 of 1280, worker ports in use 25 of 25. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
+WARNING ... worker slot-3-a1b2c3 (instance 27145501, ip 203.0.113.7) is at its process limit: 12 refused forks/threads (+12), pids 1279 of 1280, worker ports in use 14 of 14. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit
 ```
 
 | Part | Meaning |
@@ -65,7 +65,7 @@ WARNING ... worker slot-3-a1b2c3 (instance 27145501, ip 203.0.113.7) is at its p
 | `worker slot-3-a1b2c3` | The slot of the worker (its `RAY_CLOUD_INSTANCE_ID`). `instance` is the vast instance ID. |
 | `12 refused forks/threads (+12)` | The container refused this many process or thread starts since it started. `+12`: the rise since the last warning. A value above 0 means that something failed to start a thread: a Ray process or your code. |
 | `pids 1279 of 1280` | Processes and threads now, and the limit. |
-| `worker ports in use 25 of 25` | Ray worker processes that hold a port, and the number of ports. When all are in use, new tasks and actors wait. |
+| `worker ports in use 14 of 14` | Ray worker processes that hold a port, and the number of ports. When all are in use, new tasks and actors wait. |
 
 The head writes the line for a worker in these cases:
 
@@ -77,7 +77,7 @@ The head writes the line for a worker in these cases:
 The worker log has one line with the values that ray-vast chose:
 
 ```text
-bootstrap: limits: pids.max 1280 (cgroup v1), cpus 48, worker ports 25, soft limit 25, grpc threads 4, startup concurrency 8
+bootstrap: limits: pids.max 1280 (cgroup v1), cpus 48, worker ports 14, soft limit 7, grpc threads 4, startup concurrency 8
 ```
 
 `pids.max none` means that the container has no limit. Then the worker gets all 58 worker ports.
@@ -92,7 +92,7 @@ Settings that use fewer worker processes:
 
 | Library | Setting |
 |---|---|
-| Ray Data | For `groupby` and other hash shuffles, use both: `DataContext.get_current().max_hash_shuffle_aggregators = 4` and `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`, with N below the worker ports minus the aggregators. Read [Ray Data: limit the CPUs](run-your-workload.md#ray-data-limit-the-cpus). For a map, `map_batches(..., concurrency=N)`. |
+| Ray Data | For `groupby` and other hash shuffles, use both: `DataContext.get_current().max_hash_shuffle_aggregators = 4` and `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`, with N near the total worker ports. Read [Ray Data: limit the CPUs](run-your-workload.md#ray-data-limit-the-cpus). For a map, `map_batches(..., concurrency=N)`. |
 | Ray Core | Give each actor `num_cpus=1`. An actor with the default `num_cpus` uses 0 CPUs when it runs, so many actors fit on one worker. A task with a small `num_cpus` (for example 0.05) has the same effect. |
 | Ray Tune | `tune.TuneConfig(max_concurrent_trials=N)`. |
 | Ray Serve | A smaller `num_replicas`. |

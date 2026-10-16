@@ -19,8 +19,8 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 - When no port is free, tasks wait.
 - A driver fails at once with `No available ports`.
 - An actor fails after about 6 minutes. The error is misleading: `ActorUnschedulableError ... Failed to startup worker after retrying 5 times ... Python environment setup`. The real cause (`No available ports`) is only in the worker log.
-- Actors use ports too. An idle worker process keeps its port for about 60 seconds.
-- Ray has no setting for the total number of worker processes. ray-vast sets `RAY_num_workers_soft_limit` to the smaller of the cores and the worker ports. Then idle processes release their ports sooner.
+- Actors use ports too.
+- Ray has no setting for the total number of worker processes. Idle worker processes keep their ports up to `RAY_num_workers_soft_limit`. ray-vast sets this limit to the smaller of the cores and half the worker ports. So a job that needs a new kind of worker process (for example, another runtime env) finds a free port.
 - Do not set `CPU` above 58.
 
 ## The process limit of vast hosts
@@ -31,9 +31,9 @@ At the limit, Ray cannot start a thread. The raylet can stop, and then the worke
 
 ray-vast keeps each worker below its limit:
 
-- Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). A Ray worker process has about 25 threads, not about 50.
+- Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). A Ray task or actor process has about 25 threads, not about 50. A Serve replica has about 50.
 - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
-- The worker gives Ray fewer worker ports: `(pids.max - 400) // 35`, at most 58 and at least 4. With 1280, that is 25 ports. With 3328, it is 58.
+- The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at most 58 and at least 4. With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
 - Ray still gets all the cores as `CPU`.
 
 Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
