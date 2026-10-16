@@ -67,7 +67,7 @@ Ray Tune and Ray Train write checkpoints to `storage_path`.
 Ray 2.59 refuses a local `storage_path` on a cluster with more than one node. The error is `A local path on the head node is not accessible by worker nodes`.
 The default `storage_path` is local, so the default fails too.
 
-Set `storage_path` to a cloud bucket, and give the workers credentials for it. Read [Run your Ray workload](../how-to/run-your-workload.md#ray-tune-and-ray-train-checkpoints).
+Set `storage_path` to a cloud bucket, and give the workers credentials for it. Read [Ray Tune](../libraries/tune.md) and [Ray Train](../libraries/train.md).
 
 ## Certificates do not renew
 

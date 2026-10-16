@@ -60,11 +60,28 @@ ray-vast down cluster.yaml --profile my-aws-profile
 
 Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/ray-vast/reference/limits/#some-ray-commands-do-not-work). Use `--working-dir` and `runtime_env` to send code to the cluster.
 
+## Ray libraries
+
+Each library page shows how to run your work. It also gives the settings that keep a worker in its process limit.
+
+| Library | One worker | Many workers | Notes |
+|---|---|---|---|
+| [Ray Core](https://duc-ph.github.io/ray-vast/libraries/core/) | ✅ | ✅ |  |
+| [Ray Jobs](https://duc-ph.github.io/ray-vast/libraries/jobs/) | ✅ | ✅ |  |
+| [Ray Data](https://duc-ph.github.io/ray-vast/libraries/data/) | 🟨 | 🟨 | `groupby` and other shuffles also need `override_num_blocks`. A local output path stays on each worker. |
+| [Ray Train](https://duc-ph.github.io/ray-vast/libraries/train/) | 🟨 | ❌ | Checkpoints need S3. DDP over 2 or more workers fails behind the NAT of vast. |
+| [Ray Tune](https://duc-ph.github.io/ray-vast/libraries/tune/) | 🟨 | 🟨 | Checkpoints need S3. |
+| [Ray Serve](https://duc-ph.github.io/ray-vast/libraries/serve/) | ✅ | ✅ |  |
+| [RLlib](https://duc-ph.github.io/ray-vast/libraries/rllib/) | ✅ | 🟨 | Env runners on many workers work. Learners on 2 or more workers fail behind the NAT of vast. |
+
+✅ works (with the settings on its page). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
+
 ## Documentation
 
 - [Getting started](https://duc-ph.github.io/ray-vast/getting-started/): your first cluster, step by step.
-- How-to guides: [run your Ray workload](https://duc-ph.github.io/ray-vast/how-to/run-your-workload/), [choose node types](https://duc-ph.github.io/ray-vast/how-to/node-types/), [use GPU images](https://duc-ph.github.io/ray-vast/how-to/gpu-images/), [control cost](https://duc-ph.github.io/ray-vast/how-to/control-cost/), [troubleshoot](https://duc-ph.github.io/ray-vast/how-to/troubleshoot/), [clean up](https://duc-ph.github.io/ray-vast/how-to/clean-up/).
-- Reference: [CLI](https://duc-ph.github.io/ray-vast/reference/cli/), [configuration](https://duc-ph.github.io/ray-vast/reference/configuration/), [Ray library support](https://duc-ph.github.io/ray-vast/reference/ray-libraries/), [limits](https://duc-ph.github.io/ray-vast/reference/limits/), [IAM permissions](https://duc-ph.github.io/ray-vast/reference/iam/), [changelog](https://duc-ph.github.io/ray-vast/reference/changelog/).
+- Ray libraries: [Core](https://duc-ph.github.io/ray-vast/libraries/core/), [Jobs](https://duc-ph.github.io/ray-vast/libraries/jobs/), [Data](https://duc-ph.github.io/ray-vast/libraries/data/), [Train](https://duc-ph.github.io/ray-vast/libraries/train/), [Tune](https://duc-ph.github.io/ray-vast/libraries/tune/), [Serve](https://duc-ph.github.io/ray-vast/libraries/serve/), [RLlib](https://duc-ph.github.io/ray-vast/libraries/rllib/).
+- How-to guides: [choose node types](https://duc-ph.github.io/ray-vast/how-to/node-types/), [use GPU images](https://duc-ph.github.io/ray-vast/how-to/gpu-images/), [control cost](https://duc-ph.github.io/ray-vast/how-to/control-cost/), [troubleshoot](https://duc-ph.github.io/ray-vast/how-to/troubleshoot/), [clean up](https://duc-ph.github.io/ray-vast/how-to/clean-up/).
+- Reference: [CLI](https://duc-ph.github.io/ray-vast/reference/cli/), [configuration](https://duc-ph.github.io/ray-vast/reference/configuration/), [limits](https://duc-ph.github.io/ray-vast/reference/limits/), [IAM permissions](https://duc-ph.github.io/ray-vast/reference/iam/), [changelog](https://duc-ph.github.io/ray-vast/reference/changelog/).
 - Explanation: [architecture](https://duc-ph.github.io/ray-vast/explanation/architecture/), [enrollment](https://duc-ph.github.io/ray-vast/explanation/enrollment/), [worker life cycle](https://duc-ph.github.io/ray-vast/explanation/worker-lifecycle/), [design decisions](https://duc-ph.github.io/ray-vast/explanation/design-decisions/).
 - [Security model](https://duc-ph.github.io/ray-vast/security/). Read it before you use the cluster with real data. A vast host has root access to the worker container.
 

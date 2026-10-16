@@ -88,15 +88,18 @@ bootstrap: limits: pids.max 1280 (cgroup v1), cpus 48, worker ports 14, soft lim
 - **Refused forks or high pids:** your tasks start many threads, or too many processes run. Use the settings below.
 - **A job hangs with all ports in use:** the job needs more processes at the same time than the worker has ports. Use the settings below.
 
-Settings that use fewer worker processes:
+Each library page gives the settings that use fewer worker processes:
 
-| Library | Setting |
+| Library | Settings |
 |---|---|
-| Ray Data | For `groupby` and other hash shuffles, use both: `DataContext.get_current().max_hash_shuffle_aggregators = 4` and `DataContext.get_current().execution_options.resource_limits = ExecutionResources(cpu=N)`, with N at most the total worker ports minus the aggregators. Read [Ray Data: limit the CPUs](run-your-workload.md#ray-data-limit-the-cpus). For a map, `map_batches(..., concurrency=N)`. |
-| Ray Core | Give each actor `num_cpus=1`. An actor with the default `num_cpus` uses 0 CPUs when it runs, so many actors fit on one worker. A task with a small `num_cpus` (for example 0.05) has the same effect. |
-| Ray Tune | `tune.TuneConfig(max_concurrent_trials=N)`. |
-| Ray Serve | A smaller `num_replicas`. |
-| Your threads | Fewer threads in each task, for example `torch.set_num_threads(4)` and a small `DataLoader` `num_workers`. |
+| Ray Core | [Ray Core](../libraries/core.md#settings) |
+| Ray Data | [Ray Data](../libraries/data.md#settings) |
+| Ray Train | [Ray Train](../libraries/train.md#settings) |
+| Ray Tune | [Ray Tune](../libraries/tune.md#settings) |
+| Ray Serve | [Ray Serve](../libraries/serve.md#settings) |
+| RLlib | [RLlib](../libraries/rllib.md#settings) |
+
+Your own threads count too. Use fewer threads in each task, for example `torch.set_num_threads(4)` and a small `DataLoader` `num_workers`.
 
 Or rent hosts with fewer cores, so that one worker gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
 

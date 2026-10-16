@@ -73,10 +73,27 @@ When you finish:
 ray-vast down cluster.yaml --profile my-aws-profile
 ```
 
+## Ray libraries
+
+Each library page shows how to run your work. It also gives the settings that keep a worker in its process limit.
+
+| Library | One worker | Many workers | Notes |
+|---|---|---|---|
+| [Ray Core](libraries/core.md) | ✅ | ✅ |  |
+| [Ray Jobs](libraries/jobs.md) | ✅ | ✅ |  |
+| [Ray Data](libraries/data.md) | 🟨 | 🟨 | `groupby` and other shuffles also need `override_num_blocks`. A local output path stays on each worker. |
+| [Ray Train](libraries/train.md) | 🟨 | ❌ | Checkpoints need S3. DDP over 2 or more workers fails behind the NAT of vast. |
+| [Ray Tune](libraries/tune.md) | 🟨 | 🟨 | Checkpoints need S3. |
+| [Ray Serve](libraries/serve.md) | ✅ | ✅ |  |
+| [RLlib](libraries/rllib.md) | ✅ | 🟨 | Env runners on many workers work. Learners on 2 or more workers fail behind the NAT of vast. |
+
+✅ works (with the settings on its page). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
+
 ## Links
 
 - [Getting started](getting-started.md): your first cluster, step by step.
-- [How-to guides](how-to/run-your-workload.md): run jobs, choose GPUs, control cost, troubleshoot.
+- [Ray libraries](libraries/jobs.md): run jobs, and the settings for each Ray library.
+- [How-to guides](how-to/node-types.md): choose GPUs, control cost, troubleshoot.
 - [Reference](reference/cli.md): the CLI, the configuration, the limits.
 - [Explanation](explanation/architecture.md): the architecture, enrollment, the watchdog, security.
 - Source code: [github.com/duc-ph/ray-vast](https://github.com/duc-ph/ray-vast).

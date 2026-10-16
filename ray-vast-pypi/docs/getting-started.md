@@ -193,6 +193,6 @@ If something is left, `down` lists it and exits with code 1. Run `down` again.
 
 ## Next steps
 
-- [Run your Ray workload](how-to/run-your-workload.md): `--working-dir`, `runtime_env` and the Ray libraries.
+- [Ray Jobs](libraries/jobs.md): `--working-dir`, `runtime_env` and credentials. The other library pages give the settings for each Ray library.
 - [Choose node types and offer queries](how-to/node-types.md).
 - [Security model](security.md): read it before you use real data.
