@@ -63,3 +63,94 @@ Limit: all tests used the IP `127.0.0.1` (the same IP-SAN code path), not the bo
 - **Two head ports.** One `SSLContext` has one `verify_mode`, so the head server uses one port without client certs (`/ca.pem`, `/bootstrap`, `/enroll`, `/report` before enrollment) and one port that requires a client cert (`/heartbeat`, `/report` after enrollment).
 - With TLS 1.3, a refused client cert shows on the first read as `ssl.SSLError` (not `URLError`). The bootstrap catches both around each call.
 - The head server must do the TLS handshake in the request thread, with a timeout. A handshake in the accept loop lets one slow client stop the server.
+
+## S6 — vast host survey (2026-10-17): done
+
+Goal: find the rule for the container process limit (`pids.max`) and measure the host checks on many distinct machines. Each rental ran a stdlib probe (`python:3.11-slim`, 10 GB disk, the 64 identity ports or the offer's `direct_port_count` if lower). The probe read the limits and the network facts, served one JSON on every identity port, and then destroyed its own instance with `CONTAINER_API_KEY`. The operator (the dev box) read the JSON and checked every identity port from outside (5 s, as the head's port check). When no port answered, the operator read the JSON from the vast log. Stratified by offer `cpu_cores_effective` (7 classes), over GPU types, datacenter and non-datacenter, verified, unverified and deverified, and countries. Offer cap $1.50/h, $3.00/h for 64 or more effective cores. Label `ray-vast-test-2026-10-17`; the final label sweep found 0 instances. Code: [`../tests/manual/survey/`](../tests/manual/survey/) (`probe.py`, `survey.py`, `analyze.py`). Data: [`../archive/results/2026-10-17/survey/`](../archive/results/2026-10-17/survey/) (`rentals.jsonl` one row for each rental, `machines.csv`, `analysis.txt`, `events.log`, `credit.jsonl`, the offer lists).
+
+### Counts
+
+| Item | Number |
+|---|---|
+| Distinct machines tried (small image) | 431, on 278 hosts |
+| Probed | 322 machines, 219 hosts |
+| Never started (12 min limit) | 78 |
+| Create failed (`no_such_ask`), retried with another machine | 22 rentals, 20 machines |
+| Stopped by the two operator restarts, not tried again | 11 |
+| Ray image check (`rayproject/ray:2.59.0-py311-cpu`, same offer) | 11 rentals, 9 probed |
+
+Probed machines by `cpu_cores_effective`: <4 or unknown 33, 4–8 52, 8–16 56, 16–32 53, 32–64 48, 64–128 56, 128+ 24.
+
+Cost: the credit fell by $8.56 (13.40 → 14.83 with one auto top-up of $9.99). The estimate from `dph_total` × lifetime is $13.98; it counts the time before `running`, which vast does not bill. Estimate by class ($): <4 1.77, 4–8 0.67, 8–16 0.74, 16–32 1.55, 32–64 2.36, 64–128 4.83, 128+ 2.07. API calls had 4 HTTP 429 answers; the backoff handled them.
+
+### The process limit rule
+
+- `pids.max` = 256 × floor(CPU quota) on 319 of 322 machines. The CPU quota is cgroup v2 `cpu.max`, or cgroup v1 `cpu.cfs_quota_us` / `cpu.cfs_period_us`.
+- The 3 other machines have a quota below 1 core (0.24, 0.64, 0.96). floor(quota) is 0, and `pids.max` is `max` (no limit).
+- Every container has a CPU quota (322 of 322). Every container has a memory limit.
+- The limit does not depend on the image. On 9 machines, the Ray image gave the same cgroup version, `pids.max`, quota, memory limit, affinity, CapBnd and seccomp mode as the small image. The Ray image runs as uid 1000.
+- The quota is 0.96 × the offer's `cpu_cores_effective` on 303 of 322 machines. Exceptions (19):
+    - The offer's `cpu_cores_effective` is unknown (0 or null) on 5 machines. The instance listing then gives the value.
+    - On 2 machines with 384 offer cores (RTX PRO 6000), the container has a cpuset of 48 CPUs and a quota of 46.08 (0.96 × 48).
+    - m97081 (offer 64 cores) has a quota of 7.68 (0.96 × 8).
+    - 11 machines with a GPU fraction below 1 (for example 0.125 or 0.5 of a 256- or 512-core host) have a quota of 0.72 to 1.44 × `cpu_cores_effective`.
+- So `pids.max` = 256 × floor(0.96 × `cpu_cores_effective`) on 302 of 317 machines with a known value. The worker port count from that prediction is correct on 311 of 317 (98 %).
+- The machine with `pids.max` 1280 is the machine with 6 effective cores (5.76 quota). The rule explains it. Only 22 of 322 probed machines (7 %) have 1280.
+
+Worker ports (the bootstrap formula `max(4, min(58, (pids.max − 400) // 60))`) and B = ports − 4, for integer `cpu_cores_effective`:
+
+| `cpu_cores_effective` | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 10 | 12 | 14 | 16 | 17+ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `pids.max` | 256 | 512 | 768 | 1024 | 1280 | 1536 | 1792 | 2304 | 2816 | 3328 | 3840 | ≥ 4096 |
+| Worker ports | 4 | 4 | 6 | 10 | 14 | 18 | 23 | 31 | 40 | 48 | 57 | 58 |
+| B | 0 | 0 | 2 | 6 | 10 | 14 | 19 | 27 | 36 | 44 | 53 | 54 |
+| Ray CPUs (floor of quota) | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 9 | 11 | 13 | 15 | floor(0.96 × n) |
+
+Measured distribution of worker ports: 58 ports on 164 machines (51 %), 40–57 on 51, 14–36 on 59, 4–10 on 48. 23 machines have `pids.max` below 640, so 4 ports have no thread room (4 × 60 + 400 = 640).
+
+### Host attributes
+
+Rates over probed machines. Datacenter is `hosting_type` 1.
+
+| Check | All (322) | Datacenter (47) | Non-datacenter (275) | Verified (162) | Unverified (95) | Deverified (65) |
+|---|---|---|---|---|---|---|
+| cgroup v1 | 17 % | 43 % | 13 % | 22 % | 8 % | 17 % |
+| Hairpin NAT works | 65 % | 45 % | 69 % | 70 % | 58 % | 66 % |
+| All identity ports reachable from outside | 91 % | 100 % | 89 % | 99 % | 77 % | 87 % |
+| Egress IP = `PUBLIC_IPADDR` | 93 % | 98 % | 93 % | 95 % | 96 % | 86 % |
+| Not started in 12 min (of the rentals) | 20 % | 10 % | 21 % | 2 % | 9 % | 50 % |
+
+The same on all 322 machines:
+
+- CapBnd is `a80405fb`: no NET_ADMIN, NET_RAW, SYS_ADMIN or SYS_PTRACE. The probe ran as root, with seccomp mode 2, in its own network namespace (172.17.x.x), and with no user namespace.
+- `/dev/shm` is empty. Its size is 6 % to 50 % of the host RAM, not the Docker default of 64 MiB (2 machines).
+- `/.dockerenv` exists. The number of `/dev/nvidia<N>` devices is the same as `num_gpus`. The probe found no global IPv6 address.
+- `RLIMIT_NPROC` is unlimited. The `nofile` soft limit is 1024 on 92 machines and 1048576 on 230. The eth0 MTU is 1500.
+- The identity port env (`VAST_TCP_PORT_*`) holds every requested port (318 of 318).
+- The self-destroy with `CONTAINER_API_KEY` worked on 290 of 290 machines. On the 32 machines whose JSON came from the log, the operator destroyed the instance.
+
+Other findings:
+
+- No identity port answered from outside on 27 machines. A part of the ports answered on 3 (29 of 64, 51 of 62, 9 of 64). The head's port check refuses such hosts.
+- Hairpin failures: a timeout on 70, a refused connection on 36, other errors on 4.
+- The egress IP was not `PUBLIC_IPADDR` on 21 machines. On 4 of them, the two echo services did not agree.
+- Kernels: 6.8 (166), 5.15 (101), 7.0 (38), 5.4 (7), others (10).
+- Timing: create → `running` median 42 s, p90 62 s (the list period is 20 s). Create → probe line median 30 s, p90 45 s (host clock).
+- Never-started causes (78): a GPU CDI device error 32 (`failed to inject CDI devices: unresolvable CDI devices .../gpu=N`, a host Docker/NVIDIA fault), another OCI create error 16, no status message 9, a Docker port setup error 5, a pull that did not end 4, a pull error 2, other 10. These come before the container starts. The ray-vast shim and bootstrap are not involved.
+- The vast container log keeps only the first 500 characters of a line. The probe prints its JSON in parts of 400 characters for this reason.
+
+### Findings that contradict the docs or the design
+
+1. **B = 10 is not "most workers".** The library pages say that most workers have 14 ports (B = 10). Only 7 % of the hosts have 1280. Half of the hosts have 58 ports (B = 54). B depends on `cpu_cores_effective`.
+2. **Ray gets fewer CPUs than `cpu_cores_effective`.** The bootstrap gives Ray floor(quota) = floor(0.96 × `cpu_cores_effective`) CPUs. That is lower than the offer value on 311 of 322 machines. The provider filter is `cpu_cores_effective >= CPU`. So an offer with exactly `CPU` effective cores gives a worker with `CPU − 1` (`CPU − 2` from 25 cores). F4 says that `CPU` is a minimum. `limits.md` says "Ray still gets all the cores as `CPU`".
+3. design.md (section 1, measured 2026-10-06/07): hairpin about 72 % is now 65 % (45 % on datacenter hosts). Unreachable ports about 8 % is now 9 % (1 % on verified hosts). Egress mismatch about 8 % is now 7 %.
+
+### Proposals (not done: product code and user docs are not changed)
+
+- **Provider filter for CPU.** Require floor(0.96 × `cpu_cores_effective`) ≥ `CPU`, that is `cpu_cores_effective >= CPU / 0.96`. Then the worker has at least the declared CPUs on 95 % of hosts. Alternative: the head accepts the measured CPUs and does not count the slot as a match failure.
+- **Predict the ports before the rent.** ports = `max(4, min(58, (256 × floor(0.96 × cpu_cores_effective) − 400) // 60))`. The provider can log the predicted ports for each candidate. A node type option (for example `min_worker_ports`) can become an offer filter on `cpu_cores_effective` (17 or more effective cores give 58 ports). The bootstrap must still read `pids.max`: the prediction is wrong on 2 % of hosts.
+- **Refuse very small hosts.** Below about 3.2 effective cores, `pids.max` is under 640, and the 4 minimum ports have no thread room. A floor of `cpu_cores_effective >= 4` in the added filters stops these rentals.
+- **B advice in the docs.** Replace "Hosts with `pids.max` 1280 give 14 worker ports, so B = 10" with the table above, keyed by `cpu_cores_effective`. Tell the user to choose `cpu_cores_effective >= 17` in `offer_query` for B = 54. Keep "read the start line".
+- **The limits page.** Write the rule as "256 × each whole core of the quota; the quota is 0.96 × `cpu_cores_effective`; below 1 core there is no limit". Change "Ray still gets all the cores" to "Ray gets floor(quota) CPUs".
+- **Keep `verified = true` as the default.** Deverified hosts did not start in 50 % of the rentals; verified hosts in 2 %. Verified hosts also had all ports reachable in 99 %.
+- **design.md section 1:** update the measured rates with this survey.

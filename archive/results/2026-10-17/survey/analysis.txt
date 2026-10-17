@@ -1,80 +1,200 @@
 == Counts (small image, distinct machines) ==
-machines tried: 3 hosts: 3
-outcomes: {'probed': 3}
-rentals (rows): 3 create_failed rows: 0 distinct probed hosts: 3
-create_failed reasons: []
+machines tried: 431 hosts: 278
+outcomes: {'probed': 322, 'aborted': 11, 'never_started': 78, 'create_failed': 20}
+rentals (rows): 476 create_failed rows: 22 distinct probed hosts: 219
+create_failed reasons: [('PUT /asks/13527066/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/54499930/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/53430598/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/47795964/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/39434936/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/49634060/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/53347803/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1), ('PUT /asks/56094819/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/36', 1)]
+  never_started m35052 b5 RTX 5090 dc=0 deverified last=[32.8, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m42075 b5 RTX 4090 dc=1 deverified last=[23.9, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m147430 b5 Q RTX 8000 dc=0 unverified last=[20.0, None, '']
+  never_started m14626 b0 RTX 4090 dc=1 deverified last=[197.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: /var/lib/vastai_kaalia/latest/kaalia_docker_shim did not terminate successfully: exit status 2: unknown\nError: failed to']
+  never_started m139638 b6 RTX 5080 dc=0 deverified last=[35.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m149495 b5 RTX 3090 dc=0 deverified last=[710.0, 'offline', 'ecc510c1e359: Verifying Checksum\necc510c1e359: Download complete\n']
+  never_started m8195 b0 RTX A4000 dc=1 deverified last=[29.7, 'loading', 'Error response from daemon: Unknown runtime specified nvidia\n']
+  never_started m16607 b0 RTX A4000 dc=0 deverified last=[155.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: /var/lib/vastai_kaalia/latest/kaalia_docker_shim did not terminate successfully: exit status 2: unknown\nError: failed to']
+  never_started m56763 b4 A100 PCIE dc=0 deverified last=[44.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m40568 b1 RTX 3060 laptop dc=0 deverified last=[41.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m58911 b4 RTX 5080 dc=0 deverified last=[21.0, None, '']
+  never_started m152215 b0 RTX 5080 dc=0 deverified last=[38.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m8197 b0 RTX A4000 dc=1 deverified last=[207.8, 'created', 'Error response from daemon: failed to create shim task: OCI runtime create failed: nvidia-container-runtime did not terminate successfully: exit status 2: unknown\nError: failed to start containers: C.56330316\n']
+  never_started m140375 b6 RTX 5080 dc=0 deverified last=[40.9, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m139652 b6 RTX 5080 dc=0 deverified last=[48.1, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m150724 b4 RTX 4070S Ti dc=0 deverified last=[25.9, 'offline', '']
+  never_started m52359 b3 RTX 3090 dc=0 deverified last=[44.5, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m152205 b0 RTX 5080 dc=0 deverified last=[59.1, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m149802 b5 RTX 5060 Ti dc=0 deverified last=[30.5, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m154013 b2 GTX 1660 S dc=0 unverified last=[195.9, 'created', 'Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint C.56330117 (887f5c611df10950565177a66e303f3300507b26a732cf9a5a5f2bce5836b7ac): failed to bind host port for 0.0.0']
+  never_started m146616 b3 RTX 3060 laptop dc=0 deverified last=[46.6, 'loading', 'Error response from daemon: unknown or invalid runtime name: nvidia\n']
+  never_started m140667 b4 RTX 5090 dc=0 deverified last=[62.3, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m151166 b1 RTX 4090 dc=0 deverified last=[62.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m56252 b0 RTX PRO 6000 WS dc=0 deverified last=[21.5, 'loading', 'Error response from daemon: write /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db: input/output error\n']
+  never_started m107487 b5 CMP 170HX dc=0 deverified last=[39.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m139244 b3 RTX PRO 6000 WS dc=0 deverified last=[21.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m152159 b2 RTX 3060 dc=0 unverified last=[469.2, 'loading', 'oud.vast.ai\n']
+  never_started m26278 b0 RTX 2060S dc=0 deverified last=[41.0, 'loading', 'Error response from daemon: error creating temporary lease: Unavailable: connection error: desc = "transport: Error while dialing: dial unix:///run/containerd/containerd.sock: timeout"\n']
+  never_started m58709 b6 RTX 4090 dc=0 deverified last=[21.5, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m153971 b3 RTX 3070 dc=0 deverified last=[51.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m47514 b5 RTX 5090 dc=0 deverified last=[21.9, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m27770 b0 GTX 1070 dc=0 deverified last=[49.1, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m47421 b5 RTX 4090 dc=0 deverified last=[50.0, 'created', 'Successfully loaded python:3.11-slim']
+  never_started m146839 b5 RTX 5090 dc=0 deverified last=[45.3, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m56270 b5 RTX 5060 Ti dc=0 deverified last=[42.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m42054 b4 RTX 5090 dc=0 deverified last=[40.8, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m42696 b5 RTX 5090 dc=0 deverified last=[43.7, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m150031 b6 RTX A2000 dc=0 verified last=[195.0, 'created', 'Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint C.56331833 (aa4f7d916af60a4d5b1381c1c27001ca681b3cb560fdc3ecccc61a8987c16a43): failed to bind host port for 0.0.0']
+  never_started m58924 b3 RTX 5080 dc=0 deverified last=[22.2, None, '']
+  never_started m146320 b0 RTX 3060 dc=0 deverified last=[49.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m139877 b3 RTX A4000 dc=0 deverified last=[50.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m139896 b4 RTX 5090 dc=0 deverified last=[44.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m137361 b5 RTX 5090 dc=0 deverified last=[41.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m153698 b2 RTX 2060S dc=0 unverified last=[18.3, 'loading', 'Error response from daemon: Get "https://registry-1.docker.io/v2/": EOF\n']
+  never_started m147093 b5 RTX 5090 dc=0 deverified last=[21.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m34763 b4 RTX 5080 dc=0 deverified last=[44.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m149228 b1 RTX 5060 dc=0 unverified last=[448.3, 'loading', 'ost: cloud.vast.ai\n']
+  never_started m36567 b2 RTX 5090 dc=0 unverified last=[19.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m49868 b0 RTX 3060 dc=0 deverified last=[213.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: /var/lib/vastai_kaalia/latest/kaalia_docker_shim did not terminate successfully: exit status 2: unknown\nError: failed to']
+  never_started m35231 b3 RTX 5090 dc=1 verified last=[189.7, 'created', 'Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint C.56332653 (9c110cb6527935f57893ccf7fcee5e374ef064ac927dbca125eeba433ecc9eaf): failed to bind host port for 0.0.0']
+  never_started m30658 b0 GTX 1070 dc=0 deverified last=[18.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m143744 b4 RTX 4070S dc=0 unverified last=[19.9, None, '']
+  never_started m8998 b4 RTX 4090 dc=0 deverified last=[213.9, 'created', 'Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint C.56333064 (ee16d7db9e823b602002bfd252fd301cb94419d14307b415ce1e2bfee8cbeb4d): failed to bind host port for 0.0.0']
+  never_started m51316 b1 RTX 2060 dc=0 deverified last=[40.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m153616 b0 RTX 5090 dc=0 deverified last=[46.7, 'loading', "Error response from daemon: --storage-opt is supported only for overlay over xfs with 'pquota' mount option\n"]
+  never_started m153141 b0 RTX 5090 dc=0 deverified last=[63.3, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m150168 b4 RTX 5090 dc=0 deverified last=[34.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m150837 b0 RTX 3070 dc=0 deverified last=[199.0, 'loading', 'Error: Internal error.']
+  never_started m18680 b1 RTX A4000 dc=0 deverified last=[42.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m139516 b0 RTX 5090 dc=0 deverified last=[40.5, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m18081 b1 RTX 3090 dc=0 deverified last=[18.0, None, '']
+  never_started m144362 b0 RTX 3090 dc=0 deverified last=[679.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m153655 b5 RTX PRO 6000 WS dc=0 verified last=[45.7, 'loading', '3.11-slim: Pulling from library/python\n']
+  never_started m136798 b3 RTX 3070 Ti dc=0 unverified last=[24.8, None, '']
+  never_started m16634 b0 RTX A2000 dc=0 deverified last=[201.2, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: /var/lib/vastai_kaalia/latest/kaalia_docker_shim did not terminate successfully: exit status 2: unknown\nError: failed to']
+  never_started m54650 b4 RTX 5090 dc=0 deverified last=[22.9, None, '']
+  never_started m152242 b0 RTX 3070 dc=0 deverified last=[44.5, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m140517 b1 RTX 3060 dc=0 deverified last=[17.9, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m151327 b4 RTX 5060 Ti dc=0 deverified last=[47.4, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m148640 b2 RTX 5080 dc=0 deverified last=[38.3, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m149499 b0 RTX 3090 dc=0 deverified last=[152.8, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error setting cgroup config for proc']
+  never_started m137680 b2 GTX 1060 dc=0 unverified last=[19.2, None, '']
+  never_started m99580 b4 RTX 5090 dc=0 deverified last=[39.7, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m71076 b1 RTX 3080 dc=0 verified last=[329.3, 'loading', 'Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint C.56334446 (a33d21ce3703f423ea78716a2e933ff85a6545cdf4e11265c78c5b347c6afa2a): failed to bind host port for 0.0.0']
+  never_started m16771 b0 RTX A2000 dc=0 deverified last=[133.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: /var/lib/vastai_kaalia/latest/kaalia_docker_shim did not terminate successfully: exit status 2: unknown\nError: failed to']
+  never_started m150333 b4 RTX 5090 dc=0 deverified last=[26.0, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
+  never_started m142438 b0 RTX 4090 dc=0 deverified last=[45.8, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to create the automatic CDI']
+  never_started m136741 b3 RTX 4090 dc=0 deverified last=[41.6, 'created', 'Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: could not apply required modification to OCI specification: error modifying OCI spec: failed to inject CDI devices: unre']
 
 == pids.max rule ==
-probed: 3 {'pids.max = 256 x floor(quota)': 3}
-pids.max / floor(quota) values: [(256.0, 3)]
+probed: 322 {'pids.max = 256 x floor(quota)': 319, 'no pids limit (max); quota set': 3}
+  exception: ('no pids limit (max); quota set', 134024, 'v2', 'max', 0.24, 0.2222222222222222, 2, 1, 'RTX 2070S', 0, 2, 2)
+  exception: ('no pids limit (max); quota set', 52482, 'v2', 'max', 0.96, 1.0, 4, 2, 'RTX 3060 laptop', 0, 4, 4)
+  exception: ('no pids limit (max); quota set', 59317, 'v2', 'max', 0.64, 0.6666666666666666, 4, 1, 'RTX 3060', 0, 4, 4)
+pids.max / floor(quota) values: [(256.0, 319)]
 
 == CPU quota vs offer fields ==
-floor(quota) == floor(cpu_cores_effective): 0/3 (0%)
-quota / cpu_cores_effective: min 0.960 median 0.960 max 0.960
-ratio buckets: [(0.96, 2)]
-floor(quota) == floor(instance cpu_cores_effective): 0/3 (0%)
-quota == instance cpu_cores_effective (2 dp): 0/3 (0%)
-affinity == os_cpu_count: 3/3 (100%)
-affinity < floor(quota) (affinity is the cap): 0/3 (0%)
+floor(quota) == floor(cpu_cores_effective): 21/322 (7%)
+quota / cpu_cores_effective: min 0.120 median 0.960 max 1.440
+ratio buckets: [(0.12, 3), (0.72, 1), (0.84, 1), (0.85, 1), (0.88, 1), (0.96, 303), (1.08, 1), (1.1, 3), (1.28, 1), (1.44, 2)]
+floor(quota) == floor(instance cpu_cores_effective): 21/319 (7%)
+quota == instance cpu_cores_effective (2 dp): 0/319 (0%)
+affinity == os_cpu_count: 320/322 (99%)
+affinity < floor(quota) (affinity is the cap): 0/322 (0%)
 
 == Per bucket (cpu_cores_effective) ==
 bucket | tried | probed | cgroup v1 | pids.max (median, min-max) | no limit | worker ports (median, min-max) | B=ports-4 median | Ray CPUs median | est. cost $
-<4 (or unknown) | 1 | 1 | 0 | 5888 (5888-5888) | 0 | 58 (58-58) | 54 | 23 | 0.01
-4-8 | 1 | 1 | 1 | 1280 (1280-1280) | 0 | 14 (14-14) | 10 | 5 | 0.00
-8-16 | 1 | 1 | 0 | 2304 (2304-2304) | 0 | 31 (31-31) | 27 | 9 | 0.00
-16-32 | 0 | 0 | 0 | - (---) | 0 | - (---) | - | - | 0.00
-32-64 | 0 | 0 | 0 | - (---) | 0 | - (---) | - | - | 0.00
-64-128 | 0 | 0 | 0 | - (---) | 0 | - (---) | - | - | 0.00
-128+ | 0 | 0 | 0 | - (---) | 0 | - (---) | - | - | 0.00
-worker ports distribution: [(14, 1), (31, 1), (58, 1)]
-pids.max 1280 (14 ports) count: 1
-ports 58 (pids >= 3880 or none): 1
+<4 (or unknown) | 59 | 33 | 2 | 256.0 (256-7680) | 3 | 4 (4-58) | 0 | 1 | 1.77
+4-8 | 62 | 52 | 10 | 1280.0 (768-1792) | 0 | 14.0 (6-23) | 10.0 | 5.0 | 0.67
+8-16 | 65 | 56 | 11 | 2560.0 (1792-3328) | 0 | 36.0 (23-48) | 32.0 | 10.0 | 0.74
+16-32 | 66 | 53 | 8 | 4608 (3840-7680) | 0 | 58 (57-58) | 54 | 18 | 1.55
+32-64 | 72 | 48 | 7 | 7680.0 (7680-13568) | 0 | 58.0 (58-58) | 54.0 | 30.0 | 2.36
+64-128 | 74 | 56 | 15 | 15616.0 (1792-27392) | 0 | 58.0 (23-58) | 54.0 | 61.0 | 4.83
+128+ | 33 | 24 | 2 | 31232.0 (11776-94208) | 0 | 58.0 (58-58) | 54.0 | 122.0 | 2.07
+worker ports distribution: [(4, 23), (6, 18), (10, 7), (14, 22), (18, 6), (23, 14), (27, 5), (31, 8), (36, 4), (40, 25), (48, 3), (57, 23), (58, 164)]
+pids.max 1280 (14 ports) count: 22
+ports 58 (pids >= 3880 or none): 164
 
 == Attributes by class ==
-check | all (n=3) | datacenter (n=0) | non-datacenter (n=3) | verified (n=0) | unverified (n=0) | deverified (n=3) | dpc>=64 (n=1)
-cgroup v1 | 1/3 (33%) | 0/0 | 1/3 (33%) | 0/0 | 0/0 | 1/3 (33%) | 0/1 (0%)
-pids limit set | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-CPU quota set | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-hairpin ok | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-egress == PUBLIC_IPADDR | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-all ports reachable from outside | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-identity port env == requested | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-NET_ADMIN (CapBnd) | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-NET_RAW (CapBnd) | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-SYS_ADMIN (CapBnd) | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-SYS_PTRACE (CapBnd) | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-root | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-seccomp filter (2) | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-own netns | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-/dev/shm empty | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-IPv6 global address | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-/.dockerenv | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-nvidia devs == num_gpus | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-memory limit set | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-RLIMIT_NPROC unlimited | 3/3 (100%) | 0/0 | 3/3 (100%) | 0/0 | 0/0 | 3/3 (100%) | 1/1 (100%)
-user namespace (uid_map not 0 0 4294967295) | 0/3 (0%) | 0/0 | 0/3 (0%) | 0/0 | 0/0 | 0/3 (0%) | 0/1 (0%)
-static_ip (offer) | 1/3 (33%) | 0/0 | 1/3 (33%) | 0/0 | 0/0 | 1/3 (33%) | 0/1 (0%)
-eth0 MTU: [(1500, 3)]
-kernel: [('6.8', 2), ('5.15', 1)]
-nofile soft: [(1024, 2), (1048576, 1)]
-shm bytes / mem_total: [(0.24, 1), (0.5, 1), (0.06, 1)]
-shm 64 MiB: 0/3 (0%)
-CapBnd values: [('a80405fb', 3)]
-egress services disagree: 0 egress mismatch examples: []
-hairpin errors: []
-local_ip private: [('172', 3)] local_ip == public: 0
-runtime cgroup path: [('0::/', 2), ('docker', 1)]
+check | all (n=322) | datacenter (n=47) | non-datacenter (n=275) | verified (n=162) | unverified (n=95) | deverified (n=65) | dpc>=64 (n=213)
+cgroup v1 | 55/322 (17%) | 20/47 (43%) | 35/275 (13%) | 36/162 (22%) | 8/95 (8%) | 11/65 (17%) | 41/213 (19%)
+pids limit set | 319/322 (99%) | 47/47 (100%) | 272/275 (99%) | 162/162 (100%) | 93/95 (98%) | 64/65 (98%) | 211/213 (99%)
+CPU quota set | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+hairpin ok | 208/318 (65%) | 21/47 (45%) | 187/271 (69%) | 113/162 (70%) | 53/92 (58%) | 42/64 (66%) | 131/213 (62%)
+egress == PUBLIC_IPADDR | 301/322 (93%) | 46/47 (98%) | 255/275 (93%) | 154/162 (95%) | 91/95 (96%) | 56/65 (86%) | 205/213 (96%)
+all ports reachable from outside | 287/317 (91%) | 47/47 (100%) | 240/270 (89%) | 161/162 (99%) | 71/92 (77%) | 55/63 (87%) | 192/212 (91%)
+identity port env == requested | 318/318 (100%) | 47/47 (100%) | 271/271 (100%) | 162/162 (100%) | 92/92 (100%) | 64/64 (100%) | 213/213 (100%)
+NET_ADMIN (CapBnd) | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+NET_RAW (CapBnd) | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+SYS_ADMIN (CapBnd) | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+SYS_PTRACE (CapBnd) | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+root | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+seccomp filter (2) | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+own netns | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+/dev/shm empty | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+IPv6 global address | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+/.dockerenv | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+nvidia devs == num_gpus | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+memory limit set | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+RLIMIT_NPROC unlimited | 322/322 (100%) | 47/47 (100%) | 275/275 (100%) | 162/162 (100%) | 95/95 (100%) | 65/65 (100%) | 213/213 (100%)
+user namespace (uid_map not 0 0 4294967295) | 0/322 (0%) | 0/47 (0%) | 0/275 (0%) | 0/162 (0%) | 0/95 (0%) | 0/65 (0%) | 0/213 (0%)
+static_ip (offer) | 176/322 (55%) | 25/47 (53%) | 151/275 (55%) | 78/162 (48%) | 68/95 (72%) | 30/65 (46%) | 122/213 (57%)
+eth0 MTU: [(1500, 321), (None, 1)]
+kernel: [('6.8', 166), ('5.15', 101), ('7.0', 38), ('5.4', 7), ('6.17', 4), ('6.14', 3), ('6.5', 2), ('4.15', 1)]
+nofile soft: [(1048576, 230), (1024, 92)]
+shm bytes / mem_total: [(0.06, 48), (0.25, 48), (0.12, 42), (0.5, 32), (0.49, 26), (0.48, 14)]
+shm 64 MiB: 2/322 (1%)
+CapBnd values: [('a80405fb', 322)]
+egress services disagree: 4 egress mismatch examples: [(13615, 1), (153318, 0), (154299, 0), (152271, 0), (153882, 0), (136571, 0), (149198, 0), (153790, 0), (144146, 0), (154199, 0)]
+hairpin errors: [('ERR TimeoutError None', 70), ('ERR ConnectionRefusedError 111', 36), ('ERR OSError 113', 3), ('ERR OSError 101', 1)]
+local_ip private: [('172', 321), ('ERR 101', 1)] local_ip == public: 0
+runtime cgroup path: [('0::/', 266), ('docker', 55), ('1:net_cls:/\n0::/', 1)]
+
+== Prediction from the offer ==
+pids.max == 256 x floor(0.96 x offer cpu_cores_effective): 302/317 (95%)
+worker ports predicted == actual: 311/317 (98%)
+offer cpu_cores_effective unknown (0 or null), probed: 5
+  m150419 eff 384.00 cores 384 gpu_frac 1.0 quota 46.08 affinity 48 pids 11776 RTX PRO 6000 S
+  m67877 eff 20.00 cores 80 gpu_frac 0.25 quota 25.6 affinity 80 pids 6400 RTX 4090
+  m97081 eff 64.00 cores 64 gpu_frac 1.0 quota 7.68 affinity 64 pids 1792 Q RTX 6000
+  m152658 eff 128.00 cores 256 gpu_frac 0.5 quota 140.43428 affinity 256 pids 35840 RTX 5090
+  m153434 eff 4.00 cores 12 gpu_frac 0.3333333333333333 quota 5.76 affinity 12 pids 1280 RTX 3090
+  m59317 eff 0.67 cores 4 gpu_frac 0.16666666666666666 quota 0.64 affinity 4 pids max RTX 3060
+  m150493 eff 384.00 cores 384 gpu_frac 1.0 quota 46.08 affinity 48 pids 11776 RTX PRO 6000 S
+  m52482 eff 1.00 cores 4 gpu_frac 0.25 quota 0.96 affinity 4 pids max RTX 3060 laptop
+  m152030 eff 32.00 cores 256 gpu_frac 0.125 quota 35.10857 affinity 256 pids 8960 RTX PRO 5000
+  m57628 eff 27.43 cores 192 gpu_frac 0.14285714285714285 quota 23.04 affinity 192 pids 5888 A100 SXM4
+  m134024 eff 0.22 cores 2 gpu_frac 0.1111111111111111 quota 0.24 affinity 2 pids max RTX 2070S
+  m153046 eff 21.33 cores 128 gpu_frac 0.16666666666666666 quota 30.71999 affinity 128 pids 7680 RTX 5090
+  m51313 eff 64.00 cores 512 gpu_frac 0.125 quota 70.21714 affinity 512 pids 17920 RTX 5090
+  m59248 eff 192.00 cores 384 gpu_frac 0.5 quota 163.83999 affinity 384 pids 41728 RTX 5090
+  m154224 eff 5.33 cores 16 gpu_frac 0.3333333333333333 quota 3.84 affinity 16 pids 768 RTX 3090
+
+== Not probed: causes by class ==
+causes: [('GPU CDI device error', 32), ('OCI create error', 16), ('no status message', 9), ('Docker port setup error', 5), ('pulling at deadline', 4), ('image pull error', 2), ('other: load complete\n ecc510c1e359: Verifying Checksum\necc510c1e359: Download complete\n', 1), ('other:  Error response from daemon: Unknown runtime specified nvidia\n', 1), ('other: cessfully: exit status 2: unknown\nError: failed to start containers: C.56330316\n', 1), ('other:  Error response from daemon: unknown or invalid runtime name: nvidia\n', 1), ('other:  /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db: input/output error\n', 1), ('other:  ast.ai\n t.ai\n ud.vast.ai\n oud.vast.ai\n', 1), ('other: ort: Error while dialing: dial unix:///run/containerd/containerd.sock: timeout"\n', 1), ('other: lve host: cloud.vast.ai\n  not resolve host: cloud.vast.ai\n \n ost: cloud.vast.ai\n', 1), ("other: --storage-opt is supported only for overlay over xfs with 'pquota' mount option\n", 1), ('other: ecksum\necc510c1e359:  docker.io/library/python:3.11-slim\n Error: Internal error.', 1)]
+datacenter: not probed 5/52 (10%)
+non-datacenter: not probed 73/348 (21%)
+verified: not probed 4/166 (2%)
+unverified: not probed 9/104 (9%)
+deverified: not probed 65/130 (50%)
+partial outside reachability: [(153851, 29, 64), (150974, 51, 62), (56199, 9, 64)]
+no port reachable from outside (probe via log): 27
 
 == Timing (s) ==
-create -> running (20 s list period): median 41, p90 41, max 62
-create -> probe line (host clock): median 23, p90 23, max 44
-create -> probe read by operator: median 42, p90 42, max 64
-self-destroy after /done: 3/3 (100%)
-probe source: Counter({'port': 3})
+create -> running (20 s list period): median 42, p90 62, max 295
+create -> probe line (host clock): median 30, p90 45, max 295
+create -> probe read by operator: median 44, p90 133, max 542
+self-destroy after /done: 290/290 (100%)
+probe source: Counter({'port': 290, 'log': 32})
 
 == Small image vs Ray image (same machine) ==
-ray-image rentals: 0 probed: 0 identical limits: 0
+  m14376 gpus 1/1 same=True small=['v1', 1280, 5.76, 45680164864, 12] ray=['v1', 1280, 5.76, 45680164864, 12] ray uid=1000
+  m67850 gpus 1/1 same=True small=['v2', 3840, 15.36, 730298580992, 128] ray=['v2', 3840, 15.36, 730298580992, 128] ray uid=1000
+  m35172 gpus 1/1 same=True small=['v1', 7680, 30.71999, 550861012992, 256] ray=['v1', 7680, 30.71999, 550861012992, 256] ray uid=1000
+  m13615 gpus 1/1 same=True small=['v1', 1536, 6.144, 232147386368, 32] ray=['v1', 1536, 6.144, 232147386368, 32] ray uid=1000
+  m96453 gpus 1/1 same=True small=['v2', 15616, 61.43999, 550786564096, 512] ray=['v2', 15616, 61.43999, 550786564096, 512] ray uid=1000
+  m41526 gpus 1/1 same=True small=['v2', 1792, 7.68, 183579443200, 64] ray=['v2', 1792, 7.68, 183579443200, 64] ray uid=1000
+  m67877 gpus 1/1 same=True small=['v2', 6400, 25.6, 149694709760, 80] ray=['v2', 6400, 25.6, 149694709760, 80] ray uid=1000
+  m154241 gpus 2/2 same=True small=['v2', 36608, 143.36, 423747387392, 224] ray=['v2', 36608, 143.36, 423747387392, 224] ray uid=1000
+  m153851 gpus 1/1 same=True small=['v1', 5888, 23.04, 15938355200, 24] ray=['v1', 5888, 23.04, 15938355200, 24] ray uid=1000
+ray-image rentals: 11 probed: 9 identical limits: 9
 
 == Spend ==
-estimated (dph x lifetime) all rows: $0.02
-credit first 13.3963 last 13.3963; drops 0.0000; rises (top-ups) 0.0000
+estimated (dph x lifetime) all rows: $13.98
+credit first 13.3963 last 14.8307; drops 8.5595; rises (top-ups) 9.9939

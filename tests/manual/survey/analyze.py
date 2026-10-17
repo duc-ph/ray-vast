@@ -172,6 +172,44 @@ say("runtime cgroup path:", collections.Counter(("docker" if "docker" in r["prob
                                                  r["probe"]["self_cgroup"].startswith("0::/") else r["probe"]["self_cgroup"][:30])
                                                 for r in probed).most_common(5))
 
+say("\n== Prediction from the offer ==")
+pred = [r for r in probed if r["offer"].get("cpu_cores_effective")]
+say("pids.max == 256 x floor(0.96 x offer cpu_cores_effective):",
+    pct(sum(1 for r in pred if r["probe"]["pids_max"] == 256 * math.floor(0.96 * r["offer"]["cpu_cores_effective"] + 1e-9)), len(pred)))
+say("worker ports predicted == actual:",
+    pct(sum(1 for r in pred if ports_of(256 * math.floor(0.96 * r["offer"]["cpu_cores_effective"] + 1e-9)) == ports_of(r["probe"]["pids_max"])), len(pred)))
+say("offer cpu_cores_effective unknown (0 or null), probed:", len(probed) - len(pred))
+for r in pred:
+    if r["probe"]["pids_max"] != 256 * math.floor(0.96 * r["offer"]["cpu_cores_effective"] + 1e-9):
+        o, p = r["offer"], r["probe"]
+        say(f"  m{r['machine_id']} eff {o['cpu_cores_effective']:.2f} cores {o.get('cpu_cores')} gpu_frac {o.get('gpu_frac')} "
+            f"quota {p['cpu_quota']} affinity {p['affinity']} pids {p['pids_max']} {o['gpu_name']}")
+
+say("\n== Not probed: causes by class ==")
+
+
+def cause(r):
+    msg = " ".join(str(s[2]) for s in r.get("statuses") or [])
+    for key, name in (("CDI", "GPU CDI device error"), ("external connectivity", "Docker port setup error"),
+                      ("registry", "image pull error"), ("pull", "pulling at deadline"), ("Pull", "pulling at deadline"),
+                      ("failed to create task", "OCI create error")):
+        if key in msg:
+            return name
+    return "no status message" if not msg.strip() else "other: " + msg[-80:]
+
+
+failed = [r for r in machines if r["outcome"] in ("never_started", "no_probe_running", "vanished")]
+say("causes:", collections.Counter(cause(r) for r in failed).most_common())
+for cname, sel in (("datacenter", lambda o: o.get("hosting_type") == 1), ("non-datacenter", lambda o: o.get("hosting_type") != 1),
+                   ("verified", lambda o: o.get("verification") == "verified"), ("unverified", lambda o: o.get("verification") == "unverified"),
+                   ("deverified", lambda o: o.get("verification") == "deverified")):
+    t = [r for r in machines if r["outcome"] not in ("aborted", "create_failed") and sel(r["offer"])]
+    f = [r for r in failed if sel(r["offer"])]
+    say(f"{cname}: not probed {pct(len(f), len(t))}")
+say("partial outside reachability:", [(r["machine_id"], r.get("ext_ports_ok"), r.get("ext_ports_total")) for r in probed
+                                       if r.get("ext_ports_total") and 0 < r.get("ext_ports_ok", 0) < r["ext_ports_total"]])
+say("no port reachable from outside (probe via log):", sum(1 for r in probed if r.get("ext_ports_total") and not r.get("ext_ports_ok")))
+
 say("\n== Timing (s) ==")
 tr = [r["t_running"] - r["t_create"] for r in probed if r.get("t_running")]
 tp = [r["probe"]["t_probe"] - r["t_create"] for r in probed if r.get("probe")]
