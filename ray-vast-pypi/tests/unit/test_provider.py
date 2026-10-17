@@ -237,6 +237,31 @@ def test_a_candidate_that_enrolls_while_the_pass_ends_its_finished_request_keeps
     assert 104 not in instance_ids(env)
 
 
+@pytest.mark.parametrize("timeout", ["enrollment", "pull"])
+def test_a_candidate_that_enrolls_while_the_pass_ends_it_for_a_timeout_stays_and_its_host_is_not_blocked(env, timeout):
+    """The pass decides a timeout under the lock and ends the candidate after it releases the lock. The head server can
+    enroll the candidate in between. That worker must stay, and its host must not be blocked."""
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    (slot_id,) = create(p)
+    if timeout == "enrollment":
+        env.vast.run(101, "198.51.100.55")
+        p.reconcile_once()
+        env.clock.now += 61
+    else:
+        env.clock.now += 901
+    end = p._end
+
+    def head_enrolls_101_first(cand, reason, *args, **kwargs):
+        if cand.instance_id == 101 and 101 not in p.state.enrolled:
+            enroll(p, 101, slot_id)  # the head server's request thread enrolls between the decision and the end
+        return end(cand, reason, *args, **kwargs)
+    p._end = head_enrolls_101_first
+    p.reconcile_once()
+    assert instance_ids(env) == [101] and p.state.slots[slot_id].instance_id == 101
+    assert not p.state.is_blocked(11, env.clock())
+
+
 def test_free_slot_stays_while_a_pending_candidate_of_its_type_remains(env):
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
