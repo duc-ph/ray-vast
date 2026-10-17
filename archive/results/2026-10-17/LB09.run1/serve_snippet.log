@@ -1,0 +1,52 @@
+2026-10-17 11:34:45,723	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:54033[22m
+2026-10-17 11:34:45,734	INFO cli.py:569 -- 2026-10-17 04:34:02,372	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job serve_snippet-e503cf: python lb_snippet.py serve
+2026-10-17 04:34:04,235	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.236.153.229:6379...
+2026-10-17 04:34:04,266	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START serve 1792236844.2
+--- snippet.py ---
+from ray import serve
+
+@serve.deployment(
+    num_replicas=20,                        # at most B for each worker
+    ray_actor_options={"num_cpus": 0.4},    # CPUS / B
+)
+class Model:
+    def __call__(self, request):
+        ...
+
+serve.run(Model.bind(), route_prefix="/")
+--- end ---
+[36m(ProxyActor pid=6696)[0m INFO 2026-10-17 04:34:09,728 proxy 18.236.153.229 -- Proxy starting on node e5748fa7dd7a75081cc269669e9fdd28de750925ae022cc2bfad3357 (HTTP port: 8000).
+INFO 2026-10-17 04:34:09,871 serve 6622 -- Started Serve in namespace "serve".
+[36m(ProxyActor pid=6696)[0m INFO 2026-10-17 04:34:09,865 proxy 18.236.153.229 -- Got updated endpoints: {}.
+[36m(ServeController pid=6657)[0m INFO 2026-10-17 04:34:10,001 controller 6657 -- Deploying new version of Deployment(name='Model', app='default') (initial target replicas: 20).
+[36m(ProxyActor pid=6696)[0m INFO 2026-10-17 04:34:10,008 proxy 18.236.153.229 -- Got updated endpoints: {Deployment(name='Model', app='default'): EndpointInfo(route='/', app_is_cross_language=False, route_patterns=None)}.
+[36m(ProxyActor pid=6696)[0m INFO 2026-10-17 04:34:10,026 proxy 18.236.153.229 -- Started <ray.serve._private.router.SharedRouterLongPollClient object at 0x7e946e87a1d0>.
+[36m(ServeController pid=6657)[0m INFO 2026-10-17 04:34:10,109 controller 6657 -- Adding 20 replicas to Deployment(name='Model', app='default').
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,148 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='5h83dv52', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,148 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='pbu1sv48', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='9qghq2tu', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='1bs0vwdq', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='7lyk3k31', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='sbzz4d5b', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='j8o6dwxv', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:20,149 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='ueg0r6ke', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:23,086 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='rgtp3zsr', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:23,193 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='m3uyqerc', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:24,349 controller 6657 -- Proxy actor readiness check for proxy on b77ede5e9be5583da18ee4bb303671e7812ba67213d185fa00084603 didn't complete in 5.0s.
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:24,349 controller 6657 -- Proxy actor reported not ready on node b77ede5e9be5583da18ee4bb303671e7812ba67213d185fa00084603
+[36m(ProxyActor pid=27169, ip=143.55.45.86)[0m INFO 2026-10-17 04:34:25,129 proxy 143.55.45.86 -- Proxy starting on node b77ede5e9be5583da18ee4bb303671e7812ba67213d185fa00084603 (HTTP port: 8000).
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:25,609 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='5bsjc4gw', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=27169, ip=143.55.45.86)[0m INFO 2026-10-17 04:34:25,696 proxy 143.55.45.86 -- Got updated endpoints: {Deployment(name='Model', app='default'): EndpointInfo(route='/', app_is_cross_language=False, route_patterns=None)}.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:26,240 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='wg70qqsv', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ProxyActor pid=27169, ip=143.55.45.86)[0m INFO 2026-10-17 04:34:26,439 proxy 143.55.45.86 -- Started <ray.serve._private.router.SharedRouterLongPollClient object at 0x7f3a33f5fc50>.
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:27,709 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='uhhl6tfs', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:28,766 controller 6657 -- Proxy actor readiness check for proxy on c714ed119eae0f1f4dc996886c980c41e6ae4a0a0e40067a1f7c5c6c didn't complete in 5.0s.
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:28,766 controller 6657 -- Proxy actor reported not ready on node c714ed119eae0f1f4dc996886c980c41e6ae4a0a0e40067a1f7c5c6c
+[36m(ProxyActor pid=6696)[0m WARNING 2026-10-17 04:34:30,661 proxy 18.236.153.229 -- Failed to get queue length from Replica(id='6dxemi4j', deployment='Model', app='default') within 0.1s. If this happens repeatedly it's likely caused by high network latency in the cluster. You can configure the deadline using the `RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S` environment variable.[32m [repeated 25x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(ProxyActor pid=26029, ip=185.62.108.226)[0m INFO 2026-10-17 04:34:33,590 proxy 185.62.108.226 -- Proxy starting on node c714ed119eae0f1f4dc996886c980c41e6ae4a0a0e40067a1f7c5c6c (HTTP port: 8000).
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:33,974 controller 6657 -- Proxy actor readiness check for proxy on c714ed119eae0f1f4dc996886c980c41e6ae4a0a0e40067a1f7c5c6c didn't complete in 5.0s.
+[36m(ServeController pid=6657)[0m WARNING 2026-10-17 04:34:33,974 controller 6657 -- Proxy actor reported not ready on node c714ed119eae0f1f4dc996886c980c41e6ae4a0a0e40067a1f7c5c6c
+INFO 2026-10-17 04:34:34,597 serve 6622 -- Application 'default' is ready at http://127.0.0.1:8000/.
+LB_RESULT serve PASS {"elapsed_s": 30.5, "replica_nodes": {"b77ede5e": 10, "c714ed11": 10}}

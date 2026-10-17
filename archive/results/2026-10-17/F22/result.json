@@ -5,7 +5,7 @@
   "limits"
  ],
  "fixture": "none",
- "started": 1792254107.265959,
+ "started": 1792263733.5301583,
  "checks": [
   {
    "name": "C10 local runs on the small worker: exit 0",
@@ -25,7 +25,7 @@
  ],
  "data": {
   "c10_threads_threads_1536": {
-   "seconds": 57.9,
+   "seconds": 57.5,
    "job": "COMPLETED",
    "params": "{'tasks': 6, 'threads_per_task': 200, 'hold_s': 30.0, 'ports': 18}",
    "ports": 18,
@@ -39,36 +39,43 @@
    },
    "cpu": 6.0,
    "worker_alive": true,
-   "pids.events": "max 46",
+   "pids.events": "max 48",
    "no_port_errors": 0,
    "warnings": [
-    "2026-10-17 09:23:18,516\tWARNING head_server.py:302 -- worker slot-1-7e64c3 (instance 1000, ip 172.17.0.3) is at its process limit: 46 refused forks/threads (+46), pids 122 of 1536, worker ports in use 0 of 18. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+    "2026-10-17 12:03:40,531\tWARNING head_server.py:302 -- worker slot-1-10abea (instance 1000, ip 172.17.0.2) is at its process limit: 48 refused forks/threads (+48), pids 120 of 1536, worker ports in use 0 of 18. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
    ],
    "job_data": {
     "alive_nodes": [
-     "9cbb81c0307120f52c3fdba03812cf2afcf082499abcb2c794fc551e"
+     "765fb6057751c0c61d955898c1d482895bf75b77e0681123c712aa94"
     ],
-    "elapsed_s": 51.5,
+    "elapsed_s": 51.0,
     "hold_s": 30.0,
     "max_pids_current": 1536,
     "max_ray_worker_processes": 13,
     "mode": "threads",
     "ports": 18,
-    "refused_tasks": 4,
+    "refused_tasks": 6,
     "results": [
      {
-      "own_threads": 189,
+      "own_threads": 208,
       "pids.current": "1536",
       "ray_worker_processes": 13,
       "refused": "can't start new thread",
-      "started": 163
+      "started": 182
      },
      {
-      "own_threads": 206,
+      "own_threads": 220,
       "pids.current": "1536",
       "ray_worker_processes": 13,
       "refused": "can't start new thread",
-      "started": 179
+      "started": 194
+     },
+     {
+      "own_threads": 217,
+      "pids.current": "1536",
+      "ray_worker_processes": 13,
+      "refused": "can't start new thread",
+      "started": 191
      },
      {
       "own_threads": 201,
@@ -78,37 +85,30 @@
       "started": 175
      },
      {
-      "own_threads": 215,
+      "own_threads": 216,
       "pids.current": "1536",
       "ray_worker_processes": 13,
       "refused": "can't start new thread",
-      "started": 189
+      "started": 190
      },
      {
-      "own_threads": 226,
-      "pids.current": "1493",
+      "own_threads": 204,
+      "pids.current": "1536",
       "ray_worker_processes": 13,
-      "refused": null,
-      "started": 200
-     },
-     {
-      "own_threads": 226,
-      "pids.current": "1362",
-      "ray_worker_processes": 13,
-      "refused": null,
-      "started": 200
+      "refused": "can't start new thread",
+      "started": 178
      }
     ],
     "tasks": 6,
     "threads_per_task": 200
    },
    "reasons": [
-    "4 of 6 tasks refused, 13 worker processes of 18 ports, pids.current peak 1536, refused forks 46"
+    "6 of 6 tasks refused, 13 worker processes of 18 ports, pids.current peak 1536, refused forks 48"
    ]
   }
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792254248.4933205,
- "wall_s": 141.2
+ "ended": 1792263866.6184266,
+ "wall_s": 133.1
 }

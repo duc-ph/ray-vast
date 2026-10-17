@@ -1,0 +1,49 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/bin/ray", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/scripts/scripts.py", line 3013, in main
+    return cli()
+           ^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/job/cli_utils.py", line 54, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/autoscaler/_private/cli_logger.py", line 812, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/job/cli.py", line 303, in submit
+    client = _get_sdk_client(
+             ^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/job/cli.py", line 35, in _get_sdk_client
+    client = JobSubmissionClient(
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/job/sdk.py", line 113, in __init__
+    self._check_connection_and_version(
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/dashboard_sdk.py", line 269, in _check_connection_and_version
+    self._check_connection_and_version_with_url(min_version, version_error_message)
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/dashboard_sdk.py", line 283, in _check_connection_and_version_with_url
+    r = self._do_request("GET", url)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/lib/python3.12/site-packages/ray/dashboard/modules/dashboard_sdk.py", line 342, in _do_request
+    raise AuthenticationError(formatted_error)
+ray.exceptions.AuthenticationError: Authentication required: Unauthorized: Missing authentication token
+
+Token authentication is enabled but no authentication token was found. Note: RAY_AUTH_MODE is currently 'disabled' (not 'token'). Ensure that the token for the cluster is available in a local file (e.g., ~/.ray/auth_token or via RAY_AUTH_TOKEN_PATH) or as the `RAY_AUTH_TOKEN` environment variable. To generate a token for local development, use `ray get-auth-token --generate` For remote clusters, ensure that the token is propagated to all nodes of the cluster when token authentication is enabled. For more information, see: https://docs.ray.io/en/latest/ray-security/token-auth.html

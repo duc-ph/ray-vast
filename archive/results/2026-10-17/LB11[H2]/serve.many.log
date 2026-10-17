@@ -1,0 +1,37 @@
+2026-10-17 19:24:36,849	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:33731[22m
+2026-10-17 19:24:36,868	INFO cli.py:569 -- 2026-10-17 12:22:13,279	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job serve-many-b11743: python c10_serve.py many
+C10_START C10.serve many 1792264936.5 guard_s=600.0
+2026-10-17 12:22:16,499	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.212.243.33:6379...
+2026-10-17 12:22:16,536	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'num_replicas': 62, 'replica_cpu': 0.1}
+[36m(ProxyActor pid=6066)[0m INFO 2026-10-17 12:22:21,986 proxy 34.212.243.33 -- Proxy starting on node 615b6bb1381f1c5d7fd27694c215d651c870238d442532d64d95714c (HTTP port: 8000).
+INFO 2026-10-17 12:22:22,143 serve 5990 -- Started Serve in namespace "serve".
+[36m(ProxyActor pid=6066)[0m INFO 2026-10-17 12:22:22,136 proxy 34.212.243.33 -- Got updated endpoints: {}.
+[36m(ServeController pid=6027)[0m INFO 2026-10-17 12:22:22,229 controller 6027 -- Deploying new version of Deployment(name='Echo', app='c10') (initial target replicas: 62).
+[36m(ServeController pid=6027)[0m INFO 2026-10-17 12:22:22,335 controller 6027 -- Adding 62 replicas to Deployment(name='Echo', app='c10').
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:22:38,508 controller 6027 -- Proxy actor readiness check for proxy on 54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b didn't complete in 5.0s.
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:22:38,508 controller 6027 -- Proxy actor reported not ready on node 54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:22:43,660 controller 6027 -- Proxy actor readiness check for proxy on 54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b didn't complete in 5.0s.
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:22:43,660 controller 6027 -- Proxy actor reported not ready on node 54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b
+[36m(ProxyActor pid=39221, ip=154.42.3.219)[0m INFO 2026-10-17 12:22:47,324 proxy 154.42.3.219 -- Proxy starting on node 54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b (HTTP port: 8000).
+[36m(ProxyActor pid=39221, ip=154.42.3.219)[0m INFO 2026-10-17 12:22:48,605 proxy 154.42.3.219 -- Got updated endpoints: {}.
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:22:52,372 controller 6027 -- Deployment 'Echo' in application 'c10' has 31 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[36m(pid=40674, ip=154.42.3.219)[0m [2026-10-17 12:22:56,296 E 40674 40674] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=91be44a54d0c95769948aa06940ca8cf403036d6735f9b8c82c0e9e9
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:23:22,441 controller 6027 -- Deployment 'Echo' in application 'c10' has 13 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[36m(pid=41125, ip=154.42.3.219)[0m [2026-10-17 12:23:01,009 E 41125 41125] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=d7823c2bf3d5b4c08956f14af3ccb5d835f58e1e5df10fe8a2c5d65e[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:23:52,461 controller 6027 -- Deployment 'Echo' in application 'c10' has 13 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=154.42.3.219)[0m [2026-10-17 12:23:53,273 E 433 433] (raylet) worker_pool.cc:627: Some workers of the worker process(40674) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=42114, ip=154.42.3.219)[0m [2026-10-17 12:23:56,507 E 42114 42114] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=4150e22749f4689acf61b9ab5741e708329f4aea17731278c6c3fb3c
+[33m(raylet, ip=154.42.3.219)[0m [2026-10-17 12:23:58,040 E 433 433] (raylet) worker_pool.cc:627: Some workers of the worker process(41130) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 7x across cluster][0m
+[36m(ServeController pid=6027)[0m WARNING 2026-10-17 12:24:22,514 controller 6027 -- Deployment 'Echo' in application 'c10' has 12 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[36m(pid=42308, ip=154.42.3.219)[0m [2026-10-17 12:24:01,225 E 42308 42308] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=df3c1427bc7418d8ac79decaab34cce9d76b53598227713df5f1a313[32m [repeated 7x across cluster][0m
+*** SIGTERM received at time=1792265073 on cpu 0 ***
+PC: @     0x7c3216b8f7b8  (unknown)  clock_nanosleep
+    @     0x7c3216aec520  1719427136  (unknown)
+    @         0x3b44a961  (unknown)  (unknown)
+[2026-10-17 12:24:33,635 E 5990 5990] logging.cc:474: *** SIGTERM received at time=1792265073 on cpu 0 ***
+[2026-10-17 12:24:33,636 E 5990 5990] logging.cc:474: PC: @     0x7c3216b8f7b8  (unknown)  clock_nanosleep
+[2026-10-17 12:24:33,637 E 5990 5990] logging.cc:474:     @     0x7c3216aec520  1719427136  (unknown)
+[2026-10-17 12:24:33,641 E 5990 5990] logging.cc:474:     @         0x3b44a961  (unknown)  (unknown)

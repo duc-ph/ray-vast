@@ -787,69 +787,64 @@ Written by `tests/live/summarize.py` from `archive/results/2026-10-17/`.
 
 | ID | Result | Time (s) | Line | Evidence |
 |---|---|---|---|---|
-| F01 | NOT RUN | | | |
-| F02 | NOT RUN | | | |
-| F03 | NOT RUN | | | |
-| F04 | NOT RUN | | | |
-| F05 | NOT RUN | | | |
-| F06 | NOT RUN | | | |
-| F07 | NOT RUN | | | |
-| F08 | NOT RUN | | | |
-| F09 | NOT RUN | | | |
-| F10 | NOT RUN | | | |
-| F11 | NOT RUN | | | |
-| F12 | NOT RUN | | | |
-| F13 | NOT RUN | | | |
-| F14 | NOT RUN | | | |
-| F15 | NOT RUN | | | |
-| F16 | NOT RUN | | | |
-| F17 | NOT RUN | | | |
-| F18 | NOT RUN | | | |
-| F19 | NOT RUN | | | |
-| F20 | NOT RUN | | | |
-| A01 | NOT RUN | | | |
-| A02 | NOT RUN | | | |
-| A03 | NOT RUN | | | |
-| A04 | NOT RUN | | | |
-| A05 | NOT RUN | | | |
-| A06 | NOT RUN | | | |
-| A07 | NOT RUN | | | |
-| A08 | NOT RUN | | | |
-| A09 | NOT RUN | | | |
-| A10 | NOT RUN | | | |
-| A11 | NOT RUN | | | |
-| A12 | NOT RUN | | | |
-| A13 | NOT RUN | | | |
-| L01 | PASS | 0.7 | up as the restricted user exits 0: 559.9; the head runs in us-east-2 with t3.medium: ('us-east-2b', 't3.medium'); the head role has the boundary; the state file saved the restricted profile | `2026-10-17/L01/` |
-| L02 | PASS | 316.4 | c8_job SUCCEEDED with 4 containers: SUCCEEDED; both node types: ['gpu-a', 'gpu-b']; bundle 0: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-d1929428-eb3c-777d-f101-91cfd03f34ea)'); bundle 1: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: NVIDIA GeForce RTX 5060 Ti (UUID: GPU-407d0c99-ab97- | `2026-10-17/L02/` |
-| L03 | PASS | 26.3 | probe job SUCCEEDED on 4 workers: ('SUCCEEDED', 4); 56321651: uid 1000, Ray 2.59.0: (1000, '2.59.0'); 56321651: no CONTAINER_API_KEY or RAYVAST_JOIN_TOKEN in os.environ; 56321651: PID 1 is the bootstrap (GPU image ENTRYPOINT kept); 56321651: /tmp/rayvast 700, files 600 or 644 for certs: {'ca.pem': ' | `2026-10-17/L03/` |
-| L04 | FAIL | 14.4 | check failed: 56321651: agent port answers 401 without the token (InvalidURL) | `2026-10-17/L04/` |
-| L05 | PASS | 3.4 | monitor.log has the rent line; monitor.log has the enrolled line; monitor.log has the ending line; the `Dropping the empty legacy field` lines are not errors: ['2026-10-16 17:35:50,043\tWARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is | `2026-10-17/L05/` |
-| L06 | PASS | 14.3 | 56321651: /proc/1/environ holds CONTAINER_API_KEY and RAYVAST_JOIN_TOKEN (a task can read them); 56321651: the key reads its own instance (200) and not another (401 or 403): {'other': 401, 'own': 200}; 56321651: uid 1000 cannot read /root/.ssh; 56321632: /proc/1/environ holds CONTAINER_API_KEY and R | `2026-10-17/L06/` |
-| L07 | FAIL | 166.2 | check failed: TERM: the report reaches the head within 1 s (1.77) | `2026-10-17/L07/` |
-| L08 | FAIL | 25.5 | IndexError: list index out of range | `2026-10-17/L08/` |
-| L09 | FAIL | 29.8 | check failed: `rebooting` is not an unknown status () | `2026-10-17/L09/` |
-| L10 | PASS | 860.7 | head stopped with a worker enrolled and a candidate loading; worker 56322499 destroys itself within 300 s + 30 s heartbeat + 15 s: 65; candidate 56322500 is gone within 10 min plus its pull: 65; candidate 56322510 is gone within 10 min plus its pull: 65; candidate 56322513 is gone within 10 min plus | `2026-10-17/L10/` |
-| L11 | FAIL | 0.4 | check failed: down: left nothing () | `2026-10-17/L11/` |
-| LB00[H1] | FAIL | 975.5 | livekit.HostNotFound: no host matched {'pids_max': 1280, 'cgroup': 'v1', 'cpus': {'gte': 36}} in 3 rentals (machines 148655, 58013, 36376) | `2026-10-17/LB00[H1]/` |
-| LB00[H2] | PASS | 600.3 | H2: cgroup v2: {'machine_id': 51706, 'pids.max': '1536', 'cgroup': 'v2'}; H2 56320907: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1536): (18, 18); H2 56320907: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_worke | `2026-10-17/LB00[H2]/` |
-| LB00[H3] | PASS | 578.6 | H3 56320908: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1280): (14, 14); H3 56320908: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '5', 'RAY_worker_maximum_startup_concurrency': '8'}; H3 56 | `2026-10-17/LB00[H3]/` |
-| LB00[gpu2] | PASS | 716.8 | gpu2 56321071: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 3072): (44, 44); gpu2 56321071: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '12', 'RAY_worker_maximum_startup_concurrency': '8'}; | `2026-10-17/LB00[gpu2]/` |
-| LB01 | PASS | 472.7 | --working-dir: data/hello.txt read by tasks on both workers: {'cwd_example': '/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896', 'elapsed_s': 7.7, 'file_ok': True, 'ips': ['143.55.45.86', '185.62.108.226'], 'tasks_per_node': {'e4cf6aaa': 4, | `2026-10-17/LB01/` |
-| LB02 | PASS | 174.7 | PACK on one worker, STRICT_SPREAD on both: {'elapsed_s': 12.2, 'pack_bundles': {'0': 'e4cf6aaa', '1': 'e4cf6aaa', '2': 'e4cf6aaa', '3': 'e4cf6aaa'}, 'pack_task_nodes': ['e4cf6aaa', 'e4cf6aaa', 'e4cf6aaa', 'e4cf6aaa'], 'spread_bundles': {'0': 'fa6c41ea', '1': 'e4cf6aaa'}, 'spread_task_nodes': ['fa6c4 | `2026-10-17/LB02/` |
-| LB03[H1] | FAIL | 1831.8 | AssertionError: the LB03 input was not written: FAILED ('make_parquet', 'FAIL', {'error_class': 'ExecutionTimeoutError', 'error_head': ["Dataset execution made no progress for at least 1800s of scheduling time (timeout: 1800s). No output was taken and no blocks moved through any operator's queues in | `2026-10-17/LB03[H1]/` |
-| LB04 | PASS | 232.5 | C9.1.3 with the data.md settings at B 10: SUCCEEDED: ('SUCCEEDED', {'dataset_gb': 3.0, 'elapsed_s': 124.6, 'group_total': 1430, 'groupby_s': 55.5, 'groups': 16, 'rows': 1430, 'settings': {'B': 10, 'max_hash_shuffle_aggregators': 2, 'override_num_blocks': 5, 'read_concurrency': 2, 'resource_limits_cp | `2026-10-17/LB04/` |
-| LB05 | PASS | 363.5 | c9_1_1_data_cpu.py with the defaults: {'count': 3333334, 'elapsed_s': 23.5, 'expected': 3333334, 'first': [{'id': 0}, {'id': 6}, {'id': 12}], 'rows': 10000000, 'rows_per_s': 856884, 'seconds': 23.34, 'task_nodes': {'e4cf6aaa': 38, 'fa6c41ea': 46}}; c9_1_2_data_objstore.py with the defaults: {'checks | `2026-10-17/LB05/` |
-| LB06 | FAIL | 406.1 | check failed: the default storage_path: `Unable to set up cluster storage ... not accessible by worker nodes` (tune.md:83) ({'elapsed_s': 10.1, 'errors': 4, 'experiment_path': '/home/ray/ray_results/c9_2_4', 'storage': 'default', 'trials': [{'checkpoint': None, 'error': '\x1b[36mray::ImplicitFunc.tr | `2026-10-17/LB06/` |
-| LB07 | FAIL | 284.5 | interrupted: the test did not end (no call report) | `2026-10-17/LB07/` |
-| LB08 | FAIL | 821.1 | interrupted: the test did not end (no call report) | `2026-10-17/LB08/` |
-| LB09 | NOT RUN | | | |
-| LB10[gpu2] | FAIL | 2048.0 | check failed: the learner snippet on gpu2 (num_cpus_per_learner 0.3): 2 iterations, 0 errors ({'elapsed_s': 1912.7, 'errors': 1, 'iterations': None}) | `2026-10-17/LB10[gpu2]/` |
-| LB11[H1] | FAIL | 242.0 | interrupted: the test did not end (no call report) | `2026-10-17/LB11[H1]/` |
-| LB11[H2] | FAIL | 2449.0 | interrupted: the test did not end (no call report) | `2026-10-17/LB11[H2]/` |
-| LB12 | NOT RUN | | | |
-| LB13 | NOT RUN | | | |
-| LB14 | NOT RUN | | | |
+| F01 | PASS | 144.1 | committed shim is the step 10c build: 79055dea6e913180c362c81e2b0c9903dd7a39bac5e3d5bab0e491bb9b3817fd; shim tests: exit 0: {'passed': 14}; shim tests: no failure or error: {'passed': 14}; 14 shim tests: 14; mutation run: the unchanged source builds the committed .so: _overwritten_environment_memory | `2026-10-17/F01/` |
+| F02 | PASS | 203.4 | shim: node ALIVE: ['NODES ["ALIVE"]']; shim: job ran a task; shim: no Errno 99: ['ERRNO99 0']; control without the shim: Errno 99 or no job: ['ray start exit 124', 'NODES none', 'ERRNO99 0'] | `2026-10-17/F02/` |
+| F03 | PASS | 24.1 | config and CLI unit tests: exit 0: {'passed': 181}; config and CLI unit tests: no failure or error: {'passed': 181}; config and CLI unit tests: a passing test '0_1_0': ['test_main_down_removes_a_cluster_that_version_0_1_0_made', 'test_main_down_of_a_0_1_0_yaml_without_the_state_file_takes_the_region | `2026-10-17/F03/` |
+| F04 | PASS | 12.8 | provider unit tests: exit 0: {'passed': 131}; provider unit tests: no failure or error: {'passed': 131}; provider unit tests: a passing test 'missing_from_vast_counts_only_after_the_grace': ['test_instance_missing_from_vast_counts_only_after_the_grace_period']; provider unit tests: a passing test 'o | `2026-10-17/F04/` |
+| F05 | PASS | 117.8 | bootstrap tests: exit 0: {'passed': 63}; bootstrap tests: no failure or error: {'passed': 63}; bootstrap tests: a passing test 'cgroup_v1_cpu_quota': ['test_cgroup_v1_cpu_quota_is_reported_in_enroll_and_minus_1_is_no_limit[150000\\n-100000\\n-1.5]', 'test_cgroup_v1_cpu_quota_is_reported_in_enroll_an | `2026-10-17/F05/` |
+| F06 | PASS | 82.5 | head server and PKI tests: exit 0: {'passed': 93}; head server and PKI tests: no failure or error: {'passed': 93}; a test asserts the exact enroll answer keys: {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address", "num_cpus"} | `2026-10-17/F06/` |
+| F07 | PASS | 81.7 | bootloader and bootstrap container tests: exit 0: {'passed': 16}; bootloader and bootstrap container tests: no failure or error: {'passed': 16}; bootloader and bootstrap container tests: a passing test 'one_changed_byte': ['test_bootstrap_with_one_changed_byte_is_refused_by_the_bootloader_which_dest | `2026-10-17/F07/` |
+| F08 | PASS | 116.6 | test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero passed: (0, {'test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero': 'passed'}) | `2026-10-17/F08/` |
+| F09 | PASS | 98.0 | test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed passed: (0, {'test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed': 'passed'}) | `2026-10-17/F09/` |
+| F10 | PASS | 24.3 | test_ray_gets_the_declared_cpu_on_a_host_with_a_cpu_quota_of_96_percent passed: (0, {'test_ray_gets_the_declared_cpu_on_a_host_with_a_cpu_quota_of_96_percent': 'passed'}) | `2026-10-17/F10/` |
+| F11 | PASS | 94.1 | test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again passed: (0, {'test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again': 'passed'}) | `2026-10-17/F11/` |
+| F12 | PASS | 109.9 | test_head_silence_makes_each_worker_report_and_destroy_itself passed: (0, {'test_head_silence_makes_each_worker_report_and_destroy_itself': 'passed'}) | `2026-10-17/F12/` |
+| F13 | PASS | 25.3 | test_container_restart_is_refused_a_second_enrollment_and_destroys_itself passed: (0, {'test_container_restart_is_refused_a_second_enrollment_and_destroys_itself': 'passed'}) | `2026-10-17/F13/` |
+| F14 | PASS | 91.9 | test_monitor_crash_stops_the_head_and_every_worker_destroys_itself passed: (0, {'test_monitor_crash_stops_the_head_and_every_worker_destroys_itself': 'passed'}) | `2026-10-17/F14/` |
+| F15 | PASS | 139.3 | test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again passed: (0, {'test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again': 'passed'}) | `2026-10-17/F15/` |
+| F16 | PASS | 288.5 | C10 local pairs: exit 0: {'passed': 5}; C10 local pairs: no failure or error: {'passed': 5}; 5 pair runs: ['test_pair[c10_core.py-full-1280-300]', 'test_pair[c10_core.py-many-1280-150]', 'test_pair[c10_core.py-tuned-1280-150]', 'test_pair[c10_data.py-many-560-150]', 'test_pair[c10_serve.py-full-1280 | `2026-10-17/F16/` |
+| F17 | PASS | 0.3 | twine check --strict: ['/tmp/pytest-of-ubuntu/pytest-2185/popen-gw9/dist0/ray_vast-0.1.0.tar.gz: \x1b[32mPASSED\x1b[0m']; wheel has ray_vast/shim/librayvast_shim.so; wheel has ray_vast/worker/bootstrap.py; wheel has ray_vast/worker/bootloader.sh; wheel has ray_vast/examples/gpu-24gb.yaml; wheel has | `2026-10-17/F17/` |
+| F18 | PASS | 176.6 | Python 3.10: ['Python 3.10.22']; ray-vast --help works; fast unit run passes on 3.10: ['578 passed, 62 deselected in 115.42s (0:01:55)'] | `2026-10-17/F18/` |
+| F19 | PASS | 0.6 | cpu-heavy.yaml cpu32: >= 4 offers on >= 3 machines: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 18, 'machines': 18, 'cheapest': [0.337, 0.536], 'budget': 4.0}; cpu-heavy.yaml cpu32: the first candidates fit the budget: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 18, 'machines | `2026-10-17/F19/` |
+| F20 | PASS | 30.1 | core_0 compiles; core_1 compiles; data_0 compiles; rllib_0 compiles; rllib_1 compiles; serve_0 compiles; train_0 compiles; tune_0 compiles; tune_1 compiles; all snippet imports work in the Ray 2.59 image (torch from pip); the core snippets run on a local node: ing '--shm-size=10.00gb' to 'docker run | `2026-10-17/F20/` |
+| F21 | PASS | 107.9 | C10 local runs on the small worker: exit 0: {'passed': 6}; C10 local runs on the small worker: no failure or error: {'passed': 6}; 6 runs: ['test_default[c10_core.py-300]', 'test_default[c10_data.py-300]', 'test_default[c10_rllib.py-600]', 'test_default[c10_serve.py-300]', 'test_default[c10_train.py | `2026-10-17/F21/` |
+| F22 | PASS | 133.1 | C10 local runs on the small worker: exit 0: {'passed': 1}; C10 local runs on the small worker: no failure or error: {'passed': 1}; 1 runs: ['test_threads'] | `2026-10-17/F22/` |
+| A01 | PASS | 40.2 | up: first line names the source: installing ray-vast from a wheel built from the source tree /home/ubuntu/ray-vast/.claude/worktrees/agent-a9c688433397c3eec/ray-vast-pypi; up output line ^head instance i-\w+ starting$; up output line ^head IP [\d.]+$; up output line ^cluster rvtest-aws-5635 is up\. | `2026-10-17/A01/` |
+| A02 | PASS | 8.2 | no ray-vast role uses the boundary now: []; up exits 1 with the message and the link: ray-vast up: the IAM policy ray-vast-head-boundary does not exist in AWS account 491085427508. Create it once (one command): https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created. ; noth | `2026-10-17/A02/` |
+| A03 | PASS | 61.7 | (a) up was stopped after the key pair: fer) ^^^^^^^^^^^^^^^^^^^^^^^^^ File "/usr/lib/python3.12/ssl.py", line 1104, in read return self._sslobj.read(len, buffer) ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ KeyboardInterrupt ; (a) down: left nothing: deleted security group sg-0d3ce9c1f | `2026-10-17/A03/` |
+| A05 | PASS | 97.0 | port 6379 is closed from the operator machine: TimeoutError; port 7443 is closed from the operator machine: TimeoutError; port 7444 is closed from the operator machine: TimeoutError; port 8265 is closed from the operator machine: TimeoutError; port 10001 is closed from the operator machine: TimeoutE | `2026-10-17/A05/` |
+| A07 | PASS | 23.8 | s3 ListAllMyBuckets is denied: AccessDenied; ec2 CreateSecurityGroup is denied: UnauthorizedOperation; authorize on an untagged group is denied: UnauthorizedOperation; authorize on cluster group 1 works: ALLOWED; revoke on cluster group 1 works: ALLOWED | `2026-10-17/A07/` |
+| A08 | PASS | 26.9 | monitor.log: no rentable offer matches the node type query: 2026-10-17 11:55:10,850 INFO node_provider.py:491 -- Failed to launch 1 nodes of type impossible: Node Launch Exception (no offers): node type 'impossible': no rentable offer matches the node type query; monitor.log: every matching offer wo | `2026-10-17/A08/` |
+| A09 | PASS | 4.6 | ray job submit without RAY_AUTH_* fails: t variable. To generate a token for local development, use `ray get-auth-token --generate` For remote clusters, ensure that the token is propagated to all nodes of the cluster when token authentication is enabled. For more information, see: https://docs.ray.i | `2026-10-17/A09/` |
+| A10 | PASS | 0.9 | CreateRole ray-vast-negtest without a boundary is denied: AccessDenied; CreateRole ray-vast-negtest with AdministratorAccess as the boundary is denied: AccessDenied; CreateRole negtest-other with the right boundary is denied: AccessDenied; PutRolePolicy on a role not named ray-vast-* is denied: Acce | `2026-10-17/A10/` |
+| L01 | PASS | 0.8 | up as the restricted user exits 0: 488.1; the head runs in us-east-2 with t3.medium: ('us-east-2b', 't3.medium'); the head role has the boundary; the state file saved the restricted profile | `2026-10-17/L01/` |
+| L02 | PASS | 254.7 | c8_job SUCCEEDED with 4 containers: SUCCEEDED; both node types: ['gpu-a', 'gpu-b']; bundle 0: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: NVIDIA GeForce RTX 5060 Ti (UUID: GPU-407d0c99-ab97-e050-0409-e438201d275'); bundle 1: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: Tesla P100-SXM2-16GB (UUID: GPU-160d95bc-7759-0622- | `2026-10-17/L02/` |
+| L03 | PASS | 44.3 | probe job SUCCEEDED on 4 workers: 4; 56436994: uid 1000, Ray 2.59.0: (1000, '2.59.0'); 56436994: no CONTAINER_API_KEY or RAYVAST_JOIN_TOKEN in os.environ; 56436994: PID 1 is the bootstrap (GPU image ENTRYPOINT kept); 56436994: /tmp/rayvast 700, files 600 or 644 for certs: {'ca.pem': '0o600', 'libray | `2026-10-17/L03/` |
+| L04 | PASS | 105.2 | 56436994: agent port answers 401 without the token: 401; 56436994: runtime-env port answers 401 without the token: 401; 56436994: dashboard_agent_listen_port listens on 127.0.0.1 only: ['127.0.0.1']; 56436994: runtime_env_agent_port listens on 127.0.0.1 only: ['127.0.0.1']; 56436971: agent port answ | `2026-10-17/L04/` |
+| L05 | PASS | 3.4 | monitor.log has the rent line; monitor.log has the enrolled line; monitor.log has the ending line; the `Dropping the empty legacy field` lines are not errors: ['2026-10-17 11:52:35,457\tWARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is | `2026-10-17/L05/` |
+| L07 | PASS | 272.8 | KILL, QUIT, USR1, USR2, CONT: same PID 1 after 120 s: {'SIGKILL': 'sent', 'SIGQUIT': 'sent', 'SIGUSR1': 'sent', 'SIGUSR2': 'sent', 'SIGCONT': 'sent'}; 0 zombies of PID 1: 0; TERM: the head logs the report `asks to be destroyed: 'received SIGTERM'`; TERM: gone from vast within 60 s (safety bound): 11 | `2026-10-17/L07/` |
+| L10 | PASS | 925.8 | 0 workers before the second hold (within 900 s): None; head stopped with a worker enrolled and a candidate loading; vast lists no instance of the cluster within 30 min of the head stop: None; worker 56438197 destroys itself within 360 s: 72; candidate 56438180 is gone within 30 min (10 min after its | `2026-10-17/L10/` |
+| LB00[H1] | PASS | 76.9 | H1: 64 or more Ray CPUs (more than B), a pids limit: {'machine_id': 149678, 'ray_cpus': 64.0, 'pids.max': '15616', 'cgroup': 'v2'}; H1 56436409: worker ports of the bootstrap formula (pids.max 15616): (58, 58); H1 56436409: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8: | `2026-10-17/LB00[H1]/` |
+| LB00[H2] | PASS | 76.3 | H2: cgroup v2: {'machine_id': 153955, 'pids.max': '15616', 'cgroup': 'v2'}; H2 56436781: worker ports of the bootstrap formula (pids.max 15616): (58, 58); H2 56436781: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_ | `2026-10-17/LB00[H2]/` |
+| LB00[H3] | PASS | 104.2 | H3 56436329: worker ports of the bootstrap formula (pids.max 1280): (14, 14); H3 56436329: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '4', 'RAY_worker_maximum_startup_concurrency': '8'}; H3 56436329 | `2026-10-17/LB00[H3]/` |
+| LB00[gpu2] | PASS | 86.1 | gpu2 56436340: worker ports of the bootstrap formula (pids.max 1792): (23, 23); gpu2 56436340: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '4', 'RAY_worker_maximum_startup_concurrency': '8'}; gpu2 56 | `2026-10-17/LB00[gpu2]/` |
+| LB01 | PASS | 475.5 | --working-dir: data/hello.txt read by tasks on both workers: {'cwd_example': '/tmp/ray/session_2026-10-17_11-52-14_809738_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896', 'elapsed_s': 8.5, 'file_ok': True, 'ips': ['143.55.45.86', '185.62.108.226'], 'tasks_per_node': {'45aa8bd6': 4, | `2026-10-17/LB01/` |
+| LB02 | PASS | 313.7 | PACK on one worker, STRICT_SPREAD on both: {'elapsed_s': 15.1, 'pack_bundles': {'0': '51335dc2', '1': '51335dc2', '2': '51335dc2', '3': '51335dc2'}, 'pack_task_nodes': ['51335dc2', '51335dc2', '51335dc2', '51335dc2'], 'spread_bundles': {'0': '51335dc2', '1': '45aa8bd6'}, 'spread_task_nodes': ['51335 | `2026-10-17/LB02/` |
+| LB03[H1] | PASS | 195.3 | the LB03 input is written (lb_make_parquet.py): ('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 24.1}); the data.md snippet at B 54 on H1: SUCCEEDED, all rows counted from the S3 output: ('SUCCEEDED', {'elapsed_s': 80.2, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 3000 | `2026-10-17/LB03[H1]/` |
+| LB03[H3] | PASS | 669.8 | the LB03 input is written (lb_make_parquet.py): ('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 56.1}); the data.md snippet at B 10 on H3: SUCCEEDED, all rows counted from the S3 output: ('SUCCEEDED', {'elapsed_s': 543.1, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 300 | `2026-10-17/LB03[H3]/` |
+| LB04 | PASS | 402.0 | C9.1.3 with the data.md settings at B 10: SUCCEEDED: ('SUCCEEDED', {'dataset_gb': 3.0, 'elapsed_s': 272.4, 'group_total': 1430, 'groupby_s': 82.8, 'groups': 16, 'rows': 1430, 'settings': {'B': 10, 'max_hash_shuffle_aggregators': 2, 'override_num_blocks': 5, 'read_concurrency': 2, 'resource_limits_cp | `2026-10-17/LB04/` |
+| LB05 | PASS | 448.0 | c9_1_1_data_cpu.py with the defaults: {'count': 3333334, 'elapsed_s': 26.9, 'expected': 3333334, 'first': [{'id': 0}, {'id': 6}, {'id': 12}], 'rows': 10000000, 'rows_per_s': 748985, 'seconds': 26.7, 'task_nodes': {'45aa8bd6': 49, '51335dc2': 33}}; c9_1_2_data_objstore.py with the defaults: {'checksu | `2026-10-17/LB05/` |
+| LB06 | PASS | 450.6 | the tune.md snippet: 60 trials, 0 errors: {'checkpoints': 60, 'elapsed_s': 289.2, 'errors': 0, 'experiment_path': 'ray-vast-rvtest-20261017-ad16/lb06/experiments/trainable_2026-10-17_12-22-22', 'results': 60, 'trial_nodes': ['45aa8bd6', '51335dc2']}; trials on both workers: ['45aa8bd6', '51335dc2']; | `2026-10-17/LB06/` |
+| LB07 | PASS | 131.2 | the train.md snippet: fit returns: ('SUCCEEDED', {'elapsed_s': 42.7, 'fit': 'returned'}); 2 epochs on 2 ranks on the gpu2 worker, cuda, one GPU id each, 2 different GPUs: [{'rank': 0, 'epoch': 1, 'device': 'cuda:0', 'gpu_ids': ['0'], 'node': '1e1b4530'}, {'rank': 1, 'epoch': 1, 'device': 'cuda:1', ' | `2026-10-17/LB07/` |
+| LB09 | PASS | 355.0 | the serve.md snippet: 20 replicas, at most B = 10 on each worker: ('SUCCEEDED', {'45aa8bd6': 10, '51335dc2': 10}); 100 HTTP calls through the serve.md tunnel after the job ended: all 200: {'200': 100}; curl on the head, port 8000: 200: 200; no refused fork in a WARNING for the H3 workers: []; GPU re | `2026-10-17/LB09/` |
+| LB10[H3] | PASS | 96.9 | the env runner snippet (2 runners, num_cpus 0.4): 2 iterations: {'elapsed_s': 53.3, 'iterations': 2, 'return': 35.27791666666667, 'runner_nodes': {'45aa8bd6': 2}}; no process-limit WARNING for the H3 workers: [] | `2026-10-17/LB10[H3]/` |
+| LB10[gpu2] | PASS | 305.6 | the learner snippet on gpu2 (num_cpus_per_learner 0.211): 2 iterations, 0 errors: {'elapsed_s': 157.5, 'errors': 0, 'iterations': 2} | `2026-10-17/LB10[gpu2]/` |
+| LB11[H1] | PASS | 1493.7 | H1 has a pids limit: 15616; data.tuned: one worker node: 1; data.many: one worker node: 1; tune.tuned: one worker node: 1; tune.many: one worker node: 1; serve.tuned: one worker node: 1; serve.many: one worker node: 1; data.tuned: PASS: completed, node alive, no refused fork; data.many: PASS: HUNG, | `2026-10-17/LB11[H1]/` |
+| LB11[H1b] | PASS | 2137.6 | H1b has a pids limit: 21504; core.tuned: one worker node: 1; core.many: one worker node: 1; train.tuned: one worker node: 1; train.many: one worker node: 1; rllib.tuned: one worker node: 1; rllib.many: one worker node: 1; core.tuned: PASS: completed, node alive, no refused fork; core.many: PASS: HUN | `2026-10-17/LB11[H1b]/` |
+| LB11[H2] | PASS | 1758.2 | H2 has a pids limit: 15616; data.tuned: one worker node: 1; data.many: one worker node: 1; tune.tuned: one worker node: 1; tune.many: one worker node: 1; serve.tuned: one worker node: 1; serve.many: one worker node: 1; data.tuned: PASS: completed, node alive, no refused fork; data.many: PASS: HUNG, | `2026-10-17/LB11[H2]/` |
+| LB11[H2b] | PASS | 1705.1 | H2b has a pids limit: 15616; core.tuned: one worker node: 1; core.many: one worker node: 1; train.tuned: one worker node: 1; train.many: one worker node: 1; rllib.tuned: one worker node: 1; rllib.many: one worker node: 1; core.tuned: PASS: completed, node alive, no refused fork; core.many: PASS: HUN | `2026-10-17/LB11[H2b]/` |
+| LB15 | PASS | 611.7 | H4: 4 or more visible CPUs for each core of the CPU quota, a pids limit: {'machine_id': 45592, 'pids_max': 3840, 'cgroup': 'v2', 'cpus': 16, 'limited': True, 'quota': 15.36, 'visible_cpus': 128, 'visible_per_quota': 8.33, 'cores': 15.36}; data default: the workload completed and the threads of each | `2026-10-17/LB15/` |
+| LB16 | PASS | 690.5 | the offer has 10 to 63 direct ports: 24; the port cap sets the count: mapped - 6 is below the pids formula alone: (24, 58, 7680); the candidate rents min(64, direct_port_count) identity ports: vast maps that many into the container: (24, 24, 0); the worker enrolled (the head checked each of its mapp | `2026-10-17/LB16/` |
 | R01 | NOT RUN | | | |
 | R02 | NOT RUN | | | |
 
@@ -857,13 +852,30 @@ Spend for each cluster group (vast: the dph_total of its instances over time, fr
 
 | Group | Cluster | vast | Hours | EC2 |
 |---|---|---|---|---|
-| lifecycle | rvtest-life-f9e2 | $0.4077 | 0.6 h | $0.03 |
+| aws_only | rvtest-aws-5635 | $0.0000 | 0.21 h | $0.02 |
+| libraries-gpu2 | rvtest-lib-gpu2-025c | $0.0980 | 0.3 h | $0.03 |
+| libraries-h1 | rvtest-lib-h1-1cb0 | $0.2923 | 0.65 h | $0.05 |
+| libraries-h1b | rvtest-lib-h1b-1b10 | $0.2024 | 0.74 h | $0.06 |
+| libraries-h2 | rvtest-lib-h2-7323 | $0.2809 | 0.67 h | $0.06 |
+| libraries-h2b | rvtest-lib-h2b-393f | $0.2659 | 0.63 h | $0.05 |
+| libraries-h3 | rvtest-lib-h3-4fad | $0.3820 | 1.08 h | $0.09 |
+| libraries-h4 | rvtest-lib-h4-5711 | $0.0712 | 0.32 h | $0.03 |
+| libraries-h5 | rvtest-lib-h5-a913 | $0.0591 | 0.33 h | $0.03 |
+| lifecycle | rvtest-life-fa8a | $0.4410 | 0.6 h | $0.03 |
 
 vast spend of each run (the credit before and after, plus the auto top-ups in between):
 
 | Run | vast | Top-ups |
 |---|---|---|
 | 002539-287730 | $2.1200 | $10.00 |
+| 104003-2460938 | $0.0000 | $0.00 |
+| 105612-2540038 | $3.6146 | $0.00 |
+| 123416-2552297 | $0.0000 | $0.00 |
+| 124508-2552968 | $0.7201 | $0.00 |
+| 134831-2588952 | $2.1062 | $0.00 |
+| 152216-2595907 | $0.4227 | $0.00 |
+| 184356-2810254 | $2.5458 | $10.00 |
+| 195008-2897937 | $0.3741 | $0.00 |
 <!-- live-suite 2026-10-17 end -->
 ### Notes on the live suite run of 2026-10-17 (lifecycle and libraries, stopped)
 
@@ -1022,3 +1034,61 @@ Local checks (records in a scratch directory, not kept):
 - The progress half of the early end, on a Ray 2.59 head in Docker with 14 worker ports (the WARNING faked): `c10_tune.py many` (60 trials, 10 s evaluations) and `c10_serve.py many` (60 replicas) ended `HUNG(STOPPED)` after 146 s and 145 s (127 s and 127 s without progress), not at the 600 s guard. The ended tasks stayed at 11 (tune: the trial actors that started) and 0 (serve: the health checks do not count). A control on 300 worker ports (30 trials) completed and was not stopped.
 - `test_c10_local_e2e.py::test_pair[c10_tune.py-many-1280-150]` with `C10E_SCALE=1` (60 trials, 60 s hold, 10 s evaluations, the real head and the bootstrap of 34d3d65): PASS, HUNG, the WARNING `worker ports in use 14 of 14`, node alive, `pids.events` max 0.
 - The free group with `-n 14`: 22 of 22 pass in 19 min 37 s (the local Docker scenarios one after the other). F21 passed.
+
+## Confirmation run of 2026-10-17 (free, aws, lifecycle, libraries)
+
+The code of 23bf742. The product code (`ray-vast-pypi/src`) did not change. Records in `archive/results/2026-10-17/` (the records of the earlier runs are the `.run<n>` directories). No run used `--keep-cluster`. The table in "Live suite 2026-10-17" is from `summarize.py`.
+
+### Main run (run 184356-2810254)
+
+`pytest tests/live -m "free or aws or lifecycle or libraries" -n 16`: 56 pass, 1 fail (LB16), 1 error (LB11[H1b]), in 1 h 05 min (18:43:55 to 19:49:20 UTC). The end-of-run sweep had 0 left, the AWS account check said `left: nothing`, and the secret scan said `no file holds a secret`. The run problem line: `rvtest-lib-h1b-2339: down while a worker runs: destroyed N vast instance(s) with N >= 1`, a follow-on of the failed `up` of H1b.
+
+- LB11[H1b] ERROR (environment, not a product bug): the `up` of the H1b head failed in 16.6 s with `AWS error VcpuLimitExceeded: ... your current vCPU limit of 32`. The account has a limit of 32 on-demand standard vCPUs in us-west-2. At that time the dev box (16 vCPUs), another instance of the account, the 8 libraries heads (t3.large, 2 vCPUs each), the aws_only head and the A02/A03 clusters ran. The `up` gave the AWS message and the `down` hint, and the `down` removed every part (`left: nothing`). So `-n 16` with all 8 libraries hosts needs a higher vCPU limit, or fewer clusters at the same time. Fix: none (a host problem of the account). Retry 1 of 1 after the main run: PASS (below).
+- LB16 FAIL (test bug): the check "the candidate rents min(64, direct_port_count) identity ports" failed with `(24, 25, 0)`: 24 mapped identity ports, but 25 direct ports. The test took `direct_port_count` from the instance listing. The provider rents with the offer's `direct_port_count`. On machine 30574 (A100 SXM4, 4 GPUs) the offer for 1 GPU has 24 direct ports, and the instance listing gives 25. Proof: a search of the offers of machine 30574 after the run gave `29019333: num_gpus 1, direct_port_count 24` (and 2 GPUs: 49, 4 GPUs: 98). So the provider asked for 24, and vast mapped 24. Fix: the test reads the offer of the same machine and GPU count (`search_offers`, `machine_id` and `num_gpus`) and records the instance value as `instance_direct_port_count`. Check of the fix: the new code gives 24 for machine 30574. The other 5 checks of LB16 passed (enrolled, start line `worker ports 18, soft limit 4`, a small job).
+- Every other scenario passed: F01 to F22, A01 to A03, A05, A07 to A10, L01 to L05, L07, L10, LB00 (H1, H2, H3, gpu2), LB01 to LB07, LB09, LB10 (H3, gpu2), LB03 (H1, H3), LB11[H1], LB11[H2], LB11[H2b], LB15. Every group teardown passed except H1b (the failed `up`).
+
+### Re-run of LB16 and LB11[H1b] (run 195008-2897937)
+
+`pytest tests/live -m libraries -k "LB16 or (LB11 and H1b)" -n 4`, fresh clusters, the test fix above: 2 of 2 pass in 44 min 51 s. Sweep 0 left, AWS `left: nothing`, secret scan clean, both group teardowns passed.
+
+- LB16 PASS on machine 144644 (A100 SXM4, the same host IP as machine 30574): offer 24, instance listing 25, mapped 24. So the difference of the instance listing came back on a second machine.
+- LB11[H1b] PASS on machine 28692 (pids.max 21504): core, train and rllib, tuned and many, and the refused forks.
+
+### Data notes (no check failed)
+
+- LB11[H2b] train.many and rllib.many report `'No available ports' lines -3` and `-6`. This number is the count in the `worker-*.err` files after the job minus before the job. Ray removes the log files of ended workers, so the difference can be below 0. On the live hosts the head WARNING is the evidence, so the verdict does not use this number.
+- LB16: the vast instance listing has no `700xx` keys in `ports` (`vast_identity_ports` 0) on both machines. The test records this value only.
+- The candidate factor rents 2 candidates for each worker. The table below has only the hosts that enrolled and were probed.
+
+### Hosts
+
+Effective cores are from the vast listing. B = worker ports − 4. Enroll time: the `enrolled` line minus the first `running` sample (s), "–" when the record has no `enrolled` line.
+
+| Host | Instance | Machine | GPU | Eff. cores | Visible CPUs | CPU quota | pids.max | cgroup | Identity ports | Worker ports | B | Enroll (s) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| lifecycle (L03) | 56436971 | 3969 | Tesla P100 | 6.0 | 24 | 5.76 | 1280 | v1 | 64 | 14 | 10 | 8.8 |
+| lifecycle (L03) | 56436978 | 42715 | RTX 3090 | 6.4 | 32 | 6.14 | 1536 | v2 | 64 | 18 | 14 | 2.8 |
+| lifecycle (L03) | 56436994 | 105116 | RTX 5060 Ti | 7.0 | 14 | 6.72 | 1536 | v1 | 64 | 18 | 14 | 4.8 |
+| lifecycle (L03) | 56437007 | 51706 | CMP 170HX | 7.2 | 72 | 6.91 | 1536 | v2 | 64 | 18 | 14 | 7.5 |
+| H1 | 56436409 | 149678 | RTX 5070 Ti | 64.0 | 256 | 61.44 | 15616 | v2 | 64 | 58 | 54 | 8.9 |
+| H1b (re-run) | 56443926 | 28692 | RTX 3060 | 88.0 | 88 | 84.48 | 21504 | v2 | 64 | 58 | 54 | – |
+| H2 | 56436781 | 153955 | A40 | 64.0 | 255 | 61.2 | 15616 | v2 | 64 | 58 | 54 | 1.6 |
+| H2b | 56436390 | 154116 | A40 | 64.0 | 255 | 61.2 | 15616 | v2 | 64 | 58 | 54 | – |
+| H3 | 56436329 | 3969 | Tesla P100 | 6.0 | 24 | 5.76 | 1280 | v1 | 64 | 14 | 10 | 2.8 |
+| H3 | 56436344 | 32816 | RTX 3060 | 6.0 | 48 | 5.76 | 1280 | v1 | 64 | 14 | 10 | 7.2 |
+| gpu2 | 56436340 | 37217 | RTX 3090 (2) | 8.0 | 24 | 7.68 | 1792 | v2 | 64 | 23 | 19 | 11.7 |
+| H4 | 56436356 | 45592 | RTX 5060 Ti | 16.0 | 128 | 15.36 | 3840 | v2 | 64 | 57 | 53 | – |
+| H5 (main run) | 56436466 | 30574 | A100 SXM4 | 32.0 | 128 | 30.72 | 7680 | v1 | 24 | 18 | 14 | – |
+| H5 (re-run) | 56444879 | 144644 | A100 SXM4 | 32.0 | 128 | 30.72 | 7680 | v2 | 24 | 18 | 14 | 1.1 |
+
+The L02 workers (56436370, 56436398, 56436402, 56436387) enrolled in −0.5, 10.9, 1.7 and 13.4 s. The `h5` type declares `CPU: 4`, so Ray has 4 CPUs on H5.
+
+### Spend
+
+- Main run: vast $2.55 (credit 6.64 → 14.09 with one auto top-up of $10.00). EC2 about $0.45 (the group estimates below, plus A02 and A03).
+- Re-run: vast $0.37 (credit 14.09 → 13.71, no top-up). EC2 about $0.09.
+- vast estimates for each group (from the timelines): lifecycle $0.44, H1 $0.29, H1b $0.20 (re-run; the failed `up` $0), H2 $0.28, H2b $0.27, H3 $0.38, gpu2 $0.10, H4 $0.07, H5 $0.04 (main) + $0.06 (re-run), aws_only $0. The credit difference is higher than the sum, because the probe rentals of `libraries.find()` are not in the group timelines.
+
+### Cleanup check (after the re-run)
+
+us-west-2: no instance except `ray-vast-dev` and an instance of another project (not touched); no rvtest security group, key pair or available volume. us-east-2: no instance, security group, key pair or available volume. IAM: no rvtest role, no livetest user. S3: no rvtest bucket. vast: 0 instances. A scan of the archive for AWS access key IDs, private keys and the vast key found nothing.

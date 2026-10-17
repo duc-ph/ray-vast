@@ -1,0 +1,53 @@
+{
+ "id": "A03",
+ "markers": [
+  "aws",
+  "failure"
+ ],
+ "fixture": "none",
+ "started": 1792233723.4454129,
+ "checks": [
+  {
+   "name": "(a) up was stopped after the key pair",
+   "ok": true,
+   "detail": "fer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+  },
+  {
+   "name": "(a) down: left nothing",
+   "ok": true,
+   "detail": "deleted security group sg-03584dd0426229c9e\ndeleted key pair ray-vast-rvtest-a03a-b562\ndeleted role ray-vast-rvtest-a03a-b562\nleft: nothing\n"
+  },
+  {
+   "name": "(c) a head exists",
+   "ok": true,
+   "detail": "['i-00f37ec3c902864ff']"
+  },
+  {
+   "name": "(c) the head is terminated by hand (within 600 s)",
+   "ok": true,
+   "detail": "['terminated']"
+  },
+  {
+   "name": "attach without a running head: one-line error",
+   "ok": true,
+   "detail": "ray-vast attach: no running head for cluster rvtest-a03b-4a81\n"
+  },
+  {
+   "name": "(b, c, d) down without state file, key or head: left nothing",
+   "ok": true,
+   "detail": "sg-084c2874ccad178dc\ndeleted security group sg-0bcea2ef8a435d890\ndeleted security group sg-048c6c3004c5a4a93\ndeleted security group sg-07f35e9f4a7717c01\ndeleted key pair ray-vast-rvtest-a03b-4a81\ndeleted instance profile ray-vast-rvtest-a03b-4a81\ndeleted role ray-vast-rvtest-a03b-4a81\nleft: nothing\n"
+  },
+  {
+   "name": "each cluster of the scenario ended cleanly (liverun.end_cluster)",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "data": {
+  "a_up_output_tail": "^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1252, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/ssl.py\", line 1104, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nKeyboardInterrupt\n"
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792233775.087944,
+ "wall_s": 51.6
+}

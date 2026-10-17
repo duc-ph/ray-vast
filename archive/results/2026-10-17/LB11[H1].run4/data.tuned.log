@@ -1,0 +1,40 @@
+2026-10-17 16:49:11,667	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:55231[22m
+2026-10-17 16:49:11,680	INFO cli.py:569 -- 2026-10-17 09:48:49,402	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job data-tuned-a2d277: python c10_data.py tuned2
+C10_START C10.data tuned2 1792255732.1 guard_s=900.0
+2026-10-17 09:48:52,121	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 184.32.234.178:6379...
+2026-10-17 09:48:52,154	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'blocks': 27, 'rows': 400000, 'map_num_cpus': 0.05, 'max_hash_shuffle_aggregators': 13, 'resource_limits_cpu': 13, 'read_concurrency': 13, 'map_concurrency': 13}
+2026-10-17 09:48:52,569	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034haLB0dHGvkkqM1Y9nOV_0. Full logs are in /tmp/ray/session_2026-10-17_09-34-17_741509_8/logs/ray-data
+2026-10-17 09:48:52,569	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034haLB0dHGvkkqM1Y9nOV_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange] -> TaskPoolMapOperator[MapBatches(add_key)] -> HashAggregateOperator[HashAggregate(key_columns=('key',), num_partitions=28)]
+2026-10-17 09:48:52,687	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-17 09:48:52,950	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034haLB0dHGvkkqM1Y9nOV_0 =======
+2026-10-17 09:48:52,951	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 09:48:52,951	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 09:48:52,951	INFO logging_progress.py:181 -- 
+2026-10-17 09:48:52,951	INFO logging_progress.py:231 -- ReadRange: 0/1
+2026-10-17 09:48:52,951	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 27 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 09:48:52,951	INFO logging_progress.py:231 -- MapBatches(add_key): 0/1
+2026-10-17 09:48:52,951	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 09:48:52,951	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=28): 0/1
+2026-10-17 09:48:52,953	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 09:48:52,953	INFO logging_progress.py:231 --     - Shuffle: 0/1
+2026-10-17 09:48:52,953	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 09:48:52,953	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 09:49:00,308	INFO hash_aggregate.py:161 -- Estimated memory requirement for aggregating aggregator (partitions=28, aggregators=13, dataset (estimate)=0.0GiB): shuffle=0.5MiB, output=0.2MiB, total=0.7MiB, 
+2026-10-17 09:49:02,979	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034haLB0dHGvkkqM1Y9nOV_0 =======
+2026-10-17 09:49:02,980	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 09:49:02,980	INFO logging_progress.py:227 -- Active & requested resources: 12.35/13 CPU, 13.0GiB/364.8GiB memory, 6.7MiB/59.4GiB object store
+2026-10-17 09:49:02,980	INFO logging_progress.py:181 -- 
+2026-10-17 09:49:02,981	INFO logging_progress.py:231 -- ReadRange: 399978/414792
+2026-10-17 09:49:02,981	INFO logging_progress.py:233 --   Tasks: 1; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 115.7KiB memory, 347.2KiB object store
+2026-10-17 09:49:02,981	INFO logging_progress.py:231 -- MapBatches(add_key): 385164/414792
+2026-10-17 09:49:02,981	INFO logging_progress.py:233 --   Tasks: 2; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.1 CPU, 462.9KiB memory, 6.3MiB object store
+2026-10-17 09:49:02,981	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=28): 0/1
+2026-10-17 09:49:02,981	INFO logging_progress.py:233 --   Tasks: 8 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 18 (4.1MiB); Resources: 11.2 CPU, 13.0GiB memory, 0.0B object store
+2026-10-17 09:49:02,981	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 09:49:02,981	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 09:49:02,981	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 09:49:07,381	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034haLB0dHGvkkqM1Y9nOV_0 execution finished in 14.81 seconds
+C10_RESULT C10.data COMPLETED {"alive_nodes": ["c1939f16935303d1fa3cab12948ebad0e2d69ccb2cea96a61c4b2c5f"], "blocks": 27, "elapsed_s": 15.3, "groups": 16, "map_concurrency": 13, "map_num_cpus": 0.05, "max_hash_shuffle_aggregators": 13, "mode": "tuned2", "read_concurrency": 13, "resource_limits_cpu": 13, "rows": 400000, "seconds": 15.0, "total": 400000}

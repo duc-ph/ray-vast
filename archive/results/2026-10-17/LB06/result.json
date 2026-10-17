@@ -5,17 +5,17 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792236384.855681,
+ "started": 1792264887.9762087,
  "checks": [
   {
    "name": "the tune.md snippet: 60 trials, 0 errors",
    "ok": true,
-   "detail": "{'checkpoints': 60, 'elapsed_s': 268.4, 'errors': 0, 'experiment_path': 'ray-vast-rvtest-20261017-089e/lb06/experiments/trainable_2026-10-17_04-27-16', 'results': 60, 'trial_nodes': ['b77ede5e', 'c714ed11']}"
+   "detail": "{'checkpoints': 60, 'elapsed_s': 289.2, 'errors': 0, 'experiment_path': 'ray-vast-rvtest-20261017-ad16/lb06/experiments/trainable_2026-10-17_12-22-22', 'results': 60, 'trial_nodes': ['45aa8bd6', '51335dc2']}"
   },
   {
    "name": "trials on both workers",
    "ok": true,
-   "detail": "['b77ede5e', 'c714ed11']"
+   "detail": "['45aa8bd6', '51335dc2']"
   },
   {
    "name": "checkpoints in S3 for every trial",
@@ -30,12 +30,12 @@
   {
    "name": "ASHA stops trials early",
    "ok": true,
-   "detail": "{'elapsed_s': 13.3, 'errors': 0, 'iterations': [2, 2, 2, 2, 2, 2, 4, 20], 'results': 8, 'seconds': 13.2, 'trial_nodes': ['b77ede5e', 'c714ed11']}"
+   "detail": "{'elapsed_s': 13.5, 'errors': 0, 'iterations': [2, 2, 2, 2, 2, 2, 4, 20], 'results': 8, 'seconds': 13.4, 'trial_nodes': ['45aa8bd6', '51335dc2']}"
   },
   {
    "name": "GPU trials get 1 GPU each, on both workers",
    "ok": true,
-   "detail": "{'elapsed_s': 31.6, 'errors': 0, 'results': 2, 'trials': [{'gpu_ids': '0', 'node': 'b77ede5e'}, {'gpu_ids': '0', 'node': 'c714ed11'}]}"
+   "detail": "{'elapsed_s': 31.6, 'errors': 0, 'results': 2, 'trials': [{'gpu_ids': '0', 'node': '51335dc2'}, {'gpu_ids': '0', 'node': '45aa8bd6'}]}"
   },
   {
    "name": "the default storage_path: `Unable to set up cluster storage ... not accessible by worker nodes` (tune.md:83)",
@@ -45,24 +45,24 @@
   {
    "name": "anonymous S3 through pyarrow: S3 refuses the uploads (tune.md:84)",
    "ok": true,
-   "detail": "{'elapsed_s': 0.3, 'error_class': 'OSError', 'error_head': [\"When testing for existence of bucket 'ray-vast-rvtest-20261017-089e': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\"], 'storage': 's3://anonymous@ray-vast-rvtest-20261017-089e/lb06/anon', 'traceback_tail': ['  File \"pyarrow/_fs.pyx\", line 638, in pyarrow._fs.FileSystem.create_dir\\n', '  File \"pyarrow/error.pxi\", line 92, in pyarrow.lib.check_status\\n', \"OSError: When testing for existence of bucket 'ray-vast-rvtest-20261017-089e': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\\n\"]}"
+   "detail": "{'elapsed_s': 0.4, 'error_class': 'OSError', 'error_head': [\"When testing for existence of bucket 'ray-vast-rvtest-20261017-ad16': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\"], 'storage': 's3://anonymous@ray-vast-rvtest-20261017-ad16/lb06/anon', 'traceback_tail': ['  File \"pyarrow/_fs.pyx\", line 638, in pyarrow._fs.FileSystem.create_dir\\n', '  File \"pyarrow/error.pxi\", line 92, in pyarrow.lib.check_status\\n', \"OSError: When testing for existence of bucket 'ray-vast-rvtest-20261017-ad16': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\\n\"]}"
   }
  ],
  "data": {
-  "shape_wait_s": 2.9,
+  "shape_wait_s": 3.6,
   "H3": {
    "B": 10,
    "CPUS": 4.0,
    "hosts": [
     {
-     "container_id": "56385063",
+     "container_id": "56436329",
      "machine_id": 3969,
      "ports": 14,
      "ray_cpus": 4.0,
      "pids.max": "1280"
     },
     {
-     "container_id": "56385075",
+     "container_id": "56436344",
      "machine_id": 32816,
      "ports": 14,
      "ray_cpus": 4.0,
@@ -84,23 +84,23 @@
    {
     "doc": "libraries/tune.md",
     "old": "\"s3://my-bucket/experiments\"",
-    "new": "\"s3://ray-vast-rvtest-20261017-089e/lb06/experiments\""
+    "new": "\"s3://ray-vast-rvtest-20261017-ad16/lb06/experiments\""
    }
   ],
   "tune_snippet": {
    "checkpoints": 60,
-   "elapsed_s": 268.4,
+   "elapsed_s": 289.2,
    "errors": 0,
-   "experiment_path": "ray-vast-rvtest-20261017-089e/lb06/experiments/trainable_2026-10-17_04-27-16",
+   "experiment_path": "ray-vast-rvtest-20261017-ad16/lb06/experiments/trainable_2026-10-17_12-22-22",
    "results": 60,
    "trial_nodes": [
-    "b77ede5e",
-    "c714ed11"
+    "45aa8bd6",
+    "51335dc2"
    ]
   },
   "s3_trials_with_checkpoints": 60,
   "c9_2_2_tune_asha": {
-   "elapsed_s": 13.3,
+   "elapsed_s": 13.5,
    "errors": 0,
    "iterations": [
     2,
@@ -113,10 +113,10 @@
     20
    ],
    "results": 8,
-   "seconds": 13.2,
+   "seconds": 13.4,
    "trial_nodes": [
-    "b77ede5e",
-    "c714ed11"
+    "45aa8bd6",
+    "51335dc2"
    ]
   },
   "c9_2_3_tune_gpu": {
@@ -126,58 +126,58 @@
    "trials": [
     {
      "gpu_ids": "0",
-     "node": "b77ede5e"
+     "node": "51335dc2"
     },
     {
      "gpu_ids": "0",
-     "node": "c714ed11"
+     "node": "45aa8bd6"
     }
    ]
   },
   "default_storage": {
-   "elapsed_s": 10.7,
+   "elapsed_s": 11.0,
    "errors": 4,
    "experiment_path": "/home/ray/ray_results/c9_2_4",
    "storage": "default",
    "trials": [
     {
      "checkpoint": null,
-     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=24609, ip=185.62.108.226, actor_id=aff7590e574df197e5a9b06c17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab",
+     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=30442, ip=143.55.45.86, actor_id=814379d0dd082fd57bb6b75e17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable",
      "node": null
     },
     {
      "checkpoint": null,
-     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=25672, ip=143.55.45.86, actor_id=8325f6835577a9baeca5531e17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable",
+     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=29562, ip=185.62.108.226, actor_id=61efa3e142378f3e676bc24917000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab",
      "node": null
     },
     {
      "checkpoint": null,
-     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=25674, ip=143.55.45.86, actor_id=6ffc724cf5bafc07348d24b417000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable",
+     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=30443, ip=143.55.45.86, actor_id=5b2051565f5093ccb6dd704217000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable",
      "node": null
     },
     {
      "checkpoint": null,
-     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=24623, ip=185.62.108.226, actor_id=f3e21047e022a3f0957c7ac217000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab",
+     "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=29569, ip=185.62.108.226, actor_id=039cd91a9969fc36ebc5e50717000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab",
      "node": null
     }
    ]
   },
   "anonymous_s3": {
-   "elapsed_s": 0.3,
+   "elapsed_s": 0.4,
    "error_class": "OSError",
    "error_head": [
-    "When testing for existence of bucket 'ray-vast-rvtest-20261017-089e': AWS Error ACCESS_DENIED during HeadBucket operation: No response body."
+    "When testing for existence of bucket 'ray-vast-rvtest-20261017-ad16': AWS Error ACCESS_DENIED during HeadBucket operation: No response body."
    ],
-   "storage": "s3://anonymous@ray-vast-rvtest-20261017-089e/lb06/anon",
+   "storage": "s3://anonymous@ray-vast-rvtest-20261017-ad16/lb06/anon",
    "traceback_tail": [
     "  File \"pyarrow/_fs.pyx\", line 638, in pyarrow._fs.FileSystem.create_dir\n",
     "  File \"pyarrow/error.pxi\", line 92, in pyarrow.lib.check_status\n",
-    "OSError: When testing for existence of bucket 'ray-vast-rvtest-20261017-089e': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\n"
+    "OSError: When testing for existence of bucket 'ray-vast-rvtest-20261017-ad16': AWS Error ACCESS_DENIED during HeadBucket operation: No response body.\n"
    ]
   }
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792236812.832517,
- "wall_s": 428.0
+ "ended": 1792265338.5531528,
+ "wall_s": 450.6
 }

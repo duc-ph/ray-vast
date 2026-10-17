@@ -1,0 +1,35 @@
+{
+ "id": "A08",
+ "markers": [
+  "aws"
+ ],
+ "fixture": "aws_only",
+ "started": 1792234360.931451,
+ "checks": [
+  {
+   "name": "monitor.log: no rentable offer matches the node type query",
+   "ok": true,
+   "detail": "2026-10-17 03:52:54,800\tINFO node_provider.py:491 -- Failed to launch 1 nodes of type impossible: Node Launch Exception (no offers): node type 'impossible': no rentable offer matches the node type query"
+  },
+  {
+   "name": "monitor.log: every matching offer would pass max_dollars_per_hour",
+   "ok": true,
+   "detail": "2026-10-17 03:52:55,183\tINFO node_provider.py:491 -- Failed to launch 1 nodes of type poor: Node Launch Exception (budget): node type 'poor': every matching offer would pass max_dollars_per_hour 0.001"
+  },
+  {
+   "name": "ray status shows LaunchFailed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "0 vast rentals",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "data": {},
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792234391.5940228,
+ "wall_s": 30.7
+}

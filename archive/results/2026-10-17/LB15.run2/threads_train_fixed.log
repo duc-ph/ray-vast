@@ -1,0 +1,19 @@
+2026-10-17 14:04:33,085	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:35785[22m
+2026-10-17 14:04:33,099	INFO cli.py:569 -- 2026-10-17 07:03:49,746	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job threads_train_fixed-4666be: python lb_threads.py train fixed
+2026-10-17 07:03:52,130	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.94.56.60:6379...
+2026-10-17 07:03:52,165	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(TrainController pid=1792)[0m Requesting resources: {'CPU': 1} * 4
+[36m(TrainController pid=1792)[0m Attempting to start training worker group of size 4 with the following resources: [{'CPU': 1}] * 4
+[36m(RayTrainWorker pid=8654, ip=38.247.78.21)[0m Setting up process group for: env:// [rank=0, world_size=4]
+[36m(TrainController pid=1792)[0m [2026-10-17 07:04:15,585 E 1792 1831] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: '8013581a7114daaa1f4873f706000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(TrainController pid=1792)[0m Started training worker group of size 4: 
+[36m(TrainController pid=1792)[0m - (ip=38.247.78.21, pid=8654) world_rank=0, local_rank=0, node_rank=0
+[36m(TrainController pid=1792)[0m - (ip=38.247.78.21, pid=8655) world_rank=1, local_rank=1, node_rank=0
+[36m(TrainController pid=1792)[0m - (ip=38.247.78.21, pid=8656) world_rank=2, local_rank=2, node_rank=0
+[36m(TrainController pid=1792)[0m - (ip=38.247.78.21, pid=8653) world_rank=3, local_rank=3, node_rank=0
+[36m(RayTrainWorker pid=8654, ip=38.247.78.21)[0m Moving model to device: cpu
+[36m(RayTrainWorker pid=8654, ip=38.247.78.21)[0m Wrapping provided model in DistributedDataParallel.
+[36m(RayTrainWorker pid=8653, ip=38.247.78.21)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'loss': 55.16510772705078}, validation=False) from rank 3
+LB_RESULT threads-train-fixed PASS {"workload": {"num_workers": 4, "dataloader_workers": 2, "error": null, "ok": true, "seconds": 22.7}, "mode": "fixed", "fix_threads": 2, "cpus": 16, "samples": 53, "kinds": {"ray::DashboardAgent": {"processes": 1, "max_threads": 42}, "raylet": {"processes": 1, "max_threads": 41}, "?": {"processes": 4, "max_threads": 37}, "ray::_AutoscalingCoordinatorActor": {"processes": 1, "max_threads": 31}, "ray::PreemptionWatcher.__init__": {"processes": 1, "max_threads": 28}, "ray::_StatsActor": {"processes": 1, "max_threads": 27}, "ray::RuntimeEnvAgent": {"processes": 1, "max_threads": 18}, "python3": {"processes": 3, "max_threads": 16}, "runc": {"processes": 4, "max_threads": 6}}, "max_threads_one_process": 42, "over_60": [], "pids_current_peak": 387, "pids.max": "3840", "refused_forks": 0, "cpu_count": 128, "affinity": 128}
+[36m(RayTrainWorker pid=8656, ip=38.247.78.21)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'loss': 71.73372650146484}, validation=False) from rank 2[32m [repeated 3x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m

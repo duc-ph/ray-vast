@@ -1,0 +1,28 @@
+2026-10-17 19:10:24,124	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:42867[22m
+2026-10-17 19:10:24,138	INFO cli.py:569 -- 2026-10-17 12:06:13,863	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job train-many-e7b714: python c10_train.py many
+C10_START C10.train many 1792263979.1 guard_s=900.0
+2026-10-17 12:06:19,108	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 32.191.59.87:6379...
+2026-10-17 12:06:19,144	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'num_workers': 62, 'cpu_per_worker': 1, 'dataloader_workers': 2}
+[36m(TrainController pid=3351)[0m Requesting resources: {'CPU': 1} * 62
+[36m(TrainController pid=3351)[0m Attempting to start training worker group of size 62 with the following resources: [{'CPU': 1}] * 62
+[36m(pid=18842, ip=154.42.3.235)[0m [2026-10-17 12:07:02,000 E 18842 18842] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=5e1c31680194e21c3ec95916da78f046936b73295cb1a28be1fd8463
+[33m(raylet, ip=154.42.3.235)[0m [2026-10-17 12:07:58,940 E 319 319] (raylet) worker_pool.cc:627: Some workers of the worker process(18842) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=18861, ip=154.42.3.235)[0m [2026-10-17 12:07:02,196 E 18861 18861] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=bf1949eb7215cb0b7c1168c1cf696fa869ed89635e6839051ada3ee7[32m [repeated 5x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[33m(raylet, ip=154.42.3.235)[0m [2026-10-17 12:08:59,145 E 319 319] (raylet) worker_pool.cc:627: Some workers of the worker process(20019) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 9x across cluster][0m
+[36m(pid=20018, ip=154.42.3.235)[0m [2026-10-17 12:08:02,215 E 20018 20018] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=56bf5e400becbf3910597c13173651a2488e32e7b7bbe7787866463c[32m [repeated 4x across cluster][0m
+[33m(raylet, ip=154.42.3.235)[0m [2026-10-17 12:09:59,133 E 319 319] (raylet) worker_pool.cc:627: Some workers of the worker process(21173) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=21177, ip=154.42.3.235)[0m [2026-10-17 12:09:02,244 E 21177 21177] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=54c37e10c62c46ee233ae52961bc4bfb858383c84da5d813f0b62e0b[32m [repeated 4x across cluster][0m
+[33m(raylet, ip=154.42.3.235)[0m [2026-10-17 12:09:59,145 E 319 319] (raylet) worker_pool.cc:627: Some workers of the worker process(21175) have not registered within the timeout. The process is dead, probably it crashed during start.
+*** SIGTERM received at time=1792264219 on cpu 0 ***
+PC: @     0x771fe23ab0d7  (unknown)  (unknown)
+    @     0x771fe235c520  (unknown)  (unknown)
+    @ ... and at least 1 more frames
+[2026-10-17 12:10:19,911 E 3309 3309] logging.cc:474: *** SIGTERM received at time=1792264219 on cpu 0 ***
+[2026-10-17 12:10:19,912 E 3309 3309] logging.cc:474: PC: @     0x771fe23ab0d7  (unknown)  (unknown)
+[2026-10-17 12:10:19,912 E 3309 3309] logging.cc:474:     @     0x771fe235c520  (unknown)  (unknown)
+[2026-10-17 12:10:19,912 E 3309 3309] logging.cc:474:     @ ... and at least 1 more frames
+[36m(pid=22262, ip=154.42.3.235)[0m [2026-10-17 12:10:02,256 E 22262 22262] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=41c6a63460640ede9247f5abee4a4f1630ce22344707e3d5a58287d6[32m [repeated 4x across cluster][0m
+[33m(raylet, ip=154.42.3.235)[0m [2026-10-17 12:09:59,167 E 319 319] (raylet) worker_pool.cc:627: Some workers of the worker process(21177) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 2x across cluster][0m

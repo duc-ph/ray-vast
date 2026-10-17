@@ -1,10 +1,10 @@
-2026-10-17 11:33:20,387	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:50317[22m
-2026-10-17 11:33:20,399	INFO cli.py:569 -- 2026-10-17 04:32:58,113	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job c9_2_4_tune_ckpt-bd8f28: python c9_2_4_tune_ckpt.py
-C9_START C9.2.4 1792236780.7 small=False min_nodes=2
-2026-10-17 04:33:00,735	INFO worker.py:1686 -- Using address 18.236.153.229:6379 set in the environment variable RAY_ADDRESS
-2026-10-17 04:33:00,738	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.236.153.229:6379...
-2026-10-17 04:33:00,768	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-17 19:28:46,088	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:37377[22m
+2026-10-17 19:28:46,104	INFO cli.py:569 -- 2026-10-17 12:28:23,817	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9_2_4_tune_ckpt-94c81f: python c9_2_4_tune_ckpt.py
+C9_START C9.2.4 1792265307.4 small=False min_nodes=2
+2026-10-17 12:28:27,427	INFO worker.py:1686 -- Using address 35.89.191.232:6379 set in the environment variable RAY_ADDRESS
+2026-10-17 12:28:27,431	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.89.191.232:6379...
+2026-10-17 12:28:27,472	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
 ╭────────────────────────────────────────────────────────╮
 │ Configuration for experiment     c9_2_4                │
 ├────────────────────────────────────────────────────────┤
@@ -14,162 +14,162 @@ C9_START C9.2.4 1792236780.7 small=False min_nodes=2
 ╰────────────────────────────────────────────────────────╯
 
 View detailed results here: /home/ray/ray_results/c9_2_4
-To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts`
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts`
 
 Trial status: 4 PENDING
-Current time: 2026-10-17 04:33:01. Total running time: 0s
-Logical resource usage: 0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3060, 0.0/1.0 accelerator_type:P100)
+Current time: 2026-10-17 12:28:28. Total running time: 0s
+Logical resource usage: 1.0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3060)
 ╭────────────────────────────────────────╮
 │ Trial name              status       i │
 ├────────────────────────────────────────┤
-│ trainable_82446_00000   PENDING      0 │
-│ trainable_82446_00001   PENDING      1 │
-│ trainable_82446_00002   PENDING      2 │
-│ trainable_82446_00003   PENDING      3 │
+│ trainable_ed834_00000   PENDING      0 │
+│ trainable_ed834_00001   PENDING      1 │
+│ trainable_ed834_00002   PENDING      2 │
+│ trainable_ed834_00003   PENDING      3 │
 ╰────────────────────────────────────────╯
 
-Trial trainable_82446_00001 started with configuration:
+Trial trainable_ed834_00000 started with configuration:
 ╭───────────────────────────────────────────╮
-│ Trial trainable_82446_00001 config        │
-├───────────────────────────────────────────┤
-│ i                                       1 │
-╰───────────────────────────────────────────╯
-
-Trial trainable_82446_00002 started with configuration:
-╭───────────────────────────────────────────╮
-│ Trial trainable_82446_00002 config        │
-├───────────────────────────────────────────┤
-│ i                                       2 │
-╰───────────────────────────────────────────╯
-2026-10-17 04:33:07,603	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_82446_00001
-Traceback (most recent call last):
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
-    result = ray.get(future)
-             ^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
-    values, debugger_breakpoint = worker.get_objects(
-                                  ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
-    raise value.as_instanceof_cause()
-ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=25672, ip=143.55.45.86, actor_id=8325f6835577a9baeca5531e17000000, repr=trainable)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
-    raise skipped from exception_cause(skipped)
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/_internal/util.py", line 98, in run
-    self._ret = self._target(*self._args, **self._kwargs)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 44, in <lambda>
-    training_func=lambda: self._trainable_func(self.config),
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
-    output = fn()
-             ^^^^
-  File "/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
-    tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable_fn_utils.py", line 48, in report
-    get_session().report(metrics, checkpoint=checkpoint)
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 448, in report
-    persisted_checkpoint = self.storage.persist_current_checkpoint(checkpoint)
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 559, in persist_current_checkpoint
-    self._check_validation_file()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 511, in _check_validation_file
-    raise RuntimeError(
-RuntimeError: Unable to set up cluster storage with the following settings:
-StorageContext<
-  storage_filesystem='local',
-  storage_fs_path='/home/ray/ray_results',
-  experiment_dir_name='c9_2_4',
-  trial_dir_name='trainable_82446_00001_1_i=1_2026-10-17_04-33-01',
-  current_checkpoint_index=0,
->
-Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
-
-Trial trainable_82446_00001 errored after 0 iterations at 2026-10-17 04:33:07. Total running time: 6s
-Error file: /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00001_1_i=1_2026-10-17_04-33-01/error.txt
-2026-10-17 04:33:07,710	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_82446_00002
-Traceback (most recent call last):
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
-    result = ray.get(future)
-             ^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
-    values, debugger_breakpoint = worker.get_objects(
-                                  ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
-    raise value.as_instanceof_cause()
-ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=25674, ip=143.55.45.86, actor_id=6ffc724cf5bafc07348d24b417000000, repr=trainable)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
-    raise skipped from exception_cause(skipped)
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/_internal/util.py", line 98, in run
-    self._ret = self._target(*self._args, **self._kwargs)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 44, in <lambda>
-    training_func=lambda: self._trainable_func(self.config),
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
-    output = fn()
-             ^^^^
-  File "/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
-    tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
-    return fn(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable_fn_utils.py", line 48, in report
-    get_session().report(metrics, checkpoint=checkpoint)
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 448, in report
-    persisted_checkpoint = self.storage.persist_current_checkpoint(checkpoint)
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 559, in persist_current_checkpoint
-    self._check_validation_file()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 511, in _check_validation_file
-    raise RuntimeError(
-RuntimeError: Unable to set up cluster storage with the following settings:
-StorageContext<
-  storage_filesystem='local',
-  storage_fs_path='/home/ray/ray_results',
-  experiment_dir_name='c9_2_4',
-  trial_dir_name='trainable_82446_00002_2_i=2_2026-10-17_04-33-01',
-  current_checkpoint_index=0,
->
-Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
-
-Trial trainable_82446_00002 errored after 0 iterations at 2026-10-17 04:33:07. Total running time: 6s
-Error file: /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00002_2_i=2_2026-10-17_04-33-01/error.txt
-
-Trial trainable_82446_00000 started with configuration:
-╭───────────────────────────────────────────╮
-│ Trial trainable_82446_00000 config        │
+│ Trial trainable_ed834_00000 config        │
 ├───────────────────────────────────────────┤
 │ i                                       0 │
 ╰───────────────────────────────────────────╯
 
-Trial trainable_82446_00003 started with configuration:
+Trial trainable_ed834_00002 started with configuration:
 ╭───────────────────────────────────────────╮
-│ Trial trainable_82446_00003 config        │
+│ Trial trainable_ed834_00002 config        │
+├───────────────────────────────────────────┤
+│ i                                       2 │
+╰───────────────────────────────────────────╯
+2026-10-17 12:28:34,273	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_ed834_00000
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
+    result = ray.get(future)
+             ^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=30442, ip=143.55.45.86, actor_id=814379d0dd082fd57bb6b75e17000000, repr=trainable)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
+    raise skipped from exception_cause(skipped)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/_internal/util.py", line 98, in run
+    self._ret = self._target(*self._args, **self._kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 44, in <lambda>
+    training_func=lambda: self._trainable_func(self.config),
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
+    output = fn()
+             ^^^^
+  File "/tmp/ray/session_2026-10-17_11-52-14_809738_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
+    tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable_fn_utils.py", line 48, in report
+    get_session().report(metrics, checkpoint=checkpoint)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 448, in report
+    persisted_checkpoint = self.storage.persist_current_checkpoint(checkpoint)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 559, in persist_current_checkpoint
+    self._check_validation_file()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 511, in _check_validation_file
+    raise RuntimeError(
+RuntimeError: Unable to set up cluster storage with the following settings:
+StorageContext<
+  storage_filesystem='local',
+  storage_fs_path='/home/ray/ray_results',
+  experiment_dir_name='c9_2_4',
+  trial_dir_name='trainable_ed834_00000_0_i=0_2026-10-17_12-28-27',
+  current_checkpoint_index=0,
+>
+Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
+
+Trial trainable_ed834_00000 errored after 0 iterations at 2026-10-17 12:28:34. Total running time: 6s
+Error file: /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00000_0_i=0_2026-10-17_12-28-27/error.txt
+2026-10-17 12:28:34,635	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_ed834_00002
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
+    result = ray.get(future)
+             ^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=30443, ip=143.55.45.86, actor_id=5b2051565f5093ccb6dd704217000000, repr=trainable)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
+    raise skipped from exception_cause(skipped)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/_internal/util.py", line 98, in run
+    self._ret = self._target(*self._args, **self._kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 44, in <lambda>
+    training_func=lambda: self._trainable_func(self.config),
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
+    output = fn()
+             ^^^^
+  File "/tmp/ray/session_2026-10-17_11-52-14_809738_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
+    tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable_fn_utils.py", line 48, in report
+    get_session().report(metrics, checkpoint=checkpoint)
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 448, in report
+    persisted_checkpoint = self.storage.persist_current_checkpoint(checkpoint)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 559, in persist_current_checkpoint
+    self._check_validation_file()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/storage.py", line 511, in _check_validation_file
+    raise RuntimeError(
+RuntimeError: Unable to set up cluster storage with the following settings:
+StorageContext<
+  storage_filesystem='local',
+  storage_fs_path='/home/ray/ray_results',
+  experiment_dir_name='c9_2_4',
+  trial_dir_name='trainable_ed834_00002_2_i=2_2026-10-17_12-28-27',
+  current_checkpoint_index=0,
+>
+Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
+
+Trial trainable_ed834_00002 errored after 0 iterations at 2026-10-17 12:28:34. Total running time: 6s
+Error file: /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00002_2_i=2_2026-10-17_12-28-27/error.txt
+
+Trial trainable_ed834_00001 started with configuration:
+╭───────────────────────────────────────────╮
+│ Trial trainable_ed834_00001 config        │
+├───────────────────────────────────────────┤
+│ i                                       1 │
+╰───────────────────────────────────────────╯
+
+Trial trainable_ed834_00003 started with configuration:
+╭───────────────────────────────────────────╮
+│ Trial trainable_ed834_00003 config        │
 ├───────────────────────────────────────────┤
 │ i                                       3 │
 ╰───────────────────────────────────────────╯
-2026-10-17 04:33:10,928	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_82446_00000
+2026-10-17 12:28:37,787	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_ed834_00001
 Traceback (most recent call last):
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
     result = ray.get(future)
@@ -185,7 +185,7 @@ Traceback (most recent call last):
                                   ^^^^^^^^^^^^^^^^^^^
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
     raise value.as_instanceof_cause()
-ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=24609, ip=185.62.108.226, actor_id=aff7590e574df197e5a9b06c17000000, repr=trainable)
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=29562, ip=185.62.108.226, actor_id=61efa3e142378f3e676bc24917000000, repr=trainable)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
@@ -200,7 +200,7 @@ ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
     output = fn()
              ^^^^
-  File "/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
+  File "/tmp/ray/session_2026-10-17_11-52-14_809738_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
     tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
     return fn(*args, **kwargs)
@@ -219,14 +219,14 @@ StorageContext<
   storage_filesystem='local',
   storage_fs_path='/home/ray/ray_results',
   experiment_dir_name='c9_2_4',
-  trial_dir_name='trainable_82446_00000_0_i=0_2026-10-17_04-33-01',
+  trial_dir_name='trainable_ed834_00001_1_i=1_2026-10-17_12-28-27',
   current_checkpoint_index=0,
 >
 Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
 
-Trial trainable_82446_00000 errored after 0 iterations at 2026-10-17 04:33:10. Total running time: 9s
-Error file: /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00000_0_i=0_2026-10-17_04-33-01/error.txt
-2026-10-17 04:33:11,295	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_82446_00003
+Trial trainable_ed834_00001 errored after 0 iterations at 2026-10-17 12:28:37. Total running time: 9s
+Error file: /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00001_1_i=1_2026-10-17_12-28-27/error.txt
+2026-10-17 12:28:38,265	ERROR tune_controller.py:1336 -- Trial task failed for trial trainable_ed834_00003
 Traceback (most recent call last):
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
     result = ray.get(future)
@@ -242,7 +242,7 @@ Traceback (most recent call last):
                                   ^^^^^^^^^^^^^^^^^^^
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
     raise value.as_instanceof_cause()
-ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=24623, ip=185.62.108.226, actor_id=f3e21047e022a3f0957c7ac217000000, repr=trainable)
+ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (pid=29569, ip=185.62.108.226, actor_id=039cd91a9969fc36ebc5e50717000000, repr=trainable)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 329, in train
@@ -257,7 +257,7 @@ ray.exceptions.RayTaskError(RuntimeError): [36mray::ImplicitFunc.train()[39m (
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/function_trainable.py", line 249, in _trainable_func
     output = fn()
              ^^^^
-  File "/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
+  File "/tmp/ray/session_2026-10-17_11-52-14_809738_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9_2_4_tune_ckpt.py", line 28, in trainable
     tune.report({"step": step, "node": node}, checkpoint=Checkpoint.from_directory(d))
   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/_internal/session.py", line 689, in wrapper
     return fn(*args, **kwargs)
@@ -276,36 +276,36 @@ StorageContext<
   storage_filesystem='local',
   storage_fs_path='/home/ray/ray_results',
   experiment_dir_name='c9_2_4',
-  trial_dir_name='trainable_82446_00003_3_i=3_2026-10-17_04-33-01',
+  trial_dir_name='trainable_ed834_00003_3_i=3_2026-10-17_12-28-27',
   current_checkpoint_index=0,
 >
 Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
 
-Trial trainable_82446_00003 errored after 0 iterations at 2026-10-17 04:33:11. Total running time: 10s
-Error file: /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00003_3_i=3_2026-10-17_04-33-01/error.txt
-2026-10-17 04:33:11,310	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/c9_2_4' in 0.0054s.
+Trial trainable_ed834_00003 errored after 0 iterations at 2026-10-17 12:28:38. Total running time: 10s
+Error file: /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00003_3_i=3_2026-10-17_12-28-27/error.txt
+2026-10-17 12:28:38,277	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/c9_2_4' in 0.0050s.
 
 Trial status: 4 ERROR
-Current time: 2026-10-17 04:33:11. Total running time: 10s
-Logical resource usage: 1.0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3060, 0.0/1.0 accelerator_type:P100)
+Current time: 2026-10-17 12:28:38. Total running time: 10s
+Logical resource usage: 1.0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3060)
 ╭────────────────────────────────────────╮
 │ Trial name              status       i │
 ├────────────────────────────────────────┤
-│ trainable_82446_00000   ERROR        0 │
-│ trainable_82446_00001   ERROR        1 │
-│ trainable_82446_00002   ERROR        2 │
-│ trainable_82446_00003   ERROR        3 │
+│ trainable_ed834_00000   ERROR        0 │
+│ trainable_ed834_00001   ERROR        1 │
+│ trainable_ed834_00002   ERROR        2 │
+│ trainable_ed834_00003   ERROR        3 │
 ╰────────────────────────────────────────╯
 
 Number of errored trials: 4
 ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Trial name                # failures   error file                                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ trainable_82446_00000              1   /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00000_0_i=0_2026-10-17_04-33-01/error.txt │
-│ trainable_82446_00001              1   /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00001_1_i=1_2026-10-17_04-33-01/error.txt │
-│ trainable_82446_00002              1   /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00002_2_i=2_2026-10-17_04-33-01/error.txt │
-│ trainable_82446_00003              1   /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-33-00/c9_2_4/driver_artifacts/trainable_82446_00003_3_i=3_2026-10-17_04-33-01/error.txt │
+│ trainable_ed834_00000              1   /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00000_0_i=0_2026-10-17_12-28-27/error.txt │
+│ trainable_ed834_00001              1   /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00001_1_i=1_2026-10-17_12-28-27/error.txt │
+│ trainable_ed834_00002              1   /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00002_2_i=2_2026-10-17_12-28-27/error.txt │
+│ trainable_ed834_00003              1   /tmp/ray/session_2026-10-17_11-52-14_809738_7/artifacts/2026-10-17_12-28-27/c9_2_4/driver_artifacts/trainable_ed834_00003_3_i=3_2026-10-17_12-28-27/error.txt │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-2026-10-17 04:33:11,471	ERROR tune.py:1035 -- Trials did not complete: [trainable_82446_00000, trainable_82446_00001, trainable_82446_00002, trainable_82446_00003]
-C9_RESULT C9.2.4 LIMIT {"elapsed_s": 10.7, "errors": 4, "experiment_path": "/home/ray/ray_results/c9_2_4", "storage": "default", "trials": [{"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=24609, ip=185.62.108.226, actor_id=aff7590e574df197e5a9b06c17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=25672, ip=143.55.45.86, actor_id=8325f6835577a9baeca5531e17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=25674, ip=143.55.45.86, actor_id=6ffc724cf5bafc07348d24b417000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=24623, ip=185.62.108.226, actor_id=f3e21047e022a3f0957c7ac217000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab", "node": null}]}
+2026-10-17 12:28:38,442	ERROR tune.py:1035 -- Trials did not complete: [trainable_ed834_00000, trainable_ed834_00001, trainable_ed834_00002, trainable_ed834_00003]
+C9_RESULT C9.2.4 LIMIT {"elapsed_s": 11.0, "errors": 4, "experiment_path": "/home/ray/ray_results/c9_2_4", "storage": "default", "trials": [{"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=30442, ip=143.55.45.86, actor_id=814379d0dd082fd57bb6b75e17000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=29562, ip=185.62.108.226, actor_id=61efa3e142378f3e676bc24917000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=30443, ip=143.55.45.86, actor_id=5b2051565f5093ccb6dd704217000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable", "node": null}, {"checkpoint": null, "error": "\u001b[36mray::ImplicitFunc.train()\u001b[39m (pid=29569, ip=185.62.108.226, actor_id=039cd91a9969fc36ebc5e50717000000, repr=trainable)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainab", "node": null}]}

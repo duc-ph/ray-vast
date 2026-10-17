@@ -1,0 +1,577 @@
+2026-10-17 04:05:35,566	INFO monitor.py:321 -- Starting autoscaler v2 monitor using ray installation: /home/ray/anaconda3/lib/python3.11/site-packages/ray/__init__.py
+2026-10-17 04:05:35,566	INFO monitor.py:324 -- Ray version: 2.59.0
+2026-10-17 04:05:35,567	INFO monitor.py:325 -- Ray commit: dd83c3a703a5422d0b47f142cb380c6330817608
+2026-10-17 04:05:35,567	INFO monitor.py:326 -- AutoscalerMonitor started with command: ['/home/ray/anaconda3/lib/python3.11/site-packages/ray/autoscaler/v2/monitor.py', '--logs-dir=/tmp/ray/session_2026-10-17_04-05-33_787248_7/logs', '--logging-rotate-bytes=536870912', '--logging-rotate-backup-count=5', '--gcs-address=3.135.225.40:6379', '--stdout-filepath=/tmp/ray/session_2026-10-17_04-05-33_787248_7/logs/monitor.out', '--stderr-filepath=/tmp/ray/session_2026-10-17_04-05-33_787248_7/logs/monitor.err', '--autoscaling-config=/home/ubuntu/ray-vast-rvtest-life-324d/cluster.yaml', '--monitor-ip=3.135.225.40']
+2026-10-17 04:05:35,588	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:35,588	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:35,588	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:35,671	INFO monitor.py:94 -- session_name: session_2026-10-17_04-05-33_787248_7
+2026-10-17 04:05:35,673	INFO monitor.py:122 -- Starting autoscaler metrics server on port 44217
+2026-10-17 04:05:35,687	INFO autoscaler.py:73 -- Using Autoscaling Config: 
+auth:
+  ssh_user: ray
+available_node_types:
+  gpu-a:
+    max_workers: 2
+    min_workers: 0
+    node_config:
+      disk_gb: 40
+      offer_query:
+        datacenter:
+          eq: true
+        gpu_ram:
+          gte: 8000
+          lt: 24570
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500
+        verified:
+          eq: true
+    resources:
+      CPU: 4
+      GPU: 1
+  gpu-b:
+    max_workers: 2
+    min_workers: 0
+    node_config:
+      disk_gb: 40
+      offer_query:
+        datacenter:
+          eq: true
+        gpu_ram:
+          gte: 24570
+          lt: 70000
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500
+        verified:
+          eq: true
+    resources:
+      CPU: 4
+      GPU: 1
+  head:
+    max_workers: 0
+    min_workers: 0
+    node_config:
+      instance_type: t3.medium
+      region: us-east-2
+    resources:
+      CPU: 0
+cluster_name: rvtest-life-324d
+cluster_synced_files: []
+file_mounts: {}
+head_node_type: head
+head_setup_commands: []
+head_start_ray_commands: []
+idle_timeout_minutes: 2
+initialization_commands: []
+max_workers: 4
+provider:
+  candidate_factor: 2
+  disable_node_updaters: true
+  head_ip: 3.135.225.40
+  image: rayproject/ray:2.59.0-py311-gpu
+  image_size_gb: 7
+  max_dollars_per_hour: 3.0
+  module: ray_vast.provider.VastNodeProvider
+  region: us-east-2
+  secrets_dir: /home/ubuntu/ray-vast-rvtest-life-324d/secrets
+  security_group_ids:
+  - sg-0821e041d3eea1066
+  - sg-07b2f64ed8e00676d
+  - sg-004bad95be94e54ab
+  - sg-0a12f44229204cfe3
+  - sg-067192ea1d781f355
+  type: external
+setup_commands: []
+worker_setup_commands: []
+worker_start_ray_commands: []
+
+2026-10-17 04:05:36,706	INFO credentials.py:1055 -- Found credentials from IAM Role: ray-vast-rvtest-life-324d
+2026-10-17 04:05:37,379	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:37,379	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:37,379	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:37,390	INFO instance_manager.py:247 -- New instance ALLOCATED (id=68b2ea6e-aecd-4cfa-b59c-61b5c34e5d4d, type=head, cloud_instance_id=, ray_id=): allocated unmanaged cloud instance :head (HEAD) from cloud provider
+2026-10-17 04:05:42,402	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:42,403	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:42,403	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:42,413	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=68b2ea6e-aecd-4cfa-b59c-61b5c34e5d4d, type=head, cloud_instance_id=head, ray_id=): ray node c8b91f572197fbbb9981fdd25c604e52b9783057be7e52c2350d4201 is IDLE
+2026-10-17 04:05:47,423	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:47,424	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:47,424	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:52,450	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:52,450	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:52,450	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:52,467	INFO event_logger.py:77 -- Adding 2 node(s) of type gpu-a.
+2026-10-17 04:05:52,467	INFO event_logger.py:77 -- Adding 2 node(s) of type gpu-b.
+2026-10-17 04:05:52,468	INFO instance_manager.py:247 -- New instance QUEUED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=, ray_id=): queuing new instance of gpu-a from scheduler
+2026-10-17 04:05:52,468	INFO instance_manager.py:247 -- New instance QUEUED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=, ray_id=): queuing new instance of gpu-a from scheduler
+2026-10-17 04:05:52,468	INFO instance_manager.py:247 -- New instance QUEUED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=, ray_id=): queuing new instance of gpu-b from scheduler
+2026-10-17 04:05:52,468	INFO instance_manager.py:247 -- New instance QUEUED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=, ray_id=): queuing new instance of gpu-b from scheduler
+2026-10-17 04:05:52,468	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=, ray_id=): requested to launch gpu-a with request id a745fe88-83d7-44d7-8754-c84f7a190c5d
+2026-10-17 04:05:52,468	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=, ray_id=): requested to launch gpu-b with request id a745fe88-83d7-44d7-8754-c84f7a190c5d
+2026-10-17 04:05:52,470	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-a.
+2026-10-17 04:05:52,470	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-b.
+2026-10-17 04:05:52,978	INFO vast_api.py:128 -- rented offer 48743420 as instance 56385262
+2026-10-17 04:05:53,268	INFO vast_api.py:128 -- rented offer 18811408 as instance 56385263
+2026-10-17 04:05:53,293	WARNING vast_api.py:90 -- PUT /asks/33877197/: HTTP 429, retry 1/4 in 1.3 s
+2026-10-17 04:05:53,647	INFO vast_api.py:128 -- rented offer 13273594 as instance 56385265
+2026-10-17 04:05:53,648	INFO provider.py:241 -- create 1 x gpu-a: rented 2 candidates
+2026-10-17 04:05:53,648	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-a.
+2026-10-17 04:05:54,860	INFO vast_api.py:128 -- rented offer 33877197 as instance 56385268
+2026-10-17 04:05:54,860	INFO provider.py:241 -- create 1 x gpu-b: rented 2 candidates
+2026-10-17 04:05:54,860	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-b.
+2026-10-17 04:05:57,479	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:05:57,479	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:05:57,479	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:05:57,486	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-1-3bdc45
+2026-10-17 04:05:57,488	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-2-2a0324
+2026-10-17 04:05:57,493	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=, ray_id=): requested to launch gpu-a with request id fa22252e-d66f-486f-9352-2e7569492311
+2026-10-17 04:05:57,493	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=, ray_id=): requested to launch gpu-b with request id fa22252e-d66f-486f-9352-2e7569492311
+2026-10-17 04:05:57,494	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-a.
+2026-10-17 04:05:57,496	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-b.
+2026-10-17 04:05:57,604	WARNING provider.py:218 -- renting offer 48743420 failed: PUT /asks/48743420/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 48743420 is not available.","ask_id":48743420}
+2026-10-17 04:05:57,651	WARNING provider.py:218 -- renting offer 18811408 failed: PUT /asks/18811408/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 18811408 is not available.","ask_id":18811408}
+2026-10-17 04:05:57,654	WARNING provider.py:218 -- renting offer 13273594 failed: PUT /asks/13273594/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 13273594 is not available.","ask_id":13273594}
+2026-10-17 04:05:57,678	WARNING vast_api.py:90 -- PUT /asks/33877197/: HTTP 429, retry 1/4 in 1.9 s
+2026-10-17 04:05:57,913	INFO vast_api.py:128 -- rented offer 13273577 as instance 56385275
+2026-10-17 04:05:57,940	WARNING vast_api.py:90 -- PUT /asks/52710386/: HTTP 429, retry 1/4 in 2.0 s
+2026-10-17 04:05:59,614	WARNING vast_api.py:90 -- PUT /asks/33877197/: HTTP 429, retry 2/4 in 2.9 s
+2026-10-17 04:05:59,947	WARNING vast_api.py:90 -- PUT /asks/52710386/: HTTP 429, retry 2/4 in 2.2 s
+2026-10-17 04:06:02,568	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:02,569	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:02,569	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:02,637	WARNING provider.py:218 -- renting offer 33877197 failed: PUT /asks/33877197/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 33877197 is not available.","ask_id":33877197}
+2026-10-17 04:06:02,638	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-3-e00b24
+2026-10-17 04:06:02,641	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-4-8a59ee
+2026-10-17 04:06:03,113	INFO vast_api.py:128 -- rented offer 52710386 as instance 56385289
+2026-10-17 04:06:03,129	INFO provider.py:241 -- create 1 x gpu-a: rented 2 candidates
+2026-10-17 04:06:03,136	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-a.
+2026-10-17 04:06:03,569	INFO vast_api.py:128 -- rented offer 31013680 as instance 56385292
+2026-10-17 04:06:04,238	INFO vast_api.py:128 -- rented offer 46872546 as instance 56385296
+2026-10-17 04:06:04,238	INFO provider.py:241 -- create 1 x gpu-b: rented 2 candidates
+2026-10-17 04:06:04,238	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-b.
+2026-10-17 04:06:07,632	WARNING vast_api.py:90 -- GET /instances/: HTTP 429, retry 1/4 in 1.1 s
+2026-10-17 04:06:07,662	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:07,662	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:07,662	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:12,688	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:12,688	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:12,688	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:17,709	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:17,709	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:17,709	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:22,474	INFO head_server.py:188 -- enroll request: instance 56385262, machine 3969, ip 143.55.45.86
+2026-10-17 04:06:22,612	INFO head_server.py:243 -- enrolled instance 56385262 (machine 3969, ip 143.55.45.86) into slot-1-3bdc45
+2026-10-17 04:06:22,728	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:22,728	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:22,728	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:25,550	INFO head_server.py:188 -- enroll request: instance 56385263, machine 8966, ip 185.62.108.226
+2026-10-17 04:06:25,828	INFO head_server.py:243 -- enrolled instance 56385263 (machine 8966, ip 185.62.108.226) into slot-2-2a0324
+2026-10-17 04:06:27,749	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:27,749	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:27,749	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:29,755	WARNING provider.py:278 -- ending instance 56385265 (machine 29278, ip None): 'its request has no free slot left'
+2026-10-17 04:06:30,129	WARNING provider.py:278 -- ending instance 56385268 (machine 42715, ip None): 'its request has no free slot left'
+2026-10-17 04:06:32,769	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:32,769	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:32,769	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:32,776	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=slot-1-3bdc45, ray_id=): ray node 9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6 is IDLE
+2026-10-17 04:06:32,776	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=slot-2-2a0324, ray_id=): ray node 73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054 is RUNNING
+2026-10-17 04:06:37,789	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:37,789	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:37,789	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:38,213	WARNING head_server.py:186 -- enroll refused for instance 56385268 from 185.62.108.226: not a candidate
+2026-10-17 04:06:38,552	WARNING head_server.py:259 -- unverified report from 185.62.108.226: instance '56385268' kind 'destroy' reason 'head refused enrollment: not a candidate'
+2026-10-17 04:06:42,817	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:42,817	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:42,817	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:47,852	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:47,852	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:47,852	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:52,893	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:52,893	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:52,894	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:06:57,933	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:06:57,933	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:06:57,933	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:02,971	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:02,971	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:02,971	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:04,606	INFO head_server.py:188 -- enroll request: instance 56385292, machine 37217, ip 194.228.55.129
+2026-10-17 04:07:04,852	INFO head_server.py:243 -- enrolled instance 56385292 (machine 37217, ip 194.228.55.129) into slot-4-8a59ee
+2026-10-17 04:07:08,026	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:08,027	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:08,027	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:11,524	WARNING provider.py:278 -- ending instance 56385296 (machine 26840, ip None): 'its request has no free slot left'
+2026-10-17 04:07:13,062	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:13,062	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:13,062	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:13,069	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=slot-4-8a59ee, ray_id=): ray node 39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2 is IDLE
+2026-10-17 04:07:18,083	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:18,083	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:18,083	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:22,106	WARNING head_server.py:186 -- enroll refused for instance 56385296 from 185.62.108.226: not a candidate
+2026-10-17 04:07:23,104	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:23,105	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:23,105	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:28,126	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:28,127	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:28,127	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:30,802	INFO head_server.py:188 -- enroll request: instance 56385275, machine 29217, ip 5.2.174.20
+2026-10-17 04:07:31,155	INFO head_server.py:243 -- enrolled instance 56385275 (machine 29217, ip 5.2.174.20) into slot-3-e00b24
+2026-10-17 04:07:32,616	WARNING provider.py:278 -- ending instance 56385289 (machine 13544, ip 81.27.69.180): 'its request has no free slot left'
+2026-10-17 04:07:33,148	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:33,148	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:33,148	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:38,169	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:38,169	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:38,169	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:38,177	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=slot-3-e00b24, ray_id=): ray node 917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2 is RUNNING
+2026-10-17 04:07:43,188	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:43,188	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:43,188	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:48,208	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:48,208	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:48,208	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:53,230	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:53,230	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:53,231	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:07:58,248	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:07:58,248	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:07:58,248	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:03,275	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:03,275	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:03,275	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:08,302	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:08,303	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:08,303	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:13,320	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:13,320	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:13,320	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:18,336	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:18,336	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:18,337	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:23,353	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:23,353	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:23,353	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:28,369	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:28,369	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:28,370	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:33,385	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:33,386	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:33,386	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:38,402	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:38,402	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:38,402	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:43,419	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:43,419	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:43,419	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:48,436	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:48,436	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:48,436	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:53,453	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:53,454	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:53,454	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:08:58,470	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:08:58,470	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:08:58,470	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:03,494	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:03,494	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:03,494	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:08,529	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:08,529	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:08,530	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:13,547	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:13,547	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:13,547	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:18,563	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:18,563	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:18,563	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:23,582	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:23,582	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:23,582	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:28,598	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:28,598	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:28,598	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:33,615	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:33,615	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:33,615	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:38,632	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:38,632	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:38,632	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:43,652	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:43,653	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:43,653	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:48,669	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:48,669	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:48,669	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:53,686	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:53,686	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:53,686	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:09:58,702	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:09:58,702	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:09:58,702	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:03,738	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:03,739	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:03,739	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:08,784	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:08,785	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:08,785	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:13,801	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:13,801	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:13,801	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:18,818	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:18,818	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:18,818	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:18,827	INFO event_logger.py:97 -- Removing 2 nodes of type gpu-a (idle).
+2026-10-17 04:10:18,827	INFO event_logger.py:97 -- Removing 2 nodes of type gpu-b (idle).
+2026-10-17 04:10:18,828	INFO instance_manager.py:263 -- Update instance RAY_RUNNING->RAY_STOP_REQUESTED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=slot-1-3bdc45, ray_id=9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6): draining ray: idle for 123.864 secs > timeout=120 secs
+2026-10-17 04:10:18,828	INFO instance_manager.py:263 -- Update instance RAY_RUNNING->RAY_STOP_REQUESTED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=slot-3-e00b24, ray_id=917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2): draining ray: idle for 123.761 secs > timeout=120 secs
+2026-10-17 04:10:18,828	INFO instance_manager.py:263 -- Update instance RAY_RUNNING->RAY_STOP_REQUESTED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=slot-2-2a0324, ray_id=73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054): draining ray: idle for 123.783 secs > timeout=120 secs
+2026-10-17 04:10:18,828	INFO instance_manager.py:263 -- Update instance RAY_RUNNING->RAY_STOP_REQUESTED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=slot-4-8a59ee, ray_id=39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2): draining ray: idle for 123.765 secs > timeout=120 secs
+2026-10-17 04:10:18,864	INFO ray_stopper.py:118 -- Drained ray on 9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6(success=True, msg=)
+2026-10-17 04:10:19,003	INFO ray_stopper.py:118 -- Drained ray on 917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2(success=True, msg=)
+2026-10-17 04:10:19,117	INFO ray_stopper.py:118 -- Drained ray on 73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054(success=True, msg=)
+2026-10-17 04:10:19,250	INFO ray_stopper.py:118 -- Drained ray on 39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2(success=True, msg=)
+2026-10-17 04:10:23,840	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:23,840	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:23,841	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:23,854	INFO instance_manager.py:263 -- Update instance RAY_STOP_REQUESTED->RAY_STOPPED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=slot-1-3bdc45, ray_id=9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6): ray node 9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6 is DEAD
+2026-10-17 04:10:23,854	INFO instance_manager.py:263 -- Update instance RAY_STOP_REQUESTED->RAY_STOPPED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=slot-3-e00b24, ray_id=917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2): ray node 917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2 is DEAD
+2026-10-17 04:10:23,855	INFO instance_manager.py:263 -- Update instance RAY_STOP_REQUESTED->RAY_STOPPED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=slot-4-8a59ee, ray_id=39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2): ray node 39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2 is DEAD
+2026-10-17 04:10:23,855	INFO instance_manager.py:263 -- Update instance RAY_STOP_REQUESTED->RAY_STOPPED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=slot-2-2a0324, ray_id=73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054): ray node 73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054 is DEAD
+2026-10-17 04:10:23,856	INFO instance_manager.py:263 -- Update instance RAY_STOPPED->TERMINATING (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=slot-1-3bdc45, ray_id=9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6): terminating instance from RAY_STOPPED
+2026-10-17 04:10:23,856	INFO instance_manager.py:263 -- Update instance RAY_STOPPED->TERMINATING (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=slot-3-e00b24, ray_id=917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2): terminating instance from RAY_STOPPED
+2026-10-17 04:10:23,856	INFO instance_manager.py:263 -- Update instance RAY_STOPPED->TERMINATING (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=slot-2-2a0324, ray_id=73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054): terminating instance from RAY_STOPPED
+2026-10-17 04:10:23,856	INFO instance_manager.py:263 -- Update instance RAY_STOPPED->TERMINATING (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=slot-4-8a59ee, ray_id=39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2): terminating instance from RAY_STOPPED
+2026-10-17 04:10:23,858	INFO node_provider.py:211 -- NodeProvider: slot-1-3bdc45: Terminating node
+2026-10-17 04:10:23,858	WARNING provider.py:278 -- ending instance 56385262 (machine 3969, ip 143.55.45.86): 'terminated by the autoscaler'
+2026-10-17 04:10:23,896	WARNING head_server.py:275 -- port B request /heartbeat refused for instance 56385262
+2026-10-17 04:10:24,002	WARNING head_server.py:275 -- port B request /report refused for instance 56385262
+2026-10-17 04:10:24,518	INFO node_provider.py:211 -- NodeProvider: slot-3-e00b24: Terminating node
+2026-10-17 04:10:24,518	WARNING provider.py:278 -- ending instance 56385275 (machine 29217, ip 5.2.174.20): 'terminated by the autoscaler'
+2026-10-17 04:10:25,198	INFO node_provider.py:211 -- NodeProvider: slot-2-2a0324: Terminating node
+2026-10-17 04:10:25,198	WARNING provider.py:278 -- ending instance 56385263 (machine 8966, ip 185.62.108.226): 'terminated by the autoscaler'
+2026-10-17 04:10:25,945	INFO node_provider.py:211 -- NodeProvider: slot-4-8a59ee: Terminating node
+2026-10-17 04:10:25,945	WARNING provider.py:278 -- ending instance 56385292 (machine 37217, ip 194.228.55.129): 'terminated by the autoscaler'
+2026-10-17 04:10:25,962	WARNING vast_api.py:36 -- sweep: destroying instance 56385292 with label ray-vast:rvtest-life-324d
+2026-10-17 04:10:28,867	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:28,867	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:28,867	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:28,874	INFO instance_manager.py:263 -- Update instance TERMINATING->TERMINATED (id=4301900d-20ab-48bc-b647-e06908a49d26, type=gpu-a, cloud_instance_id=slot-1-3bdc45, ray_id=9319fede1b6f2531957f178d3d4053e779741ab73d52961592848ef6): cloud instance slot-1-3bdc45 no longer found
+2026-10-17 04:10:28,874	INFO instance_manager.py:263 -- Update instance TERMINATING->TERMINATED (id=794ae488-c459-4993-bfca-9b9e8dd88d64, type=gpu-a, cloud_instance_id=slot-3-e00b24, ray_id=917b3cc120a4e26dcb4416d017c7d26e0675e81c636e3f75ef0ae5d2): cloud instance slot-3-e00b24 no longer found
+2026-10-17 04:10:28,874	INFO instance_manager.py:263 -- Update instance TERMINATING->TERMINATED (id=63a5ee94-7d6e-4a67-9854-2a7f6decb825, type=gpu-b, cloud_instance_id=slot-2-2a0324, ray_id=73992d00febd72472d0003dc01e56d4dc75a9aa8df0846261c007054): cloud instance slot-2-2a0324 no longer found
+2026-10-17 04:10:28,874	INFO instance_manager.py:263 -- Update instance TERMINATING->TERMINATED (id=907ba746-241f-4b5a-9a89-5e27cf2cd832, type=gpu-b, cloud_instance_id=slot-4-8a59ee, ray_id=39549d67d045050e7ba3b4145450b5d73424f95c836d8003b63d58f2): cloud instance slot-4-8a59ee no longer found
+2026-10-17 04:10:33,883	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:33,883	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:33,883	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:38,899	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:38,899	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:38,899	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:43,917	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:43,917	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:43,917	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:48,934	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:48,934	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:48,934	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:53,954	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:53,954	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:53,954	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:58,976	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:10:58,976	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:10:58,976	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:10:58,990	INFO event_logger.py:77 -- Adding 2 node(s) of type gpu-a.
+2026-10-17 04:10:58,990	INFO event_logger.py:77 -- Adding 2 node(s) of type gpu-b.
+2026-10-17 04:10:58,991	INFO instance_manager.py:247 -- New instance QUEUED (id=23edb89d-e797-41be-b2a4-912ced53da7b, type=gpu-a, cloud_instance_id=, ray_id=): queuing new instance of gpu-a from scheduler
+2026-10-17 04:10:58,991	INFO instance_manager.py:247 -- New instance QUEUED (id=356b5292-eac4-484a-a1ca-30e175005f2b, type=gpu-a, cloud_instance_id=, ray_id=): queuing new instance of gpu-a from scheduler
+2026-10-17 04:10:58,991	INFO instance_manager.py:247 -- New instance QUEUED (id=7f5118e9-8304-4dd3-91cd-9e4435d77ff8, type=gpu-b, cloud_instance_id=, ray_id=): queuing new instance of gpu-b from scheduler
+2026-10-17 04:10:58,991	INFO instance_manager.py:247 -- New instance QUEUED (id=cefb0be9-e356-416b-b807-224791ac8ce3, type=gpu-b, cloud_instance_id=, ray_id=): queuing new instance of gpu-b from scheduler
+2026-10-17 04:10:58,991	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=23edb89d-e797-41be-b2a4-912ced53da7b, type=gpu-a, cloud_instance_id=, ray_id=): requested to launch gpu-a with request id 527bd52c-491a-4365-afbe-3750dfc7f233
+2026-10-17 04:10:58,991	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=7f5118e9-8304-4dd3-91cd-9e4435d77ff8, type=gpu-b, cloud_instance_id=, ray_id=): requested to launch gpu-b with request id 527bd52c-491a-4365-afbe-3750dfc7f233
+2026-10-17 04:10:58,992	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-a.
+2026-10-17 04:10:58,993	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-b.
+2026-10-17 04:10:59,405	INFO vast_api.py:128 -- rented offer 48743420 as instance 56385750
+2026-10-17 04:10:59,431	WARNING vast_api.py:90 -- PUT /asks/13273594/: HTTP 429, retry 1/4 in 1.5 s
+2026-10-17 04:10:59,531	INFO vast_api.py:128 -- rented offer 18811400 as instance 56385749
+2026-10-17 04:10:59,553	WARNING vast_api.py:90 -- PUT /asks/33877195/: HTTP 429, retry 1/4 in 1.6 s
+2026-10-17 04:11:00,997	WARNING vast_api.py:90 -- PUT /asks/13273594/: HTTP 429, retry 2/4 in 3.7 s
+2026-10-17 04:11:01,742	INFO vast_api.py:128 -- rented offer 33877195 as instance 56385753
+2026-10-17 04:11:01,742	INFO provider.py:241 -- create 1 x gpu-b: rented 2 candidates
+2026-10-17 04:11:01,742	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-b.
+2026-10-17 04:11:04,003	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:04,004	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:04,004	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:04,014	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=23edb89d-e797-41be-b2a4-912ced53da7b, type=gpu-a, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-5-d47bf6
+2026-10-17 04:11:04,014	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=7f5118e9-8304-4dd3-91cd-9e4435d77ff8, type=gpu-b, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-6-2edfc5
+2026-10-17 04:11:04,021	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=356b5292-eac4-484a-a1ca-30e175005f2b, type=gpu-a, cloud_instance_id=, ray_id=): requested to launch gpu-a with request id c50ada10-76e5-4c37-9123-b328e873d460
+2026-10-17 04:11:04,021	INFO instance_manager.py:263 -- Update instance QUEUED->REQUESTED (id=cefb0be9-e356-416b-b807-224791ac8ce3, type=gpu-b, cloud_instance_id=, ray_id=): requested to launch gpu-b with request id c50ada10-76e5-4c37-9123-b328e873d460
+2026-10-17 04:11:04,022	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-a.
+2026-10-17 04:11:04,122	WARNING provider.py:218 -- renting offer 48743420 failed: PUT /asks/48743420/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 48743420 is not available.","ask_id":48743420}
+2026-10-17 04:11:04,363	INFO vast_api.py:128 -- rented offer 13273594 as instance 56385758
+2026-10-17 04:11:04,673	INFO vast_api.py:128 -- rented offer 13273575 as instance 56385759
+2026-10-17 04:11:04,674	INFO provider.py:241 -- create 1 x gpu-a: rented 2 candidates
+2026-10-17 04:11:04,674	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-a.
+2026-10-17 04:11:04,674	INFO node_provider.py:485 -- Launching 1 nodes of type gpu-b.
+2026-10-17 04:11:04,766	WARNING provider.py:218 -- renting offer 18811400 failed: PUT /asks/18811400/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 18811400 is not available.","ask_id":18811400}
+2026-10-17 04:11:04,768	WARNING vast_api.py:90 -- PUT /asks/13273594/: HTTP 429, retry 3/4 in 4.2 s
+2026-10-17 04:11:04,789	WARNING vast_api.py:90 -- PUT /asks/33877195/: HTTP 429, retry 1/4 in 1.4 s
+2026-10-17 04:11:06,254	WARNING vast_api.py:90 -- PUT /asks/33877195/: HTTP 429, retry 2/4 in 2.3 s
+2026-10-17 04:11:08,589	WARNING vast_api.py:90 -- PUT /asks/33877195/: HTTP 429, retry 3/4 in 5.7 s
+2026-10-17 04:11:09,030	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:09,030	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:09,030	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:09,037	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=356b5292-eac4-484a-a1ca-30e175005f2b, type=gpu-a, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-7-75a7a6
+2026-10-17 04:11:09,037	INFO instance_manager.py:263 -- Update instance REQUESTED->ALLOCATED (id=cefb0be9-e356-416b-b807-224791ac8ce3, type=gpu-b, cloud_instance_id=, ray_id=): allocated unassigned cloud instance slot-8-02a36c
+2026-10-17 04:11:09,051	WARNING provider.py:218 -- renting offer 13273594 failed: PUT /asks/13273594/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 13273594 is not available.","ask_id":13273594}
+2026-10-17 04:11:09,073	WARNING vast_api.py:90 -- PUT /asks/13273575/: HTTP 429, retry 1/4 in 1.8 s
+2026-10-17 04:11:10,944	WARNING provider.py:218 -- renting offer 13273575 failed: PUT /asks/13273575/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 13273575 is not available.","ask_id":13273575}
+2026-10-17 04:11:11,242	INFO vast_api.py:128 -- rented offer 52710386 as instance 56385776
+2026-10-17 04:11:11,242	INFO provider.py:241 -- create 1 x gpu-a: rented 2 candidates
+2026-10-17 04:11:11,243	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-a.
+2026-10-17 04:11:14,053	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:14,053	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:14,053	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:14,283	WARNING provider.py:218 -- renting offer 33877195 failed: PUT /asks/33877195/: HTTP 400: {"success":false,"error":"invalid_args","msg":"error 404/3603: no_such_ask  Instance type by id 33877195 is not available.","ask_id":33877195}
+2026-10-17 04:11:14,595	INFO vast_api.py:128 -- rented offer 31013680 as instance 56385779
+2026-10-17 04:11:14,618	WARNING vast_api.py:90 -- PUT /asks/55819898/: HTTP 429, retry 1/4 in 1.1 s
+2026-10-17 04:11:16,207	INFO vast_api.py:128 -- rented offer 55819898 as instance 56385784
+2026-10-17 04:11:16,207	INFO provider.py:241 -- create 1 x gpu-b: rented 2 candidates
+2026-10-17 04:11:16,207	INFO node_provider.py:489 -- Launched 1 nodes of type gpu-b.
+2026-10-17 04:11:19,085	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:19,085	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:19,085	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:24,106	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:24,106	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:24,106	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:26,573	INFO head_server.py:188 -- enroll request: instance 56385753, machine 42715, ip 185.62.108.226
+2026-10-17 04:11:26,840	INFO head_server.py:243 -- enrolled instance 56385753 (machine 42715, ip 185.62.108.226) into slot-6-2edfc5
+2026-10-17 04:11:27,811	WARNING provider.py:278 -- ending instance 56385749 (machine 8966, ip None): 'its request has no free slot left'
+2026-10-17 04:11:29,126	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:29,126	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:29,126	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:34,146	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:34,146	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:34,146	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:34,153	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=7f5118e9-8304-4dd3-91cd-9e4435d77ff8, type=gpu-b, cloud_instance_id=slot-6-2edfc5, ray_id=): ray node 3c971899c93c3cd7e16b385acf3653889cdee440540b3a4ea77819ec is IDLE
+2026-10-17 04:11:35,727	WARNING head_server.py:186 -- enroll refused for instance 56385749 from 185.62.108.226: not a candidate
+2026-10-17 04:11:36,069	WARNING head_server.py:259 -- unverified report from 185.62.108.226: instance '56385749' kind 'destroy' reason 'head refused enrollment: not a candidate'
+2026-10-17 04:11:37,604	INFO head_server.py:188 -- enroll request: instance 56385759, machine 29217, ip 5.2.174.20
+2026-10-17 04:11:37,857	INFO head_server.py:243 -- enrolled instance 56385759 (machine 29217, ip 5.2.174.20) into slot-7-75a7a6
+2026-10-17 04:11:38,991	WARNING provider.py:278 -- ending instance 56385758 (machine 29278, ip None): 'its request has no free slot left'
+2026-10-17 04:11:39,167	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:39,168	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:39,168	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:43,603	INFO head_server.py:188 -- enroll request: instance 56385784, machine 55704, ip 81.183.231.113
+2026-10-17 04:11:43,889	INFO head_server.py:243 -- enrolled instance 56385784 (machine 55704, ip 81.183.231.113) into slot-8-02a36c
+2026-10-17 04:11:44,187	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:44,187	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:44,187	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:47,267	INFO head_server.py:188 -- enroll request: instance 56385750, machine 3969, ip 143.55.45.86
+2026-10-17 04:11:47,403	INFO head_server.py:243 -- enrolled instance 56385750 (machine 3969, ip 143.55.45.86) into slot-5-d47bf6
+2026-10-17 04:11:49,207	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:49,207	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:49,207	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:49,214	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=356b5292-eac4-484a-a1ca-30e175005f2b, type=gpu-a, cloud_instance_id=slot-7-75a7a6, ray_id=): ray node 613e917a1845c6f4cd2e4dae41558e9d78cc672d308f210014852e13 is IDLE
+2026-10-17 04:11:49,778	WARNING provider.py:278 -- ending instance 56385776 (machine 13544, ip None): 'its request has no free slot left'
+2026-10-17 04:11:50,071	WARNING provider.py:278 -- ending instance 56385779 (machine 37217, ip 194.228.55.129): 'its request has no free slot left'
+2026-10-17 04:11:54,228	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:54,228	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:54,228	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:11:54,235	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=23edb89d-e797-41be-b2a4-912ced53da7b, type=gpu-a, cloud_instance_id=slot-5-d47bf6, ray_id=): ray node 3665c991275d1867ba644dc6e2a163307980dd69ae0122a79c2e3442 is RUNNING
+2026-10-17 04:11:54,235	INFO instance_manager.py:263 -- Update instance ALLOCATED->RAY_RUNNING (id=cefb0be9-e356-416b-b807-224791ac8ce3, type=gpu-b, cloud_instance_id=slot-8-02a36c, ray_id=): ray node 62520ac5611aa310e6f3b07a16d5733ac12d5105cbc055bb65a62932 is IDLE
+2026-10-17 04:11:59,249	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:11:59,250	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:11:59,250	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:04,299	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:04,299	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:04,299	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:09,325	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:09,325	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:09,325	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:14,345	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:14,345	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:14,345	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:19,366	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:19,367	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:19,367	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:24,386	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:24,386	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:24,388	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:29,406	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:29,406	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:29,407	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:34,424	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:34,424	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:34,424	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:39,442	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:39,442	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:39,442	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:44,476	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:44,477	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:44,477	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:49,499	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:49,499	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:49,499	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:54,523	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:54,523	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:54,526	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:12:59,544	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:12:59,545	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:12:59,545	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:04,562	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:04,562	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:04,563	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:09,580	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:09,580	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:09,580	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:14,597	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:14,597	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:14,597	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:19,614	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:19,615	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:19,615	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:24,633	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:24,633	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:24,635	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:29,654	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:29,654	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:29,654	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:34,673	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:34,673	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:34,673	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:39,692	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:39,692	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:39,692	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:44,711	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:44,711	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:44,711	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:49,728	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:49,729	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:49,729	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:54,746	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:54,746	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:54,748	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:13:59,772	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:13:59,772	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:13:59,772	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:04,804	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:04,804	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:04,804	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:09,854	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:09,854	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:09,854	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:14,880	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:14,880	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:14,880	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:19,907	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:19,907	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:19,907	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:24,929	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:24,929	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:24,929	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 04:14:29,947	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 04:14:29,947	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 04:14:29,947	INFO util.py:402 -- setting max workers for head node type to 0

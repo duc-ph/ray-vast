@@ -5,12 +5,12 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792236812.8339682,
+ "started": 1792265338.5545847,
  "checks": [
   {
    "name": "the serve.md snippet: 20 replicas, at most B = 10 on each worker",
    "ok": true,
-   "detail": "('SUCCEEDED', {'b77ede5e': 10, 'c714ed11': 10})"
+   "detail": "('SUCCEEDED', {'45aa8bd6': 10, '51335dc2': 10})"
   },
   {
    "name": "100 HTTP calls through the serve.md tunnel after the job ended: all 200",
@@ -30,7 +30,7 @@
   {
    "name": "GPU replicas: 1 GPU id each, on both workers",
    "ok": true,
-   "detail": "{'answers': 40, 'devices': ['cuda'], 'elapsed_s': 34.1, 'gpu_ids': ['0'], 'per_node': {'b77ede5e': 34, 'c714ed11': 6}, 'replica_nodes': ['b77ede5e', 'c714ed11']}"
+   "detail": "{'answers': 40, 'devices': ['cuda'], 'elapsed_s': 35.1, 'gpu_ids': ['0'], 'per_node': {'45aa8bd6': 35, '51335dc2': 5}, 'replica_nodes': ['45aa8bd6', '51335dc2']}"
   },
   {
    "name": "autoscaling: scales out, up to max_replicas 20, at most B on each worker",
@@ -39,20 +39,20 @@
   }
  ],
  "data": {
-  "shape_wait_s": 2.8,
+  "shape_wait_s": 3.5,
   "H3": {
    "B": 10,
    "CPUS": 4.0,
    "hosts": [
     {
-     "container_id": "56385063",
+     "container_id": "56436329",
      "machine_id": 3969,
      "ports": 14,
      "ray_cpus": 4.0,
      "pids.max": "1280"
     },
     {
-     "container_id": "56385075",
+     "container_id": "56436344",
      "machine_id": 32816,
      "ports": 14,
      "ray_cpus": 4.0,
@@ -73,19 +73,19 @@
    }
   ],
   "serve_snippet": {
-   "elapsed_s": 30.5,
+   "elapsed_s": 31.4,
    "replica_nodes": {
-    "b77ede5e": 10,
-    "c714ed11": 10
+    "45aa8bd6": 10,
+    "51335dc2": 10
    }
   },
   "worker_threads_with_replicas": {
-   "56385063": [
+   "56436329": [
     18,
-    24,
+    25,
     26,
     31,
-    34,
+    33,
     41,
     48,
     48,
@@ -98,12 +98,12 @@
     48,
     48
    ],
-   "56385075": [
+   "56436344": [
     18,
     24,
     26,
     31,
-    32,
+    34,
     42,
     48,
     48,
@@ -117,7 +117,7 @@
     48
    ]
   },
-  "tunnel_command": "ssh -i /tmp/pytest-of-ubuntu/pytest-2037/popen-gw2/home-libraries-h30/.ray-vast/rvtest-lib-h3-6b38/ssh_key.pem -o UserKnownHostsFile=/tmp/pytest-of-ubuntu/pytest-2037/popen-gw2/home-libraries-h30/.ray-vast/rvtest-lib-h3-6b38.known_hosts -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>",
+  "tunnel_command": "ssh -i /tmp/pytest-of-ubuntu/pytest-2185/popen-gw12/home-libraries-h30/.ray-vast/rvtest-lib-h3-4fad/ssh_key.pem -o UserKnownHostsFile=/tmp/pytest-of-ubuntu/pytest-2185/popen-gw12/home-libraries-h30/.ray-vast/rvtest-lib-h3-4fad.known_hosts -N -L 18000:127.0.0.1:8000 ubuntu@<head ip>",
   "http_codes": {
    "200": 100
   },
@@ -126,17 +126,17 @@
    "devices": [
     "cuda"
    ],
-   "elapsed_s": 34.1,
+   "elapsed_s": 35.1,
    "gpu_ids": [
     "0"
    ],
    "per_node": {
-    "b77ede5e": 34,
-    "c714ed11": 6
+    "45aa8bd6": 35,
+    "51335dc2": 5
    },
    "replica_nodes": [
-    "b77ede5e",
-    "c714ed11"
+    "45aa8bd6",
+    "51335dc2"
    ]
   },
   "serve_autoscale": {
@@ -145,69 +145,69 @@
    "workers": 2,
    "max_replicas": 20,
    "num_cpus": 0.4,
-   "calls": 640,
-   "answered": 640,
+   "calls": 720,
+   "answered": 720,
    "peak_replicas": 20,
    "per_node_max": 10,
    "samples": [
     {
-     "t": 28.1,
+     "t": 19.5,
      "per_node": {
-      "c714ed11": 1
+      "45aa8bd6": 1
      }
     },
     {
-     "t": 43.3,
+     "t": 34.8,
      "per_node": {
-      "c714ed11": 1
+      "45aa8bd6": 1
      }
     },
     {
-     "t": 58.3,
+     "t": 49.9,
      "per_node": {
-      "c714ed11": 1
+      "45aa8bd6": 1
      }
     },
     {
-     "t": 73.4,
+     "t": 65.0,
      "per_node": {
-      "c714ed11": 9,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 8
      }
     },
     {
-     "t": 88.4,
+     "t": 80.1,
      "per_node": {
-      "c714ed11": 10,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 10
      }
     },
     {
-     "t": 103.5,
+     "t": 95.2,
      "per_node": {
-      "c714ed11": 10,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 10
      }
     },
     {
-     "t": 118.6,
+     "t": 110.2,
      "per_node": {
-      "c714ed11": 10,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 10
      }
     },
     {
-     "t": 133.6,
+     "t": 125.3,
      "per_node": {
-      "c714ed11": 10,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 10
      }
     },
     {
-     "t": 148.7,
+     "t": 140.4,
      "per_node": {
-      "c714ed11": 10,
-      "b77ede5e": 10
+      "45aa8bd6": 10,
+      "51335dc2": 10
      }
     }
    ]
@@ -215,6 +215,6 @@
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792237165.5824752,
- "wall_s": 352.7
+ "ended": 1792265693.5192926,
+ "wall_s": 355.0
 }

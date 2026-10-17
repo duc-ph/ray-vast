@@ -1,0 +1,109 @@
+{
+ "id": "LB01",
+ "markers": [
+  "libraries"
+ ],
+ "fixture": "libraries",
+ "started": 1792235185.384456,
+ "checks": [
+  {
+   "name": "--working-dir: data/hello.txt read by tasks on both workers",
+   "ok": true,
+   "detail": "{'cwd_example': '/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896', 'elapsed_s': 8.5, 'file_ok': True, 'ips': ['143.55.45.86', '185.62.108.226'], 'tasks_per_node': {'b77ede5e': 4, 'c714ed11': 4}}"
+  },
+  {
+   "name": "runtime_env pip torch==2.7.1: CUDA on both GPU workers",
+   "ok": true,
+   "detail": "{'elapsed_s': 119.7, 'nodes': [{'available': True, 'count': 1, 'gpu_ids': [0], 'ip': '185.62.108.226', 'matmul_s': 0.439, 'name': 'NVIDIA GeForce RTX 3060', 'torch': '2.7.1+cu126', 'torch_cuda': '12.6'}, {'available': True, 'count': 1, 'gpu_ids': [0], 'ip': '143.55.45.86', 'matmul_s': 0.312, 'name': 'Tesla P100-SXM2-16GB', 'torch': '2.7.1+cu126', 'torch_cuda': '12.6'}]}"
+  },
+  {
+   "name": "the sleeper job is RUNNING (within 300 s)",
+   "ok": true,
+   "detail": "RUNNING"
+  },
+  {
+   "name": "ray job list shows the job",
+   "ok": true,
+   "detail": "0"
+  },
+  {
+   "name": "ray job logs --follow streams (>= 3 ticks in 30 s)",
+   "ok": true,
+   "detail": "18"
+  },
+  {
+   "name": "ray job stop: exit 0, then STOPPED",
+   "ok": true,
+   "detail": "(0, 'STOPPED')"
+  }
+ ],
+ "data": {
+  "shape_wait_s": 2.8,
+  "H3": {
+   "B": 10,
+   "CPUS": 4.0,
+   "hosts": [
+    {
+     "container_id": "56385063",
+     "machine_id": 3969,
+     "ports": 14,
+     "ray_cpus": 4.0,
+     "pids.max": "1280"
+    },
+    {
+     "container_id": "56385075",
+     "machine_id": 32816,
+     "ports": 14,
+     "ray_cpus": 4.0,
+     "pids.max": "1280"
+    }
+   ]
+  },
+  "hello": {
+   "cwd_example": "/tmp/ray/session_2026-10-17_04-03-59_911064_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896",
+   "elapsed_s": 8.5,
+   "file_ok": true,
+   "ips": [
+    "143.55.45.86",
+    "185.62.108.226"
+   ],
+   "tasks_per_node": {
+    "b77ede5e": 4,
+    "c714ed11": 4
+   }
+  },
+  "torch_cuda": {
+   "elapsed_s": 119.7,
+   "nodes": [
+    {
+     "available": true,
+     "count": 1,
+     "gpu_ids": [
+      0
+     ],
+     "ip": "185.62.108.226",
+     "matmul_s": 0.439,
+     "name": "NVIDIA GeForce RTX 3060",
+     "torch": "2.7.1+cu126",
+     "torch_cuda": "12.6"
+    },
+    {
+     "available": true,
+     "count": 1,
+     "gpu_ids": [
+      0
+     ],
+     "ip": "143.55.45.86",
+     "matmul_s": 0.312,
+     "name": "Tesla P100-SXM2-16GB",
+     "torch": "2.7.1+cu126",
+     "torch_cuda": "12.6"
+    }
+   ]
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792235499.6264865,
+ "wall_s": 314.2
+}

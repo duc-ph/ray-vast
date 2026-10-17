@@ -1,15 +1,15 @@
-2026-10-17 11:12:37,982	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36269[22m
-2026-10-17 11:12:38,001	INFO cli.py:569 -- 2026-10-17 04:09:05,852	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job rllib_learners-600927: python lb_snippet.py rllib_learners
-2026-10-17 04:10:59,926	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 52.37.75.64:6379...
-2026-10-17 04:10:59,969	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-LB_START rllib_learners 1792235459.9
+2026-10-17 18:58:58,950	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:33551[22m
+2026-10-17 18:58:58,968	INFO cli.py:569 -- 2026-10-17 11:54:22,716	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job rllib_learners-c17b5e: python lb_snippet.py rllib_learners
+2026-10-17 11:56:15,954	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.213.233.172:6379...
+2026-10-17 11:56:15,987	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START rllib_learners 1792263375.9
 --- snippet.py ---
 from ray import tune
 
 config = (PPOConfig().environment("CartPole-v1")
           .env_runners(num_env_runners=0)
-          .learners(num_learners=2, num_gpus_per_learner=1, num_cpus_per_learner=0.074)   # CPUS / B
+          .learners(num_learners=2, num_gpus_per_learner=1, num_cpus_per_learner=0.211)   # CPUS / B
           .resources(placement_strategy="STRICT_PACK"))   # all learners on one worker
 grid = tune.Tuner(config.algo_class, param_space=config,
            run_config=tune.RunConfig(
@@ -17,50 +17,67 @@ grid = tune.Tuner(config.algo_class, param_space=config,
                checkpoint_config=tune.CheckpointConfig(checkpoint_at_end=False))).fit()
 --- end ---
 ╭────────────────────────────────────────────────────────────╮
-│ Configuration for experiment     PPO_2026-10-17_04-11-08   │
+│ Configuration for experiment     PPO_2026-10-17_11-56-22   │
 ├────────────────────────────────────────────────────────────┤
 │ Search algorithm                 BasicVariantGenerator     │
 │ Scheduler                        FIFOScheduler             │
 │ Number of trials                 1                         │
 ╰────────────────────────────────────────────────────────────╯
 
-View detailed results here: /home/ray/ray_results/PPO_2026-10-17_04-11-08
-To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_04-05-44_634617_8/artifacts/2026-10-17_04-11-08/PPO_2026-10-17_04-11-08/driver_artifacts`
-2026-10-17 04:11:08,444	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+View detailed results here: /home/ray/ray_results/PPO_2026-10-17_11-56-22
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_11-52-17_688359_7/artifacts/2026-10-17_11-56-22/PPO_2026-10-17_11-56-22/driver_artifacts`
+2026-10-17 11:56:22,630	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
 
 Trial status: 1 PENDING
-Current time: 2026-10-17 04:11:08. Total running time: 0s
-Logical resource usage: 1.1480000000000001/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-4060-Ti)
+Current time: 2026-10-17 11:56:22. Total running time: 0s
+Logical resource usage: 0/4 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
 ╭────────────────────────────────────────╮
 │ Trial name                    status   │
 ├────────────────────────────────────────┤
-│ PPO_CartPole-v1_73f95_00000   PENDING  │
+│ PPO_CartPole-v1_72205_00000   PENDING  │
 ╰────────────────────────────────────────╯
 Trial status: 1 PENDING
-Current time: 2026-10-17 04:11:38. Total running time: 30s
-Logical resource usage: 1.1480000000000001/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-4060-Ti)
+Current time: 2026-10-17 11:56:52. Total running time: 30s
+Logical resource usage: 1.4220000000000002/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
 ╭────────────────────────────────────────╮
 │ Trial name                    status   │
 ├────────────────────────────────────────┤
-│ PPO_CartPole-v1_73f95_00000   PENDING  │
+│ PPO_CartPole-v1_72205_00000   PENDING  │
 ╰────────────────────────────────────────╯
 Trial status: 1 PENDING
-Current time: 2026-10-17 04:12:08. Total running time: 1min 0s
-Logical resource usage: 1.1480000000000001/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-4060-Ti)
+Current time: 2026-10-17 11:57:22. Total running time: 1min 0s
+Logical resource usage: 1.4220000000000002/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
 ╭────────────────────────────────────────╮
 │ Trial name                    status   │
 ├────────────────────────────────────────┤
-│ PPO_CartPole-v1_73f95_00000   PENDING  │
+│ PPO_CartPole-v1_72205_00000   PENDING  │
 ╰────────────────────────────────────────╯
-[36m(PPO pid=3031, ip=38.247.78.6)[0m 2026-10-17 04:12:09,822	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
-[36m(PPO pid=3031, ip=38.247.78.6)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
-[36m(_WrappedExecutable pid=3154, ip=38.247.78.6)[0m Setting up process group for: env:// [rank=0, world_size=2]
-[36m(_WrappedExecutable pid=3153, ip=38.247.78.6)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
-[36m(PPO pid=3031, ip=38.247.78.6)[0m Install gputil for GPU system monitoring.
+Trial status: 1 PENDING
+Current time: 2026-10-17 11:57:52. Total running time: 1min 30s
+Logical resource usage: 1.4220000000000002/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_72205_00000   PENDING  │
+╰────────────────────────────────────────╯
+[36m(PPO pid=3871, ip=194.228.55.129)[0m 2026-10-17 11:58:17,933	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+[36m(PPO pid=3871, ip=194.228.55.129)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+Trial status: 1 PENDING
+Current time: 2026-10-17 11:58:22. Total running time: 2min 0s
+Logical resource usage: 1.4220000000000002/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_72205_00000   PENDING  │
+╰────────────────────────────────────────╯
+[36m(_WrappedExecutable pid=4059, ip=194.228.55.129)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[36m(_WrappedExecutable pid=4059, ip=194.228.55.129)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+[36m(PPO pid=3871, ip=194.228.55.129)[0m Trainable.setup took 14.925 seconds. If your trainable is slow to initialize, consider setting reuse_actors=True to reduce actor creation overheads.
+[36m(PPO pid=3871, ip=194.228.55.129)[0m Install gputil for GPU system monitoring.
 
-Trial PPO_CartPole-v1_73f95_00000 started with configuration:
+Trial PPO_CartPole-v1_72205_00000 started with configuration:
 ╭───────────────────────────────────────────────────────────────────────────╮
-│ Trial PPO_CartPole-v1_73f95_00000 config                                  │
+│ Trial PPO_CartPole-v1_72205_00000 config                                  │
 ├───────────────────────────────────────────────────────────────────────────┤
 │ _disable_action_flattening                                          False │
 │ _disable_execution_plan_api                                            -1 │
@@ -265,7 +282,7 @@ Trial PPO_CartPole-v1_73f95_00000 started with configuration:
 │ num_consecutive_env_runner_failures_tolerance                         100 │
 │ num_cpus_for_main_process                                               1 │
 │ num_cpus_per_env_runner                                                 1 │
-│ num_cpus_per_learner                                                0.074 │
+│ num_cpus_per_learner                                                0.211 │
 │ num_cpus_per_offline_eval_runner                                        1 │
 │ num_env_runners                                                         0 │
 │ num_envs_per_env_runner                                                 1 │
@@ -306,7 +323,7 @@ Trial PPO_CartPole-v1_73f95_00000 started with configuration:
 │ policies_to_train                                                         │
 │ policy_map_cache                                                       -1 │
 │ policy_map_capacity                                                   100 │
-│ policy_mapping_fn                                    ...t 0x713c0d484a40> │
+│ policy_mapping_fn                                    ...t 0x7d60ab7c8a40> │
 │ policy_states_are_swappable                                         False │
 │ postprocess_inputs                                                  False │
 │ prelearner_buffer_class                                                   │
@@ -370,23 +387,23 @@ Trial PPO_CartPole-v1_73f95_00000 started with configuration:
 │ worker_cls                                                             -1 │
 ╰───────────────────────────────────────────────────────────────────────────╯
 
-Trial PPO_CartPole-v1_73f95_00000 completed after 2 iterations at 2026-10-17 04:12:34. Total running time: 1min 26s
-╭──────────────────────────────────────────────────────╮
-│ Trial PPO_CartPole-v1_73f95_00000 result             │
-├──────────────────────────────────────────────────────┤
-│ env_runners/episode_len_mean                 40.5354 │
-│ env_runners/episode_return_mean              40.5354 │
-│ num_env_steps_sampled_lifetime                  8000 │
-╰──────────────────────────────────────────────────────╯
-2026-10-17 04:12:34,503	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/PPO_2026-10-17_04-11-08' in 0.0215s.
+Trial PPO_CartPole-v1_72205_00000 completed after 2 iterations at 2026-10-17 11:58:52. Total running time: 2min 29s
+╭────────────────────────────────────────────────────╮
+│ Trial PPO_CartPole-v1_72205_00000 result           │
+├────────────────────────────────────────────────────┤
+│ env_runners/episode_len_mean                 34.07 │
+│ env_runners/episode_return_mean              34.07 │
+│ num_env_steps_sampled_lifetime                8000 │
+╰────────────────────────────────────────────────────╯
+2026-10-17 11:58:52,299	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/PPO_2026-10-17_11-56-22' in 0.0201s.
 
 Trial status: 1 TERMINATED
-Current time: 2026-10-17 04:12:34. Total running time: 1min 26s
-Logical resource usage: 1.1480000000000001/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-4060-Ti)
+Current time: 2026-10-17 11:58:52. Total running time: 2min 29s
+Logical resource usage: 1.4220000000000002/4 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3090)
 ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Trial name                    status         iter     total time (s)     ...lls_per_iteration     ..._sampled_lifetime │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ PPO_CartPole-v1_73f95_00000   TERMINATED        2            14.4398                        1                     8000 │
+│ PPO_CartPole-v1_72205_00000   TERMINATED        2            17.6867                        1                     8000 │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-LB_RESULT rllib_learners PASS {"elapsed_s": 95.2, "errors": 0, "iterations": 2}
+LB_RESULT rllib_learners PASS {"elapsed_s": 157.5, "errors": 0, "iterations": 2}

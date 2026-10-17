@@ -1,0 +1,104 @@
+{
+ "id": "LB03[H1]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792235148.5548708,
+ "checks": [
+  {
+   "name": "the LB03 input is written (lb_make_parquet.py)",
+   "ok": true,
+   "detail": "('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 24.4})"
+  },
+  {
+   "name": "the data.md snippet at B 54 on H1: SUCCEEDED, all rows counted from the S3 output",
+   "ok": true,
+   "detail": "('SUCCEEDED', {'elapsed_s': 84.1, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 3000000})"
+  },
+  {
+   "name": "output in S3",
+   "ok": true,
+   "detail": "s3://ray-vast-rvtest-20261017-12b2/lb03/out-H1"
+  },
+  {
+   "name": "no refused fork in a WARNING",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "no node crash: the same Ray nodes are alive",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no out-of-memory error",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "data": {
+  "input": {
+   "path": "s3://ray-vast-rvtest-20261017-12b2/lb03/in",
+   "rows": 3000000,
+   "bytes": 3016796697,
+   "status": "SUCCEEDED",
+   "result": [
+    "PASS",
+    {
+     "rows": 3000000,
+     "blocks": 60,
+     "seconds": 24.4
+    }
+   ]
+  },
+  "data_substitutions": [
+   {
+    "doc": "libraries/data.md",
+    "old": "max_hash_shuffle_aggregators = 2",
+    "new": "max_hash_shuffle_aggregators = 13"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "ExecutionResources(cpu=2)",
+    "new": "ExecutionResources(cpu=13)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "\"s3://my-bucket/in\"",
+    "new": "\"s3://ray-vast-rvtest-20261017-12b2/lb03/in\""
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "concurrency=2,",
+    "new": "concurrency=13,"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "override_num_blocks=5)",
+    "new": "override_num_blocks=27)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "TaskPoolStrategy(size=2)",
+    "new": "TaskPoolStrategy(size=13)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "\"s3://my-bucket/out\"",
+    "new": "\"s3://ray-vast-rvtest-20261017-12b2/lb03/out-H1\""
+   }
+  ],
+  "data_snippet": {
+   "elapsed_s": 84.1,
+   "groups": 1000,
+   "rows_counted": 3000000,
+   "rows_expected": 3000000
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792235354.2749782,
+ "wall_s": 205.7
+}

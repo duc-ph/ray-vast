@@ -1,0 +1,85 @@
+bringing up nodes...
+bringing up nodes...
+
+FFF...
+=================================== FAILURES ===================================
+________________________ test_default[c10_data.py-300] _________________________
+[gw1] linux -- Python 3.12.3 /home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/bin/python3.12
+
+make_cluster = <function make_cluster.<locals>.make at 0x7f88d892a5c0>
+script = 'c10_data.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs <= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+>       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (None)'], {'seconds': 19.3, 'job': None, 'params': "{'blocks': 40, 'rows': 40000, 'map_num_cpus': 1}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     werkzeug:_internal.py:97 172.31.17.228 - - [17/Oct/2026 16:22:05] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.13 - - [17/Oct/2026 16:22:09] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.13 - - [17/Oct/2026 16:22:20] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.13 - - [17/Oct/2026 16:22:20] "POST / HTTP/1.1" 200 -
+________________________ test_default[c10_serve.py-300] ________________________
+[gw3] linux -- Python 3.12.3 /home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/bin/python3.12
+
+make_cluster = <function make_cluster.<locals>.make at 0x7bf34ab5e5c0>
+script = 'c10_serve.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs <= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+>       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (None)'], {'seconds': 20.4, 'job': None, 'params': "{'num_replicas': 6, 'replica_cpu': 'default 1'}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     werkzeug:_internal.py:97 172.31.17.228 - - [17/Oct/2026 16:22:05] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.16 - - [17/Oct/2026 16:22:09] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.16 - - [17/Oct/2026 16:22:19] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.16 - - [17/Oct/2026 16:22:19] "POST / HTTP/1.1" 200 -
+________________________ test_default[c10_core.py-300] _________________________
+[gw0] linux -- Python 3.12.3 /home/ubuntu/ray-vast/.claude/worktrees/agent-a7570c614d5241d72/ray-vast-pypi/.venv/bin/python3.12
+
+make_cluster = <function make_cluster.<locals>.make at 0x70148fb8a5c0>
+script = 'c10_core.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs <= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+>       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (ERROR)'], {'seconds': 17.0, 'job': 'ERROR', 'params': "{'actors': 6, 'actor_cpus': 'default', 'child_cpus': 1}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     werkzeug:_internal.py:97 172.31.17.228 - - [17/Oct/2026 16:22:05] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.12 - - [17/Oct/2026 16:22:09] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.12 - - [17/Oct/2026 16:22:29] "POST / HTTP/1.1" 200 -
+INFO     werkzeug:_internal.py:97 172.17.0.12 - - [17/Oct/2026 16:22:29] "POST / HTTP/1.1" 200 -
+=========================== short test summary info ============================
+FAILED ../tests/manual/c10/test_c10_local_e2e.py::test_default[c10_data.py-300]
+FAILED ../tests/manual/c10/test_c10_local_e2e.py::test_default[c10_serve.py-300]
+FAILED ../tests/manual/c10/test_c10_local_e2e.py::test_default[c10_core.py-300]
+3 failed, 3 passed in 121.91s (0:02:01)

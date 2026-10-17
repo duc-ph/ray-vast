@@ -1,0 +1,217 @@
+{
+ "id": "LB11[H2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792254686.6279216,
+ "checks": [
+  {
+   "name": "H2 has a pids limit",
+   "ok": true,
+   "detail": "15616"
+  },
+  {
+   "name": "core.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "core.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  }
+ ],
+ "data": {
+  "H2_rentals": [
+   {
+    "machine_id": 154116,
+    "pids_max": 15616,
+    "cgroup": "v2",
+    "cores": 61.2,
+    "match": true,
+    "query": {
+     "machine_id": {
+      "in": [
+       149678,
+       153955,
+       154115,
+       154116
+      ]
+     }
+    }
+   }
+  ],
+  "host": {
+   "machine_id": 154116,
+   "container_id": "56419350",
+   "pids.max": "15616",
+   "cgroup": "v2",
+   "ray_cpus": 64.0,
+   "ports": 58
+  },
+  "core.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "actor_cpus": 1.185,
+    "actors": 27,
+    "alive_nodes": [
+     "3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"
+    ],
+    "child_cpus": 1.185,
+    "done": 200,
+    "elapsed_s": 26.6,
+    "items": 200,
+    "mode": "tuned",
+    "seconds": 26.2
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'actors': 27, 'actor_cpus': 1.185, 'child_cpus': 1.185}"
+  },
+  "core.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 70"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"
+    ],
+    "elapsed_s": 600.0,
+    "guard_s": 600.0,
+    "mode": "many",
+    "progress": {
+     "actor_cpus": 0.1,
+     "actors": 200,
+     "child_cpus": 0.1,
+     "done": 56,
+     "items": 200
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 09:37:42,712\tWARNING head_server.py:302 -- worker slot-1-e6a801 (instance 56419350, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1693 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 09:42:47,906\tWARNING head_server.py:302 -- worker slot-1-e6a801 (instance 56419350, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1693 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'actors': 200, 'actor_cpus': 0.1, 'child_cpus': 0.1}"
+  },
+  "data.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"
+    ],
+    "blocks": 27,
+    "elapsed_s": 26.6,
+    "groups": 16,
+    "map_concurrency": 13,
+    "map_num_cpus": 0.05,
+    "max_hash_shuffle_aggregators": 13,
+    "mode": "tuned2",
+    "read_concurrency": 13,
+    "resource_limits_cpu": 13,
+    "rows": 400000,
+    "seconds": 26.2,
+    "total": 400000
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'blocks': 27, 'rows': 400000, 'map_num_cpus': 0.05, 'max_hash_shuffle_aggregators': 13, 'resource_limits_cpu': 13, 'read_concurrency': 13, 'map_concurrency': 13}"
+  },
+  "data.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 4"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"
+    ],
+    "elapsed_s": 900.0,
+    "guard_s": 900.0,
+    "mode": "many",
+    "progress": {
+     "blocks": 400,
+     "map_num_cpus": 0.05,
+     "rows": 400000,
+     "stage": "groupby"
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 09:52:28,156\tWARNING head_server.py:302 -- worker slot-1-e6a801 (instance 56419350, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 2004 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 09:57:33,411\tWARNING head_server.py:302 -- worker slot-1-e6a801 (instance 56419350, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1996 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 10:02:38,664\tWARNING head_server.py:302 -- worker slot-1-e6a801 (instance 56419350, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1996 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'blocks': 400, 'rows': 400000, 'map_num_cpus': 0.05}"
+  },
+  "tune.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"
+    ],
+    "bundles": [
+     1.1852,
+     1.1852
+    ],
+    "elapsed_s": 54.8,
+    "errors": 0,
+    "max_concurrent_trials": 27,
+    "mode": "tuned",
+    "results": 62,
+    "seconds": 54.7,
+    "task_cpu": 1.1852,
+    "trials": 62
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'trials': 62, 'bundles': [1.1852, 1.1852], 'task_cpu': 1.1852, 'max_concurrent_trials': 27}"
+  }
+ },
+ "outcome": "failed",
+ "message": "interrupted: the test did not end (no call report)",
+ "ended": 1792257337.9136062,
+ "wall_s": 2651.3
+}

@@ -1,0 +1,74 @@
+{
+ "id": "LB16",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792267079.7957883,
+ "checks": [
+  {
+   "name": "the offer has 10 to 63 direct ports",
+   "ok": true,
+   "detail": "24"
+  },
+  {
+   "name": "the port cap sets the count: mapped - 6 is below the pids formula alone",
+   "ok": true,
+   "detail": "(24, 58, 7680)"
+  },
+  {
+   "name": "the candidate rents min(64, direct_port_count) identity ports: vast maps that many into the container",
+   "ok": true,
+   "detail": "(24, 24, 0)"
+  },
+  {
+   "name": "the worker enrolled (the head checked each of its mapped ports)",
+   "ok": true,
+   "detail": "2026-10-17 13:08:28,872\tINFO head_server.py:243 -- enrolled instance 56444879 (machine 144644, ip 80.188.223.202) into slot-92-2d5825"
+  },
+  {
+   "name": "the start line: worker ports = min(mapped - 6, the pids formula) (worker_ports_and_soft_limit)",
+   "ok": true,
+   "detail": "('bootstrap: limits: pids.max 7680 (cgroup v2), cpus 4, worker ports 18, soft limit 4', 18, 18, 24)"
+  },
+  {
+   "name": "a small job runs (one task for each Ray CPU at the same time)",
+   "ok": true,
+   "detail": "('SUCCEEDED', 'PASS', {'tasks': 4, 'cpus': 4, 'nodes': ['0b188dfda0ca19738657deac158c5f4666faee439704136838a3fced']})"
+  }
+ ],
+ "data": {
+  "shape_wait_s": 636.8,
+  "host": {
+   "machine_id": 144644,
+   "pids_max": 7680,
+   "cgroup": "v2",
+   "cpus": 4,
+   "limited": true,
+   "quota": 30.72,
+   "visible_cpus": 128,
+   "visible_per_quota": 4.17,
+   "cores": 30.72,
+   "direct_port_count": 24,
+   "instance_direct_port_count": 25,
+   "identity_ports_mapped": 24,
+   "vast_identity_ports": 0,
+   "ports": 18,
+   "expected_ports": 18,
+   "soft_limit": 4
+  },
+  "port_check_endings": [],
+  "tasks": {
+   "tasks": 4,
+   "cpus": 4,
+   "nodes": [
+    "0b188dfda0ca19738657deac158c5f4666faee439704136838a3fced"
+   ]
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792267770.293086,
+ "wall_s": 690.5
+}

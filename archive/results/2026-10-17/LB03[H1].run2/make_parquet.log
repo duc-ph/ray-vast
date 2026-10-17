@@ -1,0 +1,33 @@
+2026-10-17 11:06:59,118	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:55517[22m
+2026-10-17 11:06:59,131	INFO cli.py:569 -- 2026-10-17 04:06:26,292	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job make_parquet-c8cafb: python lb_make_parquet.py s3://ray-vast-rvtest-20261017-12b2/lb03/in 3000000
+2026-10-17 04:06:28,484	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.221.178.85:6379...
+2026-10-17 04:06:28,527	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-17 04:06:30,619	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hRwFVY0s9bEKkiRIRVp_0. Full logs are in /tmp/ray/session_2026-10-17_04-04-22_199445_7/logs/ray-data
+2026-10-17 04:06:30,619	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hRwFVY0s9bEKkiRIRVp_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->MapBatches(make_rows)->Write]
+2026-10-17 04:06:30,840	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-17 04:06:31,013	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hRwFVY0s9bEKkiRIRVp_0 =======
+2026-10-17 04:06:31,017	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 04:06:31,018	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 04:06:31,018	INFO logging_progress.py:181 -- 
+2026-10-17 04:06:31,018	INFO logging_progress.py:231 -- ReadRange->MapBatches(make_rows)->Write: 0/1
+2026-10-17 04:06:31,018	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 59 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 04:06:31,018	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 04:06:41,030	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hRwFVY0s9bEKkiRIRVp_0 =======
+2026-10-17 04:06:41,032	INFO logging_progress.py:225 -- Total Progress: 2/60
+2026-10-17 04:06:41,032	INFO logging_progress.py:227 -- Active & requested resources: 58/64 CPU, 10.1KiB/59.4GiB object store
+2026-10-17 04:06:41,033	INFO logging_progress.py:181 -- 
+2026-10-17 04:06:41,033	INFO logging_progress.py:231 -- ReadRange->MapBatches(make_rows)->Write: 2/60
+2026-10-17 04:06:41,033	INFO logging_progress.py:233 --   Tasks: 58; Actors: 0; Queued blocks: 0 (0.0B); Resources: 58.0 CPU, 10.1KiB object store
+2026-10-17 04:06:41,033	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet)[0m WARNING: 32 PYTHON worker processes have been started on node: 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470 with address: 38.247.78.28, which is 4x the maximum expected startup concurrency (8). This could be a result of using a large number of actors, tasks blocked in ray.get() calls, or tasks with fractional CPU requests (e.g., num_cpus=0.1) allowing high concurrency. See https://github.com/ray-project/ray/issues/3644 for some discussion of workarounds.
+2026-10-17 04:06:51,042	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hRwFVY0s9bEKkiRIRVp_0 =======
+2026-10-17 04:06:51,046	INFO logging_progress.py:225 -- Total Progress: 55/60
+2026-10-17 04:06:51,046	INFO logging_progress.py:227 -- Active & requested resources: 5/64 CPU, 10.1KiB/59.4GiB object store
+2026-10-17 04:06:51,046	INFO logging_progress.py:181 -- 
+2026-10-17 04:06:51,046	INFO logging_progress.py:231 -- ReadRange->MapBatches(make_rows)->Write: 55/60
+2026-10-17 04:06:51,046	INFO logging_progress.py:233 --   Tasks: 5; Actors: 0; Queued blocks: 0 (0.0B); Resources: 5.0 CPU, 10.1KiB object store
+2026-10-17 04:06:51,046	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 04:06:52,317	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hRwFVY0s9bEKkiRIRVp_0 execution finished in 21.70 seconds
+2026-10-17 04:06:52,852	INFO dataset.py:6680 -- Data sink Parquet finished. 3000000 rows and 2.8GiB data written.
+LB_RESULT make_parquet PASS {"rows": 3000000, "blocks": 60, "seconds": 24.4}

@@ -1,56 +1,53 @@
-2026-10-17 11:24:37,480	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:42157[22m
-2026-10-17 11:24:37,494	INFO cli.py:569 -- 2026-10-17 04:24:04,655	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job c9_1_5_data_io-c969c3: python c9_1_5_data_io.py
-C9_START C9.1.5 1792236246.5 small=False min_nodes=2
-2026-10-17 04:24:06,497	INFO worker.py:1686 -- Using address 18.236.153.229:6379 set in the environment variable RAY_ADDRESS
-2026-10-17 04:24:06,502	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.236.153.229:6379...
-2026-10-17 04:24:06,535	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-2026-10-17 04:24:07,666	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hSN3hIvMwNwosuWZmQ8_0. Full logs are in /tmp/ray/session_2026-10-17_04-03-59_911064_7/logs/ray-data
-2026-10-17 04:24:07,666	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hSN3hIvMwNwosuWZmQ8_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->Write]
-2026-10-17 04:24:07,755	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
-2026-10-17 04:24:07,814	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hSN3hIvMwNwosuWZmQ8_0 =======
-2026-10-17 04:24:07,814	INFO logging_progress.py:225 -- Total Progress: 0/?
-2026-10-17 04:24:07,814	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
-2026-10-17 04:24:07,814	INFO logging_progress.py:181 -- 
-2026-10-17 04:24:07,814	INFO logging_progress.py:231 -- ReadRange->Write: 0/1
-2026-10-17 04:24:07,814	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 15 (0.0B); Resources: 1.0 CPU, 0.0B object store
-2026-10-17 04:24:07,817	INFO logging_progress.py:192 -- =================================================================
-2026-10-17 04:24:17,914	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hSN3hIvMwNwosuWZmQ8_0 =======
-2026-10-17 04:24:17,914	INFO logging_progress.py:225 -- Total Progress: 12/16
-2026-10-17 04:24:17,914	INFO logging_progress.py:227 -- Active & requested resources: 4/8 CPU, 2.7KiB/9.9GiB object store
-2026-10-17 04:24:17,914	INFO logging_progress.py:181 -- 
-2026-10-17 04:24:17,914	INFO logging_progress.py:231 -- ReadRange->Write: 12/16
-2026-10-17 04:24:17,914	INFO logging_progress.py:233 --   Tasks: 4; Actors: 0; Queued blocks: 0 (0.0B); Resources: 4.0 CPU, 2.7KiB object store
-2026-10-17 04:24:17,914	INFO logging_progress.py:192 -- =================================================================
-[36m(autoscaler +11s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
-[36m(autoscaler +11s)[0m No available node types can fulfill cluster constraint: {'CPU': 4.0, 'memory': 36507222016.0, 'GPU': 1.0}*2, {'CPU': 4.0, 'memory': 35648228556.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +16s)[0m No available node types can fulfill cluster constraint: {'CPU': 4.0, 'memory': 36507222016.0, 'GPU': 1.0}*2, {'CPU': 4.0, 'memory': 35648228556.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-2026-10-17 04:24:24,919	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hSN3hIvMwNwosuWZmQ8_0 execution finished in 17.25 seconds
-2026-10-17 04:24:25,751	INFO dataset.py:6680 -- Data sink Parquet finished. 1000000 rows and 7.6MiB data written.
-2026-10-17 04:24:27,082	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hSNYQuozp3NlODwvrSV_0. Full logs are in /tmp/ray/session_2026-10-17_04-03-59_911064_7/logs/ray-data
-2026-10-17 04:24:27,083	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hSNYQuozp3NlODwvrSV_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ListFiles] -> TaskPoolMapOperator[MapBatches(count_rows)]
-2026-10-17 04:24:27,109	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hSNYQuozp3NlODwvrSV_0 =======
-2026-10-17 04:24:27,109	INFO logging_progress.py:225 -- Total Progress: 0/?
-2026-10-17 04:24:27,109	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
-2026-10-17 04:24:27,109	INFO logging_progress.py:181 -- 
-2026-10-17 04:24:27,110	INFO logging_progress.py:231 -- ListFiles: 0/1
-2026-10-17 04:24:27,110	INFO logging_progress.py:233 --   Tasks: 1; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
-2026-10-17 04:24:27,110	INFO logging_progress.py:231 -- MapBatches(count_rows): 0/1
-2026-10-17 04:24:27,110	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
-2026-10-17 04:24:27,110	INFO logging_progress.py:192 -- =================================================================
-2026-10-17 04:24:30,787	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hSNYQuozp3NlODwvrSV_0 execution finished in 3.70 seconds
-2026-10-17 04:24:30,824	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hSNeKGgRdoOIFDj0fdC_0. Full logs are in /tmp/ray/session_2026-10-17_04-03-59_911064_7/logs/ray-data
-2026-10-17 04:24:30,824	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hSNeKGgRdoOIFDj0fdC_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadCSV] -> TaskPoolMapOperator[Project] -> AggregateNumRows[AggregateNumRows]
-2026-10-17 04:24:30,856	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hSNeKGgRdoOIFDj0fdC_0 =======
-2026-10-17 04:24:30,857	INFO logging_progress.py:225 -- Total Progress: 0/?
-2026-10-17 04:24:30,857	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
-2026-10-17 04:24:30,857	INFO logging_progress.py:181 -- 
-2026-10-17 04:24:30,857	INFO logging_progress.py:231 -- ReadCSV->SplitBlocks(16): 0/1
-2026-10-17 04:24:30,857	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
-2026-10-17 04:24:30,857	INFO logging_progress.py:231 -- Project: 0/1
-2026-10-17 04:24:30,857	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
-2026-10-17 04:24:30,857	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
-2026-10-17 04:24:30,857	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
-2026-10-17 04:24:30,857	INFO logging_progress.py:192 -- =================================================================
-2026-10-17 04:24:35,845	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hSNeKGgRdoOIFDj0fdC_0 execution finished in 5.02 seconds
-C9_RESULT C9.1.5 PASS {"csv_rows": 100, "elapsed_s": 29.4, "files_per_node": {"b77ede5e": {"bytes": 4420317, "files": 12}, "c714ed11": {"bytes": 1473443, "files": 4}}, "public_rows": 150, "public_s": 4.1, "readback_error": ["no files found under ['/tmp/c9_out']. Check the path and any configured `partition_filter` or `file_extensions` filters."], "write_s": 19.2}
+2026-10-17 19:20:01,571	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36911[22m
+2026-10-17 19:20:01,587	INFO cli.py:569 -- 2026-10-17 12:19:28,761	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9_1_5_data_io-d4b228: python c9_1_5_data_io.py
+C9_START C9.1.5 1792264771.5 small=False min_nodes=2
+2026-10-17 12:19:31,540	INFO worker.py:1686 -- Using address 35.89.191.232:6379 set in the environment variable RAY_ADDRESS
+2026-10-17 12:19:31,547	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.89.191.232:6379...
+2026-10-17 12:19:31,600	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-17 12:19:32,991	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034he2QtZtkf2KTX6WLDuC_0. Full logs are in /tmp/ray/session_2026-10-17_11-52-14_809738_7/logs/ray-data
+2026-10-17 12:19:32,991	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034he2QtZtkf2KTX6WLDuC_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange->Write]
+2026-10-17 12:19:33,097	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-17 12:19:33,169	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034he2QtZtkf2KTX6WLDuC_0 =======
+2026-10-17 12:19:33,169	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 12:19:33,170	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 12:19:33,170	INFO logging_progress.py:181 -- 
+2026-10-17 12:19:33,170	INFO logging_progress.py:231 -- ReadRange->Write: 0/1
+2026-10-17 12:19:33,170	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 15 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 12:19:33,170	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 12:19:43,181	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034he2QtZtkf2KTX6WLDuC_0 =======
+2026-10-17 12:19:43,181	INFO logging_progress.py:225 -- Total Progress: 13/16
+2026-10-17 12:19:43,182	INFO logging_progress.py:227 -- Active & requested resources: 3/8 CPU, 2.7KiB/9.9GiB object store
+2026-10-17 12:19:43,183	INFO logging_progress.py:181 -- 
+2026-10-17 12:19:43,187	INFO logging_progress.py:231 -- ReadRange->Write: 13/16
+2026-10-17 12:19:43,187	INFO logging_progress.py:233 --   Tasks: 3; Actors: 0; Queued blocks: 0 (0.0B); Resources: 3.0 CPU, 2.7KiB object store
+2026-10-17 12:19:43,187	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 12:19:43,441	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034he2QtZtkf2KTX6WLDuC_0 execution finished in 10.45 seconds
+2026-10-17 12:19:44,316	INFO dataset.py:6680 -- Data sink Parquet finished. 1000000 rows and 7.6MiB data written.
+2026-10-17 12:19:45,478	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034he2kl2VSsBOtEll8211_0. Full logs are in /tmp/ray/session_2026-10-17_11-52-14_809738_7/logs/ray-data
+2026-10-17 12:19:45,478	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034he2kl2VSsBOtEll8211_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ListFiles] -> TaskPoolMapOperator[MapBatches(count_rows)]
+2026-10-17 12:19:45,508	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034he2kl2VSsBOtEll8211_0 =======
+2026-10-17 12:19:45,508	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 12:19:45,508	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 12:19:45,508	INFO logging_progress.py:181 -- 
+2026-10-17 12:19:45,508	INFO logging_progress.py:231 -- ListFiles: 0/1
+2026-10-17 12:19:45,508	INFO logging_progress.py:233 --   Tasks: 1; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 12:19:45,508	INFO logging_progress.py:231 -- MapBatches(count_rows): 0/1
+2026-10-17 12:19:45,509	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 12:19:45,509	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 12:19:48,437	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034he2kl2VSsBOtEll8211_0 execution finished in 2.95 seconds
+2026-10-17 12:19:48,478	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034he2pU6wOLbc5AgFuR7w_0. Full logs are in /tmp/ray/session_2026-10-17_11-52-14_809738_7/logs/ray-data
+2026-10-17 12:19:48,478	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034he2pU6wOLbc5AgFuR7w_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadCSV] -> TaskPoolMapOperator[Project] -> AggregateNumRows[AggregateNumRows]
+2026-10-17 12:19:48,515	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034he2pU6wOLbc5AgFuR7w_0 =======
+2026-10-17 12:19:48,516	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 12:19:48,516	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 12:19:48,516	INFO logging_progress.py:181 -- 
+2026-10-17 12:19:48,516	INFO logging_progress.py:231 -- ReadCSV->SplitBlocks(16): 0/1
+2026-10-17 12:19:48,516	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 12:19:48,516	INFO logging_progress.py:231 -- Project: 0/1
+2026-10-17 12:19:48,516	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 12:19:48,516	INFO logging_progress.py:231 -- AggregateNumRows: 0/1
+2026-10-17 12:19:48,516	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 12:19:48,516	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 12:19:52,098	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034he2pU6wOLbc5AgFuR7w_0 execution finished in 3.62 seconds
+C9_RESULT C9.1.5 PASS {"csv_rows": 100, "elapsed_s": 20.6, "files_per_node": {"45aa8bd6": {"bytes": 4420316, "files": 12}, "51335dc2": {"bytes": 1473444, "files": 4}}, "public_rows": 150, "public_s": 3.4, "readback_error": ["no files found under ['/tmp/c9_out']. Check the path and any configured `partition_filter` or `file_extensions` filters."], "write_s": 12.6}

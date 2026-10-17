@@ -39,7 +39,7 @@ import pytest
 from ray_vast.worker.bootstrap import worker_ports_and_soft_limit
 
 import livejob
-from cluster import BIN, JOBS, MANUAL, free_port, wait_port
+from cluster import BIN, JOBS, MANUAL, free_port, vast, wait_port
 from libraries_setup import HOST_TYPE, PINS, alive_workers, b_and_cpus, doc_snippet, expected_limits, host_facts, probe
 from liverun import wait_until
 
@@ -655,12 +655,16 @@ def test_LB16_a_host_with_10_to_63_direct_ports(record, libraries, env):
     node = probe(libraries, env, record.dir, "probe_h5")["h5"][0]
     cid = str(node["container_id"])
     instance = next((i for i in libraries.instances() if str(i["id"]) == cid), {})
-    offered, mapped = instance.get("direct_port_count"), node.get("identity_ports")
+    # The provider rents with the offer's `direct_port_count`. The instance listing can give another value (machine 30574,
+    # A100 SXM4: the offer for 1 of 4 GPUs has 24, the instance 25), so the test reads the offer of the same machine and GPU count.
+    same = [o for o in vast().search_offers({"machine_id": {"eq": instance.get("machine_id")}, "num_gpus": {"eq": instance.get("num_gpus")}})
+            if o.get("machine_id") == instance.get("machine_id")]
+    offered, mapped = (same[0]["direct_port_count"] if same else None), node.get("identity_ports")
     vast_ports = sorted(int(k.split("/")[0]) for k in (instance.get("ports") or {}) if k.split("/")[0].isdigit()
                         and 70000 <= int(k.split("/")[0]) < 70064)
     facts = host_facts(node, node.get("machine_id"))
     ports, soft_limit = expected_limits(node)
-    record.data("host", {**facts, "direct_port_count": offered, "identity_ports_mapped": mapped, "vast_identity_ports": len(vast_ports),
+    record.data("host", {**facts, "direct_port_count": offered, "instance_direct_port_count": instance.get("direct_port_count"), "identity_ports_mapped": mapped, "vast_identity_ports": len(vast_ports),
                          "ports": node.get("ports"), "expected_ports": ports, "soft_limit": soft_limit})
     record.check("the offer has 10 to 63 direct ports", offered is not None and 10 <= offered <= 63, offered)
     # The h5 query asks for 17 or more effective cores, so the pids formula alone gives more ports than mapped - 6.

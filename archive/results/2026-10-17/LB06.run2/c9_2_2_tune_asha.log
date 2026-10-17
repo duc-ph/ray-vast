@@ -1,0 +1,205 @@
+2026-10-17 11:32:13,490	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:50317[22m
+2026-10-17 11:32:13,501	INFO cli.py:569 -- 2026-10-17 04:31:51,241	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9_2_2_tune_asha-dc8164: python c9_2_2_tune_asha.py
+C9_START C9.2.2 1792236713.9 small=False min_nodes=2
+2026-10-17 04:31:53,857	INFO worker.py:1686 -- Using address 18.236.153.229:6379 set in the environment variable RAY_ADDRESS
+2026-10-17 04:31:53,860	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.236.153.229:6379...
+2026-10-17 04:31:53,894	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+╭──────────────────────────────────────────────────────────────────╮
+│ Configuration for experiment     trainable_2026-10-17_04-31-53   │
+├──────────────────────────────────────────────────────────────────┤
+│ Search algorithm                 BasicVariantGenerator           │
+│ Scheduler                        AsyncHyperBandScheduler         │
+│ Number of trials                 8                               │
+╰──────────────────────────────────────────────────────────────────╯
+
+View detailed results here: /home/ray/ray_results/trainable_2026-10-17_04-31-53
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_04-03-59_911064_7/artifacts/2026-10-17_04-31-53/trainable_2026-10-17_04-31-53/driver_artifacts`
+
+Trial status: 8 PENDING
+Current time: 2026-10-17 04:31:54. Total running time: 0s
+Logical resource usage: 1.0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3060, 0.0/1.0 accelerator_type:P100)
+╭─────────────────────────────────────────────╮
+│ Trial name              status       lr_bad │
+├─────────────────────────────────────────────┤
+│ trainable_5a65f_00000   PENDING         0   │
+│ trainable_5a65f_00001   PENDING         0.1 │
+│ trainable_5a65f_00002   PENDING         0.2 │
+│ trainable_5a65f_00003   PENDING         0.3 │
+│ trainable_5a65f_00004   PENDING         0.4 │
+│ trainable_5a65f_00005   PENDING         0.5 │
+│ trainable_5a65f_00006   PENDING         0.6 │
+│ trainable_5a65f_00007   PENDING         0.7 │
+╰─────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00000 started with configuration:
+╭───────────────────────────────────────────╮
+│ Trial trainable_5a65f_00000 config        │
+├───────────────────────────────────────────┤
+│ lr_bad                                  0 │
+╰───────────────────────────────────────────╯
+
+Trial trainable_5a65f_00002 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00002 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.2 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00004 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00004 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.4 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00002 completed after 2 iterations at 2026-10-17 04:32:00. Total running time: 6s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00002 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30054 │
+│ time_total_s                                        0.60137 │
+│ training_iteration                                        2 │
+│ loss                                                    0.7 │
+│ node                                   ...213d185fa00084603 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00006 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00006 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.6 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00004 completed after 2 iterations at 2026-10-17 04:32:01. Total running time: 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00004 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30058 │
+│ time_total_s                                        0.60128 │
+│ training_iteration                                        2 │
+│ loss                                                    0.9 │
+│ node                                   ...213d185fa00084603 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00006 completed after 2 iterations at 2026-10-17 04:32:01. Total running time: 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00006 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30041 │
+│ time_total_s                                         0.6012 │
+│ training_iteration                                        2 │
+│ loss                                                    1.1 │
+│ node                                   ...213d185fa00084603 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00001 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00001 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.1 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00003 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00003 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.3 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00005 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00005 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.5 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00003 completed after 2 iterations at 2026-10-17 04:32:04. Total running time: 10s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00003 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                     0.3004 │
+│ time_total_s                                        0.60115 │
+│ training_iteration                                        2 │
+│ loss                                                    0.8 │
+│ node                                   ...a0e40067a1f7c5c6c │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00007 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00007 config         │
+├────────────────────────────────────────────┤
+│ lr_bad                                 0.7 │
+╰────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00005 completed after 2 iterations at 2026-10-17 04:32:05. Total running time: 10s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00005 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30041 │
+│ time_total_s                                         0.6011 │
+│ training_iteration                                        2 │
+│ loss                                                     1. │
+│ node                                   ...a0e40067a1f7c5c6c │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00001 completed after 4 iterations at 2026-10-17 04:32:05. Total running time: 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00001 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30042 │
+│ time_total_s                                        1.20198 │
+│ training_iteration                                        4 │
+│ loss                                                   0.35 │
+│ node                                   ...a0e40067a1f7c5c6c │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00007 completed after 2 iterations at 2026-10-17 04:32:05. Total running time: 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00007 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30049 │
+│ time_total_s                                        0.60121 │
+│ training_iteration                                        2 │
+│ loss                                                    1.2 │
+│ node                                   ...a0e40067a1f7c5c6c │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_5a65f_00000 completed after 20 iterations at 2026-10-17 04:32:07. Total running time: 12s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_5a65f_00000 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                                         │
+│ time_this_iter_s                                    0.30042 │
+│ time_total_s                                         6.0087 │
+│ training_iteration                                       20 │
+│ loss                                                   0.05 │
+│ node                                   ...213d185fa00084603 │
+╰─────────────────────────────────────────────────────────────╯
+2026-10-17 04:32:07,067	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/trainable_2026-10-17_04-31-53' in 0.0100s.
+
+Trial status: 8 TERMINATED
+Current time: 2026-10-17 04:32:07. Total running time: 12s
+Logical resource usage: 1.0/8 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:GeForce-RTX-3060, 0.0/1.0 accelerator_type:P100)
+Current best trial: 5a65f_00000 with loss=0.05 and params={'lr_bad': 0.0}
+╭────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status         lr_bad     iter     total time (s)     loss │
+├────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_5a65f_00000   TERMINATED        0         20           6.0087       0.05 │
+│ trainable_5a65f_00001   TERMINATED        0.1        4           1.20198      0.35 │
+│ trainable_5a65f_00002   TERMINATED        0.2        2           0.601371     0.7  │
+│ trainable_5a65f_00003   TERMINATED        0.3        2           0.601151     0.8  │
+│ trainable_5a65f_00004   TERMINATED        0.4        2           0.601277     0.9  │
+│ trainable_5a65f_00005   TERMINATED        0.5        2           0.601101     1    │
+│ trainable_5a65f_00006   TERMINATED        0.6        2           0.601199     1.1  │
+│ trainable_5a65f_00007   TERMINATED        0.7        2           0.601207     1.2  │
+╰────────────────────────────────────────────────────────────────────────────────────╯
+
+C9_RESULT C9.2.2 PASS {"elapsed_s": 13.3, "errors": 0, "iterations": [2, 2, 2, 2, 2, 2, 4, 20], "results": 8, "seconds": 13.2, "trial_nodes": ["b77ede5e", "c714ed11"]}

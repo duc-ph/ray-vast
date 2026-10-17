@@ -1,0 +1,86 @@
+{
+ "id": "LB00[H1]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792235072.3943815,
+ "checks": [
+  {
+   "name": "H1: 64 or more Ray CPUs (more than B), a pids limit",
+   "ok": true,
+   "detail": "{'machine_id': 148655, 'ray_cpus': 64.0, 'pids.max': '15616', 'cgroup': 'v1'}"
+  },
+  {
+   "name": "H1 56385108: worker ports of the bootstrap formula (pids.max 15616)",
+   "ok": true,
+   "detail": "(58, 58)"
+  },
+  {
+   "name": "H1 56385108: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
+   "ok": true,
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '29', 'RAY_worker_maximum_startup_concurrency': '8'}"
+  },
+  {
+   "name": "H1 56385108: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
+   "ok": true,
+   "detail": "(64.0, 64, 256, 61.44)"
+  },
+  {
+   "name": "H1 56385108: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
+   "ok": true,
+   "detail": "13.2"
+  }
+ ],
+ "data": {
+  "H1_rentals": [
+   {
+    "machine_id": 148655,
+    "pids_max": 15616,
+    "cgroup": "v1",
+    "cores": 61.44,
+    "match": true,
+    "query": {
+     "machine_id": {
+      "in": [
+       148655,
+       45547,
+       151137
+      ]
+     }
+    }
+   }
+  ],
+  "H1_56385108": {
+   "machine_id": 148655,
+   "pids.max": "15616",
+   "cgroup": "v1",
+   "cpu_quota": {
+    "cpu.cfs_period_us": "100000",
+    "cpu.cfs_quota_us": "6143999"
+   },
+   "affinity": 256,
+   "ray_cpus": 64.0,
+   "ports": 58,
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "29",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "worker_threads": [
+    17,
+    23,
+    26,
+    42,
+    63
+   ],
+   "cpu_count": 256,
+   "enroll_s_from_first_running_sample": 13.2
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792235148.55357,
+ "wall_s": 76.2
+}

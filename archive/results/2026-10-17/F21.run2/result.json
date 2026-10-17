@@ -1,0 +1,170 @@
+{
+ "id": "F21",
+ "markers": [
+  "free",
+  "limits"
+ ],
+ "fixture": "none",
+ "started": 1792254121.6150956,
+ "checks": [
+  {
+   "name": "C10 local runs on the small worker: exit 0",
+   "ok": false,
+   "detail": "{'failure': 3, 'passed': 3}"
+  },
+  {
+   "name": "C10 local runs on the small worker: no failure or error",
+   "ok": false,
+   "detail": "{'failure': 3, 'passed': 3}"
+  },
+  {
+   "name": "6 runs",
+   "ok": true,
+   "detail": "['test_default[c10_core.py-300]', 'test_default[c10_data.py-300]', 'test_default[c10_rllib.py-600]', 'test_default[c10_serve.py-300]', 'test_default[c10_train.py-600]', 'test_default[c10_tune.py-600]']"
+  }
+ ],
+ "data": {
+  "c10_core_default_1536": {
+   "seconds": 17.0,
+   "job": "ERROR",
+   "params": "{'actors': 6, 'actor_cpus': 'default', 'child_cpus': 1}",
+   "ports": 18,
+   "pids.peak": "344",
+   "peak_workers": 16,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "the job did not complete (ERROR)"
+   ]
+  },
+  "c10_data_default_1536": {
+   "seconds": 19.3,
+   "job": null,
+   "params": "{'blocks': 40, 'rows': 40000, 'map_num_cpus': 1}",
+   "ports": 18,
+   "pids.peak": "464",
+   "peak_workers": 12,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "the job did not complete (None)"
+   ]
+  },
+  "c10_rllib_default_1536": {
+   "seconds": 35.1,
+   "job": "COMPLETED",
+   "params": "{'num_env_runners': 6, 'num_envs_per_env_runner': 1, 'environments': 6, 'num_cpus_per_env_runner': 'default 1'}",
+   "ports": 18,
+   "pids.peak": "301",
+   "peak_workers": 8,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ]
+  },
+  "c10_serve_default_1536": {
+   "seconds": 20.4,
+   "job": null,
+   "params": "{'num_replicas': 6, 'replica_cpu': 'default 1'}",
+   "ports": 18,
+   "pids.peak": "444",
+   "peak_workers": 9,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "the job did not complete (None)"
+   ]
+  },
+  "c10_train_default_1536": {
+   "seconds": 39.1,
+   "job": "COMPLETED",
+   "params": "{'num_workers': 6, 'cpu_per_worker': 1, 'dataloader_workers': 0}",
+   "ports": 18,
+   "pids.peak": "364",
+   "peak_workers": 9,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ]
+  },
+  "c10_tune_default_1536": {
+   "seconds": 34.2,
+   "job": "COMPLETED",
+   "params": "{'trials': 22, 'bundle_cpu': 'default 1', 'max_concurrent_trials': None}",
+   "ports": 18,
+   "pids.peak": "329",
+   "peak_workers": 10,
+   "pids.max": "1536",
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "cpu": 6.0,
+   "worker_alive": true,
+   "pids.events": "max 0",
+   "no_port_errors": 0,
+   "warnings": [],
+   "job_data": null,
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ]
+  }
+ },
+ "outcome": "failed",
+ "message": "AssertionError: 2 check(s) failed: C10 local runs on the small worker: exit 0; C10 local runs on the small worker: no failure or error",
+ "ended": 1792254243.8413107,
+ "wall_s": 122.2
+}

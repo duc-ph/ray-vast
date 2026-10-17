@@ -1,0 +1,54 @@
+cluster_name: rvtest-lib-h5-a913
+idle_timeout_minutes: 5
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head:
+    resources:
+      CPU: 0
+    node_config:
+      region: us-west-2
+      instance_type: t3.large
+  h5:
+    resources:
+      CPU: 4
+      GPU: 1
+    min_workers: 0
+    max_workers: 1
+    node_config:
+      disk_gb: 60
+      offer_query:
+        direct_port_count:
+          gte: 10
+          lte: 63
+        cpu_cores_effective:
+          gte: 17
+        verified:
+          eq: true
+        datacenter:
+          eq: true
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500
+        machine_id:
+          notin:
+          - 148655
+          - 45547
+          - 151137
+          - 77312
+          - 149593
+          - 149678
+          - 153955
+          - 154115
+          - 154116
+          - 149416
+          - 152012
+          - 45592
+          - 43571
+          - 45777
+          - 45775
+          - 153046

@@ -1,1291 +1,1285 @@
-2026-10-17 17:05:05,611	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:45441[22m
-2026-10-17 17:05:05,629	INFO cli.py:569 -- 2026-10-17 10:04:01,169	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job tune-tuned-da6280: python lb_tuned.py tune
-C10_START LB11.tune tune 1792256643.6 guard_s=600.0
-2026-10-17 10:04:03,570	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.202.79.91:6379...
-2026-10-17 10:04:03,607	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-17 19:05:32,498	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:33731[22m
+2026-10-17 19:05:32,515	INFO cli.py:569 -- 2026-10-17 12:04:17,359	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job tune-tuned-e8728e: python lb_tuned.py tune
+C10_START LB11.tune tune 1792263859.6 guard_s=600.0
+2026-10-17 12:04:19,584	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.212.243.33:6379...
+2026-10-17 12:04:19,621	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
 C10_TARGET cpus=64.0 ports=58 budget=54
 C10_PARAMS {'trials': 62, 'bundles': [1.1852, 1.1852], 'task_cpu': 1.1852, 'max_concurrent_trials': 27}
 ╭──────────────────────────────────────────────────────────────────╮
-│ Configuration for experiment     trainable_2026-10-17_10-04-04   │
+│ Configuration for experiment     trainable_2026-10-17_12-04-20   │
 ├──────────────────────────────────────────────────────────────────┤
 │ Search algorithm                 BasicVariantGenerator           │
 │ Scheduler                        FIFOScheduler                   │
 │ Number of trials                 62                              │
 ╰──────────────────────────────────────────────────────────────────╯
 
-View detailed results here: /home/ray/ray_results/trainable_2026-10-17_10-04-04
-To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_09-31-16_645875_6/artifacts/2026-10-17_10-04-04/trainable_2026-10-17_10-04-04/driver_artifacts`
+View detailed results here: /home/ray/ray_results/trainable_2026-10-17_12-04-20
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_11-55-09_370582_7/artifacts/2026-10-17_12-04-20/trainable_2026-10-17_12-04-20/driver_artifacts`
 
 Trial status: 27 PENDING
-Current time: 2026-10-17 10:04:05. Total running time: 0s
+Current time: 2026-10-17 12:04:21. Total running time: 0s
 Logical resource usage: 0/64 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:A40)
-╭─────────────────────────────────────────────╮
-│ Trial name              status            x │
-├─────────────────────────────────────────────┤
-│ trainable_c228c_00000   PENDING    0.927239 │
-│ trainable_c228c_00001   PENDING    0.93889  │
-│ trainable_c228c_00002   PENDING    0.686014 │
-│ trainable_c228c_00003   PENDING    0.519413 │
-│ trainable_c228c_00004   PENDING    0.305256 │
-╰─────────────────────────────────────────────╯
-22 more PENDING
-[36m(autoscaler +4s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
-[36m(autoscaler +4s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +9s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00000 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00000 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.92724 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00001 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00001 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.93889 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00002 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00002 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.68601 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00003 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00003 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.51941 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00004 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00004 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.30526 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00005 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00005 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.42437 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00006 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00006 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.03546 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00007 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00007 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.32993 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00008 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00008 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.46545 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +14s)[0m No available node types can fulfill placement group requests (detail=b399917ab20f9bd3afa503d8460214000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +14s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00009 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00009 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.15467 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00010 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00010 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.71247 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00011 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00011 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.79804 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00012 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00012 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.81813 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00013 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00013 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.88489 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00014 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00014 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.63478 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00015 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00015 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.28168 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00016 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00016 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.87777 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +19s)[0m No available node types can fulfill placement group requests (detail=b399917ab20f9bd3afa503d8460214000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +19s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00017 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00017 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.76007 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00024 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00024 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.66054 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00025 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00025 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.90966 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00018 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00018 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.99736 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00019 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00019 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.64369 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00020 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00020 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.60397 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00021 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00021 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.45901 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +24s)[0m No available node types can fulfill placement group requests (detail=b399917ab20f9bd3afa503d8460214000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +24s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00005 completed after 3 iterations at 2026-10-17 10:04:28. Total running time: 22s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00005 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.62601 │
-│ time_total_s                            12.822 │
-│ training_iteration                           3 │
-│ score                                  0.84875 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00022 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00022 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.02921 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00023 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00023 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.20574 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00006 completed after 3 iterations at 2026-10-17 10:04:29. Total running time: 23s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00006 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       2.11835 │
-│ time_total_s                           13.2798 │
-│ training_iteration                           3 │
-│ score                                  0.07091 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00000 completed after 3 iterations at 2026-10-17 10:04:29. Total running time: 23s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00000 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.88624 │
-│ time_total_s                           15.0195 │
-│ training_iteration                           3 │
-│ score                                  1.85448 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00008 completed after 3 iterations at 2026-10-17 10:04:29. Total running time: 23s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00008 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                        0.6623 │
-│ time_total_s                           10.5303 │
-│ training_iteration                           3 │
-│ score                                   0.9309 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00002 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00002 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       2.38289 │
-│ time_total_s                           15.2817 │
-│ training_iteration                           3 │
-│ score                                  1.37203 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00001 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00001 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       2.17543 │
-│ time_total_s                           15.5518 │
-│ training_iteration                           3 │
-│ score                                  1.87778 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00007 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00007 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       2.00564 │
-│ time_total_s                           13.9126 │
-│ training_iteration                           3 │
-│ score                                  0.65987 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00003 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00003 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       2.01642 │
-│ time_total_s                           15.1601 │
-│ training_iteration                           3 │
-│ score                                  1.03883 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00004 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00004 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.88688 │
-│ time_total_s                           15.0024 │
-│ training_iteration                           3 │
-│ score                                  0.61051 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00009 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 24s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00009 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.76118 │
-│ time_total_s                            11.212 │
-│ training_iteration                           3 │
-│ score                                  0.30934 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00012 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00012 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.74444 │
-│ time_total_s                           10.4747 │
-│ training_iteration                           3 │
-│ score                                  1.63626 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00011 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00011 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.63476 │
-│ time_total_s                           10.8362 │
-│ training_iteration                           3 │
-│ score                                  1.59608 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00010 completed after 3 iterations at 2026-10-17 10:04:30. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00010 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.85259 │
-│ time_total_s                           11.3382 │
-│ training_iteration                           3 │
-│ score                                  1.42493 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00014 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00014 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                        1.8701 │
-│ time_total_s                           10.1896 │
-│ training_iteration                           3 │
-│ score                                  1.26956 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00013 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00013 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.50638 │
-│ time_total_s                           10.7612 │
-│ training_iteration                           3 │
-│ score                                  1.76979 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00015 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 25s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00015 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.46347 │
-│ time_total_s                           10.2775 │
-│ training_iteration                           3 │
-│ score                                  0.56336 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00016 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00016 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.24706 │
-│ time_total_s                           7.77341 │
-│ training_iteration                           3 │
-│ score                                  1.75555 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00018 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00018 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.06835 │
-│ time_total_s                            6.0777 │
-│ training_iteration                           3 │
-│ score                                  1.99472 │
-╰────────────────────────────────────────────────╯
-[36m(trainable pid=43124, ip=154.42.3.235)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x77780704bce0>
-[36m(trainable pid=43124, ip=154.42.3.235)[0m Traceback (most recent call last):
-[36m(trainable pid=43124, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
-[36m(trainable pid=43124, ip=154.42.3.235)[0m     def _remove(item, selfref=ref(self)):
-[36m(trainable pid=43124, ip=154.42.3.235)[0m 
-[36m(trainable pid=43124, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
-[36m(trainable pid=43124, ip=154.42.3.235)[0m     raise_sys_exit_with_custom_error_message(
-[36m(trainable pid=43124, ip=154.42.3.235)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
-[36m(trainable pid=43124, ip=154.42.3.235)[0m SystemExit: 1
-
-Trial trainable_c228c_00017 completed after 3 iterations at 2026-10-17 10:04:31. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00017 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65578 │
-│ time_total_s                           7.76707 │
-│ training_iteration                           3 │
-│ score                                  1.52014 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00019 completed after 3 iterations at 2026-10-17 10:04:32. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00019 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.81379 │
-│ time_total_s                           6.01989 │
-│ training_iteration                           3 │
-│ score                                  1.28737 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00024 completed after 3 iterations at 2026-10-17 10:04:32. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00024 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66612 │
-│ time_total_s                           7.02049 │
-│ training_iteration                           3 │
-│ score                                  1.32109 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00025 completed after 3 iterations at 2026-10-17 10:04:32. Total running time: 26s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00025 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       1.40384 │
-│ time_total_s                           6.95298 │
-│ training_iteration                           3 │
-│ score                                  1.81932 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00021 completed after 3 iterations at 2026-10-17 10:04:33. Total running time: 27s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00021 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66458 │
-│ time_total_s                           4.09552 │
-│ training_iteration                           3 │
-│ score                                  0.91802 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00022 completed after 3 iterations at 2026-10-17 10:04:33. Total running time: 27s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00022 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66285 │
-│ time_total_s                           3.80812 │
-│ training_iteration                           3 │
-│ score                                  0.05842 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00026 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00026 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.68101 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00020 completed after 3 iterations at 2026-10-17 10:04:33. Total running time: 27s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00020 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66276 │
-│ time_total_s                            4.6196 │
-│ training_iteration                           3 │
-│ score                                  1.20793 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00023 completed after 3 iterations at 2026-10-17 10:04:33. Total running time: 27s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00023 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65683 │
-│ time_total_s                           3.73307 │
-│ training_iteration                           3 │
-│ score                                  0.41147 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +30s)[0m No available node types can fulfill placement group requests (detail=936473ca85ed74a346b3a6ce6f6c14000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +30s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00027 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00027 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.45536 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00028 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00028 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.55075 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00029 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00029 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.01969 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00030 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00030 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.14622 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00031 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00031 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.50223 │
-╰────────────────────────────────────────────────╯
-
-Trial status: 26 TERMINATED | 6 RUNNING | 21 PENDING
-Current time: 2026-10-17 10:04:35. Total running time: 30s
-Logical resource usage: 47.408000000000044/64 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:A40)
-Current best trial: c228c_00018 with score=1.9947180324184028 and params={'x': 0.9973590162092014}
-╭───────────────────────────────────────────────────────────────────────────────────────╮
-│ Trial name              status               x     iter     total time (s)      score │
-├───────────────────────────────────────────────────────────────────────────────────────┤
-│ trainable_c228c_00026   RUNNING      0.681013         1            1.88521   0        │
-│ trainable_c228c_00027   RUNNING      0.455357         1            1.88635   0        │
-│ trainable_c228c_00028   RUNNING      0.550753                                         │
-│ trainable_c228c_00029   RUNNING      0.0196864                                        │
-│ trainable_c228c_00030   RUNNING      0.146221                                         │
-│ trainable_c228c_00000   TERMINATED   0.927239         3           15.0195    1.85448  │
-│ trainable_c228c_00001   TERMINATED   0.93889          3           15.5518    1.87778  │
-│ trainable_c228c_00002   TERMINATED   0.686014         3           15.2817    1.37203  │
-│ trainable_c228c_00003   TERMINATED   0.519413         3           15.1601    1.03883  │
-│ trainable_c228c_00004   TERMINATED   0.305256         3           15.0024    0.610512 │
-│ trainable_c228c_00032   PENDING      0.332695                                         │
-│ trainable_c228c_00033   PENDING      0.659782                                         │
-│ trainable_c228c_00034   PENDING      0.0854497                                        │
-│ trainable_c228c_00035   PENDING      0.946254                                         │
-│ trainable_c228c_00036   PENDING      0.236202                                         │
-╰───────────────────────────────────────────────────────────────────────────────────────╯
-1 more RUNNING, 21 more TERMINATED, 16 more PENDING
-
-Trial trainable_c228c_00026 completed after 3 iterations at 2026-10-17 10:04:37. Total running time: 31s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00026 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66558 │
-│ time_total_s                           3.21552 │
-│ training_iteration                           3 │
-│ score                                  1.36203 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00027 completed after 3 iterations at 2026-10-17 10:04:37. Total running time: 32s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00027 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66469 │
-│ time_total_s                           3.21542 │
-│ training_iteration                           3 │
-│ score                                  0.91071 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00032 started with configuration:
-╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00032 config            │
-├───────────────────────────────────────────────┤
-│ x                                      0.3327 │
-╰───────────────────────────────────────────────╯
-
-Trial trainable_c228c_00028 completed after 3 iterations at 2026-10-17 10:04:38. Total running time: 32s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00028 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66546 │
-│ time_total_s                           3.21271 │
-│ training_iteration                           3 │
-│ score                                  1.10151 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00033 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00033 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.65978 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00029 completed after 3 iterations at 2026-10-17 10:04:38. Total running time: 32s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00029 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66378 │
-│ time_total_s                            3.2046 │
-│ training_iteration                           3 │
-│ score                                  0.03937 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +34s)[0m No available node types can fulfill placement group requests (detail=f99ab7bd3d229f31cc175796198d14000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +34s)[0m No available node types can fulfill placement group requests (detail=8d23983ac94ffbca6b269806dccb14000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
-[36m(autoscaler +34s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00034 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00034 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.08545 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00030 completed after 3 iterations at 2026-10-17 10:04:38. Total running time: 33s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00030 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66558 │
-│ time_total_s                           3.20952 │
-│ training_iteration                           3 │
-│ score                                  0.29244 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00035 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00035 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.94625 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00031 completed after 3 iterations at 2026-10-17 10:04:38. Total running time: 33s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00031 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                        0.6643 │
-│ time_total_s                           3.21568 │
-│ training_iteration                           3 │
-│ score                                  1.00446 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00036 started with configuration:
-╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00036 config            │
-├───────────────────────────────────────────────┤
-│ x                                      0.2362 │
-╰───────────────────────────────────────────────╯
-
-Trial trainable_c228c_00037 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00037 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.59336 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00038 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00038 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.94495 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00039 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00039 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.73114 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00032 completed after 3 iterations at 2026-10-17 10:04:41. Total running time: 36s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00032 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66408 │
-│ time_total_s                           3.21488 │
-│ training_iteration                           3 │
-│ score                                  0.66539 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00033 completed after 3 iterations at 2026-10-17 10:04:42. Total running time: 36s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00033 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66311 │
-│ time_total_s                           3.20872 │
-│ training_iteration                           3 │
-│ score                                  1.31956 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00034 completed after 3 iterations at 2026-10-17 10:04:42. Total running time: 36s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00034 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66741 │
-│ time_total_s                           3.25516 │
-│ training_iteration                           3 │
-│ score                                   0.1709 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00035 completed after 3 iterations at 2026-10-17 10:04:42. Total running time: 37s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00035 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65614 │
-│ time_total_s                           3.20613 │
-│ training_iteration                           3 │
-│ score                                  1.89251 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00040 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00040 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.08009 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00036 completed after 3 iterations at 2026-10-17 10:04:42. Total running time: 37s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00036 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65596 │
-│ time_total_s                           3.19318 │
-│ training_iteration                           3 │
-│ score                                   0.4724 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00041 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00041 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.53875 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00037 completed after 3 iterations at 2026-10-17 10:04:43. Total running time: 37s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00037 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65622 │
-│ time_total_s                           3.20048 │
-│ training_iteration                           3 │
-│ score                                  1.18672 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00042 started with configuration:
-╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00042 config            │
-├───────────────────────────────────────────────┤
-│ x                                      0.4081 │
-╰───────────────────────────────────────────────╯
-[36m(trainable pid=44446, ip=154.42.3.235)[0m 
-[36m(trainable pid=44446, ip=154.42.3.235)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x7cf746923ce0>
-[36m(trainable pid=44446, ip=154.42.3.235)[0m Traceback (most recent call last):
-[36m(trainable pid=44446, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
-[36m(trainable pid=44446, ip=154.42.3.235)[0m     def _remove(item, selfref=ref(self)):
-[36m(trainable pid=44446, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
-[36m(trainable pid=44446, ip=154.42.3.235)[0m     raise_sys_exit_with_custom_error_message(
-[36m(trainable pid=44446, ip=154.42.3.235)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
-[36m(trainable pid=44446, ip=154.42.3.235)[0m SystemExit: 1
-[36m(autoscaler +40s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00038 completed after 3 iterations at 2026-10-17 10:04:43. Total running time: 38s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00038 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                        0.6634 │
-│ time_total_s                            3.2152 │
-│ training_iteration                           3 │
-│ score                                  1.88991 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00043 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00043 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.06135 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00039 completed after 3 iterations at 2026-10-17 10:04:43. Total running time: 38s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00039 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66389 │
-│ time_total_s                           3.20814 │
-│ training_iteration                           3 │
-│ score                                  1.46228 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00044 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00044 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.35969 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00045 started with configuration:
-╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00045 config            │
-├───────────────────────────────────────────────┤
-│ x                                      0.7747 │
-╰───────────────────────────────────────────────╯
-
-Trial trainable_c228c_00056 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00056 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.40808 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00052 started with configuration:
-╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00052 config            │
-├───────────────────────────────────────────────┤
-│ x                                      0.0962 │
-╰───────────────────────────────────────────────╯
-
-Trial trainable_c228c_00040 completed after 3 iterations at 2026-10-17 10:04:46. Total running time: 41s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00040 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66378 │
-│ time_total_s                           3.21228 │
-│ training_iteration                           3 │
-│ score                                  0.16019 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00041 completed after 3 iterations at 2026-10-17 10:04:46. Total running time: 41s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00041 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66483 │
-│ time_total_s                           3.22476 │
-│ training_iteration                           3 │
-│ score                                   1.0775 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00042 completed after 3 iterations at 2026-10-17 10:04:47. Total running time: 41s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00042 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66304 │
-│ time_total_s                           3.20619 │
-│ training_iteration                           3 │
-│ score                                   0.8162 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00043 completed after 3 iterations at 2026-10-17 10:04:47. Total running time: 41s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00043 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66363 │
-│ time_total_s                           3.20597 │
-│ training_iteration                           3 │
-│ score                                   0.1227 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00046 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00046 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.03603 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00047 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00047 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.59773 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00044 completed after 3 iterations at 2026-10-17 10:04:48. Total running time: 42s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00044 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66338 │
-│ time_total_s                           3.21059 │
-│ training_iteration                           3 │
-│ score                                  0.71938 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00045 completed after 3 iterations at 2026-10-17 10:04:48. Total running time: 42s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00045 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66399 │
-│ time_total_s                           3.21038 │
-│ training_iteration                           3 │
-│ score                                  1.54941 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00048 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00048 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.77407 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00056 completed after 3 iterations at 2026-10-17 10:04:48. Total running time: 42s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00056 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66405 │
-│ time_total_s                           3.22385 │
-│ training_iteration                           3 │
-│ score                                  0.81617 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00049 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00049 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.58318 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +45s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00052 completed after 3 iterations at 2026-10-17 10:04:48. Total running time: 43s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00052 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66362 │
-│ time_total_s                           3.21377 │
-│ training_iteration                           3 │
-│ score                                   0.1924 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00050 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00050 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.31847 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00051 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00051 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.70904 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00054 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00054 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.53527 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00055 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00055 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.57767 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00046 completed after 3 iterations at 2026-10-17 10:04:51. Total running time: 45s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00046 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66466 │
-│ time_total_s                           3.21458 │
-│ training_iteration                           3 │
-│ score                                  0.07207 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00047 completed after 3 iterations at 2026-10-17 10:04:51. Total running time: 46s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00047 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66412 │
-│ time_total_s                           3.21191 │
-│ training_iteration                           3 │
-│ score                                  1.19547 │
-╰────────────────────────────────────────────────╯
-[36m(trainable pid=45050, ip=154.42.3.235)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x725f14c4fce0>
-[36m(trainable pid=45050, ip=154.42.3.235)[0m Traceback (most recent call last):
-[36m(trainable pid=45050, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
-[36m(trainable pid=45050, ip=154.42.3.235)[0m     def _remove(item, selfref=ref(self)):
-[36m(trainable pid=45050, ip=154.42.3.235)[0m 
-[36m(trainable pid=45050, ip=154.42.3.235)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
-[36m(trainable pid=45050, ip=154.42.3.235)[0m     raise_sys_exit_with_custom_error_message(
-[36m(trainable pid=45050, ip=154.42.3.235)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
-[36m(trainable pid=45050, ip=154.42.3.235)[0m SystemExit: 1
-
-Trial trainable_c228c_00048 completed after 3 iterations at 2026-10-17 10:04:52. Total running time: 46s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00048 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65652 │
-│ time_total_s                           3.20022 │
-│ training_iteration                           3 │
-│ score                                  1.54814 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00049 completed after 3 iterations at 2026-10-17 10:04:52. Total running time: 46s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00049 result             │
-├────────────────────────────────────────────────┤
-│ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66409 │
-│ time_total_s                           3.21753 │
-│ training_iteration                           3 │
-│ score                                  1.16635 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00053 started with configuration:
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00053 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.06056 │
-╰────────────────────────────────────────────────╯
-
-Trial trainable_c228c_00057 started with configuration:
 ╭──────────────────────────────────────────────╮
-│ Trial trainable_c228c_00057 config           │
+│ Trial name              status             x │
 ├──────────────────────────────────────────────┤
-│ x                                      0.485 │
+│ trainable_8f493_00000   PENDING    0.0566332 │
+│ trainable_8f493_00001   PENDING    0.957351  │
+│ trainable_8f493_00002   PENDING    0.0578671 │
+│ trainable_8f493_00003   PENDING    0.525831  │
+│ trainable_8f493_00004   PENDING    0.48027   │
 ╰──────────────────────────────────────────────╯
+22 more PENDING
 
-Trial trainable_c228c_00050 completed after 3 iterations at 2026-10-17 10:04:52. Total running time: 47s
+Trial trainable_8f493_00000 started with configuration:
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00050 result             │
+│ Trial trainable_8f493_00000 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.05663 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00001 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00001 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.95735 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +11s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +11s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+
+Trial trainable_8f493_00002 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00002 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.05787 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00003 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00003 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.52583 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +16s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=154.42.3.219)[0m [2026-10-17 12:04:37,517 E 433 433] (raylet) worker_pool.cc:627: Some workers of the worker process(10895) have not registered within the timeout. The process is dead, probably it crashed during start.
+
+Trial trainable_8f493_00004 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00004 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.48027 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00005 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00005 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.79599 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +21s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+
+Trial trainable_8f493_00006 started with configuration:
+╭───────────────────────────────────────────────╮
+│ Trial trainable_8f493_00006 config            │
+├───────────────────────────────────────────────┤
+│ x                                      0.7915 │
+╰───────────────────────────────────────────────╯
+
+Trial trainable_8f493_00007 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00007 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.60243 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00008 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00008 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.62369 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00009 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00009 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.14234 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00010 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00010 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.41377 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +26s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+
+Trial trainable_8f493_00011 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00011 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.69074 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00012 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00012 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.80931 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00016 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00016 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.87225 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00013 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00013 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.76787 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00017 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00017 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.35796 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00018 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00018 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.71739 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00014 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00014 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.69117 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00021 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00021 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.16207 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +31s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+
+Trial status: 19 RUNNING | 8 PENDING
+Current time: 2026-10-17 12:04:52. Total running time: 30s
+Logical resource usage: 61.630400000000066/64 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:A40)
+╭──────────────────────────────────────────────╮
+│ Trial name              status             x │
+├──────────────────────────────────────────────┤
+│ trainable_8f493_00000   RUNNING    0.0566332 │
+│ trainable_8f493_00001   RUNNING    0.957351  │
+│ trainable_8f493_00002   RUNNING    0.0578671 │
+│ trainable_8f493_00003   RUNNING    0.525831  │
+│ trainable_8f493_00004   RUNNING    0.48027   │
+│ trainable_8f493_00015   PENDING    0.668031  │
+│ trainable_8f493_00019   PENDING    0.302478  │
+│ trainable_8f493_00020   PENDING    0.902227  │
+│ trainable_8f493_00022   PENDING    0.361835  │
+│ trainable_8f493_00023   PENDING    0.993491  │
+╰──────────────────────────────────────────────╯
+14 more RUNNING, 3 more PENDING
+
+Trial trainable_8f493_00019 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00019 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.30248 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00023 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00023 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.99349 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00015 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00015 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.66803 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00024 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00024 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.27857 │
+╰────────────────────────────────────────────────╯
+[36m(autoscaler +36s)[0m No available node types can fulfill placement group requests (detail=73da72f9fee47d12a671981e39490d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+
+Trial trainable_8f493_00009 completed after 3 iterations at 2026-10-17 12:04:57. Total running time: 36s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00009 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66442 │
-│ time_total_s                           3.21045 │
+│ time_this_iter_s                       2.02645 │
+│ time_total_s                           12.3704 │
 │ training_iteration                           3 │
-│ score                                  0.63693 │
+│ score                                  0.28469 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00051 completed after 3 iterations at 2026-10-17 10:04:53. Total running time: 47s
+Trial trainable_8f493_00006 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 36s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00051 result             │
+│ Trial trainable_8f493_00006 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66319 │
-│ time_total_s                           3.20915 │
+│ time_this_iter_s                       1.19471 │
+│ time_total_s                           13.3238 │
 │ training_iteration                           3 │
-│ score                                  1.41809 │
+│ score                                  1.58301 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00058 started with configuration:
+Trial trainable_8f493_00003 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 36s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00058 config             │
+│ Trial trainable_8f493_00003 result             │
 ├────────────────────────────────────────────────┤
-│ x                                      0.12238 │
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.23168 │
+│ time_total_s                           22.9609 │
+│ training_iteration                           3 │
+│ score                                  1.05166 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00054 completed after 3 iterations at 2026-10-17 10:04:53. Total running time: 47s
+Trial trainable_8f493_00000 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 36s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00054 result             │
+│ Trial trainable_8f493_00000 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.26655 │
+│ time_total_s                           28.1605 │
+│ training_iteration                           3 │
+│ score                                  0.11327 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00010 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00010 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.19173 │
+│ time_total_s                           12.3171 │
+│ training_iteration                           3 │
+│ score                                  0.82753 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00001 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00001 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.28129 │
+│ time_total_s                           28.2536 │
+│ training_iteration                           3 │
+│ score                                   1.9147 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00005 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00005 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.15409 │
+│ time_total_s                           18.5116 │
+│ training_iteration                           3 │
+│ score                                  1.59198 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00007 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00007 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.85659 │
+│ time_total_s                             13.68 │
+│ training_iteration                           3 │
+│ score                                  1.20486 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00013 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00013 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.69181 │
+│ time_total_s                           8.43649 │
+│ training_iteration                           3 │
+│ score                                  1.53575 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00016 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00016 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.78663 │
+│ time_total_s                           8.56545 │
+│ training_iteration                           3 │
+│ score                                  1.74449 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00020 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00020 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.90223 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00021 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00021 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.86095 │
+│ time_total_s                           7.73341 │
+│ training_iteration                           3 │
+│ score                                  0.32413 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00014 completed after 3 iterations at 2026-10-17 12:04:58. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00014 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.57452 │
+│ time_total_s                           8.52394 │
+│ training_iteration                           3 │
+│ score                                  1.38234 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00008 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00008 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       2.44298 │
+│ time_total_s                           13.4863 │
+│ training_iteration                           3 │
+│ score                                  1.24738 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00022 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00022 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.36184 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00002 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00002 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.68014 │
+│ time_total_s                           23.9234 │
+│ training_iteration                           3 │
+│ score                                  0.11573 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00004 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00004 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                        1.5969 │
+│ time_total_s                           19.1661 │
+│ training_iteration                           3 │
+│ score                                  0.96054 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00011 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00011 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.64293 │
+│ time_total_s                           9.47105 │
+│ training_iteration                           3 │
+│ score                                  1.38148 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00017 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00017 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.34485 │
+│ time_total_s                           8.90905 │
+│ training_iteration                           3 │
+│ score                                  0.71591 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00012 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00012 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.05438 │
+│ time_total_s                           9.41074 │
+│ training_iteration                           3 │
+│ score                                  1.61861 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00025 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00025 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.90586 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00018 completed after 3 iterations at 2026-10-17 12:04:59. Total running time: 37s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00018 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       1.07975 │
+│ time_total_s                           9.02969 │
+│ training_iteration                           3 │
+│ score                                  1.43477 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00023 completed after 3 iterations at 2026-10-17 12:05:00. Total running time: 38s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00023 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66568 │
+│ time_total_s                            5.4226 │
+│ training_iteration                           3 │
+│ score                                  1.98698 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00019 completed after 3 iterations at 2026-10-17 12:05:00. Total running time: 38s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00019 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66187 │
+│ time_total_s                           5.67084 │
+│ training_iteration                           3 │
+│ score                                  0.60496 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00015 completed after 3 iterations at 2026-10-17 12:05:00. Total running time: 38s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00015 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66168 │
+│ time_total_s                           5.11234 │
+│ training_iteration                           3 │
+│ score                                  1.33606 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00024 completed after 3 iterations at 2026-10-17 12:05:00. Total running time: 38s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00024 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
 │ time_this_iter_s                       0.66309 │
-│ time_total_s                           3.20953 │
+│ time_total_s                           5.24954 │
 │ training_iteration                           3 │
-│ score                                  1.07054 │
+│ score                                  0.55715 │
 ╰────────────────────────────────────────────────╯
+[36m(autoscaler +41s)[0m No available node types can fulfill placement group requests (detail=5a2c75f371079047617c2f51160c0d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +41s)[0m No available node types can fulfill placement group requests (detail=a40db6c45282708041a4ca196aaa0d000000:PACK|PENDING): {'CPU': 1.1852}*2. Add suitable node types to this cluster to resolve this issue.
 
-Trial trainable_c228c_00059 started with configuration:
+Trial trainable_8f493_00020 completed after 3 iterations at 2026-10-17 12:05:02. Total running time: 41s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00059 config             │
-├────────────────────────────────────────────────┤
-│ x                                      0.80359 │
-╰────────────────────────────────────────────────╯
-[36m(autoscaler +50s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 832579410329.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
-
-Trial trainable_c228c_00055 completed after 3 iterations at 2026-10-17 10:04:53. Total running time: 48s
-╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00055 result             │
+│ Trial trainable_8f493_00020 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66327 │
-│ time_total_s                           3.20652 │
+│ time_this_iter_s                       0.65518 │
+│ time_total_s                           3.20229 │
 │ training_iteration                           3 │
-│ score                                  1.15534 │
+│ score                                  1.80445 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00060 started with configuration:
+Trial trainable_8f493_00022 completed after 3 iterations at 2026-10-17 12:05:02. Total running time: 41s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00022 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66143 │
+│ time_total_s                           3.20684 │
+│ training_iteration                           3 │
+│ score                                  0.72367 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00025 completed after 3 iterations at 2026-10-17 12:05:03. Total running time: 41s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00025 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66151 │
+│ time_total_s                           3.20561 │
+│ training_iteration                           3 │
+│ score                                  1.81172 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00026 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00026 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.25747 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00027 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00027 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.26528 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00028 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00028 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.06993 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00031 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00031 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.88539 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00029 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00029 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.24767 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00030 started with configuration:
 ╭───────────────────────────────────────────────╮
-│ Trial trainable_c228c_00060 config            │
+│ Trial trainable_8f493_00030 config            │
 ├───────────────────────────────────────────────┤
-│ x                                      0.4498 │
+│ x                                      0.7931 │
 ╰───────────────────────────────────────────────╯
 
-Trial trainable_c228c_00061 started with configuration:
+Trial trainable_8f493_00032 started with configuration:
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00061 config             │
+│ Trial trainable_8f493_00032 config             │
 ├────────────────────────────────────────────────┤
-│ x                                      0.73043 │
+│ x                                      0.44831 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00053 completed after 3 iterations at 2026-10-17 10:04:56. Total running time: 50s
+Trial trainable_8f493_00033 started with configuration:
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00053 result             │
+│ Trial trainable_8f493_00033 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.40598 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00026 completed after 3 iterations at 2026-10-17 12:05:07. Total running time: 45s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00026 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65622 │
-│ time_total_s                           3.19694 │
+│ time_this_iter_s                       0.67131 │
+│ time_total_s                           3.22186 │
 │ training_iteration                           3 │
-│ score                                  0.12113 │
+│ score                                  0.51494 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00057 completed after 3 iterations at 2026-10-17 10:04:56. Total running time: 51s
+Trial trainable_8f493_00027 completed after 3 iterations at 2026-10-17 12:05:07. Total running time: 46s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00057 result             │
+│ Trial trainable_8f493_00027 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65661 │
+│ time_total_s                            3.3265 │
+│ training_iteration                           3 │
+│ score                                  0.53056 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00028 completed after 3 iterations at 2026-10-17 12:05:08. Total running time: 46s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00028 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                        0.6558 │
+│ time_total_s                           3.20369 │
+│ training_iteration                           3 │
+│ score                                  0.13985 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00031 completed after 3 iterations at 2026-10-17 12:05:08. Total running time: 46s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00031 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66792 │
+│ time_total_s                           3.23073 │
+│ training_iteration                           3 │
+│ score                                  1.77078 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00029 completed after 3 iterations at 2026-10-17 12:05:08. Total running time: 46s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00029 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65613 │
+│ time_total_s                           3.21295 │
+│ training_iteration                           3 │
+│ score                                  0.49533 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00032 completed after 3 iterations at 2026-10-17 12:05:08. Total running time: 46s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00032 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                        0.6555 │
+│ time_total_s                           3.20952 │
+│ training_iteration                           3 │
+│ score                                  0.89661 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00030 completed after 3 iterations at 2026-10-17 12:05:08. Total running time: 46s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00030 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65843 │
+│ time_total_s                           3.22863 │
+│ training_iteration                           3 │
+│ score                                   1.5862 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00034 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00034 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.02877 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00035 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00035 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.30688 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00033 completed after 3 iterations at 2026-10-17 12:05:09. Total running time: 47s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00033 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66439 │
+│ time_total_s                           3.21278 │
+│ training_iteration                           3 │
+│ score                                  0.81196 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00036 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00036 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.07161 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00050 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00050 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.17623 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00037 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00037 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.85545 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00039 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00039 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.64299 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00041 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00041 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.42439 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00042 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00042 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.91374 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00034 completed after 3 iterations at 2026-10-17 12:05:12. Total running time: 50s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00034 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
 │ time_this_iter_s                       0.65693 │
-│ time_total_s                           3.20728 │
+│ time_total_s                           3.22228 │
 │ training_iteration                           3 │
-│ score                                     0.97 │
+│ score                                  0.05754 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00058 completed after 3 iterations at 2026-10-17 10:04:57. Total running time: 51s
+Trial trainable_8f493_00035 completed after 3 iterations at 2026-10-17 12:05:12. Total running time: 50s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00058 result             │
+│ Trial trainable_8f493_00035 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65614 │
-│ time_total_s                           3.19913 │
+│ time_this_iter_s                       0.66398 │
+│ time_total_s                           3.21486 │
 │ training_iteration                           3 │
-│ score                                  0.24475 │
+│ score                                  0.61376 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=13561, ip=154.42.3.219)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x78372fdc7ce0>
+[36m(trainable pid=13561, ip=154.42.3.219)[0m Traceback (most recent call last):
+[36m(trainable pid=13561, ip=154.42.3.219)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(trainable pid=13561, ip=154.42.3.219)[0m     def _remove(item, selfref=ref(self)):
+[36m(trainable pid=13561, ip=154.42.3.219)[0m 
+[36m(trainable pid=13561, ip=154.42.3.219)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(trainable pid=13561, ip=154.42.3.219)[0m     raise_sys_exit_with_custom_error_message(
+[36m(trainable pid=13561, ip=154.42.3.219)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(trainable pid=13561, ip=154.42.3.219)[0m SystemExit: 1
+[33m(raylet, ip=154.42.3.219)[0m [2026-10-17 12:04:42,303 E 433 433] (raylet) worker_pool.cc:627: Some workers of the worker process(11042) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+
+Trial trainable_8f493_00036 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 51s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00036 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65728 │
+│ time_total_s                           3.19946 │
+│ training_iteration                           3 │
+│ score                                  0.14322 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00059 completed after 3 iterations at 2026-10-17 10:04:57. Total running time: 51s
+Trial trainable_8f493_00050 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 51s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00059 result             │
+│ Trial trainable_8f493_00050 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65627 │
-│ time_total_s                           3.20765 │
+│ time_this_iter_s                        0.6644 │
+│ time_total_s                           3.22031 │
 │ training_iteration                           3 │
-│ score                                  1.60718 │
+│ score                                  0.35246 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00060 completed after 3 iterations at 2026-10-17 10:04:57. Total running time: 52s
+Trial trainable_8f493_00037 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 51s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00060 result             │
+│ Trial trainable_8f493_00037 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.65566 │
-│ time_total_s                            3.2013 │
+│ time_this_iter_s                       0.66133 │
+│ time_total_s                           3.22035 │
 │ training_iteration                           3 │
-│ score                                   0.8996 │
+│ score                                  1.71089 │
 ╰────────────────────────────────────────────────╯
 
-Trial trainable_c228c_00061 completed after 3 iterations at 2026-10-17 10:04:58. Total running time: 52s
+Trial trainable_8f493_00039 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 51s
 ╭────────────────────────────────────────────────╮
-│ Trial trainable_c228c_00061 result             │
+│ Trial trainable_8f493_00039 result             │
 ├────────────────────────────────────────────────┤
 │ checkpoint_dir_name                            │
-│ time_this_iter_s                       0.66315 │
-│ time_total_s                           3.20579 │
+│ time_this_iter_s                       0.66317 │
+│ time_total_s                           3.20258 │
 │ training_iteration                           3 │
-│ score                                  1.46086 │
+│ score                                  1.28598 │
 ╰────────────────────────────────────────────────╯
-2026-10-17 10:04:58,165	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/trainable_2026-10-17_10-04-04' in 0.0486s.
+
+Trial trainable_8f493_00041 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 51s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00041 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66599 │
+│ time_total_s                           3.22792 │
+│ training_iteration                           3 │
+│ score                                  0.84879 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00038 started with configuration:
+╭───────────────────────────────────────────────╮
+│ Trial trainable_8f493_00038 config            │
+├───────────────────────────────────────────────┤
+│ x                                      0.2494 │
+╰───────────────────────────────────────────────╯
+
+Trial trainable_8f493_00040 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00040 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.52072 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00042 completed after 3 iterations at 2026-10-17 12:05:13. Total running time: 52s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00042 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66245 │
+│ time_total_s                           3.20551 │
+│ training_iteration                           3 │
+│ score                                  1.82748 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00043 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00043 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.96636 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00057 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00057 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.01373 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00055 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00055 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.37742 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00056 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00056 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.11922 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00058 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00058 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.73709 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00060 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00060 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.84651 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00038 completed after 3 iterations at 2026-10-17 12:05:17. Total running time: 55s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00038 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66389 │
+│ time_total_s                           3.21724 │
+│ training_iteration                           3 │
+│ score                                  0.49879 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00040 completed after 3 iterations at 2026-10-17 12:05:17. Total running time: 55s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00040 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66226 │
+│ time_total_s                           3.20915 │
+│ training_iteration                           3 │
+│ score                                  1.04144 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00043 completed after 3 iterations at 2026-10-17 12:05:17. Total running time: 56s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00043 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66324 │
+│ time_total_s                           3.20889 │
+│ training_iteration                           3 │
+│ score                                  1.93272 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00057 completed after 3 iterations at 2026-10-17 12:05:17. Total running time: 56s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00057 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                        0.6563 │
+│ time_total_s                            3.1978 │
+│ training_iteration                           3 │
+│ score                                  0.02746 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00055 completed after 3 iterations at 2026-10-17 12:05:18. Total running time: 56s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00055 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66319 │
+│ time_total_s                           3.21724 │
+│ training_iteration                           3 │
+│ score                                  0.75485 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00056 completed after 3 iterations at 2026-10-17 12:05:18. Total running time: 56s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00056 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66242 │
+│ time_total_s                           3.20918 │
+│ training_iteration                           3 │
+│ score                                  0.23843 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00059 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00059 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.20782 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00044 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00044 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.44068 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00058 completed after 3 iterations at 2026-10-17 12:05:18. Total running time: 57s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00058 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66355 │
+│ time_total_s                           3.21119 │
+│ training_iteration                           3 │
+│ score                                  1.47417 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00045 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00045 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.47668 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00051 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00051 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.62833 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00047 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00047 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.48904 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00046 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00046 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.82933 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00048 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00048 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.40848 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00052 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00052 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.05809 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00060 completed after 3 iterations at 2026-10-17 12:05:20. Total running time: 58s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00060 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65613 │
+│ time_total_s                           3.19408 │
+│ training_iteration                           3 │
+│ score                                  1.69302 │
+╰────────────────────────────────────────────────╯
+
+Trial status: 50 TERMINATED | 8 RUNNING | 4 PENDING
+Current time: 2026-10-17 12:05:22. Total running time: 1min 0s
+Logical resource usage: 28.444800000000015/64 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:A40)
+Current best trial: 8f493_00023 with score=1.9869826365318155 and params={'x': 0.9934913182659078}
+╭───────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status               x     iter     total time (s)      score │
+├───────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_8f493_00044   RUNNING      0.440676         2            2.55672   0.440676 │
+│ trainable_8f493_00045   RUNNING      0.476683         2            2.54915   0.476683 │
+│ trainable_8f493_00046   RUNNING      0.829331         2            2.53963   0.829331 │
+│ trainable_8f493_00047   RUNNING      0.489036         2            2.54226   0.489036 │
+│ trainable_8f493_00048   RUNNING      0.408478         2            2.54665   0.408478 │
+│ trainable_8f493_00000   TERMINATED   0.0566332        3           28.1605    0.113266 │
+│ trainable_8f493_00001   TERMINATED   0.957351         3           28.2536    1.9147   │
+│ trainable_8f493_00002   TERMINATED   0.0578671        3           23.9234    0.115734 │
+│ trainable_8f493_00003   TERMINATED   0.525831         3           22.9609    1.05166  │
+│ trainable_8f493_00004   TERMINATED   0.48027          3           19.1661    0.96054  │
+│ trainable_8f493_00049   PENDING      0.212638                                         │
+│ trainable_8f493_00053   PENDING      0.706267                                         │
+│ trainable_8f493_00054   PENDING      0.524747                                         │
+│ trainable_8f493_00061   PENDING      0.0264551                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────╯
+3 more RUNNING, 45 more TERMINATED
+
+Trial trainable_8f493_00059 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 0s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00059 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65603 │
+│ time_total_s                           3.21284 │
+│ training_iteration                           3 │
+│ score                                  0.41563 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00044 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 0s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00044 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66346 │
+│ time_total_s                           3.22019 │
+│ training_iteration                           3 │
+│ score                                  0.88135 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00045 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 1s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00045 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65678 │
+│ time_total_s                           3.20593 │
+│ training_iteration                           3 │
+│ score                                  0.95337 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00046 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 1s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00046 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66314 │
+│ time_total_s                           3.20277 │
+│ training_iteration                           3 │
+│ score                                  1.65866 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00051 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 1s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00051 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65475 │
+│ time_total_s                           3.20133 │
+│ training_iteration                           3 │
+│ score                                  1.25666 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00047 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 1s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00047 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66191 │
+│ time_total_s                           3.20416 │
+│ training_iteration                           3 │
+│ score                                  0.97807 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00048 completed after 3 iterations at 2026-10-17 12:05:22. Total running time: 1min 1s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00048 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66246 │
+│ time_total_s                           3.20911 │
+│ training_iteration                           3 │
+│ score                                  0.81696 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00049 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00049 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.21264 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00053 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00053 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.70627 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00052 completed after 3 iterations at 2026-10-17 12:05:23. Total running time: 1min 2s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00052 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66445 │
+│ time_total_s                           3.21322 │
+│ training_iteration                           3 │
+│ score                                  0.11618 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00061 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00061 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.02646 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00054 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00054 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.52475 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00053 completed after 3 iterations at 2026-10-17 12:05:27. Total running time: 1min 5s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00053 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66309 │
+│ time_total_s                           3.21572 │
+│ training_iteration                           3 │
+│ score                                  1.41253 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00061 completed after 3 iterations at 2026-10-17 12:05:27. Total running time: 1min 6s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00061 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66421 │
+│ time_total_s                           3.21444 │
+│ training_iteration                           3 │
+│ score                                  0.05291 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00054 completed after 3 iterations at 2026-10-17 12:05:27. Total running time: 1min 6s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00054 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.66276 │
+│ time_total_s                           3.20947 │
+│ training_iteration                           3 │
+│ score                                  1.04949 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_8f493_00049 completed after 3 iterations at 2026-10-17 12:05:28. Total running time: 1min 6s
+╭────────────────────────────────────────────────╮
+│ Trial trainable_8f493_00049 result             │
+├────────────────────────────────────────────────┤
+│ checkpoint_dir_name                            │
+│ time_this_iter_s                       0.65533 │
+│ time_total_s                           4.20307 │
+│ training_iteration                           3 │
+│ score                                  0.42528 │
+╰────────────────────────────────────────────────╯
+2026-10-17 12:05:28,079	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/trainable_2026-10-17_12-04-20' in 0.0504s.
 
 Trial status: 62 TERMINATED
-Current time: 2026-10-17 10:04:58. Total running time: 52s
+Current time: 2026-10-17 12:05:28. Total running time: 1min 6s
 Logical resource usage: 2.3704/64 CPUs, 0/1 GPUs (0.0/1.0 accelerator_type:A40)
-Current best trial: c228c_00018 with score=1.9947180324184028 and params={'x': 0.9973590162092014}
+Current best trial: 8f493_00023 with score=1.9869826365318155 and params={'x': 0.9934913182659078}
 ╭────────────────────────────────────────────────────────────────────────────────────────╮
 │ Trial name              status               x     iter     total time (s)       score │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
-│ trainable_c228c_00000   TERMINATED   0.927239         3           15.0195    1.85448   │
-│ trainable_c228c_00001   TERMINATED   0.93889          3           15.5518    1.87778   │
-│ trainable_c228c_00002   TERMINATED   0.686014         3           15.2817    1.37203   │
-│ trainable_c228c_00003   TERMINATED   0.519413         3           15.1601    1.03883   │
-│ trainable_c228c_00004   TERMINATED   0.305256         3           15.0024    0.610512  │
-│ trainable_c228c_00005   TERMINATED   0.424375         3           12.822     0.848749  │
-│ trainable_c228c_00006   TERMINATED   0.0354572        3           13.2798    0.0709144 │
-│ trainable_c228c_00007   TERMINATED   0.329933         3           13.9126    0.659866  │
-│ trainable_c228c_00008   TERMINATED   0.465448         3           10.5303    0.930896  │
-│ trainable_c228c_00009   TERMINATED   0.154669         3           11.212     0.309337  │
-│ trainable_c228c_00010   TERMINATED   0.712466         3           11.3382    1.42493   │
-│ trainable_c228c_00011   TERMINATED   0.798038         3           10.8362    1.59608   │
-│ trainable_c228c_00012   TERMINATED   0.818132         3           10.4747    1.63626   │
-│ trainable_c228c_00013   TERMINATED   0.884893         3           10.7612    1.76979   │
-│ trainable_c228c_00014   TERMINATED   0.634782         3           10.1896    1.26956   │
-│ trainable_c228c_00015   TERMINATED   0.281681         3           10.2775    0.563362  │
-│ trainable_c228c_00016   TERMINATED   0.877775         3            7.77341   1.75555   │
-│ trainable_c228c_00017   TERMINATED   0.760068         3            7.76707   1.52014   │
-│ trainable_c228c_00018   TERMINATED   0.997359         3            6.0777    1.99472   │
-│ trainable_c228c_00019   TERMINATED   0.643686         3            6.01989   1.28737   │
-│ trainable_c228c_00020   TERMINATED   0.603965         3            4.6196    1.20793   │
-│ trainable_c228c_00021   TERMINATED   0.459011         3            4.09552   0.918021  │
-│ trainable_c228c_00022   TERMINATED   0.0292084        3            3.80812   0.0584168 │
-│ trainable_c228c_00023   TERMINATED   0.205737         3            3.73307   0.411474  │
-│ trainable_c228c_00024   TERMINATED   0.660544         3            7.02049   1.32109   │
-│ trainable_c228c_00025   TERMINATED   0.909662         3            6.95298   1.81932   │
-│ trainable_c228c_00026   TERMINATED   0.681013         3            3.21552   1.36203   │
-│ trainable_c228c_00027   TERMINATED   0.455357         3            3.21542   0.910715  │
-│ trainable_c228c_00028   TERMINATED   0.550753         3            3.21271   1.10151   │
-│ trainable_c228c_00029   TERMINATED   0.0196864        3            3.2046    0.0393727 │
-│ trainable_c228c_00030   TERMINATED   0.146221         3            3.20952   0.292442  │
-│ trainable_c228c_00031   TERMINATED   0.502232         3            3.21568   1.00446   │
-│ trainable_c228c_00032   TERMINATED   0.332695         3            3.21488   0.66539   │
-│ trainable_c228c_00033   TERMINATED   0.659782         3            3.20872   1.31956   │
-│ trainable_c228c_00034   TERMINATED   0.0854497        3            3.25516   0.170899  │
-│ trainable_c228c_00035   TERMINATED   0.946254         3            3.20613   1.89251   │
-│ trainable_c228c_00036   TERMINATED   0.236202         3            3.19318   0.472404  │
-│ trainable_c228c_00037   TERMINATED   0.593358         3            3.20048   1.18672   │
-│ trainable_c228c_00038   TERMINATED   0.944953         3            3.2152    1.88991   │
-│ trainable_c228c_00039   TERMINATED   0.731139         3            3.20814   1.46228   │
-│ trainable_c228c_00040   TERMINATED   0.0800929        3            3.21228   0.160186  │
-│ trainable_c228c_00041   TERMINATED   0.538752         3            3.22476   1.0775    │
-│ trainable_c228c_00042   TERMINATED   0.408101         3            3.20619   0.816203  │
-│ trainable_c228c_00043   TERMINATED   0.0613487        3            3.20597   0.122697  │
-│ trainable_c228c_00044   TERMINATED   0.35969          3            3.21059   0.71938   │
-│ trainable_c228c_00045   TERMINATED   0.774703         3            3.21038   1.54941   │
-│ trainable_c228c_00046   TERMINATED   0.0360343        3            3.21458   0.0720686 │
-│ trainable_c228c_00047   TERMINATED   0.597733         3            3.21191   1.19547   │
-│ trainable_c228c_00048   TERMINATED   0.774071         3            3.20022   1.54814   │
-│ trainable_c228c_00049   TERMINATED   0.583177         3            3.21753   1.16635   │
-│ trainable_c228c_00050   TERMINATED   0.318465         3            3.21045   0.63693   │
-│ trainable_c228c_00051   TERMINATED   0.709045         3            3.20915   1.41809   │
-│ trainable_c228c_00052   TERMINATED   0.0962012        3            3.21377   0.192402  │
-│ trainable_c228c_00053   TERMINATED   0.0605628        3            3.19694   0.121126  │
-│ trainable_c228c_00054   TERMINATED   0.535269         3            3.20953   1.07054   │
-│ trainable_c228c_00055   TERMINATED   0.577668         3            3.20652   1.15534   │
-│ trainable_c228c_00056   TERMINATED   0.408085         3            3.22385   0.816169  │
-│ trainable_c228c_00057   TERMINATED   0.484999         3            3.20728   0.969998  │
-│ trainable_c228c_00058   TERMINATED   0.122377         3            3.19913   0.244754  │
-│ trainable_c228c_00059   TERMINATED   0.803588         3            3.20765   1.60718   │
-│ trainable_c228c_00060   TERMINATED   0.449798         3            3.2013    0.899597  │
-│ trainable_c228c_00061   TERMINATED   0.730429         3            3.20579   1.46086   │
+│ trainable_8f493_00000   TERMINATED   0.0566332        3           28.1605    0.113266  │
+│ trainable_8f493_00001   TERMINATED   0.957351         3           28.2536    1.9147    │
+│ trainable_8f493_00002   TERMINATED   0.0578671        3           23.9234    0.115734  │
+│ trainable_8f493_00003   TERMINATED   0.525831         3           22.9609    1.05166   │
+│ trainable_8f493_00004   TERMINATED   0.48027          3           19.1661    0.96054   │
+│ trainable_8f493_00005   TERMINATED   0.795989         3           18.5116    1.59198   │
+│ trainable_8f493_00006   TERMINATED   0.791504         3           13.3238    1.58301   │
+│ trainable_8f493_00007   TERMINATED   0.602429         3           13.68      1.20486   │
+│ trainable_8f493_00008   TERMINATED   0.623691         3           13.4863    1.24738   │
+│ trainable_8f493_00009   TERMINATED   0.142343         3           12.3704    0.284685  │
+│ trainable_8f493_00010   TERMINATED   0.413767         3           12.3171    0.827535  │
+│ trainable_8f493_00011   TERMINATED   0.690739         3            9.47105   1.38148   │
+│ trainable_8f493_00012   TERMINATED   0.809305         3            9.41074   1.61861   │
+│ trainable_8f493_00013   TERMINATED   0.767875         3            8.43649   1.53575   │
+│ trainable_8f493_00014   TERMINATED   0.691169         3            8.52394   1.38234   │
+│ trainable_8f493_00015   TERMINATED   0.668031         3            5.11234   1.33606   │
+│ trainable_8f493_00016   TERMINATED   0.872246         3            8.56545   1.74449   │
+│ trainable_8f493_00017   TERMINATED   0.357957         3            8.90905   0.715914  │
+│ trainable_8f493_00018   TERMINATED   0.717386         3            9.02969   1.43477   │
+│ trainable_8f493_00019   TERMINATED   0.302478         3            5.67084   0.604956  │
+│ trainable_8f493_00020   TERMINATED   0.902227         3            3.20229   1.80445   │
+│ trainable_8f493_00021   TERMINATED   0.162067         3            7.73341   0.324133  │
+│ trainable_8f493_00022   TERMINATED   0.361835         3            3.20684   0.72367   │
+│ trainable_8f493_00023   TERMINATED   0.993491         3            5.4226    1.98698   │
+│ trainable_8f493_00024   TERMINATED   0.278574         3            5.24954   0.557148  │
+│ trainable_8f493_00025   TERMINATED   0.90586          3            3.20561   1.81172   │
+│ trainable_8f493_00026   TERMINATED   0.257468         3            3.22186   0.514936  │
+│ trainable_8f493_00027   TERMINATED   0.265278         3            3.3265    0.530556  │
+│ trainable_8f493_00028   TERMINATED   0.0699257        3            3.20369   0.139851  │
+│ trainable_8f493_00029   TERMINATED   0.247665         3            3.21295   0.495331  │
+│ trainable_8f493_00030   TERMINATED   0.793102         3            3.22863   1.5862    │
+│ trainable_8f493_00031   TERMINATED   0.885388         3            3.23073   1.77078   │
+│ trainable_8f493_00032   TERMINATED   0.448307         3            3.20952   0.896614  │
+│ trainable_8f493_00033   TERMINATED   0.405982         3            3.21278   0.811965  │
+│ trainable_8f493_00034   TERMINATED   0.028772         3            3.22228   0.057544  │
+│ trainable_8f493_00035   TERMINATED   0.306882         3            3.21486   0.613765  │
+│ trainable_8f493_00036   TERMINATED   0.0716123        3            3.19946   0.143225  │
+│ trainable_8f493_00037   TERMINATED   0.855447         3            3.22035   1.71089   │
+│ trainable_8f493_00038   TERMINATED   0.249396         3            3.21724   0.498793  │
+│ trainable_8f493_00039   TERMINATED   0.642988         3            3.20258   1.28598   │
+│ trainable_8f493_00040   TERMINATED   0.520719         3            3.20915   1.04144   │
+│ trainable_8f493_00041   TERMINATED   0.424393         3            3.22792   0.848786  │
+│ trainable_8f493_00042   TERMINATED   0.913742         3            3.20551   1.82748   │
+│ trainable_8f493_00043   TERMINATED   0.966358         3            3.20889   1.93272   │
+│ trainable_8f493_00044   TERMINATED   0.440676         3            3.22019   0.881353  │
+│ trainable_8f493_00045   TERMINATED   0.476683         3            3.20593   0.953365  │
+│ trainable_8f493_00046   TERMINATED   0.829331         3            3.20277   1.65866   │
+│ trainable_8f493_00047   TERMINATED   0.489036         3            3.20416   0.978073  │
+│ trainable_8f493_00048   TERMINATED   0.408478         3            3.20911   0.816955  │
+│ trainable_8f493_00049   TERMINATED   0.212638         3            4.20307   0.425276  │
+│ trainable_8f493_00050   TERMINATED   0.176232         3            3.22031   0.352465  │
+│ trainable_8f493_00051   TERMINATED   0.62833          3            3.20133   1.25666   │
+│ trainable_8f493_00052   TERMINATED   0.0580906        3            3.21322   0.116181  │
+│ trainable_8f493_00053   TERMINATED   0.706267         3            3.21572   1.41253   │
+│ trainable_8f493_00054   TERMINATED   0.524747         3            3.20947   1.04949   │
+│ trainable_8f493_00055   TERMINATED   0.377424         3            3.21724   0.754849  │
+│ trainable_8f493_00056   TERMINATED   0.119215         3            3.20918   0.23843   │
+│ trainable_8f493_00057   TERMINATED   0.0137306        3            3.1978    0.0274612 │
+│ trainable_8f493_00058   TERMINATED   0.737086         3            3.21119   1.47417   │
+│ trainable_8f493_00059   TERMINATED   0.207816         3            3.21284   0.415633  │
+│ trainable_8f493_00060   TERMINATED   0.846509         3            3.19408   1.69302   │
+│ trainable_8f493_00061   TERMINATED   0.0264551        3            3.21444   0.0529101 │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 
-C10_RESULT LB11.tune COMPLETED {"alive_nodes": ["3cb7a7ebd7ad308060c39c85519feb29a9a1f526f3e37ca332a73245"], "bundles": [1.1852, 1.1852], "elapsed_s": 54.8, "errors": 0, "max_concurrent_trials": 27, "mode": "tuned", "results": 62, "seconds": 54.7, "task_cpu": 1.1852, "trials": 62}
+C10_RESULT LB11.tune COMPLETED {"alive_nodes": ["54f220befe8385183d7f5a0c231721c357d4547a16c61ced3149250b"], "bundles": [1.1852, 1.1852], "elapsed_s": 68.7, "errors": 0, "max_concurrent_trials": 27, "mode": "tuned", "results": 62, "seconds": 68.6, "task_cpu": 1.1852, "trials": 62}

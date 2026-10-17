@@ -1,0 +1,605 @@
+2026-10-17 09:22:37,760	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-17 09:22:37,780	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-17 09:22:37,780	SUCC cli.py:67 -- [32mJob 'raysubmit_tmBZnFYkxZrdkMud' submitted successfully[39m
+2026-10-17 09:22:37,780	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-17 09:22:37,780	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-17 09:22:37,781	INFO cli.py:331 -- Query the logs of the job:
+2026-10-17 09:22:37,781	INFO cli.py:333 -- [1mray job logs raysubmit_tmBZnFYkxZrdkMud[22m
+2026-10-17 09:22:37,781	INFO cli.py:335 -- Query the status of the job:
+2026-10-17 09:22:37,781	INFO cli.py:337 -- [1mray job status raysubmit_tmBZnFYkxZrdkMud[22m
+2026-10-17 09:22:37,781	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-17 09:22:37,781	INFO cli.py:341 -- [1mray job stop raysubmit_tmBZnFYkxZrdkMud[22m
+2026-10-17 09:22:37,784	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-17 09:22:37,775	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_tmBZnFYkxZrdkMud: python c10_tune.py default
+C10_START C10.tune default 1792254160.0 guard_s=600.0
+2026-10-17 09:22:40,025	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 172.17.0.15:6379...
+2026-10-17 09:22:40,057	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=6.0 ports=18 budget=14
+C10_PARAMS {'trials': 22, 'bundle_cpu': 'default 1', 'max_concurrent_trials': None}
+╭──────────────────────────────────────────────────────────────╮
+│ Configuration for experiment     plain_2026-10-17_09-22-41   │
+├──────────────────────────────────────────────────────────────┤
+│ Search algorithm                 BasicVariantGenerator       │
+│ Scheduler                        FIFOScheduler               │
+│ Number of trials                 22                          │
+╰──────────────────────────────────────────────────────────────╯
+
+View detailed results here: /home/ray/ray_results/plain_2026-10-17_09-22-41
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-17_09-22-07_914169_7/artifacts/2026-10-17_09-22-41/plain_2026-10-17_09-22-41/driver_artifacts`
+
+Trial status: 22 PENDING
+Current time: 2026-10-17 09:22:43. Total running time: 0s
+Logical resource usage: 6.0/6 CPUs, 0/0 GPUs
+╭─────────────────────────────────────────╮
+│ Trial name          status            x │
+├─────────────────────────────────────────┤
+│ plain_f9c1c_00000   PENDING    0.474391 │
+│ plain_f9c1c_00001   PENDING    0.202068 │
+│ plain_f9c1c_00002   PENDING    0.583716 │
+│ plain_f9c1c_00003   PENDING    0.598548 │
+│ plain_f9c1c_00004   PENDING    0.014793 │
+╰─────────────────────────────────────────╯
+17 more PENDING
+[36m(autoscaler +5s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=d2999c3b0ade4e8814755d05aa3c04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=116dd72463bf58547ed9d46e714304000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=16125586ec4eca6ed7e1b403d30b04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=4590cd610f5053c7d4998e11d93f04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=d90a77604905bd648ea7a72e0b6004000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=8bf67873db64bafad37d273aef8604000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=8c5289e3a721604274cc8ff3043004000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=852136ddd13c56394f2e21bd1d7e04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=c1b7e4a0bc2bf4a81a5bae99978f04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=a010f8a24573c2f7af45160b4db804000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=aafc83555ce69611b60a7b02e5dd04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=a7645848a50830aa034e20866d1404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=ad1b2f70fb8011f26c58c9e1d47004000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=39ab9abc01994e1b8cd118d9565404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=879df81c66fb4478e4a7963b8e2204000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5s)[0m No available node types can fulfill placement group requests (detail=0991a5771cd7c94751217943fc6604000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+
+Trial plain_f9c1c_00004 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00004 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.01479 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00000 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00000 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.47439 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00003 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00003 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.59855 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00001 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00001 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.20207 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00005 started with configuration:
+╭──────────────────────────────────────────╮
+│ Trial plain_f9c1c_00005 config           │
+├──────────────────────────────────────────┤
+│ x                                  0.974 │
+╰──────────────────────────────────────────╯
+
+Trial plain_f9c1c_00002 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00002 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.58372 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00004 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00004 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50029 │
+│ time_total_s                       1.50189 │
+│ training_iteration                       3 │
+│ score                              0.02959 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00003 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00003 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50047 │
+│ time_total_s                       1.50278 │
+│ training_iteration                       3 │
+│ score                               1.1971 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00001 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00001 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50028 │
+│ time_total_s                       1.50106 │
+│ training_iteration                       3 │
+│ score                              0.40414 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00005 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00005 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50049 │
+│ time_total_s                        1.5013 │
+│ training_iteration                       3 │
+│ score                              1.94799 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00000 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00000 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50032 │
+│ time_total_s                       1.50152 │
+│ training_iteration                       3 │
+│ score                              0.94878 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00002 completed after 3 iterations at 2026-10-17 09:22:49. Total running time: 6s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00002 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50029 │
+│ time_total_s                       1.50098 │
+│ training_iteration                       3 │
+│ score                              1.16743 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+[36m(plain pid=289)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x76692d78bce0>
+[36m(plain pid=289)[0m Traceback (most recent call last):
+[36m(plain pid=289)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(plain pid=289)[0m     def _remove(item, selfref=ref(self)):
+[36m(plain pid=289)[0m 
+[36m(plain pid=289)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(plain pid=289)[0m     raise_sys_exit_with_custom_error_message(
+[36m(plain pid=289)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(plain pid=289)[0m SystemExit: 1
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=c1b7e4a0bc2bf4a81a5bae99978f04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=a010f8a24573c2f7af45160b4db804000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=aafc83555ce69611b60a7b02e5dd04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=a7645848a50830aa034e20866d1404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=ad1b2f70fb8011f26c58c9e1d47004000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=39ab9abc01994e1b8cd118d9565404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=879df81c66fb4478e4a7963b8e2204000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10s)[0m No available node types can fulfill placement group requests (detail=0991a5771cd7c94751217943fc6604000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+
+Trial plain_f9c1c_00007 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00007 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.79685 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00010 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00010 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.20762 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00011 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00011 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.94661 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00008 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00008 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.75647 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00006 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00006 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.76832 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00009 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00009 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.12148 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00007 completed after 3 iterations at 2026-10-17 09:22:54. Total running time: 11s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00007 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50027 │
+│ time_total_s                       1.50361 │
+│ training_iteration                       3 │
+│ score                               1.5937 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=852136ddd13c56394f2e21bd1d7e04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=c1b7e4a0bc2bf4a81a5bae99978f04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=a010f8a24573c2f7af45160b4db804000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=aafc83555ce69611b60a7b02e5dd04000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=a7645848a50830aa034e20866d1404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=ad1b2f70fb8011f26c58c9e1d47004000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=39ab9abc01994e1b8cd118d9565404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=879df81c66fb4478e4a7963b8e2204000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +15s)[0m No available node types can fulfill placement group requests (detail=0991a5771cd7c94751217943fc6604000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+
+Trial plain_f9c1c_00010 completed after 3 iterations at 2026-10-17 09:22:55. Total running time: 12s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00010 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50065 │
+│ time_total_s                       1.50228 │
+│ training_iteration                       3 │
+│ score                              0.41523 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00011 completed after 3 iterations at 2026-10-17 09:22:55. Total running time: 12s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00011 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50027 │
+│ time_total_s                        1.5016 │
+│ training_iteration                       3 │
+│ score                              1.89323 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00008 completed after 3 iterations at 2026-10-17 09:22:55. Total running time: 12s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00008 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50086 │
+│ time_total_s                       1.50329 │
+│ training_iteration                       3 │
+│ score                              1.51294 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00006 completed after 3 iterations at 2026-10-17 09:22:55. Total running time: 12s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00006 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50027 │
+│ time_total_s                       1.50227 │
+│ training_iteration                       3 │
+│ score                              1.53665 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00009 completed after 3 iterations at 2026-10-17 09:22:55. Total running time: 12s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00009 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50565 │
+│ time_total_s                       1.50704 │
+│ training_iteration                       3 │
+│ score                              0.24296 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00012 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00012 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.97648 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00012 completed after 3 iterations at 2026-10-17 09:22:59. Total running time: 16s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00012 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50475 │
+│ time_total_s                       1.57153 │
+│ training_iteration                       3 │
+│ score                              1.95296 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00017 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00017 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.64638 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00013 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00013 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.36063 │
+╰────────────────────────────────────────────╯
+[36m(autoscaler +20s)[0m No available node types can fulfill placement group requests (detail=39ab9abc01994e1b8cd118d9565404000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +20s)[0m No available node types can fulfill placement group requests (detail=879df81c66fb4478e4a7963b8e2204000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +20s)[0m No available node types can fulfill placement group requests (detail=0991a5771cd7c94751217943fc6604000000:PACK|PENDING): {'CPU': 1.0}*1. Add suitable node types to this cluster to resolve this issue.
+
+Trial plain_f9c1c_00015 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00015 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.59315 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00014 started with configuration:
+╭───────────────────────────────────────────╮
+│ Trial plain_f9c1c_00014 config            │
+├───────────────────────────────────────────┤
+│ x                                  0.2741 │
+╰───────────────────────────────────────────╯
+
+Trial plain_f9c1c_00016 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00016 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.99408 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00017 completed after 3 iterations at 2026-10-17 09:23:01. Total running time: 18s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00017 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50031 │
+│ time_total_s                       1.50167 │
+│ training_iteration                       3 │
+│ score                              1.29275 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00013 completed after 3 iterations at 2026-10-17 09:23:01. Total running time: 18s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00013 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50117 │
+│ time_total_s                       1.50553 │
+│ training_iteration                       3 │
+│ score                              0.72126 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+[36m(plain pid=715)[0m 
+[36m(plain pid=715)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x771e77cbbce0>
+[36m(plain pid=715)[0m Traceback (most recent call last):
+[36m(plain pid=715)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(plain pid=715)[0m     def _remove(item, selfref=ref(self)):
+[36m(plain pid=715)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(plain pid=715)[0m     raise_sys_exit_with_custom_error_message(
+[36m(plain pid=715)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(plain pid=715)[0m SystemExit: 1
+
+Trial plain_f9c1c_00015 completed after 3 iterations at 2026-10-17 09:23:01. Total running time: 18s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00015 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50137 │
+│ time_total_s                       1.50251 │
+│ training_iteration                       3 │
+│ score                              1.18631 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00014 completed after 3 iterations at 2026-10-17 09:23:01. Total running time: 18s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00014 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                    0.5008 │
+│ time_total_s                       1.50189 │
+│ training_iteration                       3 │
+│ score                               0.5482 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00016 completed after 3 iterations at 2026-10-17 09:23:02. Total running time: 19s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00016 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50025 │
+│ time_total_s                       1.50338 │
+│ training_iteration                       3 │
+│ score                              1.98815 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00018 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00018 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.53072 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00021 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00021 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.88892 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00020 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00020 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.96343 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00018 completed after 3 iterations at 2026-10-17 09:23:04. Total running time: 21s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00018 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50028 │
+│ time_total_s                        1.5024 │
+│ training_iteration                       3 │
+│ score                              1.06143 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00019 started with configuration:
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00019 config             │
+├────────────────────────────────────────────┤
+│ x                                  0.60695 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00021 completed after 3 iterations at 2026-10-17 09:23:05. Total running time: 22s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00021 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50024 │
+│ time_total_s                       1.50096 │
+│ training_iteration                       3 │
+│ score                              1.77784 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00020 completed after 3 iterations at 2026-10-17 09:23:05. Total running time: 22s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00020 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                    0.5003 │
+│ time_total_s                       1.50096 │
+│ training_iteration                       3 │
+│ score                              1.92686 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+
+Trial plain_f9c1c_00019 completed after 3 iterations at 2026-10-17 09:23:05. Total running time: 22s
+╭────────────────────────────────────────────╮
+│ Trial plain_f9c1c_00019 result             │
+├────────────────────────────────────────────┤
+│ checkpoint_dir_name                        │
+│ time_this_iter_s                   0.50028 │
+│ time_total_s                         1.501 │
+│ training_iteration                       3 │
+│ score                               1.2139 │
+│ step                                     2 │
+╰────────────────────────────────────────────╯
+2026-10-17 09:23:05,730	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/plain_2026-10-17_09-22-41' in 0.0119s.
+
+Trial status: 22 TERMINATED
+Current time: 2026-10-17 09:23:05. Total running time: 22s
+Logical resource usage: 1.0/6 CPUs, 0/0 GPUs
+Current best trial: f9c1c_00016 with score=1.9881533112545213 and params={'x': 0.9940766556272607}
+╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name          status              x     iter     total time (s)       score     step │
+├────────────────────────────────────────────────────────────────────────────────────────────┤
+│ plain_f9c1c_00000   TERMINATED   0.474391        3            1.50152   0.948783         2 │
+│ plain_f9c1c_00001   TERMINATED   0.202068        3            1.50106   0.404136         2 │
+│ plain_f9c1c_00002   TERMINATED   0.583716        3            1.50098   1.16743          2 │
+│ plain_f9c1c_00003   TERMINATED   0.598548        3            1.50278   1.1971           2 │
+│ plain_f9c1c_00004   TERMINATED   0.014793        3            1.50189   0.0295859        2 │
+│ plain_f9c1c_00005   TERMINATED   0.973996        3            1.5013    1.94799          2 │
+│ plain_f9c1c_00006   TERMINATED   0.768325        3            1.50227   1.53665          2 │
+│ plain_f9c1c_00007   TERMINATED   0.796852        3            1.50361   1.5937           2 │
+│ plain_f9c1c_00008   TERMINATED   0.756469        3            1.50329   1.51294          2 │
+│ plain_f9c1c_00009   TERMINATED   0.121481        3            1.50704   0.242962         2 │
+│ plain_f9c1c_00010   TERMINATED   0.207615        3            1.50228   0.415231         2 │
+│ plain_f9c1c_00011   TERMINATED   0.946614        3            1.5016    1.89323          2 │
+│ plain_f9c1c_00012   TERMINATED   0.976478        3            1.57153   1.95296          2 │
+│ plain_f9c1c_00013   TERMINATED   0.360629        3            1.50553   0.721259         2 │
+│ plain_f9c1c_00014   TERMINATED   0.2741          3            1.50189   0.5482           2 │
+│ plain_f9c1c_00015   TERMINATED   0.593153        3            1.50251   1.18631          2 │
+│ plain_f9c1c_00016   TERMINATED   0.994077        3            1.50338   1.98815          2 │
+│ plain_f9c1c_00017   TERMINATED   0.646375        3            1.50167   1.29275          2 │
+│ plain_f9c1c_00018   TERMINATED   0.530716        3            1.5024    1.06143          2 │
+│ plain_f9c1c_00019   TERMINATED   0.606952        3            1.501     1.2139           2 │
+│ plain_f9c1c_00020   TERMINATED   0.963428        3            1.50096   1.92686          2 │
+│ plain_f9c1c_00021   TERMINATED   0.888919        3            1.50096   1.77784          2 │
+╰────────────────────────────────────────────────────────────────────────────────────────────╯
+
+C10_RESULT C10.tune COMPLETED {"alive_nodes": ["bca54d8412693eab3c0a5986ef854af3b2474e55088d6b1e76ae47e8"], "bundle_cpu": "default 1", "elapsed_s": 25.7, "errors": 0, "max_concurrent_trials": null, "mode": "default", "results": 22, "seconds": 24.6, "trials": 22}
+2026-10-17 09:23:09,862	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-17 09:23:09,862	SUCC cli.py:67 -- [32mJob 'raysubmit_tmBZnFYkxZrdkMud' succeeded[39m
+2026-10-17 09:23:09,862	SUCC cli.py:68 -- [32m------------------------------------------[39m
+2026-10-17 09:22:37,768	INFO dashboard_sdk.py:423 -- Package gcs://_ray_pkg_93b9fa1521e2298f.zip already exists, skipping upload.
+2026-10-17 09:23:09,858	INFO sdk.py:520 -- WebSocket closed for job raysubmit_tmBZnFYkxZrdkMud with close code 1000
+
+--- head log
+2026-10-17 09:22:40,074	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:22:40,075	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:22:40,075	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:22:45,091	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:22:45,092	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:22:45,092	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:22:50,117	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:22:50,117	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:22:50,117	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:22:55,158	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:22:55,158	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:22:55,158	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:00,194	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:00,194	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:00,194	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:05,224	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:05,224	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:05,224	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:10,235	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:10,235	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:10,235	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:15,245	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:15,245	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:15,245	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:20,260	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:20,260	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:20,260	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:25,274	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:25,274	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:25,275	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:30,284	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:30,284	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:30,284	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:35,293	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:35,293	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:35,293	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:40,304	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:40,304	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:40,304	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:45,316	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:45,316	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:45,316	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:50,326	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:50,326	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:50,326	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 09:23:55,336	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 09:23:55,336	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 09:23:55,336	INFO util.py:402 -- setting max workers for head node type to 0

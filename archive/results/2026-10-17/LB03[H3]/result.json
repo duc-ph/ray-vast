@@ -5,22 +5,22 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792237250.6870644,
+ "started": 1792265790.429767,
  "checks": [
   {
    "name": "the LB03 input is written (lb_make_parquet.py)",
    "ok": true,
-   "detail": "('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 60.5})"
+   "detail": "('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 56.1})"
   },
   {
    "name": "the data.md snippet at B 10 on H3: SUCCEEDED, all rows counted from the S3 output",
    "ok": true,
-   "detail": "('SUCCEEDED', {'elapsed_s': 569.5, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 3000000})"
+   "detail": "('SUCCEEDED', {'elapsed_s': 543.1, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 3000000})"
   },
   {
    "name": "output in S3",
    "ok": true,
-   "detail": "s3://ray-vast-rvtest-20261017-089e/lb03/out-H3"
+   "detail": "s3://ray-vast-rvtest-20261017-ad16/lb03/out-H3"
   },
   {
    "name": "no refused fork in a WARNING",
@@ -39,20 +39,20 @@
   }
  ],
  "data": {
-  "shape_wait_s": 3.1,
+  "shape_wait_s": 3.4,
   "H3": {
    "B": 10,
    "CPUS": 4.0,
    "hosts": [
     {
-     "container_id": "56385063",
+     "container_id": "56436329",
      "machine_id": 3969,
      "ports": 14,
      "ray_cpus": 4.0,
      "pids.max": "1280"
     },
     {
-     "container_id": "56385075",
+     "container_id": "56436344",
      "machine_id": 32816,
      "ports": 14,
      "ray_cpus": 4.0,
@@ -61,16 +61,16 @@
    ]
   },
   "input": {
-   "path": "s3://ray-vast-rvtest-20261017-089e/lb03/in",
+   "path": "s3://ray-vast-rvtest-20261017-ad16/lb03/in",
    "rows": 3000000,
-   "bytes": 3016796698,
+   "bytes": 3016796700,
    "status": "SUCCEEDED",
    "result": [
     "PASS",
     {
      "rows": 3000000,
      "blocks": 60,
-     "seconds": 60.5
+     "seconds": 56.1
     }
    ]
   },
@@ -88,7 +88,7 @@
    {
     "doc": "libraries/data.md",
     "old": "\"s3://my-bucket/in\"",
-    "new": "\"s3://ray-vast-rvtest-20261017-089e/lb03/in\""
+    "new": "\"s3://ray-vast-rvtest-20261017-ad16/lb03/in\""
    },
    {
     "doc": "libraries/data.md",
@@ -108,11 +108,11 @@
    {
     "doc": "libraries/data.md",
     "old": "\"s3://my-bucket/out\"",
-    "new": "\"s3://ray-vast-rvtest-20261017-089e/lb03/out-H3\""
+    "new": "\"s3://ray-vast-rvtest-20261017-ad16/lb03/out-H3\""
    }
   ],
   "data_snippet": {
-   "elapsed_s": 569.5,
+   "elapsed_s": 543.1,
    "groups": 1000,
    "rows_counted": 3000000,
    "rows_expected": 3000000
@@ -120,6 +120,6 @@
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792237950.9811041,
- "wall_s": 700.3
+ "ended": 1792266460.2547114,
+ "wall_s": 669.8
 }
