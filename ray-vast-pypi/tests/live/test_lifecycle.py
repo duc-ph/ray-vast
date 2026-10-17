@@ -5,42 +5,23 @@ hold of 4 workers for the probes (L03-L05), then the destructive scenarios (L07,
 About 2 h; vast about $2, EC2 about $0.10."""
 import json
 import re
-import shutil
 import subprocess
-import tempfile
 import threading
 import time
-from pathlib import Path
 
 import boto3
 import pytest
 
 from livekit import check
-from cluster import ADMIN_PROFILE, BIN, MANUAL
+from cluster import ADMIN_PROFILE, JOBS, MANUAL
 
 pytestmark = pytest.mark.lifecycle
-JOBS = Path(__file__).parent / "jobs"
-
-
-def workdir(*files):
-    """A temp working directory for `ray job submit` with these files."""
-    d = Path(tempfile.mkdtemp(prefix="rvjob-"))
-    for f in files:
-        shutil.copy(f, d / Path(f).name)
-    return d
-
 
 
 def worker_rules(cluster):
     ec2 = boto3.Session(profile_name=ADMIN_PROFILE, region_name=cluster.region).client("ec2")
     groups = ec2.describe_security_groups(Filters=[{"Name": "tag:ray-vast-cluster", "Values": [cluster.name]}])["SecurityGroups"]
     return sum(1 for g in groups for p in g["IpPermissions"] for r in p.get("IpRanges", []) if r.get("Description") == f"ray-vast:{cluster.name}")
-
-
-def probe_nodes(cluster, env, out_dir, name="probe"):
-    status, log = cluster.job(env, workdir(JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"),
-                              ["python", "node_probe.py"], out_dir=out_dir, name=name, timeout=900)
-    return status, [json.loads(line.split(" ", 1)[1]) for line in log.splitlines() if line.startswith("NODE_PROBE ")]
 
 
 @pytest.fixture(scope="module")
@@ -52,14 +33,12 @@ def session_env(lifecycle):
 @pytest.fixture(scope="module")
 def hold(lifecycle, session_env):
     """4 workers held by a placement group (hold.py) for L03-L10. Stopped at the end of the module."""
-    sid, _ = lifecycle.job(session_env, workdir(JOBS / "hold.py"), ["python", "hold.py", "4"], name="hold", no_wait=True,
-                           out_dir=lifecycle.dir)
+    job = lifecycle.job(session_env, ["python", "hold.py", "4"], name="hold", files=[JOBS / "hold.py"], wait=False)
     deadline = time.time() + 1800
-    while time.time() < deadline and "HOLD_READY" not in lifecycle.job_logs(session_env, sid):
+    while time.time() < deadline and "HOLD_READY" not in job.logs():
         time.sleep(20)
-    yield sid
-    subprocess.run([str(BIN / "ray"), "job", "stop", "--address", session_env["RAY_ADDRESS"], sid], env=session_env,
-                   capture_output=True, timeout=120)
+    yield job
+    job.stop()
 
 
 @pytest.mark.security
@@ -96,10 +75,10 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
     threading.Thread(target=sample_rules, daemon=True).start()
     t_submit = time.time()
     log_start = len(lifecycle.monitor_log()) + 1
-    status, log = lifecycle.job(session_env, workdir(MANUAL / "c8_job.py"), ["python", "c8_job.py"], out_dir=record.dir, name="c8_job",
-                                timeout=2400)
+    job = lifecycle.job(session_env, ["python", "c8_job.py"], record.dir, name="c8_job", files=[MANUAL / "c8_job.py"], timeout=2400)
+    status = job.status
     t_end = time.time()
-    results = [json.loads(line) for line in log.splitlines() if line.startswith("{")]
+    results = [json.loads(line) for line in job.log.splitlines() if line.startswith("{")]
     check(record, "c8_job SUCCEEDED with 4 containers", status == "SUCCEEDED" and len({r["container_id"] for r in results}) == 4, status)
     check(record, "both node types", {r["node_type"] for r in results} == {"gpu-a", "gpu-b"}, sorted({str(r["node_type"]) for r in results}))
     for r in results:
@@ -152,9 +131,9 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
 @pytest.mark.security
 @pytest.mark.limits
 def test_L03_host_and_task_probe_on_each_worker(record, lifecycle, session_env, hold):
-    status, nodes = probe_nodes(lifecycle, session_env, record.dir)
+    nodes = lifecycle.probe(session_env, record.dir)  # raises unless the probe job SUCCEEDED
     record.evidence("node_probe.json", json.dumps(nodes, indent=1))
-    check(record, "probe job SUCCEEDED on 4 workers", status == "SUCCEEDED" and len(nodes) == 4, (status, len(nodes)))
+    check(record, "probe job SUCCEEDED on 4 workers", len(nodes) == 4, len(nodes))
     for n in nodes:
         cid = n["container_id"]
         check(record, f"{cid}: uid 1000, Ray 2.59.0", n["uid"] == 1000 and n["ray_version"] == "2.59.0", (n["uid"], n["ray_version"]))
@@ -191,7 +170,7 @@ def test_L03_host_and_task_probe_on_each_worker(record, lifecycle, session_env, 
 
 @pytest.mark.security
 def test_L04_network_battery_tls_and_token(record, lifecycle, session_env, hold):
-    status, nodes = probe_nodes(lifecycle, session_env, record.dir)
+    nodes = lifecycle.probe(session_env, record.dir)
     for n in nodes:
         cid = n["container_id"]
         check(record, f"{cid}: agent port answers 401 without the token", n["agent_http_no_token"] == 401, n["agent_http_no_token"])
@@ -201,17 +180,16 @@ def test_L04_network_battery_tls_and_token(record, lifecycle, session_env, hold)
     ips = sorted({n["ip"] for n in nodes})
     secrets_dir = f"/home/ubuntu/ray-vast-{lifecycle.name}/secrets"
     lifecycle.ssh("sudo rm -f /tmp/rv_cap.pcap; (sudo timeout 600 tcpdump -i ens5 -w /tmp/rv_cap.pcap not port 22 >/dev/null 2>&1 &)")
-    status, log = lifecycle.job(session_env, workdir(MANUAL / "battery.py"), ["python", "battery.py", ips[0], ips[1]],
-                                out_dir=record.dir, name="battery", timeout=1800)
+    battery = lifecycle.job(session_env, ["python", "battery.py", ips[0], ips[1]], record.dir, name="battery",
+                            files=[MANUAL / "battery.py"], timeout=1800)
     lifecycle.ssh("sudo pkill -INT tcpdump; sleep 3", check=False)
     hits = lifecycle.ssh(f"sudo grep -c -a -F -f {secrets_dir}/token /tmp/rv_cap.pcap; ls -l /tmp/rv_cap.pcap", check=False)
     lifecycle.ssh("sudo rm -f /tmp/rv_cap.pcap", check=False)
     record.evidence("token_in_capture.txt", hits)
-    battery = re.search(r"BATTERY_JSON (\{.*\})", log)
-    data = json.loads(battery.group(1)) if battery else {}
+    data = (battery.lines("BATTERY_JSON") or [{}])[-1]
     record.data("battery", {k: v for k, v in data.items() if k.startswith("step")})
-    check(record, "battery ran (actor RTT, pip, 50 MB both ways, worker to worker)", status == "SUCCEEDED" and all(
-        f"step{i}" in " ".join(data) for i in (1, 2, 3, 4)), status)
+    check(record, "battery ran (actor RTT, pip, 50 MB both ways, worker to worker)", battery.status == "SUCCEEDED" and all(
+        f"step{i}" in " ".join(data) for i in (1, 2, 3, 4)), battery.status)
     check(record, "no token bytes on the head's public interface", hits.strip().splitlines()[0] == "0" if hits.strip() else False, hits[:80])
     metrics = []
     for n in nodes:
@@ -248,17 +226,16 @@ def _node_of(nodes, index):
 @pytest.mark.failure
 @pytest.mark.security
 def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
-    _, nodes = probe_nodes(lifecycle, session_env, record.dir)
+    nodes = lifecycle.probe(session_env, record.dir)
     a = _node_of(nodes, 0)
-    wd = workdir(MANUAL / "task_probe.py")
-    status, log = lifecycle.job(session_env, wd, ["python", "task_probe.py", "signals", a["node_id"], "120"], out_dir=record.dir,
-                                name="signals", timeout=900)
+    log = lifecycle.job(session_env, ["python", "task_probe.py", "signals", a["node_id"], "120"], record.dir, name="signals",
+                        files=[MANUAL / "task_probe.py"], timeout=900).log
     result = json.loads(next(line for line in log.splitlines() if line.startswith('{"orphan_parents"')))
     check(record, "KILL, QUIT, USR1, USR2, CONT: same PID 1 after 120 s", result["pid1_same"], result["kill"])
     check(record, "0 zombies of PID 1", result["zombies_of_pid1_end"] == 0, result["zombies_of_pid1_end"])
     log_start = len(lifecycle.monitor_log()) + 1
-    status, log = lifecycle.job(session_env, wd, ["python", "task_probe.py", "sigterm", a["node_id"]], out_dir=record.dir,
-                                name="sigterm", timeout=300)
+    log = lifecycle.job(session_env, ["python", "task_probe.py", "sigterm", a["node_id"]], record.dir, name="sigterm",
+                        files=[MANUAL / "task_probe.py"], timeout=300).log
     t0 = json.loads(log.splitlines()[[i for i, x in enumerate(log.splitlines()) if '"t0"' in x][0]])["t0"]
     # t0 is before the driver (on the head) schedules the signal task; the task prints the time of the signal (worker clock).
     sent = next((json.loads(x)["utc"] for x in log.splitlines() if x.startswith('{"sigterm": "sent"')), None)
@@ -291,7 +268,7 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     check(record, "Ray marks the node DEAD (safety bound 300 s)", dead is not None, dead and round(dead - t0, 1))
     deadline = time.time() + 1200
     while time.time() < deadline:
-        _, after = probe_nodes(lifecycle, session_env, record.dir, name="probe_after")
+        after = lifecycle.probe(session_env, record.dir, name="probe_after", check=False)
         if len(after) == 4 and a["container_id"] not in {n["container_id"] for n in after}:
             break
         time.sleep(30)
@@ -304,13 +281,12 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     stop the head container. Every instance must destroy itself; then `down` without a vast key."""
     if lifecycle.kept:
         pytest.skip("--keep-cluster: the cluster stays")
-    subprocess.run([str(BIN / "ray"), "job", "stop", "--address", session_env["RAY_ADDRESS"], hold], env=session_env,
-                   capture_output=True, timeout=120)
+    hold.stop()
     deadline = time.time() + 900
     while time.time() < deadline and lifecycle.instances():
         time.sleep(15)
     log_start = len(lifecycle.monitor_log()) + 1
-    lifecycle.job(session_env, workdir(JOBS / "hold.py"), ["python", "hold.py", "4"], name="hold_again", no_wait=True, out_dir=record.dir)
+    lifecycle.job(session_env, ["python", "hold.py", "4"], record.dir, name="hold_again", files=[JOBS / "hold.py"], wait=False)
     t_stop, deadline = None, time.time() + 1800
     while time.time() < deadline:
         enrolled = {int(m.group(1)) for x in lifecycle.monitor_log(log_start) for m in [re.search(r"enrolled instance (\d+)", x)] if m}

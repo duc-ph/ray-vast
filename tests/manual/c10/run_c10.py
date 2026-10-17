@@ -266,7 +266,7 @@ def main():
         node = pre.get(target) or {}
         warnings = node_warnings(head, node.get("container_id"), node.get("ip"))
         if kind in ("tuned", "many"):
-            job_line = last_line(log, "C10_JOB")
+            job_line = last_line(log, "C10_RESULT")
             job = {"kind": job_line[1], **job_line[2]} if job_line else {"kind": None, "log_tail": log.splitlines()[-15:]}
             status, reasons = verdict(kind, job, pre.get(target), post.get(target), warnings)
             data = {"reasons": reasons, "job": job, "warnings": warnings[:20], "pre": pre.get(target), "post": post.get(target)}

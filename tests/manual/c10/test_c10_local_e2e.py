@@ -88,7 +88,7 @@ def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
     log = job(script, mode, env={"C10_GUARD_S": str(guard_s), "C10_SCALE": SCALE}, timeout=guard_s + 900)
     seconds = round(time.time() - t, 1)
     stop.set()
-    job_line = last(log, "C10_JOB")
+    job_line = last(log, "C10_RESULT")
     _, _, kind, payload = job_line.split(" ", 3) if job_line else (None, None, None, "{}")
     job("c10_cleanup.py")
     time.sleep(30)  # the raylet ends the job's processes; one more heartbeat

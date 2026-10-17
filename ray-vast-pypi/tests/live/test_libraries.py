@@ -29,9 +29,10 @@ from pathlib import Path
 
 import pytest
 
+import livejob
 import livekit
-from cluster import BIN, MANUAL, free_port, wait_port
-from libraries_setup import HOST_TYPE, JOBS, PINS, alive_workers, b_and_cpus, probe, workdir
+from cluster import BIN, JOBS, MANUAL, free_port, wait_port
+from libraries_setup import HOST_TYPE, PINS, alive_workers, b_and_cpus, probe
 from livekit import check
 
 sys.path.insert(0, str(MANUAL / "c10"))
@@ -62,59 +63,21 @@ def parquet_in(libraries, env, s3):
     """The LB03 input of the host (LB03 runs once on each host): about 3 GB of parquet in s3://<bucket>/lb03/in, written
     by a job (lb_make_parquet.py)."""
     path = f"s3://{s3.bucket}/lb03/in"
-    status, log = s3_job(libraries, env, s3, workdir(JOBS / "lb_make_parquet.py"), ["python", "lb_make_parquet.py", path, str(PARQUET_ROWS)],
-                         libraries.dir, "make_parquet", timeout=3600)
-    found = result_line(log, "LB_RESULT")
+    job = libraries.job(env, ["python", "lb_make_parquet.py", path, str(PARQUET_ROWS)], name="make_parquet",
+                        files=[JOBS / "lb_make_parquet.py"], env_vars=s3.env_vars, secrets=[s3.secret], prefix="LB_RESULT", timeout=3600)
     size = sum(o["Size"] for o in s3.objects("lb03/in/"))
-    (libraries.dir / "parquet_in.json").write_text(json.dumps({"status": status, "result": found, "bytes": size, "rows": PARQUET_ROWS}))
-    assert found and found[1] == "PASS", f"the LB03 input was not written: {status} {found}"
+    (libraries.dir / "parquet_in.json").write_text(json.dumps({"status": job.status, "result": [job.word, job.data], "bytes": size,
+                                                               "rows": PARQUET_ROWS}))
+    assert job.word == "PASS", f"the LB03 input was not written: {job.status} {job.word} {job.data}"
     return {"path": path, "bytes": size, "rows": PARQUET_ROWS}
 
 
 # --- helpers ------------------------------------------------------------------------------------------------------------
-def result_line(log, prefix):
-    """(id, word, data) of the last `<prefix> <id> <word> <json>` line, or None."""
-    lines = [x for x in log.splitlines() if x.startswith(prefix + " ")]
-    if not lines:
-        return None
-    _, name, word, payload = lines[-1].split(" ", 3)
-    return name, word, json.loads(payload)
-
-
-def job(cluster, env, record, wd, entrypoint, name, runtime_env=None, timeout=1800, during=None):
-    """Submit, run `during(sid)` while it runs (optional), wait for the end (stopped at `timeout`), keep the log."""
-    sid, _ = cluster.job(env, wd, entrypoint, runtime_env=runtime_env, out_dir=record.dir, name=name, no_wait=True)
-    if sid == "SUBMIT_FAILED":
-        return sid, (record.dir / f"{name}.log").read_text()
-    t0 = time.time()
-    if during:
-        during(sid)
-    status = cluster.job_wait(env, sid, max(60, timeout - (time.time() - t0)))
-    log = cluster.job_logs(env, sid)
-    (record.dir / f"{name}.log").write_text(log)
-    return status, log
-
-
-def s3_job(cluster, env, s3, wd, entrypoint, out_dir, name, runtime_env=None, timeout=1800, extra_env=None):
-    """A job with the S3 keys in env_vars. `<name>_submit.txt` keeps the runtime_env: the secret is redacted there."""
-    runtime_env = dict(runtime_env or {}, env_vars={**s3.env_vars, **(extra_env or {})})
-    try:
-        return cluster.job(env, wd, entrypoint, runtime_env=runtime_env, out_dir=out_dir, name=name, timeout=timeout)
-    finally:
-        submit = Path(out_dir) / f"{name}_submit.txt"
-        if submit.exists():
-            submit.write_text(submit.read_text().replace(s3.secret, "<redacted>"))
-
-
 def c9(cluster, env, record, script, torch=False, timeout=1800, env_vars=None):
     """One C9 job (working dir tests/manual/c9/jobs, as run_c9.py). Returns (word, data) of its C9_RESULT line."""
-    runtime_env = dict(TORCH_ENV) if torch else {}
-    if env_vars:
-        runtime_env["env_vars"] = env_vars
-    status, log = cluster.job(env, C9_JOBS, ["python", script], runtime_env=runtime_env or None, out_dir=record.dir,
-                              name=script.removesuffix(".py"), timeout=timeout)
-    found = result_line(log, "C9_RESULT")
-    return (found[1], found[2]) if found else ("NO_RESULT", {"job_status": status, "log_tail": log.splitlines()[-10:]})
+    job = cluster.job(env, ["python", script], record.dir, name=script.removesuffix(".py"), working_dir=C9_JOBS,
+                      runtime_env=TORCH_ENV if torch else None, env_vars=env_vars, prefix="C9_RESULT", timeout=timeout)
+    return job.word, job.data
 
 
 def snippet(doc, index, subs, record, name):
@@ -126,17 +89,12 @@ def snippet(doc, index, subs, record, name):
 
 
 def snippet_job(cluster, env, record, lib, code, name, runtime_env=None, timeout=1800, s3=None, extra_env=None):
-    """Run a doc snippet with jobs/lb_snippet.py. Returns (job status, word, data, log)."""
-    wd = workdir(JOBS / "lb_snippet.py")
+    """Run a doc snippet with jobs/lb_snippet.py (with the S3 keys of `s3` in env_vars, redacted). Returns the Job."""
+    wd = livejob.workdir(JOBS / "lb_snippet.py")
     (wd / "snippet.py").write_text(code)
-    extra = {"LB_GUARD_S": str(timeout - 120), **(extra_env or {})}
-    if s3:
-        status, log = s3_job(cluster, env, s3, wd, ["python", "lb_snippet.py", lib], record.dir, name, runtime_env, timeout, extra)
-    else:
-        status, log = cluster.job(env, wd, ["python", "lb_snippet.py", lib], runtime_env=dict(runtime_env or {}, env_vars=extra),
-                                  out_dir=record.dir, name=name, timeout=timeout)
-    found = result_line(log, "LB_RESULT")
-    return status, *((found[1], found[2]) if found else ("NO_RESULT", {"log_tail": log.splitlines()[-10:]})), log
+    env_vars = {**(s3.env_vars if s3 else {}), "LB_GUARD_S": str(timeout - 120), **(extra_env or {})}
+    return cluster.job(env, ["python", "lb_snippet.py", lib], record.dir, name=name, working_dir=wd, runtime_env=runtime_env,
+                       env_vars=env_vars, secrets=[s3.secret] if s3 else [], prefix="LB_RESULT", timeout=timeout)
 
 
 def log_mark(cluster):
@@ -235,9 +193,10 @@ def test_LB01_jobs_workflow(record, libraries, env):
     word, data = c9(libraries, env, record, "c9_0_3_torch_cuda.py", torch=True, timeout=4200)
     record.data("torch_cuda", data)
     check(record, "runtime_env pip torch==2.7.1: CUDA on both GPU workers", word == "PASS", data)
-    sid, _ = libraries.job(env, C9_JOBS, ["python", "c9_0_4_sleeper.py"], out_dir=record.dir, name="sleeper", no_wait=True)
+    sleeper = libraries.job(env, ["python", "c9_0_4_sleeper.py"], record.dir, name="sleeper", working_dir=C9_JOBS, wait=False)
+    sid = sleeper.sid
     deadline = time.time() + 300
-    while libraries.job_status(env, sid) != "RUNNING" and time.time() < deadline:
+    while sleeper.status_now() != "RUNNING" and time.time() < deadline:
         time.sleep(5)
     ray = str(BIN / "ray")
     listed = subprocess.run([ray, "job", "list", "--address", env["RAY_ADDRESS"]], env=env, capture_output=True, text=True, timeout=120)
@@ -249,8 +208,8 @@ def test_LB01_jobs_workflow(record, libraries, env):
         except subprocess.TimeoutExpired:
             follow.terminate()
             follow.wait(timeout=10)
-    stopped = subprocess.run([ray, "job", "stop", "--address", env["RAY_ADDRESS"], sid], env=env, capture_output=True, text=True, timeout=120)
-    status = libraries.job_wait(env, sid, 120)
+    stopped = sleeper.stop()
+    status = sleeper.wait(120).status
     record.evidence("job_cli.txt", f"== ray job list (exit {listed.returncode})\n{listed.stdout}{listed.stderr}\n"
                                    f"== ray job stop (exit {stopped.returncode})\n{stopped.stdout}{stopped.stderr}\n")
     ticks = (record.dir / "follow.out").read_text().count("C9_SLEEPER tick")
@@ -277,11 +236,12 @@ def test_LB02_core_functions_and_the_core_snippet(record, libraries, env):
                                     f"@ray.remote(num_cpus={share})          # CPUS / B\nclass Runner"),
                                    ("range(5)", f"range({b // 2})")], record, "core"))
     start = log_mark(libraries)
-    status, word, data, _ = snippet_job(libraries, env, record, "core", code, "core_snippet", timeout=1500)
+    job = snippet_job(libraries, env, record, "core", code, "core_snippet", timeout=1500)
     lines = libraries.monitor_log(start)
     record.evidence("monitor_slice.log", "\n".join(lines))
-    record.data("core_snippet", data)
-    check(record, f"the core snippet (num_cpus {share}, pool {b // 2}) completes", status == "SUCCEEDED" and word == "PASS", (status, data))
+    record.data("core_snippet", job.data)
+    check(record, f"the core snippet (num_cpus {share}, pool {b // 2}) completes", job.status == "SUCCEEDED" and job.word == "PASS",
+          (job.status, job.data))
     check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
 
 
@@ -289,14 +249,13 @@ def test_LB02_core_functions_and_the_core_snippet(record, libraries, env):
 @pytest.mark.host("H3")
 def test_LB04_data_shuffles_with_the_tuned_settings(record, libraries, env):
     rows, b, cpus = h3(libraries, env, record)
-    wd = workdir(JOBS / "lb_data_tuned.py", C9_JOBS / "c9common.py")
     for mode, torch in (("shuffle", False), ("gpu", True)):
-        status, log = libraries.job(env, wd, ["python", "lb_data_tuned.py", mode], runtime_env=dict(TORCH_ENV if torch else {},
-                                    env_vars={"LB_B": str(b)}), out_dir=record.dir, name=f"data_{mode}", timeout=2700)
-        found = result_line(log, "C9_RESULT")
-        record.data(mode, found[2] if found else log.splitlines()[-10:])
+        job = libraries.job(env, ["python", "lb_data_tuned.py", mode], record.dir, name=f"data_{mode}",
+                            files=[JOBS / "lb_data_tuned.py", C9_JOBS / "c9common.py"], runtime_env=TORCH_ENV if torch else None,
+                            env_vars={"LB_B": str(b)}, prefix="C9_RESULT", timeout=2700)
+        record.data(mode, job.data)
         check(record, f"C9.1.{'3' if mode == 'shuffle' else '4'} with the data.md settings at B {b}: SUCCEEDED",
-              status == "SUCCEEDED" and found and found[1] == "PASS", (status, found[2] if found else None))
+              job.status == "SUCCEEDED" and job.word == "PASS", (job.status, job.data))
 
 
 @pytest.mark.host("H3")
@@ -319,7 +278,8 @@ def test_LB06_tune_snippet_with_s3(record, libraries, env, s3):
     code = snippet("tune.md", 0, [('{"cpu": 2.4}', f'{{"cpu": {share}}}'), ("max_concurrent_trials=5", f"max_concurrent_trials={b // 2}"),
                                   ('"s3://my-bucket/experiments"', f'"s3://{s3.bucket}/lb06/experiments"')], record, "tune")
     start = log_mark(libraries)
-    status, word, data, _ = snippet_job(libraries, env, record, "tune", code, "tune_snippet", timeout=2400, s3=s3)
+    job = snippet_job(libraries, env, record, "tune", code, "tune_snippet", timeout=2400, s3=s3)
+    word, data = job.word, job.data
     lines = libraries.monitor_log(start)
     record.data("tune_snippet", data)
     checkpoints = {o["Key"].split("/checkpoint_")[0] for o in s3.objects("lb06/experiments/") if "/checkpoint_" in o["Key"]}
@@ -356,11 +316,11 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
     code = snippet("serve.md", 0, [("num_replicas=10,", f"num_replicas={replicas},"), ('{"num_cpus": 2.4}', f'{{"num_cpus": {share}}}')],
                    record, "serve")
     start = log_mark(libraries)
-    status, word, data, _ = snippet_job(libraries, env, record, "serve", code, "serve_snippet", timeout=1500)
-    record.data("serve_snippet", data)
-    per_node = data.get("replica_nodes", {})
-    check(record, f"the serve.md snippet: {replicas} replicas, at most B = {b} on each worker", status == "SUCCEEDED" and word == "PASS" and
-          sum(per_node.values()) == replicas and max(per_node.values(), default=b + 1) <= b, (status, per_node))
+    job = snippet_job(libraries, env, record, "serve", code, "serve_snippet", timeout=1500)
+    record.data("serve_snippet", job.data)
+    per_node = job.data.get("replica_nodes", {})
+    check(record, f"the serve.md snippet: {replicas} replicas, at most B = {b} on each worker", job.status == "SUCCEEDED" and
+          job.word == "PASS" and sum(per_node.values()) == replicas and max(per_node.values(), default=b + 1) <= b, (job.status, per_node))
     threads = probe(libraries, env, record.dir, "probe_with_replicas")["gpu"]
     record.data("worker_threads_with_replicas", {r["container_id"]: r["worker_threads"] for r in threads})
     # HTTP through the tunnel of serve.md, as written. Changed: the cluster name, the head IP, `~` (ssh expands `~` in
@@ -393,20 +353,18 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
           {str(c): codes.count(c) for c in set(codes)})
     head = libraries.ssh("curl -s -o /dev/null -m 15 -w '%{http_code}' http://127.0.0.1:8000/", check=False).strip()
     check(record, "curl on the head, port 8000: 200", head == "200", head)
-    libraries.job(env, C10_JOBS, ["python", "c10_cleanup.py"], out_dir=record.dir, name="serve_cleanup", timeout=300)
+    libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name="serve_cleanup", working_dir=C10_JOBS, timeout=300)
     lines = libraries.monitor_log(start)
     check(record, "no refused fork in a WARNING for the H3 workers", not [w for w in warnings_for(lines, rows) if REFUSED_PATTERN.search(w)], "")
     word, data = c9(libraries, env, record, "c9_4_4_serve_gpu.py", torch=True, timeout=2700)
     record.data("serve_gpu", data)
     check(record, "GPU replicas: 1 GPU id each, on both workers", word == "PASS", data)
-    status, log = libraries.job(env, workdir(JOBS / "lb_serve_autoscale.py"), ["python", "lb_serve_autoscale.py"],
-                                runtime_env={"env_vars": {"LB_B": str(b), "LB_CPUS": str(cpus), "LB_WORKERS": str(len(rows))}},
-                                out_dir=record.dir, name="serve_autoscale", timeout=1200)
-    found = result_line(log, "LB_RESULT")
-    record.data("serve_autoscale", found[2] if found else log.splitlines()[-10:])
-    check(record, f"autoscaling: scales out, up to max_replicas {replicas}, at most B on each worker", found and found[1] == "PASS",
-          {k: (found[2] if found else {}).get(k) for k in ("peak_replicas", "per_node_max", "max_replicas")})
-    libraries.job(env, C10_JOBS, ["python", "c10_cleanup.py"], out_dir=record.dir, name="serve_cleanup_2", timeout=300)
+    job = libraries.job(env, ["python", "lb_serve_autoscale.py"], record.dir, name="serve_autoscale", files=[JOBS / "lb_serve_autoscale.py"],
+                        env_vars={"LB_B": str(b), "LB_CPUS": str(cpus), "LB_WORKERS": str(len(rows))}, prefix="LB_RESULT", timeout=1200)
+    record.data("serve_autoscale", job.data)
+    check(record, f"autoscaling: scales out, up to max_replicas {replicas}, at most B on each worker", job.word == "PASS",
+          {k: job.data.get(k) for k in ("peak_replicas", "per_node_max", "max_replicas")})
+    libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name="serve_cleanup_2", working_dir=C10_JOBS, timeout=300)
 
 
 @pytest.mark.limits
@@ -417,11 +375,10 @@ def test_LB10_rllib_env_runners_and_learners(record, libraries, env, where):
         share = round(cpus / b, 3)
         code = snippet("rllib.md", 0, [("num_cpus_per_env_runner=2.4", f"num_cpus_per_env_runner={share}")], record, "rllib_runners")
         start = log_mark(libraries)
-        status, word, data, _ = snippet_job(libraries, env, record, "rllib_runners", code, "rllib_runners", runtime_env=TORCH_ENV,
-                                            timeout=2700)
+        job = snippet_job(libraries, env, record, "rllib_runners", code, "rllib_runners", runtime_env=TORCH_ENV, timeout=2700)
         lines = libraries.monitor_log(start)
-        record.data("rllib_runners", data)
-        check(record, f"the env runner snippet (2 runners, num_cpus {share}): 2 iterations", word == "PASS", data)
+        record.data("rllib_runners", job.data)
+        check(record, f"the env runner snippet (2 runners, num_cpus {share}): 2 iterations", job.word == "PASS", job.data)
         check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
         return
     record.data("shape_wait_gpu2_s", libraries.ensure_shape({"gpu2": 1}))
@@ -431,9 +388,9 @@ def test_LB10_rllib_env_runners_and_learners(record, libraries, env, where):
     record.data("num_cpus_per_learner", share2)
     code = snippet("rllib.md", 1, [("num_cpus_per_learner=2.4", f"num_cpus_per_learner={share2}"),
                                    ("tune.Tuner(config.algo_class", "grid = tune.Tuner(config.algo_class")], record, "rllib_learners")
-    status, word, data, _ = snippet_job(libraries, env, record, "rllib_learners", code, "rllib_learners", runtime_env=TORCH_ENV, timeout=2700)
-    record.data("rllib_learners", data)
-    check(record, f"the learner snippet on gpu2 (num_cpus_per_learner {share2}): 2 iterations, 0 errors", word == "PASS", data)
+    job = snippet_job(libraries, env, record, "rllib_learners", code, "rllib_learners", runtime_env=TORCH_ENV, timeout=2700)
+    record.data("rllib_learners", job.data)
+    check(record, f"the learner snippet on gpu2 (num_cpus_per_learner {share2}): 2 iterations, 0 errors", job.word == "PASS", job.data)
 
 
 @pytest.mark.limits
@@ -447,9 +404,10 @@ def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
                                    ('"s3://my-bucket/experiments"', f'"s3://{s3.bucket}/lb07/experiments"'),
                                    ("    ...\n", "    train_body(loader)\n")], record, "train")
     start = log_mark(libraries)
-    status, word, data, log = snippet_job(libraries, env, record, "train", code, "train_snippet", runtime_env=TORCH_ENV, timeout=3600, s3=s3)
+    job = snippet_job(libraries, env, record, "train", code, "train_snippet", runtime_env=TORCH_ENV, timeout=3600, s3=s3)
+    status, word, data = job.status, job.word, job.data
     lines = libraries.monitor_log(start)
-    ranks = [json.loads(x.split("LB_RANK ", 1)[1]) for x in log.splitlines() if "LB_RANK " in x]
+    ranks = job.lines("LB_RANK")
     last = [r for r in ranks if r["epoch"] == 1]
     record.data("train_ranks", ranks)
     gpu2_node = gpu2[0]["node_id"][:8]
@@ -485,8 +443,9 @@ def test_LB03_data_snippet_verbatim(record, libraries, env, s3, parquet_in, wher
                                   ("TaskPoolStrategy(size=2)", f"TaskPoolStrategy(size={b // 4})"),
                                   ('"s3://my-bucket/out"', f'"{out}"')], record, "data")
     start = log_mark(libraries)
-    status, word, data, log = snippet_job(libraries, env, record, "data", code, "data_snippet", timeout=3600, s3=s3,
-                                          extra_env={"LB_OUT": out, "LB_ROWS": str(parquet_in["rows"])})
+    job = snippet_job(libraries, env, record, "data", code, "data_snippet", timeout=3600, s3=s3,
+                      extra_env={"LB_OUT": out, "LB_ROWS": str(parquet_in["rows"])})
+    status, word, data, log = job.status, job.word, job.data, job.log
     lines = libraries.monitor_log(start)
     record.evidence("monitor_slice.log", "\n".join(lines))
     record.data("data_snippet", data)
@@ -514,16 +473,15 @@ PAIRS = [  # (library, tuned (script, args), many (script, args), torch, job tim
 def c10_probe(cluster, env, out_dir, wd, name):
     """c10_probe.py: {node id: read_limits()}; again every 30 s for up to 5 min while a node gives an error."""
     for attempt in range(10):
-        _, log = cluster.job(env, wd, ["python", "c10_probe.py"], out_dir=out_dir, name=f"{name}_{attempt}", timeout=300)
-        lines = [x for x in log.splitlines() if x.startswith("C10_PROBE ")]
-        found = json.loads(lines[-1].split(" ", 1)[1]) if lines else {}
+        rows = cluster.job(env, ["python", "c10_probe.py"], out_dir, name=f"{name}_{attempt}", working_dir=wd, timeout=300).lines("C10_PROBE")
+        found = rows[-1] if rows else {}
         if found and not any("error" in v for v in found.values()):
             return found
         time.sleep(30)
     return found
 
 
-def diagnose(cluster, env, node, sid, out):
+def diagnose(cluster, env, node, job, out):
     """During serve.many on H1: the 3 "If it fails" steps of the library pages, as a user does them."""
     time.sleep(240)  # the replicas that get no port fail to register
     token = Path(env["RAY_AUTH_TOKEN_PATH"]).read_text().strip()
@@ -541,8 +499,8 @@ def diagnose(cluster, env, node, sid, out):
         if "No available ports" in text:
             out.update(no_port_file=name, no_port_text=text[-3000:])
             break
-    out["job_status"] = cluster.job_status(env, sid)
-    out["job_log"] = cluster.job_logs(env, sid)
+    out["job_status"] = job.status_now()
+    out["job_log"] = job.logs()
     done = cluster.cli("attach", cluster.yaml, input='sudo docker exec ray-vast-head grep "process limit" '
                        '/tmp/ray/session_latest/logs/monitor.log; echo GREP_EXIT $?\nexit\n', timeout=180)
     out["grep"] = done.stdout + done.stderr
@@ -557,7 +515,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
     limit = livekit.host_facts(node, node["machine_id"])["pids_max"]
     check(record, f"{where} has a pids limit", limit is not None, node.get("pids.max"))
     record.data("host", {k: node.get(k) for k in ("machine_id", "container_id", "pids.max", "cgroup", "ray_cpus", "ports")})
-    wd = workdir(*C10_JOBS.glob("*.py"), JOBS / "lb_tuned.py")
+    wd = livejob.workdir(*C10_JOBS.glob("*.py"), JOBS / "lb_tuned.py")
     outcomes, diag = [], {}
     for lib, tuned, many, torch, timeout in PAIRS:
         for kind, (script, arg) in (("tuned", tuned), ("many", many)):
@@ -566,19 +524,19 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
             target = next(iter(pre)) if len(pre) == 1 else None
             check(record, f"{pair}: one worker node", target is not None, len(pre))
             start = log_mark(libraries)
-            during = None
+            job = libraries.job(env, ["python", script, arg], record.dir, name=pair, working_dir=wd, runtime_env=TORCH_ENV if torch else None,
+                                env_vars={"C10_PORTS": str(pre[target]["ports"]), "C10_CPUS": str(pre[target]["CPU"])},
+                                prefix="C10_RESULT", timeout=timeout, wait=False)
             if where == "H1" and pair == "serve.many":
-                during = lambda sid: diagnose(libraries, env, node, sid, diag)  # noqa: E731
-            runtime_env = dict(TORCH_ENV if torch else {}, env_vars={"C10_PORTS": str(pre[target]["ports"]), "C10_CPUS": str(pre[target]["CPU"])})
-            status, log = job(libraries, env, record, wd, ["python", script, arg], pair, runtime_env=runtime_env, timeout=timeout, during=during)
-            libraries.job(env, wd, ["python", "c10_cleanup.py"], out_dir=record.dir, name=f"{pair}_cleanup", timeout=300)
+                diagnose(libraries, env, node, job, diag)
+            status, log = job.wait().status, job.log
+            libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name=f"{pair}_cleanup", working_dir=wd, timeout=300)
             time.sleep(30)  # the raylet ends the job's worker processes
             post = c10_probe(libraries, env, record.dir, wd, f"{pair}_post")
             lines = libraries.monitor_log(start)
             record.evidence(f"{pair}_head_slice.log", "\n".join(lines))
             warnings = node_warnings(lines, node["container_id"], node["ip"])
-            found = result_line(log, "C10_JOB")
-            job_line = {"kind": found[1], **found[2]} if found else {"kind": None}
+            job_line = {"kind": job.word, **job.data}
             # run_c10 calls a many run INCONCLUSIVE above 3328 (its phase A rule). The many sizes here are max(ports + 4, ...),
             # above the ports at any limit, so the limit of this host is accepted.
             # Refused forks are data in LB11, not a pass criterion (2026-10-17): `refused_forks` of each pair.
@@ -605,7 +563,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
                 ("diagnostics step 3: the dashboard log API opens a worker-*.err with `No available ports`", "no_port_file" in diag,
                  diag.get("no_port_file")),
                 ("diagnostics step 2: `ray job logs` shows serve.run that does not return (serve.md:101), the job RUNNING",
-                 diag.get("job_status") == "RUNNING" and "C10_PARAMS" in diag.get("job_log", "") and "C10_JOB" not in diag.get("job_log", ""),
+                 diag.get("job_status") == "RUNNING" and "C10_PARAMS" in diag.get("job_log", "") and "C10_RESULT" not in diag.get("job_log", ""),
                  diag.get("job_status")),
                 ("diagnostics step 1: the `grep \"process limit\"` through attach shows the WARNING that names the worker", bool(named),
                  named[-1][:300] if named else diag.get("grep", "")[-300:])):
@@ -614,15 +572,14 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
     # Refused forks, a measurement (data, no check): a task starts threads until EAGAIN; the next heartbeats report the
     # refused count to the head; then the node lives on, or the bootstrap reports `ray start exited` and destroys it.
     start = log_mark(libraries)
-    status, log = libraries.job(env, workdir(JOBS / "lb_forks.py"), ["python", "lb_forks.py", node["node_id"]], out_dir=record.dir,
-                                name="forks", timeout=1200)
+    forks = libraries.job(env, ["python", "lb_forks.py", node["node_id"]], record.dir, name="forks", files=[JOBS / "lb_forks.py"],
+                          prefix="LB_RESULT", timeout=1200)
     time.sleep(120)
     lines = libraries.monitor_log(start)
     record.evidence("forks_monitor_slice.log", "\n".join(lines))
-    found = result_line(log, "LB_RESULT")
     refused = [w for w in node_warnings(lines, node["container_id"], node["ip"]) if re.search(r"[1-9]\d* refused forks/threads", w)]
     alive = node["node_id"] in [n for ids in alive_workers(libraries).values() for n in ids]
-    record.data("refused_forks", {"job": found[2] if found else status, "warning": refused[-1][:300] if refused else None,
+    record.data("refused_forks", {"job": forks.data, "warning": refused[-1][:300] if refused else None,
                                   "outcome": "node alive" if alive else ("destroyed itself" if any("ray start exited" in x for x in lines)
                                                                          else "gone")})
     assert not failed, f"not PASS: {failed}"

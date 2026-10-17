@@ -14,7 +14,6 @@ import re
 import secrets
 import shutil
 import subprocess
-import tempfile
 import time
 from pathlib import Path
 
@@ -24,10 +23,9 @@ import yaml
 from ray_vast.config import build_offer_query
 
 import livekit
-from cluster import ADMIN_PROFILE, MANUAL, Cluster, vast
+from cluster import ADMIN_PROFILE, Cluster, vast
 
 HERE = Path(__file__).parent
-JOBS = HERE / "jobs"
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10, 2026-10-17) and the query to use when none of them is
 # rentable. vast sets pids.max = 256 x the CPU quota in whole cores (2026-10-17: 1280 at 5.76 cores, 9728 at 38.4, 11776 at
 # 46.08, 15616 at 61.44), so no host has many Ray CPUs and pids.max 1280. H1 is the large-host case: 32 or more Ray CPUs,
@@ -269,27 +267,11 @@ def alive_workers(cluster):
     return found
 
 
-def workdir(*files):
-    """A temp working directory for `ray job submit` with these files."""
-    d = Path(tempfile.mkdtemp(prefix="rvjob-"))
-    for f in files:
-        shutil.copy(f, d / Path(f).name)
-    return d
-
-
 def probe(cluster, env, out_dir, name="probe"):
-    """jobs/node_probe.py on every worker: {node type: [NODE_PROBE row, ...]}, each row with its `machine_id`."""
-    status, log = cluster.job(env, workdir(JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"), ["python", "node_probe.py"],
-                              out_dir=out_dir, name=name, timeout=900)
-    machines = {str(i["id"]): i.get("machine_id") for i in cluster.instances()}
+    """Cluster.probe, by node type: {node type: [NODE_PROBE row, ...]}."""
     nodes = {}
-    for line in log.splitlines():
-        if line.startswith("NODE_PROBE "):
-            row = json.loads(line.split(" ", 1)[1])
-            row["machine_id"] = machines.get(str(row.get("container_id")))
-            nodes.setdefault(row.get("node_type"), []).append(row)
-    if status != "SUCCEEDED":
-        raise RuntimeError(f"node probe {name}: {status}")
+    for row in cluster.probe(env, out_dir, name):
+        nodes.setdefault(row.get("node_type"), []).append(row)
     return nodes
 
 

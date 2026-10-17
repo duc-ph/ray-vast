@@ -116,7 +116,7 @@ def run_one(out_root, script, mode):
     after = post.get(next(iter(post), ""), {})
     row = {"script": script, "mode": mode, "seconds": seconds, "node_alive": running, "peak": peak,
            "refused_forks": events_max({"pids.events": peak.get("events")}), "no_port_errors": after.get("no_port_errors")}
-    job_line = last_json(log, "C10_JOB")
+    job_line = last_json(log, "C10_RESULT")
     if script.startswith("c10_") and mode in ("many", "tuned"):
         _, _, kind, payload = job_line.split(" ", 3) if job_line else (None, None, None, "{}")
         job = {"kind": kind, **json.loads(payload)}

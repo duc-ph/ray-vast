@@ -1,5 +1,5 @@
 # Shared parts of the C10 job scripts (docs/test-plan.md, "Cycle C10"). Stdlib and Ray only.
-# A job runs one workload in one mode and prints one final line: `C10_JOB <id> COMPLETED|HUNG|ERROR <json>`, then ends the
+# A job runs one workload in one mode and prints one final line: `C10_RESULT <id> COMPLETED|HUNG|ERROR <json>`, then ends the
 # process. The job does not decide PASS or FAIL for a "many" test: run_c10.py (or local_check.py) does, with the probe
 # before and after the job and the head log. Functional jobs (RLlib R1-R3) print `C10_RESULT <id> PASS|FAIL|LIMIT <json>`.
 # Environment:
@@ -46,7 +46,7 @@ def start(test_id, guard_s, on_hang=None):
 
 
 def finish(test_id, mode, kind, data):
-    """Print the C10_JOB line with the alive worker nodes, and end the process at once (no hang in a Ray shutdown)."""
+    """Print the C10_RESULT line (word COMPLETED, HUNG or ERROR) with the alive worker nodes, and end the process at once (no hang in a Ray shutdown)."""
     global _done
     with _lock:
         if _done:
@@ -57,7 +57,7 @@ def finish(test_id, mode, kind, data):
         except Exception as e:
             alive = [f"error: {type(e).__name__}: {e}"]
         data = dict(data, mode=mode, elapsed_s=round(time.time() - T0, 1), alive_nodes=alive)
-        print(f"C10_JOB {test_id} {kind} {json.dumps(data, default=str, sort_keys=True)}", flush=True)
+        print(f"C10_RESULT {test_id} {kind} {json.dumps(data, default=str, sort_keys=True)}", flush=True)
         sys.stderr.flush()
         os._exit({"COMPLETED": 0, "HUNG": 3, "ERROR": 1}[kind])
 

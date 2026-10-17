@@ -9,7 +9,7 @@
 #          placement_strategy "STRICT_PACK", DataLoader num_workers 2 (train.md). Needs torch.
 #   rllib: PPO, num_env_runners = B // 2, num_cpus_per_env_runner = CPUS / B, the max(ports + 4, 40) environments of
 #          the many run spread over the runners (rllib.md: more environments per runner, not more runners). Needs torch.
-# Prints `C10_JOB <id> COMPLETED|HUNG|ERROR <json>` (c10common), so run_c10.verdict() decides.
+# Prints `C10_RESULT <id> COMPLETED|HUNG|ERROR <json>` (c10common), so run_c10.verdict() decides.
 # Usage: python lb_tuned.py tune|train|rllib   Env: C10_PORTS, C10_CPUS (the target node), C10_GUARD_S, C10_SCALE.
 import sys
 import time

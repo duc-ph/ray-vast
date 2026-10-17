@@ -13,7 +13,7 @@ The scripts for cycle C10 in [docs/test-plan.md](../../../docs/test-plan.md). Th
   `PYTHONPATH=src .venv/bin/python -m pytest -o addopts="" -p no:cacheprovider -s ../tests/manual/c10/test_c10_local_e2e.py`.
 
 A pair job takes the mode as its argument: `python c10_<lib>.py many|tuned`. It prints one last line:
-`C10_JOB <id> COMPLETED|HUNG|ERROR <json>`. `run_c10.py` decides and prints `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>`.
+`C10_RESULT <id> COMPLETED|HUNG|ERROR <json>` (the suite format of a result line: `<FAMILY>_RESULT <id> <word> <json>`). `run_c10.py` decides and prints its own `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>` line.
 The functional jobs (RLlib R1 to R3) print their own `C10_RESULT` line. The C9 jobs print `C9_RESULT`.
 
 ## Tests
@@ -64,7 +64,7 @@ Phase A has a host retry: without a pids limit ≤ 3328, the runner destroys the
 `run_c10.py <R> a|b` writes `<R>/c10/`:
 
 - `results.jsonl`: one row for each test: `id`, `status`, `job_status`, `submission_id`, `wall_s`, `data` (the reasons, the
-  `C10_JOB` line, the head WARNING lines for the node, the probe of the node before and after).
+  `C10_RESULT` line of the job, the head WARNING lines for the node, the probe of the node before and after).
 - `<id>/`: the job script, `submit.txt`, `submit.out`, `job.log`, `probe_pre_*.log`, `probe_post_*.log`, `cleanup.log`,
   `head_slice.log` (the head log lines written during the test).
 

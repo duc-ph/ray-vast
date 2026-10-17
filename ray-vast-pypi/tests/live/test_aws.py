@@ -191,8 +191,8 @@ def test_A05_head_network_exposure(record, aws_only):
                                stdout=subprocess.PIPE, text=True)
     time.sleep(3)
     with aws_only.tunnel() as env:
-        status, log = aws_only.job(env, None, ["python", "-c", "import ray; ray.init(); print(ray.cluster_resources())"],
-                                   out_dir=record.dir, name="activity", timeout=300)
+        status = aws_only.job(env, ["python", "-c", "import ray; ray.init(); print(ray.cluster_resources())"], record.dir,
+                              name="activity", timeout=300).status
     out = capture.communicate(timeout=120)[0]
     record.evidence("tcpdump_to_own_public_ip.txt", out)
     packets = re.search(r"(\d+) packets captured", out)
@@ -210,7 +210,7 @@ def test_A08_no_offer_and_budget_texts(record, aws_only):
              "budget": "every matching offer would pass max_dollars_per_hour"}
     found = {}
     with aws_only.tunnel() as env:
-        sid, _ = aws_only.job(env, None, ["python", "-c", script], out_dir=record.dir, name="demand", no_wait=True)
+        demand = aws_only.job(env, ["python", "-c", script], record.dir, name="demand", wait=False)
         deadline = time.time() + 420
         while time.time() < deadline and len(found) < 2:
             time.sleep(15)
@@ -220,7 +220,7 @@ def test_A08_no_offer_and_budget_texts(record, aws_only):
                 if hit:
                     found[key] = hit
         status = aws_only.head_exec("ray status")
-        subprocess.run([str(BIN / "ray"), "job", "stop", "--address", env["RAY_ADDRESS"], sid], env=env, capture_output=True, timeout=120)
+        demand.stop()
     record.evidence("monitor_slice.log", "\n".join(aws_only.monitor_log(start)))
     record.evidence("ray_status.txt", status)
     for key, text in texts.items():

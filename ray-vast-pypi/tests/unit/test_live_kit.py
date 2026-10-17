@@ -352,7 +352,7 @@ def test_no_scenario_id_of_the_matrix_is_in_the_infrastructure_modules():
     ids = {r["id"] for r in livekit.matrix_rows((live.parents[2] / "docs" / "test-plan.md").read_text())}
     assert len(ids) > 40
     found = {name: sorted(set(re.findall(r"\b(?:" + "|".join(sorted(ids)) + r")\b", (live / name).read_text())))
-             for name in ("conftest.py", "livekit.py", "cluster.py", "libraries_setup.py", "restricted.py", "summarize.py")}
+             for name in ("conftest.py", "livekit.py", "livejob.py", "cluster.py", "libraries_setup.py", "restricted.py", "summarize.py")}
     assert {name: f for name, f in found.items() if f} == {}
 
 

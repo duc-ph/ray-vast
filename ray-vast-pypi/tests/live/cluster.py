@@ -2,7 +2,6 @@
 checks. Every command output goes to `<dir>/cli.log`. Secrets (the cluster token, join tokens) stay in memory."""
 import json
 import os
-import secrets
 import signal
 import socket
 import subprocess
@@ -19,12 +18,14 @@ import yaml
 from ray_vast import commands
 from ray_vast.vast_api import VastClient, label
 
+import livejob
 import livekit
 
 BIN = Path(sys.executable).parent
 RAY_VAST = [str(BIN / "ray-vast")]
 REPO = Path(__file__).resolve().parents[3]
 MANUAL = REPO / "tests" / "manual"
+JOBS = Path(__file__).parent / "jobs"
 ADMIN_PROFILE = os.environ.get("RAYVAST_LIVE_PROFILE", "personal")
 
 
@@ -90,6 +91,7 @@ class Cluster:
         self.up_output = self.last_down = None
         self.timeline = []
         self._poller = None
+        self.run = run
         run.register(self)
 
     # --- the CLI ---------------------------------------------------------------------------------------------------
@@ -199,55 +201,21 @@ class Cluster:
             os.killpg(proc.pid, signal.SIGTERM)
             proc.wait(timeout=30)
 
-    def job(self, env, working_dir, entrypoint, runtime_env=None, timeout=1800, out_dir=None, name="job", no_wait=False):
-        """`ray job submit --working-dir` (the normal workflow), wait for the end, stop it at the timeout. Returns
-        (status, log). The submit command and the log go to `out_dir`."""
-        out_dir = Path(out_dir or self.dir)
-        sid = f"{name.replace('.', '-').replace('[', '-').replace(']', '').lower()}-{secrets.token_hex(3)}"
-        command = ["submit", "--address", env["RAY_ADDRESS"], "--submission-id", sid, "--no-wait"]
-        if working_dir:
-            command += ["--working-dir", str(working_dir)]
-        if runtime_env:
-            command += ["--runtime-env-json", json.dumps(runtime_env)]
-        command += ["--", *entrypoint]
-        (out_dir / f"{name}_submit.txt").write_text("ray job " + " ".join(command) + "\n")
-        done = subprocess.run([str(BIN / "ray"), "job", *command], env=env, capture_output=True, text=True, timeout=600)
-        if done.returncode != 0:
-            (out_dir / f"{name}.log").write_text(done.stdout + done.stderr)
-            return "SUBMIT_FAILED", done.stdout + done.stderr
-        if no_wait:
-            return sid, ""
-        status = self.job_wait(env, sid, timeout)
-        log = self.job_logs(env, sid)
-        (out_dir / f"{name}.log").write_text(log)
-        return status, log
+    def job(self, env, entrypoint, out_dir=None, **options):
+        """One Ray job on this cluster through the tunnel `env` (livejob.run: its files or working dir, env vars, secrets,
+        result prefix, timeout, wait). The submit command and the log go to `out_dir` (default: the cluster's directory);
+        the job's secrets join the run's secret scan. Returns the livejob.Job."""
+        return livejob.run(env, entrypoint, out_dir=out_dir or self.dir, sink=self.run.secret, **options)
 
-    def job_status(self, env, sid):
-        script = ("import sys; from ray.job_submission import JobSubmissionClient; "
-                  "print('STATUS', JobSubmissionClient(sys.argv[1]).get_job_status(sys.argv[2]).value)")
-        try:
-            done = subprocess.run([sys.executable, "-c", script, env["RAY_ADDRESS"], sid], env=env, capture_output=True, text=True,
-                                  timeout=120)
-        except subprocess.TimeoutExpired:
-            return "UNKNOWN"
-        found = [line.split()[1] for line in done.stdout.splitlines() if line.startswith("STATUS ")]
-        return found[-1] if found else "UNKNOWN"
-
-    def job_wait(self, env, sid, timeout):
-        deadline = time.time() + timeout
-        status = self.job_status(env, sid)
-        while status not in ("SUCCEEDED", "FAILED", "STOPPED") and time.time() < deadline:
-            time.sleep(10)
-            status = self.job_status(env, sid)
-        if status not in ("SUCCEEDED", "FAILED", "STOPPED"):
-            subprocess.run([str(BIN / "ray"), "job", "stop", "--address", env["RAY_ADDRESS"], sid], env=env, capture_output=True, timeout=120)
-            status = f"TIMEOUT({self.job_status(env, sid)})"
-        return status
-
-    def job_logs(self, env, sid):
-        done = subprocess.run([str(BIN / "ray"), "job", "logs", "--address", env["RAY_ADDRESS"], sid], env=env,
-                              capture_output=True, text=True, timeout=300)
-        return done.stdout + done.stderr
+    def probe(self, env, out_dir, name="probe", check=True):
+        """jobs/node_probe.py on every worker: its NODE_PROBE rows, each with the `machine_id` of its vast instance. A probe
+        job that does not succeed raises RuntimeError (check=False: the rows that it printed)."""
+        job = self.job(env, ["python", "node_probe.py"], out_dir, name=name, timeout=900,
+                       files=[JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"])
+        if check and job.status != "SUCCEEDED":
+            raise RuntimeError(f"node probe {name}: {job.status}")
+        machines = {str(i["id"]): i.get("machine_id") for i in self.instances()}
+        return [dict(row, machine_id=machines.get(str(row.get("container_id")))) for row in job.lines("NODE_PROBE")]
 
     # --- vast --------------------------------------------------------------------------------------------------------
     def start_poller(self, period=10):
