@@ -431,7 +431,7 @@ def main():
                 next_heartbeat = now + heartbeat_interval
                 # Status for the head's process-limit warning (design 5.7a). pids_refused: the forks and thread starts
                 # that the process limit refused (`max N` in pids.events). ports_in_use: worker ports with a socket
-                # (not TIME_WAIT or CLOSE), from the kernel's socket tables (a Ray worker process listens on its port).
+                # (not CLOSE), from the kernel's socket tables (a Ray worker process listens on its port).
                 beat = {"instance_id": state.instance_id, "pids_current": None, "pids_max": pids_max,
                         "pids_refused": None, "ports_in_use": None, "ports_total": len(worker_ports)}
                 if pids_max is not None:
@@ -447,15 +447,15 @@ def main():
                     except (OSError, ValueError):
                         pass
                 # The identity ports are in the kernel's ephemeral range, so an outbound connection can also take a
-                # worker port as its local port. Every socket on a worker port counts, except TIME_WAIT (06) and
-                # CLOSE (07): a new listener can take those ports.
+                # worker port as its local port. Every socket on a worker port counts, except CLOSE (07). The TIME_WAIT
+                # (06) of an outbound connection also blocks a new listener on that port, even with SO_REUSEADDR.
                 try:
                     taken = set()
                     for table in ("/proc/net/tcp", "/proc/net/tcp6"):
                         with open(table) as f:
                             for row in f.read().splitlines()[1:]:
                                 fields = row.split()
-                                if fields[3] not in ("06", "07"):
+                                if fields[3] != "07":
                                     taken.add(int(fields[1].rsplit(":", 1)[1], 16))
                     beat["ports_in_use"] = len(taken & set(worker_ports))
                 except (OSError, ValueError, IndexError):

@@ -224,15 +224,16 @@ def cgroup_dir(tmp_path, layout, pids_max, events="max 17\n"):
 
 
 @pytest.mark.slow
-def test_a_worker_port_that_an_outbound_connection_uses_counts_as_in_use_and_a_time_wait_one_does_not(world, tmp_path):
+def test_a_worker_port_that_an_outbound_connection_uses_or_left_in_time_wait_counts_as_in_use(world, tmp_path):
     # LB11[H1] 2026-10-17: the identity ports are in the kernel's ephemeral range. An outbound connection had a worker
     # port as its local port (ESTABLISHED, no listener), so the heartbeat said 57 of 58 while Ray had no free port, and
-    # the head wrote no WARNING. A TIME_WAIT entry is a leftover: a new listener can take that port.
+    # the head wrote no WARNING. The TIME_WAIT of an outbound connection also blocks a new listener on that port, and
+    # Ray's free-port check (a plain bind) fails on it.
     cgroup = cgroup_dir(tmp_path, "v2", "1280\n")
     run = world.run(RAYVAST_CGROUP_DIR=str(cgroup), FAKE_RAY_LISTEN_WORKER_PORTS="3", FAKE_RAY_CONNECT_FROM_WORKER_PORTS="1",
                     FAKE_RAY_TIME_WAIT_WORKER_PORTS="1")
     assert wait_for(lambda: len(world.head.bodies("B", "/heartbeat")) >= 2), run.stdout
-    assert world.head.bodies("B", "/heartbeat")[-1]["ports_in_use"] == 4
+    assert world.head.bodies("B", "/heartbeat")[-1]["ports_in_use"] == 5
 
 
 @pytest.mark.slow

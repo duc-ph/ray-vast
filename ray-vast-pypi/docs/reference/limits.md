@@ -22,6 +22,7 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 - Actors use ports too.
 - Ray has no setting for the total number of worker processes. Idle worker processes keep their ports up to `RAY_num_workers_soft_limit`. ray-vast sets this limit to the smaller of the node type's `CPU` and half the worker ports. So a job that needs a new kind of worker process (for example, another runtime env) finds a free port.
 - Do not set `CPU` above 58.
+- An outbound connection can hold a worker port. The worker ports are in the kernel's ephemeral port range, because vast maps each host port to the same container port. Ray then uses another free worker port. When no worker port is free, a worker process does not start (`No available ports` in the worker log). The heartbeat counts these ports as in use. ray-vast cannot prevent this: a reserved port range needs `NET_ADMIN`, and vast hosts do not give it.
 
 ## The process limit of vast hosts
 
