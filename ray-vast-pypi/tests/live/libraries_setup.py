@@ -10,12 +10,10 @@ So the autoscaler starts exactly the workers of a scenario and ends the others; 
 and no demand can start a worker of another type. A host is blocked by a `machine_id` filter in that query (the provider
 itself does not block a destroyed host: C10, docs/test-results.md)."""
 import json
-import re
 import shutil
 import subprocess
 import tempfile
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -29,11 +27,12 @@ HERE = Path(__file__).parent
 JOBS = HERE / "jobs"
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10) and the query to use when none of them is rentable.
 PINS = {
-    "h1": {"named": [32816], "fallback": {"cpu_cores": {"eq": 48}}, "want": {"pids_max": 1280, "cgroup": "v1", "cpus": 48}},
+    # H1: m32816 (C9: 48 Ray CPUs) has a cgroup v1 CPU quota of 5.76 cores: since the quota fix it gives 5 Ray CPUs. A host
+    # with many Ray CPUs needs many effective cores (the quota follows `cpu_cores_effective`, 2026-10-17).
+    "h1": {"named": [], "fallback": {"cpu_cores_effective": {"gte": 40}}, "want": {"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 36}}},
     "h2": {"named": [51706, 55704], "fallback": {"gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
 }
 SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate is replaced
-LOG_TIME = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})")
 
 
 HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}  # the worker type of each libraries host
@@ -175,8 +174,3 @@ def b_and_cpus(rows):
     """(B, CPUS) for the workers of one scenario: B = the smallest worker ports - 4; CPUS = the largest Ray CPUs (core.md)."""
     return min(r["ports"] for r in rows) - 4, max(r["ray_cpus"] for r in rows)
 
-
-def log_epoch(line):
-    """The time of a monitor.log line. The head container runs in UTC (the Docker default)."""
-    m = LOG_TIME.match(line)
-    return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp() + int(m.group(2)) / 1000 if m else None

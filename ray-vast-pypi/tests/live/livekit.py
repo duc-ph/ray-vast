@@ -40,6 +40,22 @@ class Recorder:
         (self.dir / "result.json").write_text(json.dumps(self.result, indent=1, default=str))
 
 
+def outcome_of(reports):
+    """(outcome, message) of one test from its pytest reports ({"setup", "call"}). A test without a call report (Ctrl-C or
+    SIGTERM while it ran) is "failed", never "passed"."""
+    setup, call = reports.get("setup"), reports.get("call")
+    failed = next((r for r in (setup, call) if r is not None and r.failed), None)
+    skipped = next((r for r in (setup, call) if r is not None and r.skipped), None)
+    if failed is not None:
+        crash = getattr(failed.longrepr, "reprcrash", None)
+        return "failed", crash.message if crash else str(failed.longrepr)[-600:]
+    if skipped is not None:
+        return "skipped", str(skipped.longrepr[-1]) if isinstance(skipped.longrepr, tuple) else "skipped"
+    if call is None:
+        return "failed", "interrupted: the test did not end (no call report)"
+    return "passed", ""
+
+
 def _verdict(result):
     """PASS only for a passed test whose checks are all true. Returns (word, the line that explains it)."""
     failed = [c for c in result.get("checks", []) if not c["ok"]]
@@ -134,14 +150,16 @@ HOST_RENTALS_MAX = 3
 
 
 def find_host(want, rent, end):
-    """Rent a host until its probe matches `want` (for example {"pids_max": 1280, "cgroup": "v1", "cpus": 48}).
+    """Rent a host until its probe matches `want` (for example {"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 40}}; a
+    value {"gte": n} is a lower bound).
     `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
     ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
     Returns (the matching probe, the list of tries); raises HostNotFound after HOST_RENTALS_MAX rentals."""
     blocked, tries = [], []
     for _ in range(HOST_RENTALS_MAX):
         probe = rent(list(blocked))
-        match = all(probe.get(key) == value for key, value in want.items())
+        match = all(probe.get(key) is not None and probe[key] >= value["gte"] if isinstance(value, dict) else probe.get(key) == value
+                    for key, value in want.items())
         tries.append({**probe, "match": match})
         if match:
             return probe, tries
@@ -311,6 +329,17 @@ def timeline_spend(rows):
         last = row.get("instances", last)
         total += sum(i.get("dph_total") or 0 for i in last) * (after["t"] - row["t"]) / 3600
     return round(total, 4)
+
+
+LOG_TIME = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})")
+
+
+def log_epoch(line, tz):
+    """The epoch of a monitor.log line. Python logging writes the local time of the head container, and the rayproject/ray
+    images set TZ=America/Los_Angeles, so `tz` is the container's `date +%z` (for example "-0700"). None without a time."""
+    from datetime import datetime
+    m = LOG_TIME.match(line)
+    return datetime.strptime(f"{m.group(1)}.{m.group(2)} {tz}", "%Y-%m-%d %H:%M:%S.%f %z").timestamp() if m else None
 
 
 def host_of(item):

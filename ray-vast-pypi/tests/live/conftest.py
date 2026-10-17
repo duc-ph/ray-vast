@@ -120,16 +120,7 @@ def record(request):
     fixture = next((f for f in CLUSTER_FIXTURES if f in request.fixturenames), "none")
     rec = livekit.Recorder(RESULTS, scenario_id(node), markers, fixture)
     yield rec
-    reports = node.stash.get(REPORTS, {})
-    failed = next((r for r in (reports.get("setup"), reports.get("call")) if r is not None and r.failed), None)
-    skipped = next((r for r in (reports.get("setup"), reports.get("call")) if r is not None and r.skipped), None)
-    if failed is not None:
-        crash = getattr(failed.longrepr, "reprcrash", None)
-        rec.finish("failed", crash.message if crash else str(failed.longrepr)[-600:])
-    elif skipped is not None:
-        rec.finish("skipped", str(skipped.longrepr[-1]) if isinstance(skipped.longrepr, tuple) else "skipped")
-    else:
-        rec.finish("passed", "")
+    rec.finish(*livekit.outcome_of(node.stash.get(REPORTS, {})))
     if scenario_id(node) == "A02":
         (RUN_DIR / "A02.done").touch()
 

@@ -1,0 +1,26 @@
+cluster_name: rvtest-lib-h1-keep
+idle_timeout_minutes: 5
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head:
+    resources:
+      CPU: 0
+    node_config:
+      region: us-west-2
+      instance_type: t3.large
+  h1:
+    resources:
+      CPU: 4
+      GPU: 1
+    min_workers: 0
+    max_workers: 1
+    node_config:
+      disk_gb: 60
+      offer_query:
+        machine_id:
+          in:
+          - 32816

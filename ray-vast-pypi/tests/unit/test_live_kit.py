@@ -103,6 +103,14 @@ def test_find_host_rents_again_with_the_tried_machines_blocked_until_one_matches
     assert [t["match"] for t in tries] == [False, True]
 
 
+def test_find_host_takes_a_lower_bound_for_a_number():
+    hosts = iter([{"machine_id": 32816, "pids_max": 1280, "cgroup": "v1", "cpus": 5},
+                  {"machine_id": 152047, "pids_max": 1280, "cgroup": "v1", "cpus": 46}])
+    host, tries = livekit.find_host({"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 40}}, lambda blocked: next(hosts), lambda h: None)
+    assert host["machine_id"] == 152047
+    assert [t["match"] for t in tries] == [False, True]
+
+
 def test_find_host_gives_up_after_3_rentals_and_ends_each_mismatch():
     ended = []
     rent = lambda blocked: {"machine_id": 100 + len(blocked), "pids_max": None, "cgroup": "v2", "cpus": 8}
@@ -380,3 +388,24 @@ def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_pat
     record.finish("passed", "")
     rows = [line for line in livekit.summary_table(tmp_path, ["A03"]).splitlines() if line.startswith("| A03")]
     assert len(rows) == 1 and "KeyboardInterrupt" in rows[0] and rows[0].endswith("`" + tmp_path.name + "/A03/` |")
+
+
+def test_log_epoch_reads_a_monitor_log_time_in_the_time_zone_of_the_head_container():
+    # The rayproject/ray images set TZ=America/Los_Angeles: 17:20:40 PDT (-0700) is 00:20:40 UTC the next day.
+    line = "2026-10-16 17:20:40,978\tINFO node_provider.py:485 -- Launching 1 nodes of type h1."
+    assert livekit.log_epoch(line, "-0700") == 1792196440.978
+    assert livekit.log_epoch(line, "+0000") == 1792171240.978
+    assert livekit.log_epoch("no time here", "-0700") is None
+
+
+class _Report:
+    def __init__(self, outcome, longrepr=None):
+        self.failed, self.skipped, self.passed = outcome == "failed", outcome == "skipped", outcome == "passed"
+        self.longrepr = longrepr
+
+
+def test_a_test_without_a_call_report_is_not_recorded_as_passed():
+    # Ctrl-C or SIGTERM during the test: pytest makes no call report, and the record must not say "passed".
+    assert livekit.outcome_of({"setup": _Report("passed")})[0] == "failed"
+    assert livekit.outcome_of({"setup": _Report("passed"), "call": _Report("passed")}) == ("passed", "")
+    assert livekit.outcome_of({"setup": _Report("skipped", ("f", 1, "Skipped: kept")), "call": None})[0] == "skipped"

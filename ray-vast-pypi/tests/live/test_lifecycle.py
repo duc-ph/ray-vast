@@ -9,7 +9,6 @@ import subprocess
 import tempfile
 import threading
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
@@ -20,7 +19,6 @@ from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers, vast
 
 pytestmark = pytest.mark.lifecycle
 JOBS = Path(__file__).parent / "jobs"
-LOG_TIME = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})")
 
 
 def workdir(*files):
@@ -30,11 +28,6 @@ def workdir(*files):
         shutil.copy(f, d / Path(f).name)
     return d
 
-
-def log_epoch(line):
-    """The time of a monitor.log line. The head container runs in UTC (the Docker default)."""
-    m = LOG_TIME.match(line)
-    return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp() + int(m.group(2)) / 1000 if m else None
 
 
 def worker_rules(cluster):
@@ -129,7 +122,7 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
     rows = [r for r in lifecycle.timeline if r["t"] >= t_submit - 5 and "instances" in r]
     rented = {i["id"] for r in rows for i in r["instances"]}
     peak = max((sum(i.get("dph_total") or 0 for i in r["instances"]) for r in rows), default=0)
-    enrolled = {int(m.group(1)): log_epoch(line) for line in lines for m in [re.search(r"enrolled instance (\d+)", line)] if m}
+    enrolled = {int(m.group(1)): lifecycle.log_epoch(line) for line in lines for m in [re.search(r"enrolled instance (\d+)", line)] if m}
     first_running = {}
     for r in rows:
         for i in r["instances"]:
@@ -141,7 +134,8 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
     record.data("enroll_s_from_first_running_sample", enroll_s)
     check(record, "rentals <= candidate_factor x slots (8)", 4 <= len(rented) <= 8, len(rented))
     check(record, "peak $/h below max_dollars_per_hour (3.0)", peak <= 3.0, round(peak, 3))
-    check(record, "enroll within 60 s of running (15 s margin: 45 s)", enroll_s and max(enroll_s.values()) <= 45, enroll_s)
+    check(record, "enroll within 60 s of running (15 s margin: 45 s; the 10 s samples allow -15 s)",
+          enroll_s and max(enroll_s.values()) <= 45 and min(enroll_s.values()) >= -15, enroll_s)
     check(record, "no candidate ended on the pull limit", not [x for x in lines if "ending instance" in x and "pull" in x.lower()], "")
     check(record, "no `missing from vast` ending", not [x for x in lines if "ending instance" in x and "missing" in x], "")
     unknown = [x for x in lines if "unknown vast actual_status" in x and "rebooting" not in x]
@@ -280,9 +274,9 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
             break
         time.sleep(2)
     lines = lifecycle.monitor_log(log_start)
-    report = next((log_epoch(x) for x in lines if f"worker {a['container_id']} asks to be destroyed" in x and "SIGTERM" in x), None)
+    report = next((lifecycle.log_epoch(x) for x in lines if f"worker {a['container_id']} asks to be destroyed" in x and "SIGTERM" in x), None)
     record.evidence("monitor_slice.log", "\n".join(lines))
-    check(record, "TERM: the report reaches the head within 1 s", report is not None and report - t0 <= 1.5, report and round(report - t0, 2))
+    check(record, "TERM: the report reaches the head within 1 s", report is not None and -1 <= report - t0 <= 1.5, report and round(report - t0, 2))
     check(record, "TERM: gone from vast within 20 s", gone is not None and gone - t0 <= 20, gone and round(gone - t0, 1))
     dead = None
     while time.time() < t0 + 180:
@@ -345,7 +339,7 @@ def test_L09_vast_reboot_of_a_worker(record, lifecycle, session_env, hold):
     refused, gone = None, None
     while time.time() < t_r + 600 and gone is None:
         lines = lifecycle.monitor_log(log_start)
-        refused = refused or next((log_epoch(x) for x in lines if f"enroll refused for instance {c['container_id']}" in x
+        refused = refused or next((lifecycle.log_epoch(x) for x in lines if f"enroll refused for instance {c['container_id']}" in x
                                    and "already enrolled" in x), None)
         if int(c["container_id"]) not in {i["id"] for i in lifecycle.instances()}:
             gone = time.time()

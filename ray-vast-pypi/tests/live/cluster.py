@@ -158,6 +158,12 @@ class Cluster:
     def monitor_log(self, start_line=1):
         return self.head_exec(f"tail -n +{start_line} /tmp/ray/session_latest/logs/monitor.log", timeout=120).splitlines()
 
+    def log_epoch(self, line):
+        """The epoch of a monitor.log line, in the time zone of the head container (livekit.log_epoch)."""
+        if getattr(self, "_tz", None) is None:
+            self._tz = self.head_exec("date +%z", timeout=120).strip()
+        return livekit.log_epoch(line, self._tz)
+
     def collect_token(self):
         token = self.ssh(f"cat /home/ubuntu/ray-vast-{self.name}/secrets/token").strip()
         if token:

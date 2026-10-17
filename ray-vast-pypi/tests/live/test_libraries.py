@@ -2,7 +2,7 @@
 docs (docs/libraries/*.md) taken from the docs at run time (livekit.doc_snippet), the C9 jobs and the C10 pairs.
 
 One cluster for each host (clusters/libraries.yaml with one worker type, admin profile, us-west-2), so the hosts run in
-parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (48 CPUs, pids.max 1280, cgroup v1),
+parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (36 or more CPUs, pids.max 1280, cgroup v1),
 H2 = 1 `h2` worker (cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker (2 GPUs). A test names its host with the
 `where` parameter or the `host` marker. Each test sets the workers that it needs with libraries_setup.ensure_shape()
 (only these workers run), so the library code needs no node pinning. H1, H2 and the LB13 worker come from
@@ -32,7 +32,7 @@ import pytest
 
 import livekit
 from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers, free_port, sweep_label, wait_port
-from libraries_setup import HOST_TYPE, JOBS, PINS, alive_workers, b_and_cpus, ensure_shape, find, log_epoch, probe, wait_shape, workdir
+from libraries_setup import HOST_TYPE, JOBS, PINS, alive_workers, b_and_cpus, ensure_shape, find, probe, wait_shape, workdir
 from livekit import check, scan_secrets
 
 sys.path.insert(0, str(MANUAL / "c10"))
@@ -300,13 +300,13 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
         hosts = {where: probe(libraries, env, record.dir, f"probe_{kind}")[kind]}
     record.evidence("node_probe.json", json.dumps(hosts, indent=1))
     if where == "H1":
-        check(record, "H1: 48 Ray CPUs, pids.max 1280, cgroup v1", livekit.host_facts(hosts["H1"][0], 0)["cpus"] == 48 and
+        check(record, "H1: 36 or more Ray CPUs, pids.max 1280, cgroup v1", livekit.host_facts(hosts["H1"][0], 0)["cpus"] >= 36 and
               hosts["H1"][0].get("pids.max") == "1280" and hosts["H1"][0]["cgroup"] == "v1",
               {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
     if where == "H2":
         check(record, "H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
     lines = libraries.monitor_log()
-    enrolled = {int(m.group(1)): log_epoch(x) for x in lines for m in [re.search(r"enrolled instance (\d+)", x)] if m}
+    enrolled = {int(m.group(1)): libraries.log_epoch(x) for x in lines for m in [re.search(r"enrolled instance (\d+)", x)] if m}
     first_running = {}
     for row in libraries.timeline:
         for i in row.get("instances", []):
@@ -329,7 +329,8 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
                   env_ray.get("RAY_num_grpc_internal_threads") == "4" and env_ray.get("RAY_worker_maximum_startup_concurrency") == "8", env_ray)
             check(record, f"{name} {cid}: Ray CPUs = the real core count (affinity and quota)", 1 <= n["ray_cpus"] <= n["affinity"],
                   (n["ray_cpus"], n["affinity"], n["cpu_quota"]))
-            check(record, f"{name} {cid}: enrolled within 45 s of the first `running` sample", enroll_s is not None and enroll_s <= 45, enroll_s)
+            check(record, f"{name} {cid}: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
+                  enroll_s is not None and -15 <= enroll_s <= 45, enroll_s)
 
 
 @pytest.mark.host("H3")

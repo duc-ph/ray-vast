@@ -1,0 +1,84 @@
+{
+ "id": "LB00[H2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792194568.0241008,
+ "checks": [
+  {
+   "name": "H2: cgroup v2",
+   "ok": true,
+   "detail": "{'machine_id': 51706, 'pids.max': '1536', 'cgroup': 'v2'}"
+  },
+  {
+   "name": "H2 56317218: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1536)",
+   "ok": true,
+   "detail": "(18, 18)"
+  },
+  {
+   "name": "H2 56317218: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
+   "ok": true,
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '6', 'RAY_worker_maximum_startup_concurrency': '8'}"
+  },
+  {
+   "name": "H2 56317218: Ray CPUs = the real core count (affinity and quota)",
+   "ok": true,
+   "detail": "(6.0, 72, {'cpu.max': '691200 100000'})"
+  },
+  {
+   "name": "H2 56317218: enrolled within 45 s of the first `running` sample",
+   "ok": true,
+   "detail": "-25190.3"
+  }
+ ],
+ "data": {
+  "H2_rentals": [
+   {
+    "machine_id": 51706,
+    "pids_max": 1536,
+    "cgroup": "v2",
+    "cpus": 6,
+    "match": true,
+    "query": {
+     "machine_id": {
+      "in": [
+       51706,
+       55704
+      ]
+     }
+    }
+   }
+  ],
+  "H2_56317218": {
+   "machine_id": 51706,
+   "pids.max": "1536",
+   "cgroup": "v2",
+   "cpu_quota": {
+    "cpu.max": "691200 100000"
+   },
+   "affinity": 72,
+   "ray_cpus": 6.0,
+   "ports": 18,
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "6",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "worker_threads": [
+    17,
+    24,
+    26,
+    31,
+    42
+   ],
+   "cpu_count": 72,
+   "enroll_s_from_first_running_sample": -25190.3
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792195175.848624,
+ "wall_s": 607.8
+}
