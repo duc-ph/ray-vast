@@ -803,8 +803,8 @@ Written by `tests/live/summarize.py` from `archive/results/2026-10-17/`.
 | F14 | PASS | 91.9 | test_monitor_crash_stops_the_head_and_every_worker_destroys_itself passed: (0, {'test_monitor_crash_stops_the_head_and_every_worker_destroys_itself': 'passed'}) | `2026-10-17/F14/` |
 | F15 | PASS | 139.3 | test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again passed: (0, {'test_three_enrollment_failures_in_a_row_pause_the_node_type_then_it_launches_again': 'passed'}) | `2026-10-17/F15/` |
 | F16 | PASS | 288.5 | C10 local pairs: exit 0: {'passed': 5}; C10 local pairs: no failure or error: {'passed': 5}; 5 pair runs: ['test_pair[c10_core.py-full-1280-300]', 'test_pair[c10_core.py-many-1280-150]', 'test_pair[c10_core.py-tuned-1280-150]', 'test_pair[c10_data.py-many-560-150]', 'test_pair[c10_serve.py-full-1280 | `2026-10-17/F16/` |
-| F17 | PASS | 0.3 | twine check --strict: ['/tmp/pytest-of-ubuntu/pytest-2185/popen-gw9/dist0/ray_vast-0.1.0.tar.gz: \x1b[32mPASSED\x1b[0m']; wheel has ray_vast/shim/librayvast_shim.so; wheel has ray_vast/worker/bootstrap.py; wheel has ray_vast/worker/bootloader.sh; wheel has ray_vast/examples/gpu-24gb.yaml; wheel has | `2026-10-17/F17/` |
-| F18 | PASS | 176.6 | Python 3.10: ['Python 3.10.22']; ray-vast --help works; fast unit run passes on 3.10: ['578 passed, 62 deselected in 115.42s (0:01:55)'] | `2026-10-17/F18/` |
+| F17 | PASS | 0.3 | twine check --strict: ['Checking /tmp/pytest-of-ubuntu/pytest-2248/dist0/ray_vast-0.2.0.tar.gz: \x1b[32mPASSED\x1b[0m']; wheel has ray_vast/shim/librayvast_shim.so; wheel has ray_vast/worker/bootstrap.py; wheel has ray_vast/worker/bootloader.sh; wheel has ray_vast/examples/gpu-24gb.yaml; wheel has r | `2026-10-17/F17/` |
+| F18 | PASS | 169.5 | Python 3.10: ['Python 3.10.22']; ray-vast --help works; fast unit run passes on 3.10: ['578 passed, 62 deselected in 114.02s (0:01:54)'] | `2026-10-17/F18/` |
 | F19 | PASS | 0.6 | cpu-heavy.yaml cpu32: >= 4 offers on >= 3 machines: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 18, 'machines': 18, 'cheapest': [0.337, 0.536], 'budget': 4.0}; cpu-heavy.yaml cpu32: the first candidates fit the budget: {'source': 'cpu-heavy.yaml', 'type': 'cpu32', 'offers': 18, 'machines | `2026-10-17/F19/` |
 | F20 | PASS | 30.1 | core_0 compiles; core_1 compiles; data_0 compiles; rllib_0 compiles; rllib_1 compiles; serve_0 compiles; train_0 compiles; tune_0 compiles; tune_1 compiles; all snippet imports work in the Ray 2.59 image (torch from pip); the core snippets run on a local node: ing '--shm-size=10.00gb' to 'docker run | `2026-10-17/F20/` |
 | F21 | PASS | 107.9 | C10 local runs on the small worker: exit 0: {'passed': 6}; C10 local runs on the small worker: no failure or error: {'passed': 6}; 6 runs: ['test_default[c10_core.py-300]', 'test_default[c10_data.py-300]', 'test_default[c10_rllib.py-600]', 'test_default[c10_serve.py-300]', 'test_default[c10_train.py | `2026-10-17/F21/` |
@@ -845,8 +845,8 @@ Written by `tests/live/summarize.py` from `archive/results/2026-10-17/`.
 | LB11[H2b] | PASS | 1705.1 | H2b has a pids limit: 15616; core.tuned: one worker node: 1; core.many: one worker node: 1; train.tuned: one worker node: 1; train.many: one worker node: 1; rllib.tuned: one worker node: 1; rllib.many: one worker node: 1; core.tuned: PASS: completed, node alive, no refused fork; core.many: PASS: HUN | `2026-10-17/LB11[H2b]/` |
 | LB15 | PASS | 611.7 | H4: 4 or more visible CPUs for each core of the CPU quota, a pids limit: {'machine_id': 45592, 'pids_max': 3840, 'cgroup': 'v2', 'cpus': 16, 'limited': True, 'quota': 15.36, 'visible_cpus': 128, 'visible_per_quota': 8.33, 'cores': 15.36}; data default: the workload completed and the threads of each | `2026-10-17/LB15/` |
 | LB16 | PASS | 690.5 | the offer has 10 to 63 direct ports: 24; the port cap sets the count: mapped - 6 is below the pids formula alone: (24, 58, 7680); the candidate rents min(64, direct_port_count) identity ports: vast maps that many into the container: (24, 24, 0); the worker enrolled (the head checked each of its mapp | `2026-10-17/LB16/` |
-| R01 | NOT RUN | | | |
-| R02 | NOT RUN | | | |
+| R01 | PASS | 1.0 | up exits 0: installing ray-vast==0.2.0 from PyPI head instance i-0c430bbc04866bfa3 starting head IP 54.200.191.106 cluster gpu-24gb is up. Head IP 54.200.191.106. dashboard: ray-vast dashboard cluster.yaml (then open http://127.0.0.1:8265) shell: ray-vast attach cluster.yaml ; first line: | `2026-10-17/R01/` |
+| R02 | PASS | 200.6 | the dashboard tunnel opens: ['for `ray job submit` set:\n', ' export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/tmp/pytest-of-ubuntu/pytest-2248/home-release0/.ray-vast/gpu-24gb/token\n', 'dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265\n']; hello. | `2026-10-17/R02/` |
 
 Spend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate from the hours):
 
@@ -862,6 +862,7 @@ Spend for each cluster group (vast: the dph_total of its instances over time, fr
 | libraries-h4 | rvtest-lib-h4-5711 | $0.0712 | 0.32 h | $0.03 |
 | libraries-h5 | rvtest-lib-h5-a913 | $0.0591 | 0.33 h | $0.03 |
 | lifecycle | rvtest-life-fa8a | $0.4410 | 0.6 h | $0.03 |
+| release | gpu-24gb | $0.0752 | 0.17 h | $0.01 |
 
 vast spend of each run (the credit before and after, plus the auto top-ups in between):
 
@@ -876,6 +877,7 @@ vast spend of each run (the credit before and after, plus the auto top-ups in be
 | 152216-2595907 | $0.4227 | $0.00 |
 | 184356-2810254 | $2.5458 | $10.00 |
 | 195008-2897937 | $0.3741 | $0.00 |
+| 205840-2921048 | $0.0215 | $0.00 |
 <!-- live-suite 2026-10-17 end -->
 ### Notes on the live suite run of 2026-10-17 (lifecycle and libraries, stopped)
 
@@ -1092,3 +1094,24 @@ The L02 workers (56436370, 56436398, 56436402, 56436387) enrolled in −0.5, 10.
 ### Cleanup check (after the re-run)
 
 us-west-2: no instance except `ray-vast-dev` and an instance of another project (not touched); no rvtest security group, key pair or available volume. us-east-2: no instance, security group, key pair or available volume. IAM: no rvtest role, no livetest user. S3: no rvtest bucket. vast: 0 instances. A scan of the archive for AWS access key IDs, private keys and the vast key found nothing.
+
+## Release 0.2.0: R01 and R02 (2026-10-17)
+
+ray-vast 0.2.0 is on PyPI: https://pypi.org/project/ray-vast/0.2.0/ (uploaded 2026-10-17, about 20:55 UTC, from commit 81bbaa4). A clean venv installed it with `pip install ray-vast==0.2.0` (plain PyPI, no index option). `ray-vast --help` worked, and `ray_vast.__version__` was `0.2.0`.
+
+Before the upload: the full run passed (664 tests), `mkdocs build --strict` passed, and `twine check --strict` passed for the sdist and the wheel. F17 and F18 passed on 0.2.0 (records in `archive/results/2026-10-17/F17/` and `F18/`; the confirmation-run records are `F17.run5/` and `F18.run5/`).
+
+### Run 205840-2921048
+
+`RAYVAST_LIVE_RELEASE=0.2.0 pytest tests/live -m release`: 4 of 4 pass (F17, F18, R01, R02) in 13 min 37 s. Region us-west-2. Records in `archive/results/2026-10-17/R01/`, `R02/` and `_session/release/`.
+
+- R01 PASS. A clean venv ran `pip install ray-vast "ray[default]==2.59.*"` and the `cp` command of the tutorial. `ray-vast up cluster.yaml --profile` took 386 s. Its first line was `installing ray-vast==0.2.0 from PyPI`. The head had 0.2.0.
+- R02 PASS. The tutorial, verbatim, with the packaged `gpu-24gb.yaml`. The dashboard tunnel opened. `hello.py` printed a host name and `[0]`. `ray status` worked through `attach`. Ctrl-C printed `tunnel closed`. The `down` output was `terminating head ...`, `deleted key pair ray-vast-gpu-24gb`, `deleted instance profile ray-vast-gpu-24gb`, `deleted role ray-vast-gpu-24gb`, `left: nothing`.
+- Wall time of the tutorial (from the start of `up` to the end of `down`): 10.2 min. The docs say "about 20 minutes" (the bound is 30).
+- Hosts: the provider rented 2 candidates (RTX 5090, machines 58013 and 153046, about $0.90/h each). One enrolled and ran the job. The provider destroyed the other.
+- Spend: vast credit 13.70 → 13.68 ($0.02, no top-up). The timeline estimate is $0.08 (the credit can show the cost later). EC2: head t3.large 0.17 h, about $0.01.
+- No failure, no workaround, no change to the tests or the docs.
+
+### Cleanup check
+
+The end of the run: sweep `0 left`, AWS account check `left: nothing`, secret scan `no file holds a secret`. A check after the run: us-west-2 has no instance except `ray-vast-dev` and an instance of another project (not touched); no ray-vast security group (only `ray-vast-dev-sg`), key pair, role, instance profile or available volume. vast: 0 instances. A scan of the new records for AWS access key IDs, private keys and the vast key found nothing.

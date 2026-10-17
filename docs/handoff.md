@@ -1,4 +1,4 @@
-# Handoff: continue ray-vast on the dev box (2026-10-15)
+# Handoff: continue ray-vast on the dev box (2026-10-17)
 
 You are the lead agent. Read this file first, then do the work in "Next work". The user moved the work from the laptop to the dev box `ray-vast-dev`.
 
@@ -77,10 +77,17 @@ These are the user's rules from the earlier sessions. Follow them.
 - The dev box disk (38 GB) is nearly full with the Docker images (the GPU image is 18 GB). Free space before a run: `df -h /`.
 - Lifecycle and libraries never ran.
 
+## State at 2026-10-17, end (0.2.0 released)
+
+- **0.2.0 is on PyPI:** https://pypi.org/project/ray-vast/0.2.0/. A clean venv installed it from plain PyPI. The code on `main` is version `0.2.0`.
+- The confirmation run (23bf742) passed 52 of 52 scenarios (free, aws, lifecycle, libraries). The release group passed 4 of 4 on 0.2.0 (F17, F18, R01, R02). R02 (the getting-started tutorial, verbatim) took 10.2 min and cost about $0.02 vast and $0.01 EC2. Results: `docs/test-results.md` (the last two sections).
+- The CHANGELOG has a "0.2.0" section with "Breaking changes" and "Migrate from 0.1.0".
+- The Ray library status table (README and docs home) and the Status section of each library page come from the confirmation run. The library pages cite the scenario IDs. The README and the docs home still say "(work in progress)".
+- AWS and vast are clean after the release run (vast 0 instances; no ray-vast role, key pair, security group or volume).
+
 ## Next work
 
-1. Done: the parallel suite (see the state above).
-2. Done: the free and aws groups. Next: run the lifecycle, failure, security, limits and libraries groups to the end. Fix product bugs with TDD; list every workaround and failure.
-3. Independent Standards and Spec review by the lead (not by the implementer), then fix.
-4. Version 0.2.0, publish to PyPI, run R01/R02 (clean PyPI install, getting-started verbatim).
-5. Update the Ray library status table from the results; report to the user.
+1. Done: the parallel suite, all groups of the live suite, version 0.2.0, the PyPI publish, R01/R02, the library status table.
+2. Independent Standards and Spec review by the lead (not by the implementer), then fix. (Not recorded as done in this file.)
+3. Waits on the user: a private contact for security reports (`security.md` has a TODO); when to remove "(work in progress)".
+4. The AWS account has a limit of 32 on-demand vCPUs in us-west-2, and the dev box uses 16. A full libraries run with `-n 16` needs a higher limit or fewer clusters at the same time.

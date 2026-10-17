@@ -1,0 +1,142 @@
+
+=== 2026-10-17T21:01:57Z python3 -m venv .venv && source .venv/bin/activate && pip install -q ray-vast "ray[default]==2.59.*" && ray-vast --help >/dev/null && python -c "import ray_vast; print(ray_vast.__version__)" (exit 0)
+0.2.0
+
+=== 2026-10-17T21:01:57Z source .venv/bin/activate && cp "$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/examples/gpu-24gb.yaml" cluster.yaml && sed -i "s/region: us-west-2/region: us-west-2/" cluster.yaml (exit 0)
+
+=== 2026-10-17T21:08:23Z source .venv/bin/activate && ray-vast up cluster.yaml --profile personal (exit 0)
+installing ray-vast==0.2.0 from PyPI
+head instance i-0c430bbc04866bfa3 starting
+head IP 54.200.191.106
+cluster gpu-24gb is up. Head IP 54.200.191.106.
+  dashboard: ray-vast dashboard cluster.yaml   (then open http://127.0.0.1:8265)
+  shell:     ray-vast attach cluster.yaml
+
+=== 2026-10-17T21:08:24Z source .venv/bin/activate && echo 'sudo docker exec ray-vast-head python -c "import ray_vast; print(\"HEADVERSION\", ray_vast.__version__)"' | ray-vast attach cluster.yaml (exit 0)
+Welcome to Ubuntu 24.04.5 LTS (GNU/Linux 7.0.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Oct 17 21:08:01 UTC 2026
+
+  System load:  1.71               Temperature:           -273.1 C
+  Usage of /:   34.5% of 57.08GB   Processes:             123
+  Memory usage: 8%                 Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.21.80
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+New release '26.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+HEADVERSION 0.2.0
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+
+=== 2026-10-17T21:11:10Z source .venv/bin/activate && export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/tmp/pytest-of-ubuntu/pytest-2248/home-release0/.ray-vast/gpu-24gb/token && ray job submit --address http://127.0.0.1:8265 --working-dir . -- python hello.py (exit 0)
+2026-10-17 21:08:26,586	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-17 21:08:27,043	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-17 21:08:27,043	SUCC cli.py:67 -- [32mJob 'raysubmit_kHdNTizpstdP3hNZ' submitted successfully[39m
+2026-10-17 21:08:27,043	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-17 21:08:27,043	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-17 21:08:27,043	INFO cli.py:331 -- Query the logs of the job:
+2026-10-17 21:08:27,043	INFO cli.py:333 -- [1mray job logs raysubmit_kHdNTizpstdP3hNZ[22m
+2026-10-17 21:08:27,043	INFO cli.py:335 -- Query the status of the job:
+2026-10-17 21:08:27,043	INFO cli.py:337 -- [1mray job status raysubmit_kHdNTizpstdP3hNZ[22m
+2026-10-17 21:08:27,043	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-17 21:08:27,043	INFO cli.py:341 -- [1mray job stop raysubmit_kHdNTizpstdP3hNZ[22m
+2026-10-17 21:08:27,049	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-17 14:08:26,784	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_kHdNTizpstdP3hNZ: python hello.py
+2026-10-17 14:08:29,326	INFO worker.py:1686 -- Using address 54.200.191.106:6379 set in the environment variable RAY_ADDRESS
+2026-10-17 14:08:29,332	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.200.191.106:6379...
+2026-10-17 14:08:29,365	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(autoscaler +3s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +3s)[0m Adding 1 node(s) of type gpu24.
+[36m(autoscaler +3s)[0m Resized to 8 CPUs, 1 GPUs.
+('68670e8975da', [0])
+{'node:54.200.191.106': 1.0, 'memory': 232520274740.0, 'object_store_memory': 50230701260.0, 'node:__internal_head__': 1.0, 'node:93.91.156.104': 1.0, 'CPU': 8.0, 'accelerator_type:GeForce-RTX-5090': 1.0, 'GPU': 1.0}
+2026-10-17 21:11:10,453	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-17 21:11:10,453	SUCC cli.py:67 -- [32mJob 'raysubmit_kHdNTizpstdP3hNZ' succeeded[39m
+2026-10-17 21:11:10,453	SUCC cli.py:68 -- [32m------------------------------------------[39m
+2026-10-17 21:08:26,586	WARNING working_dir.py:91 -- Directory '.venv' is now ignored by default when packaging the working directory. To disable this behavior, set the `RAY_OVERRIDE_RUNTIME_ENV_DEFAULT_EXCLUDES=''` environment variable.
+2026-10-17 21:08:26,593	INFO dashboard_sdk.py:371 -- Uploading package gcs://_ray_pkg_bac29977835e9624.zip.
+2026-10-17 21:08:26,594	INFO packaging.py:734 -- Creating a file package for local module '.'.
+2026-10-17 21:11:10,446	INFO sdk.py:520 -- WebSocket closed for job raysubmit_kHdNTizpstdP3hNZ with close code 1000
+
+=== 2026-10-17T21:11:15Z source .venv/bin/activate && echo 'sudo docker exec ray-vast-head ray status' | ray-vast attach cluster.yaml (exit 0)
+Welcome to Ubuntu 24.04.5 LTS (GNU/Linux 7.0.0-1014-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Oct 17 21:11:11 UTC 2026
+
+  System load:  0.2                Temperature:           -273.1 C
+  Usage of /:   34.6% of 57.08GB   Processes:             144
+  Memory usage: 18%                Users logged in:       0
+  Swap usage:   0%                 IPv4 address for ens5: 172.31.21.80
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+New release '26.04.1 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+======== Autoscaler status: 2026-10-17 14:11:14.604298 ========
+Node status
+---------------------------------------------------------------
+Active:
+ (no active nodes)
+Idle:
+ 1 head
+ 1 gpu24
+Pending:
+ (no pending nodes)
+Recent failures:
+ (no failures)
+
+Resources
+---------------------------------------------------------------
+Total Usage:
+ 0.0/8.0 CPU
+ 0.0/1.0 GPU
+ 0B/216.55GiB memory
+ 0B/46.78GiB object_store_memory
+
+From request_resources:
+ (none)
+Pending Demands:
+ (no resource demands)
+Pseudo-terminal will not be allocated because stdin is not a terminal.
+
+=== 2026-10-17T21:11:45Z source .venv/bin/activate && ray-vast down cluster.yaml (exit 0)
+terminating head i-0c430bbc04866bfa3
+destroyed 1 vast instance(s)
+deleted security group sg-061d05944f0fbbe1e
+deleted security group sg-0dd6429abe46195c5
+deleted security group sg-04e8df03b2c432c5e
+deleted security group sg-09fae56d3d28b52fd
+deleted security group sg-03e3b49c663986b14
+deleted key pair ray-vast-gpu-24gb
+deleted instance profile ray-vast-gpu-24gb
+deleted role ray-vast-gpu-24gb
+left: nothing
+sweep: destroying instance 56451243 with label ray-vast:gpu-24gb
+GET /instances/: HTTP 429, retry 1/4 in 1.8 s
+GET /instances/: HTTP 429, retry 2/4 in 2.7 s
