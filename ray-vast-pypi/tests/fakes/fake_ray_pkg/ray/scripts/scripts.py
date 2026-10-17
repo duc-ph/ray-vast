@@ -43,6 +43,20 @@ def main():
         listener.bind(("::" if i == 0 else "0.0.0.0", int(port)))
         listener.listen(1)
         listeners.append(listener)
+    # Outbound connections whose local port is a worker port (the identity ports are in the kernel's ephemeral range):
+    # $FAKE_RAY_CONNECT_FROM_WORKER_PORTS stay open (ESTABLISHED), then $FAKE_RAY_TIME_WAIT_WORKER_PORTS are closed at
+    # once by this side (TIME_WAIT). Both go to the first agent port. They take the ports after the listeners.
+    agent = ("127.0.0.1", int(env["RAYVAST_LOCALHOST_PORTS"].split(",")[0]))
+    rest = worker_ports[len(listeners):]
+    connected = int(env.get("FAKE_RAY_CONNECT_FROM_WORKER_PORTS", "0"))
+    for i, port in enumerate(rest[:connected + int(env.get("FAKE_RAY_TIME_WAIT_WORKER_PORTS", "0"))]):
+        client = socket.socket()
+        client.bind(("127.0.0.1", int(port)))
+        client.connect(agent)
+        if i < connected:
+            listeners.append(client)
+        else:
+            client.close()
     if "FAKE_RAY_EXIT_AFTER" in env:
         time.sleep(float(env["FAKE_RAY_EXIT_AFTER"]))
         sys.exit(int(env.get("FAKE_RAY_EXIT_CODE", "1")))

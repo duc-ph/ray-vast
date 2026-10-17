@@ -986,3 +986,17 @@ Analysis of LB11 (a debug run on a kept H1 cluster, m148655, with an outside pol
 - tune.md "What does not work" gives the two Tune results on 58 ports (62 short trials completed; 62 trials that wait 60 s hung).
 
 Debug cost: H1 kept for about 1.1 h (about $0.75 vast, EC2 t3.large about $0.10).
+
+### Re-run of the 5 failed scenarios (run 134831-2588952)
+
+`-k "L03 or LB07 or LB15 or LB11" -n 8`: L03 PASS, LB15 PASS, LB07 ERROR, LB11[H1] and LB11[H2] FAIL. vast $2.11 (credit 10.33 → 8.23, no top-up), EC2 about $0.29. Sweep 0 left, AWS `left: nothing`, secret scan clean. Problem of the run: the gpu2 group teardown ("down while a worker runs: destroyed N ≥ 1"), a follow-on of the failed `up`.
+
+- LB07 ERROR (product bug, fixed with a red test): the `up` of the gpu2 head failed: `ssh <head ip>: exit 2: cloud-init status --wait >/dev/null && sudo docker info >/dev/null`. Since cloud-init 23.4, exit code 2 means "done, with recoverable errors". The `&&` stopped the wait, and the 60 retries failed at once. Fix: `cloud-init status --wait >/dev/null; sudo docker info >/dev/null`. Red: `test_up_waits_for_cloud_init_then_needs_only_a_working_docker[2-0-True]` and `[1-0-True]` (`assert (2 == 0) is True`). The other records of this run had an `up` with cloud-init exit 0, where the old and the new command do the same.
+- LB11[H1]: data.many and serve.many again had no WARNING, and diagnostics step 1 (now only a WARNING of serve.many) failed. tune.many COMPLETED (57 trials RUNNING, 5 PENDING; the job took 235 s).
+- LB11[H2]: tune.many COMPLETED (212 s). All other pairs passed.
+
+Cause of the missing WARNING (product bug, fixed with a red test; debug run on a kept H1 cluster with temporary `[DEBUG-lb11]` lines that logged each heartbeat on the head; record `_debug/DBG2-lb11-h1-heartbeats`): the worker ports of a vast host are in the kernel's ephemeral port range (40044 to 40962 on m148655; the default range is 32768 to 60999). An outbound connection of any process can get a worker port as its local port. In core.many of the debug run, the heartbeat said `ports_in_use 57 of 58`: port 40102 had no listener, but an ESTABLISHED socket. So Ray had no free port, and the head wrote no WARNING. In data.many and serve.many of that run, all 58 ports had listeners, and the WARNING came. Which run loses a port is random. Fix: the bootstrap counts a worker port as in use when any socket uses it, except TIME_WAIT and CLOSE (a new listener can take those ports). Red: `test_a_worker_port_that_an_outbound_connection_uses_counts_as_in_use_and_a_time_wait_one_does_not` (`assert 3 == 4`). The fake `ray start` opens an ESTABLISHED and a TIME_WAIT connection from worker ports. design.md 5.7a is updated.
+
+The same lost port explains tune.many: 57 trial actors took 57 ports, and one free port ran all the 0.5 s evaluation tasks one after the other. Fix (test): each evaluation task takes 10 s (`EVAL_S`), as a real evaluation takes seconds. Then one or two free ports cannot end the work within the 600 s guard. This is the second and last fix loop of LB11.
+
+Debug cost (DBG2): H1 about 1 h (about $0.65 vast, EC2 about $0.08).

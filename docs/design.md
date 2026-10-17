@@ -215,7 +215,7 @@ The heartbeat carries the state of the process limit (5.5). Only `instance_id` i
 | `pids_current` | `pids.current` (null without a limit) |
 | `pids_max` | `pids.max` (null without a limit) |
 | `pids_refused` | the number in the `max N` line of `pids.events`: forks and thread starts that the limit refused (null without a limit) |
-| `ports_in_use` | the worker ports with a listening socket in `/proc/net/tcp` and `/proc/net/tcp6`. A registered worker process listens on its port. Two small file reads; no process scan. |
+| `ports_in_use` | the worker ports with a socket in `/proc/net/tcp` and `/proc/net/tcp6` that is not in TIME_WAIT or CLOSE. A registered worker process listens on its port. The identity ports are in the kernel's ephemeral port range, so an outbound connection can also take a worker port as its local port (LB11, 2026-10-17). Two small file reads; no process scan. |
 | `ports_total` | the number of worker ports (5.5) |
 
 The head logs one WARNING line in `monitor.log` for a worker in these cases:

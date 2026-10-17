@@ -50,7 +50,7 @@ Rule 1 is in [Limits](../reference/limits.md#rule-1-processes). For Ray Train, y
 Rule 2 is in [Limits](../reference/limits.md#rule-2-threads-and-child-processes). For Ray Train, look at these:
 
 - `DataLoader(num_workers=...)`. Each loader worker is a child process of a Train worker. It uses no port, but it counts against the process limit.
-- The intra-op threads of PyTorch in each Train worker.
+- The intra-op threads of PyTorch in each Train worker. Ray sets `OMP_NUM_THREADS`, and PyTorch uses it. In a test on a container that saw 128 CPUs, each Train worker had 35 threads, and each `DataLoader` worker had 1.
 
 ## Settings
 

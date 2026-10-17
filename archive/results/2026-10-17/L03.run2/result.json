@@ -1,0 +1,72 @@
+{
+ "id": "L03",
+ "markers": [
+  "lifecycle",
+  "limits",
+  "security"
+ ],
+ "fixture": "lifecycle",
+ "started": 1792235518.5371032,
+ "checks": [
+  {
+   "name": "probe job SUCCEEDED on 4 workers",
+   "ok": true,
+   "detail": "4"
+  },
+  {
+   "name": "56385759: uid 1000, Ray 2.59.0",
+   "ok": true,
+   "detail": "(1000, '2.59.0')"
+  },
+  {
+   "name": "56385759: no CONTAINER_API_KEY or RAYVAST_JOIN_TOKEN in os.environ",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "56385759: PID 1 is the bootstrap (GPU image ENTRYPOINT kept)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "56385759: /tmp/rayvast 700, files 600 or 644 for certs",
+   "ok": true,
+   "detail": "{'ca.pem': '0o600', 'librayvast_shim.so': '0o600', 'node.key': '0o600', 'node.pem': '0o600', 'token': '0o600'}"
+  },
+  {
+   "name": "56385759: CapBnd without NET_RAW and NET_ADMIN",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "data": {
+  "host_56385759": {
+   "pids.max": "1536",
+   "cgroup": "v1",
+   "cpu_quota": {
+    "cpu.cfs_period_us": "100000",
+    "cpu.cfs_quota_us": "614400"
+   },
+   "affinity": 32,
+   "ray_cpus": 4.0,
+   "ports": 18,
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "4",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "worker_threads": [
+    17,
+    24,
+    26,
+    31,
+    41
+   ],
+   "cpu_count": 32
+  }
+ },
+ "outcome": "failed",
+ "message": "TypeError: '<' not supported between instances of 'dict' and 'int'",
+ "ended": 1792235544.4324224,
+ "wall_s": 25.9
+}

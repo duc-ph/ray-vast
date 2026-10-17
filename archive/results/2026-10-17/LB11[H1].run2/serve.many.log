@@ -1,0 +1,294 @@
+2026-10-17 11:56:49,034	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36255[22m
+2026-10-17 11:56:49,048	INFO cli.py:569 -- 2026-10-17 04:46:41,254	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job serve-many-7dc8e7: python c10_serve.py many
+C10_START C10.serve many 1792237605.1 guard_s=600.0
+2026-10-17 04:46:45,080	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.221.178.85:6379...
+2026-10-17 04:46:45,118	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'num_replicas': 62, 'replica_cpu': 0.1}
+[36m(ProxyActor pid=8774)[0m INFO 2026-10-17 04:46:50,637 proxy 34.221.178.85 -- Proxy starting on node 4553afc3852c7b53f3cd624050461e9dbb76fbce6f0b226b2ecc062b (HTTP port: 8000).
+INFO 2026-10-17 04:46:50,766 serve 8698 -- Started Serve in namespace "serve".
+[36m(ProxyActor pid=8774)[0m INFO 2026-10-17 04:46:50,759 proxy 34.221.178.85 -- Got updated endpoints: {}.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:46:50,850 controller 8735 -- Deploying new version of Deployment(name='Echo', app='c10') (initial target replicas: 62).
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:46:50,961 controller 8735 -- Adding 62 replicas to Deployment(name='Echo', app='c10').
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:47:02,172 controller 8735 -- Proxy actor readiness check for proxy on 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470 didn't complete in 5.0s.
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:47:02,172 controller 8735 -- Proxy actor reported not ready on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470
+[36m(ProxyActor pid=63131, ip=38.247.78.28)[0m INFO 2026-10-17 04:47:02,225 proxy 38.247.78.28 -- Proxy starting on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470 (HTTP port: 8000).
+[36m(ProxyActor pid=63131, ip=38.247.78.28)[0m INFO 2026-10-17 04:47:02,819 proxy 38.247.78.28 -- Got updated endpoints: {}.
+[36m(pid=65405, ip=38.247.78.28)[0m [2026-10-17 04:47:12,348 E 65405 65405] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=4852a24ba594cd7a90e5d906bc01ced2729a0a22bc2c67862b613350
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:47:21,014 controller 8735 -- Deployment 'Echo' in application 'c10' has 7 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[36m(pid=65439, ip=38.247.78.28)[0m [2026-10-17 04:47:12,689 E 65439 65439] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=74a53f4bf01e46a787decdea8916fabe4809f9e31742330fa308d8dd[32m [repeated 6x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:47:51,070 controller 8735 -- Deployment 'Echo' in application 'c10' has 7 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:48:10,476 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(65405) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=66806, ip=38.247.78.28)[0m [2026-10-17 04:48:12,918 E 66806 66806] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=81aafe62a85af109e304baeab0ab1d4eaf7eb4dbd808cfec42eaa2ef
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:48:21,124 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:48:11,011 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(65452) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 6x across cluster][0m
+[36m(pid=66803, ip=38.247.78.28)[0m [2026-10-17 04:48:12,861 E 66803 66803] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=54ec9847ae9798fd1a3afc53906b6a3e01d57904254d1c77433ac7c1[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:48:51,165 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:49:10,754 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(66795) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=67968, ip=38.247.78.28)[0m [2026-10-17 04:49:12,995 E 67968 67968] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9d9839341c5e4b954ddc0e58de6814d1361380b1f1a181c7335425c2
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:49:21,216 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:49:11,065 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(66806) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=67965, ip=38.247.78.28)[0m [2026-10-17 04:49:12,889 E 67965 67965] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=f84e410f6e645b7dd556d99f9c9f718b9fa55c7418848890b031c1fb[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:49:51,317 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:50:10,770 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(67958) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=69053, ip=38.247.78.28)[0m [2026-10-17 04:50:12,712 E 69053 69053] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=8cf6e77dfad0157a7b584ec81d6a558abd9ae65c166a3a8af2bd275c
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:50:21,326 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:50:11,111 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(67968) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=69061, ip=38.247.78.28)[0m [2026-10-17 04:50:12,908 E 69061 69061] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=fa3fd2386881fbdd030cb511a56656f064b558a017933a497dfb91a9[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:50:51,340 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:51:10,815 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(69053) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=70174, ip=38.247.78.28)[0m [2026-10-17 04:51:12,844 E 70174 70174] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=ca4067491bc613771592634b8e4797a18cacce602d7bb88da76c0c5f
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:51:21,433 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:51:11,136 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(69063) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=70185, ip=38.247.78.28)[0m [2026-10-17 04:51:13,083 E 70185 70185] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=d9fc9df50073ea0f80102c51f5f3aaa3b891bec7f8686bf6edd5e2f0[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:51:51,508 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:52:10,841 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(70164) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=71286, ip=38.247.78.28)[0m [2026-10-17 04:52:12,811 E 71286 71286] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=fb214fe29cf8b160bfd07bd0bf09aab0359c06b42fcf4022e8c28261
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:52:21,516 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:52:11,162 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(70185) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=71293, ip=38.247.78.28)[0m [2026-10-17 04:52:13,118 E 71293 71293] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=0bf98b5886b6d44b64f3d54c66a61fd7650aa00f39f55aa8648db871[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:52:51,583 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:53:10,870 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(71285) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:10,984 controller 8735 -- Exception when allocating Replica(id='xs3g3sng', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:10,988 controller 8735 -- Exception when allocating Replica(id='8i4gl74i', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:10,990 controller 8735 -- Replica(id='xs3g3sng', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:10,991 controller 8735 -- Replica(id='8i4gl74i', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:10,992 controller 8735 -- Adding 2 replicas to Deployment(name='Echo', app='c10').
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:11,122 controller 8735 -- Exception when allocating Replica(id='z6oklp33', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:11,124 controller 8735 -- Exception when allocating Replica(id='95826wr8', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,129 controller 8735 -- Replica(id='z6oklp33', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,132 controller 8735 -- Replica(id='95826wr8', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,133 controller 8735 -- Adding 2 replicas to Deployment(name='Echo', app='c10').
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:11,262 controller 8735 -- Exception when allocating Replica(id='5gh6z027', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m ERROR 2026-10-17 04:53:11,265 controller 8735 -- Exception when allocating Replica(id='nxpinxj8', deployment='Echo', app='c10'):
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m Traceback (most recent call last):
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/deployment_state.py", line 1417, in check_ready
+[36m(ServeController pid=8735)[0m     ) = ray.get(self._allocated_obj_ref)
+[36m(ServeController pid=8735)[0m         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(ServeController pid=8735)[0m     return fn(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(ServeController pid=8735)[0m     return func(*args, **kwargs)
+[36m(ServeController pid=8735)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(ServeController pid=8735)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(ServeController pid=8735)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(ServeController pid=8735)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+[36m(ServeController pid=8735)[0m     raise value
+[36m(ServeController pid=8735)[0m ray.exceptions.ActorUnschedulableError: The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.
+[36m(ServeController pid=8735)[0m Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,274 controller 8735 -- Replica(id='5gh6z027', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,276 controller 8735 -- Replica(id='nxpinxj8', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=8735)[0m INFO 2026-10-17 04:53:11,277 controller 8735 -- Adding 2 replicas to Deployment(name='Echo', app='c10').
+[36m(pid=72399, ip=38.247.78.28)[0m [2026-10-17 04:53:13,297 E 72399 72399] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=523046c869cc9a4def8a99b6da401501059dd361e9be2e3a90eddc0a
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:53:41,015 controller 8735 -- Deployment 'Echo' in application 'c10' has 2 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:53:11,198 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(71293) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=72402, ip=38.247.78.28)[0m [2026-10-17 04:53:13,417 E 72402 72402] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=5c1eeb04713b67163505a339edfa501bf0a5a455af3dcee92d9b3da2[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:54:11,018 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:54:11,410 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(72398) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=73506, ip=38.247.78.28)[0m [2026-10-17 04:54:13,306 E 73506 73506] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9ceea1c11ac456a0f908c140595c3aa51fc009a8bcbedf68075fe46e
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:54:41,068 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:54:11,545 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(72403) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=73510, ip=38.247.78.28)[0m [2026-10-17 04:54:13,489 E 73510 73510] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9edc1251d8b088e90540e8d9e704e0f79274489a509e6da7e02530a9[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:55:11,087 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:55:11,427 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(73506) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=74613, ip=38.247.78.28)[0m [2026-10-17 04:55:13,314 E 74613 74613] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=1c7e2165c86a7383d1791a48c14b0e3da91fa7cb362924c91a42da33
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:55:41,094 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:55:11,566 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(73511) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=74617, ip=38.247.78.28)[0m [2026-10-17 04:55:13,532 E 74617 74617] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9ae10c6271dc9590b8ed8b7551bf8dd8d0ef983758f657c3c6fd4fd5[32m [repeated 5x across cluster][0m
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:56:11,183 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:56:11,471 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(74613) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=75736, ip=38.247.78.28)[0m [2026-10-17 04:56:13,411 E 75736 75736] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=e8e365f6760df63beec7db32969c26e91d0bfd2d499c93d85807504b
+[36m(ServeController pid=8735)[0m WARNING 2026-10-17 04:56:41,190 controller 8735 -- Deployment 'Echo' in application 'c10' has 6 replicas that have taken more than 30s to be scheduled. This may be due to waiting for the cluster to auto-scale or for a runtime environment to be installed. Resources required for each replica: {"CPU": 0.1}, total resources available: {"CPU": 57.8}. Use `ray status` for more details.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 04:56:11,602 E 460 460] (raylet) worker_pool.cc:627: Some workers of the worker process(74618) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=75738, ip=38.247.78.28)[0m [2026-10-17 04:56:13,550 E 75738 75738] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=39f538534bb7b36c494d0ece4860c0d294af9fcccf8d9dede4cd76e1[32m [repeated 5x across cluster][0m
+C10_RESULT C10.serve HUNG {"alive_nodes": ["8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470"], "elapsed_s": 600.0, "guard_s": 600.0, "mode": "many", "progress": {"num_replicas": 62, "replica_cpu": 0.1, "stage": "serve.run"}}

@@ -1,45 +1,44 @@
-2026-10-17 12:03:43,880	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:52219[22m
-2026-10-17 12:03:43,895	INFO cli.py:569 -- 2026-10-17 04:59:29,653	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job train-tuned-41256a: python lb_tuned.py train
-C10_START LB11.train train 1792238483.4 guard_s=900.0
-2026-10-17 05:01:23,373	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.189.161.40:6379...
-2026-10-17 05:01:23,406	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+2026-10-17 14:54:59,372	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:50945[22m
+2026-10-17 14:54:59,388	INFO cli.py:569 -- 2026-10-17 07:50:34,367	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job train-tuned-f9697f: python lb_tuned.py train
+C10_START LB11.train train 1792248757.1 guard_s=900.0
+2026-10-17 07:52:37,080	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 16.148.123.238:6379...
+2026-10-17 07:52:37,114	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
 C10_TARGET cpus=64.0 ports=58 budget=54
 C10_PARAMS {'num_workers': 27, 'cpu_per_worker': 1.1852, 'placement_strategy': 'STRICT_PACK', 'dataloader_workers': 2}
-[36m(TrainController pid=10305)[0m Requesting resources: {'CPU': 1.1852} * 27
-[36m(TrainController pid=10305)[0m Attempting to start training worker group of size 27 with the following resources: [{'CPU': 1.1852}] * 27
-[36m(RayTrainWorker pid=75143, ip=154.42.3.235)[0m Setting up process group for: env:// [rank=0, world_size=27]
-[36m(TrainController pid=10305)[0m [2026-10-17 05:03:28,919 E 10305 10340] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: 'f6d3399e1daa9db0735ddec425000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
-[36m(TrainController pid=10305)[0m Started training worker group of size 27: 
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75143) world_rank=0, local_rank=0, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75145) world_rank=1, local_rank=1, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75146) world_rank=2, local_rank=2, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75147) world_rank=3, local_rank=3, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75148) world_rank=4, local_rank=4, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75144) world_rank=5, local_rank=5, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75149) world_rank=6, local_rank=6, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75150) world_rank=7, local_rank=7, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75422) world_rank=8, local_rank=8, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75430) world_rank=9, local_rank=9, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75449) world_rank=10, local_rank=10, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75448) world_rank=11, local_rank=11, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75450) world_rank=12, local_rank=12, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75746) world_rank=13, local_rank=13, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75750) world_rank=14, local_rank=14, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75761) world_rank=15, local_rank=15, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75757) world_rank=16, local_rank=16, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75762) world_rank=17, local_rank=17, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75426) world_rank=18, local_rank=18, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=76083) world_rank=19, local_rank=19, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=76079) world_rank=20, local_rank=20, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=76072) world_rank=21, local_rank=21, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75774) world_rank=22, local_rank=22, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75773) world_rank=23, local_rank=23, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75769) world_rank=24, local_rank=24, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75441) world_rank=25, local_rank=25, node_rank=0
-[36m(TrainController pid=10305)[0m - (ip=154.42.3.235, pid=75437) world_rank=26, local_rank=26, node_rank=0
-[36m(RayTrainWorker pid=75143, ip=154.42.3.235)[0m Moving model to device: cpu
-[36m(RayTrainWorker pid=75143, ip=154.42.3.235)[0m Wrapping provided model in DistributedDataParallel.
-[36m(RayTrainWorker pid=75426, ip=154.42.3.235)[0m E1017 05:03:32.500852504   75487 ssl_transport_security.cc:1432]       Handshake failed with fatal error SSL_ERROR_SSL: error:100000f7:SSL routines:OPENSSL_internal:WRONG_VERSION_NUMBER.
-[36m(RayTrainWorker pid=75448, ip=154.42.3.235)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'loss': 31.8245906829834}, validation=False) from rank 11
-C10_RESULT LB11.train COMPLETED {"alive_nodes": ["f092a5acc5ce2c7cfea384bf28a7fc5c0f41f0560cce552258dcebd2"], "cpu_per_worker": 1.1852, "dataloader_workers": 2, "elapsed_s": 134.4, "error": null, "mode": "tuned", "num_workers": 27, "placement_strategy": "STRICT_PACK", "seconds": 134.3}
+[36m(TrainController pid=10320)[0m Requesting resources: {'CPU': 1.1852} * 27
+[36m(TrainController pid=10320)[0m Attempting to start training worker group of size 27 with the following resources: [{'CPU': 1.1852}] * 27
+[36m(RayTrainWorker pid=77214, ip=154.42.3.235)[0m Setting up process group for: env:// [rank=0, world_size=27]
+[36m(TrainController pid=10320)[0m [2026-10-17 07:54:45,166 E 10320 10357] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: '91f0fee470c810c0168bc4ca24000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(TrainController pid=10320)[0m Started training worker group of size 27: 
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77214) world_rank=0, local_rank=0, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77216) world_rank=1, local_rank=1, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77215) world_rank=2, local_rank=2, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77219) world_rank=3, local_rank=3, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77218) world_rank=4, local_rank=4, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77217) world_rank=5, local_rank=5, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77220) world_rank=6, local_rank=6, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77221) world_rank=7, local_rank=7, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77491) world_rank=8, local_rank=8, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77499) world_rank=9, local_rank=9, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77518) world_rank=10, local_rank=10, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77519) world_rank=11, local_rank=11, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77520) world_rank=12, local_rank=12, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77817) world_rank=13, local_rank=13, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77821) world_rank=14, local_rank=14, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77825) world_rank=15, local_rank=15, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77832) world_rank=16, local_rank=16, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77833) world_rank=17, local_rank=17, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77840) world_rank=18, local_rank=18, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77845) world_rank=19, local_rank=19, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=78141) world_rank=20, local_rank=20, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=78145) world_rank=21, local_rank=21, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77844) world_rank=22, local_rank=22, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77514) world_rank=23, local_rank=23, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77510) world_rank=24, local_rank=24, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=77495) world_rank=25, local_rank=25, node_rank=0
+[36m(TrainController pid=10320)[0m - (ip=154.42.3.235, pid=78149) world_rank=26, local_rank=26, node_rank=0
+[36m(RayTrainWorker pid=77214, ip=154.42.3.235)[0m Moving model to device: cpu
+[36m(RayTrainWorker pid=77214, ip=154.42.3.235)[0m Wrapping provided model in DistributedDataParallel.
+[36m(RayTrainWorker pid=77520, ip=154.42.3.235)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'loss': 41.3222541809082}, validation=False) from rank 12
+C10_RESULT LB11.train COMPLETED {"alive_nodes": ["4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"], "cpu_per_worker": 1.1852, "dataloader_workers": 2, "elapsed_s": 137.0, "error": null, "mode": "tuned", "num_workers": 27, "placement_strategy": "STRICT_PACK", "seconds": 136.9}

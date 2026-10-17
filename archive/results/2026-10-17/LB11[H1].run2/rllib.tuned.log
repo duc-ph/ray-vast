@@ -1,0 +1,16 @@
+2026-10-17 12:11:15,099	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36255[22m
+2026-10-17 12:11:15,118	INFO cli.py:569 -- 2026-10-17 05:10:42,292	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job rllib-tuned-1abf10: python lb_tuned.py rllib
+C10_START LB11.rllib rllib 1792239044.6 guard_s=900.0
+2026-10-17 05:10:44,642	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.221.178.85:6379...
+2026-10-17 05:10:44,681	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'num_env_runners': 27, 'num_envs_per_env_runner': 3, 'num_cpus_per_env_runner': 1.1852}
+2026-10-17 05:10:49,660	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+[2026-10-17 05:10:49,803 E 13496 13496] core_worker.cc:2297: Actor with class name: 'SingleAgentEnvRunner' and ID: 'a4a0ed575019f4ace2d65c1631000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(SingleAgentEnvRunner pid=92434, ip=38.247.78.28)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+[36m(SingleAgentEnvRunner pid=93268, ip=38.247.78.28)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future![32m [repeated 24x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+2026-10-17 05:11:05,648	WARNING rl_module.py:463 -- DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+2026-10-17 05:11:08,919	INFO trainable.py:154 -- Trainable.setup took 19.234 seconds. If your trainable is slow to initialize, consider setting reuse_actors=True to reduce actor creation overheads.
+2026-10-17 05:11:08,919	WARNING util.py:62 -- Install gputil for GPU system monitoring.
+C10_RESULT LB11.rllib COMPLETED {"alive_nodes": ["8e87b0c57b2bcaba4be7525b472f4a99985b50e490b8b54746073470"], "elapsed_s": 28.0, "mode": "tuned", "num_cpus_per_env_runner": 1.1852, "num_env_runners": 27, "num_envs_per_env_runner": 3, "returns": 16.580246913580247, "seconds": 27.9}

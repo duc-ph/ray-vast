@@ -48,7 +48,7 @@ Rule 1 is in [Limits](../reference/limits.md#rule-1-processes). For Ray Core, yo
 Rule 2 is in [Limits](../reference/limits.md#rule-2-threads-and-child-processes). For Ray Core, look at these:
 
 - Your own thread pools, for example `concurrent.futures.ThreadPoolExecutor`. Give them a fixed `max_workers`. The default of Python is the number of CPUs that the container sees, plus 4.
-- The libraries that your tasks import. NumPy, PyTorch and pyarrow start thread pools. Limits has the measured numbers.
+- The libraries that your tasks import. NumPy, PyTorch and pyarrow start thread pools. Ray sets `OMP_NUM_THREADS` for each task, and these pools use it. In a test, a task that used PyTorch and pyarrow had 27 threads on a container that saw 128 CPUs. Limits has the measured numbers.
 
 ## Settings
 

@@ -49,7 +49,7 @@ Rule 1 is in [Limits](../reference/limits.md#rule-1-processes). For Ray Data, yo
 
 Rule 2 is in [Limits](../reference/limits.md#rule-2-threads-and-child-processes). For Ray Data, look at these:
 
-- The Arrow thread pools in each read and map task. Arrow sizes its CPU pool by the CPUs that the container sees, unless `OMP_NUM_THREADS` is set.
+- The Arrow thread pools in each read and map task. Arrow sizes its CPU pool by `OMP_NUM_THREADS`, and Ray sets it for each task (1 for a task with 1 CPU). In a test on a container that saw 128 CPUs, each shuffle aggregator of a `groupby` had 37 threads.
 - The libraries that your map functions import (NumPy, PyTorch).
 
 ## Settings

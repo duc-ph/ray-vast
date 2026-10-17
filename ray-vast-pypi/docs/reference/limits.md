@@ -100,8 +100,24 @@ Keep each process under about 60 threads, and keep its child processes few and s
 - Your own thread pools count, for example `concurrent.futures.ThreadPoolExecutor`. Give them a fixed `max_workers`. The default of Python is the number of CPUs that the container sees, plus 4.
 - Each worker process has room for about 10 of your threads. A task that starts many threads can pass the limit. Examples are PyTorch with many intra-op threads, or a `DataLoader` with many workers.
 - Thread pools often size themselves by the CPUs that the container sees. A vast container often sees all the CPUs of the host (for example 384), not its CPU quota (for example 46 cores).
-- The threads of each library's processes on such a host: _measured in LB15 (not run yet)_.
-- The fixes and their effect: _measured in LB15 (not run yet)_. LB15 tests `OMP_NUM_THREADS` in `env_vars`, `pyarrow.set_cpu_count()` and `torch.set_num_threads()`.
+- Ray sets `OMP_NUM_THREADS` for each task and actor. PyTorch and the CPU pool of Arrow use it. In a task with 1 CPU, `torch.get_num_threads()` and `pyarrow.cpu_count()` were 1, although the container saw 128 CPUs. The I/O pool of Arrow had 8 threads.
+
+We measured the threads of each process on such a host (scenario LB15, 2026-10-17). The worker had 128 visible CPUs, a CPU quota of 15.36 cores, `pids.max` 3840, 57 worker ports and `CPU: 16`. Each workload ran with Ray's defaults, then with the fixes. The fixes were `OMP_NUM_THREADS=2` in `env_vars`, and `pyarrow.set_cpu_count(2)`, `pyarrow.set_io_thread_count(2)`, `torch.set_num_threads(2)` and `torch.set_num_interop_threads(2)` in each worker process.
+
+| Process | Threads with Ray's defaults | Threads with the fixes |
+|---|---|---|
+| Ray Data shuffle aggregator (`read_parquet`, `map_batches`, `groupby`) | 37 | 38 |
+| Ray Train worker (`TorchTrainer`, 4 workers, `DataLoader` with 2 workers) | 35 | 37 |
+| `DataLoader` worker process | 1 | Not seen (the sample period is 0.5 s) |
+| RLlib env runner (PPO, CartPole, 4 env runners) | 27 | 30 |
+| A task that uses PyTorch and pyarrow | 27 | 28 |
+| An idle Ray worker process | 27 to 29 | 30 to 32 |
+| The raylet and the dashboard agent | 40 to 42 | 41 to 42 |
+
+- With Ray's defaults, no Ray worker process had more than 37 threads. That is less than the 60 threads of rule 2.
+- The fixes did not lower the counts. They added 1 to 3 threads to each process, because 2 threads is more than Ray's 1.
+- The container refused no fork or thread. The highest `pids.current` was 1281 of 3840 (the Ray Data run).
+- So you need no thread fix for these libraries with Ray's defaults. Use a fix only when your code sets a higher thread count.
 
 Each library page lists the threads and child processes of that library.
 

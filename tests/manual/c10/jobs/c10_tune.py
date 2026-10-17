@@ -21,11 +21,14 @@ cpus, ports, budget = target()
 TRIALS = max(ports + 4, int(60 * SCALE))  # 2 processes for each trial: more than the ports at any size
 STEPS = 3
 HOLD_S = 60 * SCALE  # each trial waits this long before its first evaluation task
+EVAL_S = 10 * SCALE  # one evaluation task
 
 
 @ray.remote(num_cpus=0)  # it runs in the trial's placement group (its second bundle)
 def evaluate(x, step):
-    time.sleep(0.5)
+    # A real evaluation takes seconds. With 0.5 s, one free worker port ran all the evaluations one after the other,
+    # and the many run completed in 4 min (LB11 2026-10-17: one port was taken by an outbound connection).
+    time.sleep(EVAL_S)
     return x * step
 
 

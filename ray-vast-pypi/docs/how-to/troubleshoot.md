@@ -114,7 +114,7 @@ bootstrap: limits: pids.max 1280 (cgroup v1), cpus 5, worker ports 14, soft limi
 | Ray Serve | [Ray Serve](../libraries/serve.md#settings) |
 | RLlib | [RLlib](../libraries/rllib.md#settings) |
 
-Your own threads count too, also when worker ports are free. Use fewer threads in each task, for example a small `DataLoader` `num_workers`. A vast container often sees all the CPUs of the host, and thread pools often size themselves by that number. The fixes for each library (`OMP_NUM_THREADS`, `pyarrow.set_cpu_count()`, `torch.set_num_threads()`): _measured in LB15 (not run yet)_.
+Your own threads count too, also when worker ports are free. Use fewer threads in each task, for example a small `DataLoader` `num_workers`. A vast container often sees all the CPUs of the host, and thread pools often size themselves by that number. Ray sets `OMP_NUM_THREADS` for each task and actor, and PyTorch and Arrow use it. In a test on a container that saw 128 CPUs, no Ray worker process of Ray Data, Ray Train or RLlib had more than 37 threads with Ray's defaults. Look for code that sets a higher thread count, for example `torch.set_num_threads()`. Read [Rule 2](../reference/limits.md#rule-2-threads-and-child-processes).
 
 Or rent hosts with fewer cores, so that one worker gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
 
