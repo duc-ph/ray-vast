@@ -19,7 +19,7 @@ def xdist_group(markers, fixturenames, host=None):
     """The xdist group of one test, for `pytest -n N --dist loadgroup` (conftest forces loadgroup), from its markers and
     fixtures only. xdist runs all tests of a group in one worker process, so a session fixture of that group runs `up` once
     and `down` once. Each cluster fixture is a group; a test with the restricted IAM user joins lifecycle (one user for
-    each run); each libraries host (H1, H2, H3, gpu2) is its own cluster and group. A need of NEEDS is a group of the
+    each run); each libraries host (H1, H2, H3, gpu2, H4) is its own cluster and group. A need of NEEDS is a group of the
     same name. None: any worker. A test with two groups is a ValueError (an `exclusive_account` test with a cluster
     fixture would wait for itself)."""
     wanted = {"exclusive_account": "exclusive_account" in markers,

@@ -5,8 +5,10 @@
 #          Some workers never start; the worker group start times out or hangs.
 #   tuned: num_workers = budget // 2 (budget = ports - 4): a Train worker plus the Train controller and helpers stay in the
 #          port budget, and the DataLoader children stay in the pids budget.
+#   default: num_workers = cpus with the default resources_per_worker ({"CPU": 1}) and the default DataLoader
+#          (num_workers=0): one Train worker process for each CPU.
 # No checkpoint: a checkpoint needs shared storage on a multi-node cluster (C9.3.1).
-# Usage: python c10_train.py many|tuned
+# Usage: python c10_train.py many|tuned|default
 import time
 
 import ray.train
@@ -19,8 +21,9 @@ from c10common import PROGRESS, SCALE, error_info, finish, start, target
 ID = "C10.train"
 mode = start(ID, 900)
 cpus, ports, budget = target()
-workers = int(max(ports + 4, 40 * SCALE)) if mode == "many" else max(1, budget // 2)
-worker_cpu = round(min(1, (cpus - 0.5) / workers), 4)
+workers = {"many": int(max(ports + 4, 40 * SCALE)), "default": int(cpus)}.get(mode, max(1, budget // 2))
+worker_cpu = 1 if mode == "default" else round(min(1, (cpus - 0.5) / workers), 4)
+LOADER_WORKERS = 0 if mode == "default" else 2
 
 
 def train_func(config):
@@ -29,7 +32,7 @@ def train_func(config):
     x = torch.randn(2_000, 32)
     y = x @ torch.randn(32, 1)
     loader = ray.train.torch.prepare_data_loader(torch.utils.data.DataLoader(
-        torch.utils.data.TensorDataset(x, y), batch_size=128, shuffle=True, num_workers=2))
+        torch.utils.data.TensorDataset(x, y), batch_size=128, shuffle=True, num_workers=LOADER_WORKERS))
     model = ray.train.torch.prepare_model(torch.nn.Sequential(torch.nn.Linear(32, 64), torch.nn.ReLU(), torch.nn.Linear(64, 1)))
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
     total = 0.0
@@ -42,7 +45,7 @@ def train_func(config):
     ray.train.report({"loss": total / len(loader)})
 
 
-params = {"num_workers": workers, "cpu_per_worker": worker_cpu, "dataloader_workers": 2}
+params = {"num_workers": workers, "cpu_per_worker": worker_cpu, "dataloader_workers": LOADER_WORKERS}
 print(f"C10_PARAMS {params}", flush=True)
 PROGRESS.update(params)
 try:

@@ -80,7 +80,8 @@ def pids_max(limits):
 
 
 def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
-    """Decide one test. kind: tuned or many. job: {"kind": COMPLETED|HUNG|ERROR|None, ...}. pre and post: the probe of the
+    """Decide one test. kind: tuned, default or many. A default run (Ray's defaults on a worker with CPUs <= B) is a
+    tuned run that must also have no process-limit WARNING line at all. job: {"kind": COMPLETED|HUNG|ERROR|None, ...}. pre and post: the probe of the
     target node before and after (None if it is gone). warnings: the head WARNING lines for the node (None = not checked,
     for the local check). limit_max: a many test on a node with a higher pids.max is INCONCLUSIVE. A refused fork fails a
     tuned test (the advice is wrong); in a many test it is data. Returns (status, reasons)."""
@@ -116,6 +117,8 @@ def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
         reasons.append(f"pids.events: {refused} refused forks")
     if warnings and any(REFUSED_PATTERN.search(w) for w in warnings):
         reasons.append("a head WARNING line with new refused forks or thread starts")
+    if kind == "default" and warnings and any(WARNING_PATTERN.search(w) for w in warnings):
+        reasons.append("a head process-limit WARNING line for the node")
     return ("FAIL" if reasons else "PASS"), reasons or ["completed, node alive, no refused fork"]
 
 

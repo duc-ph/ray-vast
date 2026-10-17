@@ -4,7 +4,9 @@
 #          worker process; the trials take all worker ports, and their evaluation tasks never get a process: the job hangs.
 #   tuned: TuneConfig(max_concurrent_trials=budget // 2) (budget = ports - 4): one process for each trial plus one for its
 #          task. The same trials run in waves and complete.
-# Usage: python c10_tune.py many|tuned
+#   default: Tune's defaults: the same trials, each with the default 1 CPU, and a trainable that starts no task. At most
+#          cpus trials run at the same time (one process for each CPU).
+# Usage: python c10_tune.py many|tuned|default
 import time
 
 import ray
@@ -30,15 +32,21 @@ def trainable(config):
         tune.report({"score": ray.get(evaluate.remote(config["x"], step)), "step": step})
 
 
+def plain(config):  # default mode: the work in the trial's own process
+    for step in range(STEPS):
+        time.sleep(0.5)
+        tune.report({"score": config["x"] * step, "step": step})
+
+
 concurrent = budget // 2 if mode == "tuned" else 0  # 0: Tune's default, no limit
 bundle = min(0.1, cpus / (2 * TRIALS))
-params = {"trials": TRIALS, "bundle_cpu": round(bundle, 4), "max_concurrent_trials": concurrent or None}
+params = {"trials": TRIALS, "bundle_cpu": "default 1" if mode == "default" else round(bundle, 4), "max_concurrent_trials": concurrent or None}
 print(f"C10_PARAMS {params}", flush=True)
 PROGRESS.update(params)
 try:
     t = time.time()
     resources = tune.PlacementGroupFactory([{"CPU": bundle}, {"CPU": bundle}])  # the trial and its evaluation task
-    grid = tune.Tuner(tune.with_resources(trainable, resources), param_space={"x": tune.uniform(0, 1)},
+    grid = tune.Tuner(plain if mode == "default" else tune.with_resources(trainable, resources), param_space={"x": tune.uniform(0, 1)},
                       tune_config=tune.TuneConfig(num_samples=TRIALS, metric="score", mode="max",
                                                   max_concurrent_trials=concurrent or None)).fit()
     seconds = time.time() - t

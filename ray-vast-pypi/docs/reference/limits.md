@@ -26,7 +26,7 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 ## The process limit of vast hosts
 
 A vast container has a limit on processes and threads together (the process limit, `pids.max`).
-vast sets the limit from the CPU share of the container: 256 for each whole core of its CPU quota. So a container with 5 to 6 cores has 1280 (many 1-GPU hosts), and a container with 38 cores has 9728. A host with many cores and the limit 1280 does not occur.
+vast sets the limit from the CPU share of the container: 256 for each whole core of its CPU quota. The CPU quota is 0.96 × the offer's `cpu_cores_effective`. So a host with 6 effective cores (a quota of 5.76 cores) has 1280, and a host with 40 effective cores has 9728. A host with many cores and the limit 1280 does not occur. We measured this rule on 319 of 322 hosts (2026-10-17).
 At the limit, Ray cannot start a thread. The raylet can stop, and then the worker destroys itself.
 
 ray-vast keeps each worker below its limit:
@@ -37,14 +37,32 @@ ray-vast keeps each worker below its limit:
 - The library pages use B = worker ports − 4: the number of worker processes that your work can use on one worker. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 - The process limit does not change the Ray CPUs. Ray gets the `CPU` of the node type. Read [CPU and GPU](../how-to/node-types.md#cpu-and-gpu).
 
+The worker ports and B for each host size (a host with 64 or more direct ports):
+
+| `cpu_cores_effective` of the host | CPU quota (cores) | `pids.max` | Worker ports | B |
+|---|---|---|---|---|
+| 4 | 3.84 | 768 | 6 | 2 |
+| 5 | 4.8 | 1024 | 10 | 6 |
+| 6 | 5.76 | 1280 | 14 | 10 |
+| 7 | 6.72 | 1536 | 18 | 14 |
+| 8 | 7.68 | 1792 | 23 | 19 |
+| 12 | 11.52 | 2816 | 40 | 36 |
+| 16 | 15.36 | 3840 | 57 | 53 |
+| 17 or more | 16.32 or more | 4096 or more | 58 | 54 |
+
+A host with fewer direct ports gives at most the direct ports minus 6 worker ports.
+
 Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
+With Ray's defaults, Ray starts about one worker process for each CPU. So the defaults fit when the node type's `CPU` is at most B. The library pages call this rule 1. They give their process settings for the other cases.
 The symptom of too much work is a queue, not a crash:
 
 - Tasks wait for a free port. A job takes longer.
 - An actor that waits for a port hangs, or fails with an error that does not name the port limit. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
 - A job that needs more processes at the same time than the ports allow can hang. For example, a Ray Data `groupby` needs its map tasks and its aggregator actors at the same time.
 
-Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit.
+Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit. Free worker ports do not help: in a local test (2026-10-17), 6 tasks with 200 threads each reached the limit of 1536 with 13 Ray worker processes for 18 worker ports.
+Thread pools often size themselves by the CPUs that the container sees. A vast container often sees all the CPUs of the host (for example 384), not its CPU quota (for example 46 cores). The threads of each library's processes on such a host, and the fixes: _measured in LB15 (not run yet)_.
+The library pages call this rule 2: keep each process under about 60 threads, and keep its child processes few and small.
 
 The head log warns when a worker is at its limit. Read [A worker is at its process limit](../how-to/troubleshoot.md#a-worker-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
 

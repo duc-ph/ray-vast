@@ -225,6 +225,35 @@ def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
     record.check("the WARNING line has the documented format", warning is not None, warning.line[:200] if warning else "")
 
 
+def c10_small(record, selected, count):
+    """The local C10 runs on the SMALL worker of test_c10_local_e2e.py (pids.max 1536, CPU quota 6.72, 6 Ray CPUs, 18
+    worker ports, B = 14), at the same time. Each run's result line becomes data. Returns {test name: outcome}."""
+    code, outcomes = run_pytest(record, "c10_local_e2e", ["-o", "addopts=", "-p", "no:cacheprovider", "-s", "-n", str(count),
+                                                         str(MANUAL / "c10" / "test_c10_local_e2e.py"), "-k", selected], timeout=7200,
+                                extra_env={"C10E_OUT": str(record.dir / "c10e")})
+    all_pass(record, "C10 local runs on the small worker", code, outcomes)
+    record.check(f"{count} runs", len(outcomes) == count, sorted(outcomes))
+    for path in sorted((record.dir / "c10e").glob("*.result")):
+        line = path.read_text().strip()
+        record.data(path.stem, json.loads(line.split(" ", 6)[6]))
+    return outcomes
+
+
+@pytest.mark.limits
+def test_F21_local_rule_1_the_default_code_on_a_worker_with_cpus_at_most_b(record):
+    """Rule 1 of the library pages: with Ray's defaults (one process for each CPU), the default code of core, data, tune,
+    serve, train and rllib completes on a worker with 6 Ray CPUs and 18 worker ports (B = 14), with no process-limit
+    WARNING and no refused fork (test_c10_local_e2e.py::test_default)."""
+    c10_small(record, "test_default", 6)
+
+
+@pytest.mark.limits
+def test_F22_local_rule_2_threads_reach_the_pids_limit_while_ports_are_free(record):
+    """Rule 2 of the library pages: on the same worker, 6 tasks (one for each CPU, 6 of 18 ports) with 200 threads each
+    reach pids.max 1536: thread starts are refused (test_c10_local_e2e.py::test_threads)."""
+    c10_small(record, "test_threads", 1)
+
+
 # --- F17-F20: package, Python 3.10, offers, doc snippets -----------------------------------------------------------
 
 

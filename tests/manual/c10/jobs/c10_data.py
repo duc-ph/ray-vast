@@ -2,13 +2,14 @@
 #   many:  Ray Data defaults. The hash shuffle starts min(cluster CPUs, 128) aggregator actors, one worker process each, and
 #          the map tasks get up to CPUs / 0.05 processes: more processes than worker ports. The aggregators hold the ports,
 #          and the tasks that feed them never get a process: the job hangs.
+#   default: Ray Data defaults and the default num_cpus=1 of map_batches (one map task for each CPU).
 #   tuned: budget = ports - 4. The processes of all operators together stay <= budget, a quarter each for: the shuffle
 #          aggregators (DataContext.max_hash_shuffle_aggregators), the read tasks (concurrency), the map tasks
 #          (compute=TaskPoolStrategy(size=...)), and the shuffle tasks (execution_options.resource_limits CPU; they take 1 CPU).
 #   tuned2: tuned, and override_num_blocks = budget // 2 (added in the live run, 2026-10-16: the hash shuffle starts one
 #          `_shuffle_block` task (1 CPU) for each input block that arrives, and resource_limits does not cap these tasks; on
 #          a 24-CPU node 16 of them ran at once and took all 14 ports. Fewer blocks give fewer shuffle tasks at once.)
-# Usage: python c10_data.py many|tuned|tuned2
+# Usage: python c10_data.py many|tuned|tuned2|default
 import time
 
 import numpy as np
@@ -30,7 +31,8 @@ def add_key(batch):
     return batch
 
 
-params = {"blocks": BLOCKS, "rows": ROWS, "map_num_cpus": 0.05}
+MAP_CPUS = 1 if mode == "default" else 0.05
+params = {"blocks": BLOCKS, "rows": ROWS, "map_num_cpus": MAP_CPUS}
 if mode in ("tuned", "tuned2"):
     context = DataContext.get_current()
     context.max_hash_shuffle_aggregators = budget // 4
@@ -43,7 +45,7 @@ try:
     t = time.time()
     tuned = mode in ("tuned", "tuned2")
     ds = ray.data.range(ROWS, override_num_blocks=BLOCKS, **({"concurrency": budget // 4} if tuned else {}))
-    ds = ds.map_batches(add_key, num_cpus=0.05, **({"compute": ray.data.TaskPoolStrategy(size=budget // 4)} if tuned else {}))
+    ds = ds.map_batches(add_key, num_cpus=MAP_CPUS, **({"compute": ray.data.TaskPoolStrategy(size=budget // 4)} if tuned else {}))
     groups = ds.groupby("key").count().take_all()
     seconds = time.time() - t
 except Exception as e:

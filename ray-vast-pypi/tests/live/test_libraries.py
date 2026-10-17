@@ -2,21 +2,23 @@
 docs (docs/libraries/*.md) taken from the docs at run time (libraries_setup.doc_snippet), the C9 jobs and the C10 pairs.
 
 One cluster for each host (clusters/libraries.yaml with one worker type, admin profile, us-west-2), so the hosts run in
-parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (32 or more Ray CPUs, any pids limit),
-H2 = 1 `h2` worker (cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker (2 GPUs). A test names its host with the
+parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (64 or more Ray CPUs, so more CPUs than
+B = 54, any pids limit), H2 = 1 `h2` worker (the same on cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker
+(2 GPUs), H4 = 1 `h4` worker (4 or more visible CPUs for each core of its CPU quota: LB15). A test names its host with the
 `where` parameter or the `host` marker. Each test sets the workers that it needs with `libraries.ensure_shape()` (only
-these workers run), so the library code needs no node pinning. H1 and H2 come from `libraries.find()` (probe, at most 3
-rentals). The tests of one host run one after the other, in the file order (destructive scenarios last), so a "many" run
+these workers run), so the library code needs no node pinning. H1, H2 and H4 come from `libraries.find()` (probe, at
+most 3 rentals). The tests of one host run one after the other, in the file order (destructive scenarios last), so a "many" run
 of LB11 is alone on its host:
   H3:   LB00, LB01, LB02, LB04, LB05, LB06, LB09, LB10, LB03
   gpu2: LB00, LB10, LB07
   H1:   LB00, LB03, LB11 (with the diagnostics during serve.many)
   H2:   LB00, LB11
+  H4:   LB15
 The teardown of each host's cluster (conftest.group_lifetime) checks the `down` and the S3 cleanup.
 S3: for each host that needs it (H3, gpu2, H1), one bucket `ray-vast-rvtest-<date>-<hex>` and an IAM user
 `ray-vast-livetest-<date>-s3-<host>` that can use only that bucket (`libraries.s3()`). Its keys go to the jobs in
 the runtime env of the job; they are never written (the `*_submit.txt` files are redacted).
-In parallel: about 4.5 h (H1 with LB11 is the longest); vast about $5 ($4 to $7), EC2 about $1.3 (4 heads)."""
+In parallel: about 4.5 h (H1 with LB11 is the longest); vast about $5.5 ($4 to $8), EC2 about $1.6 (5 heads)."""
 import itertools
 import json
 import re
@@ -106,8 +108,8 @@ def h3(cluster, env, record, name="probe_h3"):
 
 
 def host(cluster, env, record, name):
-    """H1 or H2 alone: reuse the matched host when it still runs, else find one. Returns its NODE_PROBE row."""
-    kind = {"H1": "h1", "H2": "h2"}[name]
+    """H1, H2 or H4 alone: reuse the matched host when it still runs, else find one. Returns its NODE_PROBE row."""
+    kind = {"H1": "h1", "H2": "h2", "H4": "h4"}[name]
     if cluster.shape == {kind: 1} and kind in cluster.matched:
         cluster.ensure_shape({kind: 1})
         rows = probe(cluster, env, record.dir, f"probe_{kind}")[kind]
@@ -134,7 +136,7 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
         hosts = {where: probe(libraries, env, record.dir, f"probe_{kind}")[kind]}
     record.evidence("node_probe.json", json.dumps(hosts, indent=1))
     if where == "H1":
-        record.check("H1: 32 or more Ray CPUs, a pids limit", hosts["H1"][0]["ray_cpus"] >= 32 and hosts["H1"][0].get("pids.max") not in (None, "max"),
+        record.check("H1: 64 or more Ray CPUs (more than B), a pids limit", hosts["H1"][0]["ray_cpus"] >= 64 and hosts["H1"][0].get("pids.max") not in (None, "max"),
              {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
     if where == "H2":
         record.check("H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
@@ -154,9 +156,10 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
                  env_ray.get("RAY_num_workers_soft_limit") == str(soft_limit) and
                  env_ray.get("RAY_num_grpc_internal_threads") == "4" and env_ray.get("RAY_worker_maximum_startup_concurrency") == "8", env_ray)
             declared = libraries.config["available_node_types"][n["node_type"]]["resources"]["CPU"]
-            cores = n["affinity"] if n["cpu_quota"] is None else min(n["affinity"], n["cpu_quota"])
+            quota = host_facts(n, n.get("machine_id"))["quota"]
+            cores = n["affinity"] if quota is None else min(n["affinity"], quota)
             record.check(f"{name} {cid}: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
-                 n["ray_cpus"] == declared and cores >= 0.9 * declared, (n["ray_cpus"], declared, n["affinity"], n["cpu_quota"]))
+                 n["ray_cpus"] == declared and cores >= 0.9 * declared, (n["ray_cpus"], declared, n["affinity"], quota))
             # design.md:56, :86: enrollment within 1 min of `running`; the suite's 10 s samples allow -15 to 75 s.
             record.check(f"{name} {cid}: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
                  enroll_s is not None and -15 <= enroll_s <= 75, enroll_s)
@@ -576,3 +579,38 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
     alive = node["node_id"] in [n for ids in alive_workers(libraries).values() for n in ids]
     record.data("refused_forks", {"job": forks.data, "warning": refused_lines[-1][:300] if refused_lines else None,
                                   "outcome": "node alive" if alive else ("destroyed itself" if destroyed else "gone")})
+
+
+# --- LB15: threads per process (a measurement) -----------------------------------------------------------------------
+THREAD_WORKLOADS = [("data", False), ("train", True), ("rllib", True), ("task", True)]  # (workload of lb_threads.py, torch)
+FIX_THREADS = 2  # the fix of rule 2: the thread pools of Arrow, torch and OpenMP get this many threads in each process
+
+
+@pytest.mark.limits
+@pytest.mark.host("H4")
+def test_LB15_threads_per_process_on_a_host_with_many_visible_cpus(record, libraries, env):
+    """Rule 2 of the library pages (threads and child processes) on a container that sees 4 or more CPUs for each core of
+    its CPU quota. Each workload of jobs/lb_threads.py runs with Ray's defaults and then with the fixes (OMP_NUM_THREADS,
+    pyarrow.set_cpu_count, torch.set_num_threads). The threads of each process, the pids.current peak and the refused
+    forks are the data. The check: each measurement is recorded. A fixed run with a Ray worker process above 60 threads
+    is recorded (`<workload>.fixed_over_60`), not a failure: then the docs need another fix."""
+    node = host(libraries, env, record, "H4")
+    facts = host_facts(node, node["machine_id"])
+    record.data("host", {**facts, **{k: node.get(k) for k in ("container_id", "cpu_count", "affinity", "ports", "ray_cpus")}})
+    record.require("H4: 4 or more visible CPUs for each core of the CPU quota, a pids limit",
+                   (facts["visible_per_quota"] or 0) >= 4 and facts["limited"], facts)
+    wd = livejob.workdir(JOBS / "lb_threads.py", JOBS / "lb_threads_fix.py")
+    for workload, torch in THREAD_WORKLOADS:
+        for mode in ("default", "fixed"):
+            env_vars = {"LB_NODE": node["node_id"], "LB_FIX_THREADS": str(FIX_THREADS)}
+            if mode == "fixed":
+                env_vars["OMP_NUM_THREADS"] = str(FIX_THREADS)
+            job = libraries.job(env, ["python", "lb_threads.py", workload, mode], record.dir, name=f"threads_{workload}_{mode}",
+                                working_dir=wd, runtime_env={**(TORCH_ENV if torch else {}), "env_vars": env_vars},
+                                prefix="LB_RESULT", timeout=2400 if torch else 1200)
+            record.data(f"{workload}.{mode}", job.data)
+            record.check(f"{workload} {mode}: the workload completed and the threads of each process are recorded",
+                         job.word == "PASS" and job.data.get("samples", 0) > 0 and job.data.get("kinds"),
+                         (job.status, job.word, (job.data.get("workload") or {}) if isinstance(job.data, dict) else job.data))
+            if mode == "fixed":
+                record.data(f"{workload}.fixed_over_60", job.data.get("over_60"))

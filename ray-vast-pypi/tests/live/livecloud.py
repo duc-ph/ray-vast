@@ -26,7 +26,7 @@ def suite_cluster(run, config, out_dir, home, kept=False, user=None):
 
 
 def libraries_cluster(run, group_dir, home, host, suffix, kept):
-    """The cluster of one libraries host (H1, H2, H3, gpu2)."""
+    """The cluster of one libraries host (H1, H2, H3, gpu2, H4)."""
     from libraries_setup import LibrariesCluster
     return LibrariesCluster(run, group_dir, home, host, suffix, kept)
 

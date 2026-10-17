@@ -12,7 +12,7 @@
   writes down the cluster interface).
 - The cluster fixtures (`aws_only`, `lifecycle`, `libraries`, `release`) run `up` once and end the cluster at the end of
   the session, also after a failure, Ctrl-C or SIGTERM (`group_lifetime`). `libraries` is one cluster for each host (H1,
-  H2, H3, gpu2). `release` is the tutorial's cluster (a foreign name, the plain CLI). A scenario makes its own clusters
+  H2, H3, gpu2, H4). `release` is the tutorial's cluster (a foreign name, the plain CLI). A scenario makes its own clusters
   with the `new_cluster` factory; they end at the end of the test.
 - One module ends every cluster: `liverun.end_cluster` (its `down` unless kept or already clean, its vast label sweep, its
   AWS check, the secret scan of its own records). The result of a group goes to `_session/<group>/teardown/result.json`
@@ -88,7 +88,7 @@ def pytest_configure(config):
         config.addinivalue_line("markers", f"{name}: live suite group (docs/test-plan.md, claim matrix)")
     for name, meaning in liveschedule.NEEDS.items():
         config.addinivalue_line("markers", f"{name}: {meaning}")
-    config.addinivalue_line("markers", "host(name): the libraries host of a test (H1, H2, H3 or gpu2): its cluster and xdist group")
+    config.addinivalue_line("markers", "host(name): the libraries host of a test (H1, H2, H3, gpu2 or H4): its cluster and xdist group")
     # pytest -n N: --dist loadgroup, so the groups keep each cluster in one worker. A worker parses the command line again
     # (dist "load"), and xdist adds the group to the test ids only when its own `loadgroup` option is set. No reorder by
     # group size: xdist then gives out the groups in the collection order, so the `exclusive_account` group is the first
@@ -320,7 +320,7 @@ def lifecycle(request, tmp_path_factory, run, restricted_user):
 
 @pytest.fixture(scope="session")
 def library_clusters(request, tmp_path_factory, run):
-    """One libraries cluster (libraries_setup.LibrariesCluster) for each host (H1, H2, H3, gpu2), each made at the first
+    """One libraries cluster (libraries_setup.LibrariesCluster) for each host (H1, H2, H3, gpu2, H4), each made at the first
     test of its host. A failed `up` is not tried again in the run: the later tests of that host fail with the same error.
     Before its `down`, one worker runs (so `down` destroys one); after it, its S3 test bucket and IAM user go."""
     with contextlib.ExitStack() as stack:

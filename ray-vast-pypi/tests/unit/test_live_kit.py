@@ -319,10 +319,22 @@ def test_a_substitution_that_is_not_in_the_snippet_exactly_once_is_an_error(old)
         libraries_setup.doc_snippet(DOC, "## Settings", 0, [(old, "x")])
 
 
+NO_QUOTA = {"quota": None, "visible_cpus": None, "visible_per_quota": None}
+
+
 @pytest.mark.parametrize("probe, facts", [
-    ({"pids.max": "1280", "cgroup": "v1", "ray_cpus": 48.0}, {"pids_max": 1280, "cgroup": "v1", "cpus": 48, "limited": True}),
-    ({"pids.max": "max", "cgroup": "v2", "ray_cpus": 15.0}, {"pids_max": None, "cgroup": "v2", "cpus": 15, "limited": False}),
-    ({"cgroup": "v1", "ray_cpus": 24.0}, {"pids_max": None, "cgroup": "v1", "cpus": 24, "limited": False}),
+    ({"pids.max": "1280", "cgroup": "v1", "ray_cpus": 48.0}, {"pids_max": 1280, "cgroup": "v1", "cpus": 48, "limited": True, **NO_QUOTA}),
+    ({"pids.max": "max", "cgroup": "v2", "ray_cpus": 15.0}, {"pids_max": None, "cgroup": "v2", "cpus": 15, "limited": False, **NO_QUOTA}),
+    ({"cgroup": "v1", "ray_cpus": 24.0}, {"pids_max": None, "cgroup": "v1", "cpus": 24, "limited": False, **NO_QUOTA}),
+    # S6: m45592 (128 visible CPUs, quota 15.36 cores, cgroup v2); the visible CPUs are the smaller of cpu_count and affinity.
+    ({"pids.max": "3840", "cgroup": "v2", "ray_cpus": 16.0, "cpu_count": 128, "affinity": 128, "cpu_quota": {"cpu.max": "1536000 100000"}},
+     {"pids_max": 3840, "cgroup": "v2", "cpus": 16, "limited": True, "quota": 15.36, "visible_cpus": 128, "visible_per_quota": 8.33}),
+    # S6: m150419 (384 CPUs, a cpuset of 48, quota 46.08 cores, here as cgroup v1).
+    ({"pids.max": "11776", "cgroup": "v1", "ray_cpus": 16.0, "cpu_count": 384, "affinity": 48,
+      "cpu_quota": {"cpu.cfs_quota_us": "4608000", "cpu.cfs_period_us": "100000"}},
+     {"pids_max": 11776, "cgroup": "v1", "cpus": 16, "limited": True, "quota": 46.08, "visible_cpus": 48, "visible_per_quota": 1.04}),
+    ({"cgroup": "v2", "ray_cpus": 4.0, "cpu_count": 8, "affinity": 8, "cpu_quota": {"cpu.max": "max 100000"}},
+     {"pids_max": None, "cgroup": "v2", "cpus": 4, "limited": False, "quota": None, "visible_cpus": 8, "visible_per_quota": None}),
 ])
 def test_the_host_facts_of_a_node_probe_are_what_find_host_compares(probe, facts):
     assert libraries_setup.host_facts(probe, 32816) == dict(facts, machine_id=32816)
@@ -841,6 +853,20 @@ def test_a_many_run_that_hangs_with_free_worker_ports_fails_with_the_reason_that
         "no head pids/ports WARNING line for the node",
         "no 'No available ports' line and no refused fork: the job hung for another reason (CPUs?), not at the "
         "process limit"])
+
+
+def test_a_default_run_passes_only_when_it_completes_with_no_process_limit_warning_at_all(monkeypatch):
+    # Rule 1 of the library pages (F21): with Ray's defaults on a worker with CPUs <= B, the head writes no WARNING.
+    c10 = LIVE.parents[2] / "tests" / "manual" / "c10"
+    if not (c10 / "run_c10.py").exists():
+        pytest.skip("the C10 runner is in the repository, not in the package tree (F18 copies the package tree only)")
+    monkeypatch.syspath_prepend(str(c10))
+    from run_c10 import verdict
+    pre = post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "1536"}
+    full = ["WARNING worker 41 is at its process limit: 0 refused forks/threads (+0), pids 900 of 1536, worker ports in use 18 of 18"]
+    assert verdict("default", {"kind": "COMPLETED"}, pre, post, []) == ("PASS", ["completed, node alive, no refused fork"])
+    assert verdict("default", {"kind": "COMPLETED"}, pre, post, full) == ("FAIL", ["a head process-limit WARNING line for the node"])
+    assert verdict("default", {"kind": "HUNG"}, pre, post, [])[0] == "FAIL"
 
 
 def test_a_run_without_a_cluster_calls_no_cloud_guard_but_still_sums_up_the_process_scans(tmp_path):

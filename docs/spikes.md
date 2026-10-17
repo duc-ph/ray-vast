@@ -141,7 +141,7 @@ Other findings:
 
 ### Findings that contradict the docs or the design
 
-1. **B = 10 is not "most workers".** The library pages say that most workers have 14 ports (B = 10). Only 7 % of the hosts have 1280. Half of the hosts have 58 ports (B = 54). B depends on `cpu_cores_effective`.
+1. **B = 10 is not "most workers".** The library pages say that most workers have 14 ports (B = 10). Only 7 % of the hosts have 1280. Half of the hosts have 58 ports (B = 54). B depends on `cpu_cores_effective`. Fixed 2026-10-17: each library page has the table of B for each host size and the two rules (decisions.md).
 2. **Ray gets fewer CPUs than `cpu_cores_effective`.** The bootstrap gives Ray floor(quota) = floor(0.96 × `cpu_cores_effective`) CPUs. That is lower than the offer value on 311 of 322 machines. The provider filter is `cpu_cores_effective >= CPU`. So an offer with exactly `CPU` effective cores gives a worker with `CPU − 1` (`CPU − 2` from 25 cores). F4 says that `CPU` is a minimum. `limits.md` says "Ray still gets all the cores as `CPU`".
 3. design.md (section 1, measured 2026-10-06/07): hairpin about 72 % is now 65 % (45 % on datacenter hosts). Unreachable ports about 8 % is now 9 % (1 % on verified hosts). Egress mismatch about 8 % is now 7 %.
 

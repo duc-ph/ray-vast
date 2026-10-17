@@ -103,7 +103,7 @@ bootstrap: limits: pids.max 1280 (cgroup v1), cpus 5, worker ports 14, soft limi
 - **Refused forks or high pids:** your tasks start many threads, or too many processes run. Use the settings below.
 - **A job hangs with all ports in use:** the job needs more processes at the same time than the worker has ports. Use the settings below.
 
-Each library page gives the settings that use fewer worker processes:
+Each library page gives two rules. Rule 1 (processes): you need the process settings only when your node type has more CPUs than B (worker ports − 4), or when you start many processes with `num_cpus` below 1. Rule 2 (threads): keep each process under about 60 threads. The pages also give the settings that use fewer worker processes:
 
 | Library | Settings |
 |---|---|
@@ -114,7 +114,7 @@ Each library page gives the settings that use fewer worker processes:
 | Ray Serve | [Ray Serve](../libraries/serve.md#settings) |
 | RLlib | [RLlib](../libraries/rllib.md#settings) |
 
-Your own threads count too. Use fewer threads in each task, for example `torch.set_num_threads(4)` and a small `DataLoader` `num_workers`.
+Your own threads count too, also when worker ports are free. Use fewer threads in each task, for example a small `DataLoader` `num_workers`. A vast container often sees all the CPUs of the host, and thread pools often size themselves by that number. The fixes for each library (`OMP_NUM_THREADS`, `pyarrow.set_cpu_count()`, `torch.set_num_threads()`): _measured in LB15 (not run yet)_.
 
 Or rent hosts with fewer cores, so that one worker gets less work. Add an upper bound to `cpu_cores_effective` in the node type's `offer_query`, for example `cpu_cores_effective: {gte: 4, lte: 24}` for a node type with `CPU: 4`. Keep `gte` at least `CPU`. Read [Choose node types and offer queries](node-types.md).
 

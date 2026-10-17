@@ -35,7 +35,7 @@ e2e_harness.HEAD_IMAGE = e2e_harness.IMAGE_PREFIX + "c10-head"  # not the st11 t
 # The worker and head image: rayproject/ray:2.59.0-py311-cpu plus torch 2.7.1 (CPU), for Train and RLlib (see the README).
 e2e_harness.RAY_IMAGE = os.environ.get("C10E_IMAGE", "c10-local:torch")
 from e2e_harness import box_ip, docker, head_image, host_ip, make_cluster, moto_url, teardown_removes_every_container  # noqa: E402,F401
-from run_c10 import node_warnings, verdict  # noqa: E402
+from run_c10 import events_max, node_warnings, verdict  # noqa: E402
 
 HEAD = e2e_harness.HEAD
 LIVE_JOBS = HERE.parents[2] / "ray-vast-pypi" / "tests" / "live" / "jobs"
@@ -43,6 +43,10 @@ SCALE = os.environ.get("C10E_SCALE", "0.1")
 OUT = Path(os.environ.get("C10E_OUT", "/tmp/c10e"))  # the job log and the head log lines of each run  # Train and RLlib many: max(ports + 4, 40 * scale) torch processes
 CPUS = os.cpu_count()  # the node type's CPU: the worker container has all the box's cores
 TIME_SCALE = 3  # heartbeat every 10 s instead of 30 s, so the warning comes sooner
+# The small worker of the two rules of the library pages (F21, F22): a vast host with 7 effective cores has the CPU quota
+# 0.96 x 7 = 6.72 and pids.max 256 x 6 = 1536 (docs/spikes.md S6), so 18 worker ports and B = 14. Its node type declares
+# CPU 6, so Ray has 6 CPUs: fewer than B.
+SMALL = {"cpus": 6, "quota": "6.72", "pids_limit": 1536}
 
 
 def job(script, *args, env=None, timeout=900):
@@ -63,12 +67,15 @@ def last(text, prefix):
     return lines[-1] if lines else None
 
 
-def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
-    """One worker with pids.max = pids_limit, `script` in `mode`, and the run_c10.py verdict. Returns (status, reasons, data)."""
-    cluster = make_cluster(docker_args=["--pids-limit", str(pids_limit)], worker_env={"RAYVAST_TIME_SCALE": str(TIME_SCALE)})
+def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s, cpus=CPUS, quota=None):
+    """One worker with pids.max = pids_limit (and a CPU quota of `quota` cores, if given), `script` in `mode` with the
+    declared CPU `cpus`, and the verdict: run_c10.py's for tuned, default and many; `threads_verdict` for threads (then
+    the node may die: its fate is data). Returns (status, reasons, data)."""
+    cluster = make_cluster(docker_args=["--pids-limit", str(pids_limit), *(["--cpus", quota] if quota else [])],
+                           worker_env={"RAYVAST_TIME_SCALE": str(TIME_SCALE)})
     # Ray gets the declared CPU (design 5.4). Declare the box's cores, as a vast node type declares its offer's cores: with
     # CPU 1, Data many waits for CPUs with free ports, and the head rightly writes no WARNING line (F16, 2026-10-17).
-    cluster.write_config(cpu=CPUS, max_workers=1, idle_timeout_minutes=30)
+    cluster.write_config(cpu=cpus, max_workers=1, idle_timeout_minutes=30)
     cluster.start_head()
     docker("cp", str(HERE / "jobs"), f"{HEAD}:/tmp/c10jobs")
     docker("cp", str(LIVE_JOBS / "lb_tuned.py"), f"{HEAD}:/tmp/c10jobs/lb_tuned.py")  # the live suite's LB11 tuned runs
@@ -100,7 +107,10 @@ def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
     post = probe()
     head = monitor_log()[log_start:]
     warnings = node_warnings(head, before["container_id"], before["ip"])
-    status, reasons = verdict(mode, {"kind": kind, **json.loads(payload)}, before, post.get(node_id), warnings)
+    if mode == "threads":
+        status, reasons = threads_verdict(json.loads(payload) if kind == "COMPLETED" else {"kind": kind}, before, post.get(node_id))
+    else:
+        status, reasons = verdict(mode, {"kind": kind, **json.loads(payload)}, before, post.get(node_id), warnings)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / f"{script[:-3]}_{mode}_{pids_limit}.log").write_text(log + "\n--- head log\n" + "\n".join(head))
     params = last(log, "C10_PARAMS")
@@ -109,12 +119,30 @@ def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
             "pids.peak": after.get("pids.peak"), "peak_workers": peak["workers"], "pids.max": before.get("pids.max"),
             "ray_env": before.get("ray_env"), "cpu": before.get("CPU"), "worker_alive": cluster.fake.live_ids() == [instance_id],
             "pids.events": (post.get(node_id) or {}).get("pids.events"),
-            "no_port_errors": (post.get(node_id) or {}).get("no_port_errors"), "warnings": warnings[:3]}
+            "no_port_errors": (post.get(node_id) or {}).get("no_port_errors"), "warnings": warnings[:3],
+            "job_data": json.loads(payload) if mode == "threads" else None}
     line = f"C10E_RESULT {script} {mode} pids.max {pids_limit} {status} {json.dumps(dict(data, reasons=reasons))}"
     print(line, flush=True)
     (OUT / f"{script[:-3]}_{mode}_{pids_limit}.result").write_text(line + "\n")  # under xdist, a worker's print is not shown
-    cluster.assert_live([instance_id])  # the worker did not crash or destroy itself
+    if mode != "threads":
+        cluster.assert_live([instance_id])  # the worker did not crash or destroy itself
     return status, reasons, data
+
+
+def threads_verdict(job, before, after):
+    """Rule 2 (threads): with free worker ports, the threads of the tasks reach the pids limit. PASS needs a refused thread
+    start in a task (`can't start new thread`) and fewer Ray worker processes than worker ports at the peak. pids.events
+    is data (the node can die, and then there is no probe after)."""
+    reasons = []
+    if not job.get("refused_tasks"):
+        reasons.append(f"no task got a refused thread start ({job.get('kind') or 'COMPLETED'})")
+    if not job.get("max_ray_worker_processes", 99) < (before.get("ports") or 0):
+        reasons.append(f"the worker ports were not free: {job.get('max_ray_worker_processes')} worker processes, "
+                       f"{before.get('ports')} ports")
+    refused = events_max(after) - events_max(before) if after and events_max(after) is not None else None
+    return ("FAIL" if reasons else "PASS"), reasons or [
+        f"{job['refused_tasks']} of {job['tasks']} tasks refused, {job['max_ray_worker_processes']} worker processes of "
+        f"{before.get('ports')} ports, pids.current peak {job['max_pids_current']}, refused forks {refused}"]
 
 
 def start_sampler(container):
@@ -158,6 +186,28 @@ CASES = [
     # The live suite's LB11 "tuned" runs (tests/live/jobs/lb_tuned.py), with the values of tune.md, train.md and rllib.md.
     ("lb_tuned.py", "tune", 1280, 600), ("lb_tuned.py", "train", 1280, 900), ("lb_tuned.py", "rllib", 1280, 900),
 ]
+
+
+# Rule 1 (F21): Ray's defaults at one process for each CPU, on the SMALL worker (6 Ray CPUs, 18 ports, B = 14).
+SMALL_CASES = [(script, 600 if script in ("c10_train.py", "c10_rllib.py", "c10_tune.py") else 300) for script in
+               ("c10_core.py", "c10_data.py", "c10_tune.py", "c10_serve.py", "c10_train.py", "c10_rllib.py")]
+
+
+@pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+def test_default(make_cluster, script, guard_s):
+    """Rule 1: the default code completes on a worker with CPUs <= B, the worker stays alive, no refused fork, and the
+    head writes no process-limit WARNING line."""
+    status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+    assert data["ports"] == 18, data
+    assert status == "PASS", (reasons, data)
+
+
+def test_threads(make_cluster):
+    """Rule 2: one task for each CPU (6 tasks, 18 ports: the ports stay free), each with 200 threads, reaches the pids limit
+    of the SMALL worker: thread starts are refused."""
+    status, reasons, data = run_pair_mode(make_cluster, "c10_threads.py", "threads", SMALL["pids_limit"], 300, SMALL["cpus"], SMALL["quota"])
+    assert data["ports"] == 18, data
+    assert status == "PASS", (reasons, data)
 
 
 @pytest.mark.parametrize("script,mode,pids_limit,guard_s", CASES)

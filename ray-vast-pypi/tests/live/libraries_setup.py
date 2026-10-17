@@ -1,5 +1,5 @@
 """The `libraries` clusters of the live suite (clusters/libraries.yaml, one cluster for each host H1, H2, H3, gpu2, so
-the hosts run in parallel). `LibrariesCluster` owns what the scenarios of its host change: the cluster shape (which workers
+the hosts run in parallel; H4 is the host of the thread measurement). `LibrariesCluster` owns what the scenarios of its host change: the cluster shape (which workers
 run), the host pins of H1 and H2 (the offer query of each pinned type and the last host that matched), and the S3 access.
 
 How a scenario gets its hosts. The head's autoscaler reads `/home/ubuntu/ray-vast-<cluster>/cluster.yaml` again in each
@@ -26,18 +26,25 @@ from cluster import ADMIN_PROFILE, Cluster, vast
 from liverun import assert_ours, wait_until
 
 HERE = Path(__file__).parent
-# The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10, 2026-10-17) and the query to use when none of them is
-# rentable. vast sets pids.max = 256 x the CPU quota in whole cores (2026-10-17: 1280 at 5.76 cores, 9728 at 38.4, 11776 at
-# 46.08, 15616 at 61.44), so no host has many Ray CPUs and pids.max 1280. H1 is the large-host case: the h1 type declares
-# CPU 32, so Ray gets 32 CPUs, with any pids limit (CPU quota: m36376 38.4 cores, 9728, v1; m58013 46.08, 11776, v2;
-# m148655 61.44, 15616, v1).
+# The named hosts (the S6 survey, archive/results/2026-10-17/survey/machines.csv) and the query to use when none of them is
+# rentable. vast sets pids.max = 256 x the CPU quota in whole cores, so a worker has 58 worker ports (B = 54) from 17
+# effective cores up. H1 and H2 are the hosts where the process settings are needed: the h1 and h2 types declare CPU 64,
+# so Ray has 64 CPUs, more than B (decisions.md 2026-10-17, "on hosts with 64 or more effective cores"). The provider adds the filter
+# cpu_cores_effective >= 64. H1: any pids limit (m148655 61.44 cores, 15616, v1; m45547 v1; m151137 v1). H2: cgroup v2
+# (m149678 v2; m153955, m154115, m154116 A40 v2, verified, not datacenter). H4: many visible CPUs for each quota core, the
+# thread measurement: the h4 type declares CPU 16, and the query asks for 128 or more host cores and at most 32 effective
+# cores, so 4 or more visible CPUs for each core (m45592 128 CPUs at 15.36 cores, v2; m43571, m45777, m45775; m153046).
 PINS = {
-    "h1": {"named": [36376, 58013, 148655], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "cpu_cores_effective": {"gte": 32}},
-           "want": {"cpus": {"gte": 32}, "limited": True}},
-    "h2": {"named": [51706, 55704], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
+    "h1": {"named": [148655, 45547, 151137], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}},
+           "want": {"cpus": {"gte": 64}, "limited": True}},
+    "h2": {"named": [149678, 153955, 154115, 154116], "fallback": {"verified": {"eq": True}},
+           "want": {"cgroup": "v2", "cpus": {"gte": 64}}},
+    "h4": {"named": [45592, 43571, 45777, 45775, 153046],
+           "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "cpu_cores": {"gte": 128}, "cpu_cores_effective": {"gte": 16, "lte": 32}},
+           "want": {"visible_per_quota": {"gte": 4}, "limited": True}},
 }
 SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate is replaced
-HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}  # the worker type of each libraries host
+HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2", "H4": "h4"}  # the worker type of each libraries host
 DATE8 = time.strftime("%Y%m%d", time.gmtime())
 
 
@@ -49,7 +56,7 @@ HOST_RENTALS_MAX = 3
 
 
 def find_host(want, rent, end):
-    """Rent a host until its probe matches `want` (for example {"cpus": {"gte": 32}, "cgroup": "v1"}: a value is the exact
+    """Rent a host until its probe matches `want` (for example {"cpus": {"gte": 64}, "cgroup": "v1"}: a value is the exact
     value of that fact, or {"gte": n} for a number of at least n).
     `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
     ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
@@ -85,11 +92,23 @@ def shaped_config(config, shape, queries=None):
 
 def host_facts(probe, machine_id):
     """What `find_host` compares, from one NODE_PROBE row (jobs/node_probe.py): pids.max (None for "max" or no file),
-    the cgroup version, the Ray CPUs, and whether the container has a process limit."""
+    the cgroup version, the Ray CPUs, whether the container has a process limit, the CPU quota in cores (cgroup v2
+    `cpu.max`, or v1 `cpu.cfs_quota_us` / `cpu.cfs_period_us`; None for no quota), the visible CPUs (the smaller of
+    `os.cpu_count()` and the affinity: the thread pools of Arrow, torch and gRPC size themselves by these) and the visible
+    CPUs per quota core (2 decimals)."""
     value = probe.get("pids.max")
     pids_max = int(value) if value and value.isdigit() else None
+    raw = probe.get("cpu_quota") or {}
+    if "cpu.max" in raw:
+        limit, period = raw["cpu.max"].split()
+    else:
+        limit, period = raw.get("cpu.cfs_quota_us"), raw.get("cpu.cfs_period_us")
+    quota = round(int(limit) / int(period), 2) if limit and period and limit.lstrip("-").isdigit() and int(limit) > 0 and int(period) > 0 else None
+    counts = [n for n in (probe.get("cpu_count"), probe.get("affinity")) if n]
+    visible = min(counts) if counts else None
     return {"machine_id": machine_id, "pids_max": pids_max, "cgroup": probe.get("cgroup"), "cpus": int(probe["ray_cpus"]),
-            "limited": pids_max is not None}
+            "limited": pids_max is not None, "quota": quota, "visible_cpus": visible,
+            "visible_per_quota": round(visible / quota, 2) if visible and quota else None}
 
 
 def expected_limits(probe):
@@ -192,7 +211,7 @@ class S3Access:
 
 class LibrariesCluster(Cluster):
     """The cluster of one libraries host (not up yet): libraries.yaml with only the head and the worker type of `host`,
-    named `rvtest-lib-<host>-<suffix>`. For H1 and H2: the vast offers of the named hosts are searched first and recorded
+    named `rvtest-lib-<host>-<suffix>`. For H1, H2 and H4: the vast offers of the named hosts are searched first and recorded
     in `<group_dir>/host_offers.json` (a host that is not rentable now is replaced by the fallback query at rent time).
     The cluster owns `shape` (the workers that run now), `queries` (the offer query of each type in the head's YAML, when
     it differs from libraries.yaml), `matched` (node type -> the host facts of the last host that matched, rented first

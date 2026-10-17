@@ -12,7 +12,7 @@ The scripts for cycle C10 in [docs/test-plan.md](../../../docs/test-plan.md). Th
   the head's process-limit WARNING line. Run it from `ray-vast-pypi/`:
   `PYTHONPATH=src .venv/bin/python -m pytest -o addopts="" -p no:cacheprovider -s ../tests/manual/c10/test_c10_local_e2e.py`.
 
-A pair job takes the mode as its argument: `python c10_<lib>.py many|tuned`. It prints one last line:
+A pair job takes the mode as its argument: `python c10_<lib>.py many|tuned|default` (`default`: Ray's defaults at one process for each CPU, rule 1 of the library pages). `c10_threads.py` starts 200 threads in each of one task for each CPU (rule 2). It prints one last line:
 `C10_RESULT <id> COMPLETED|HUNG|ERROR <json>` (the suite format of a result line: `<FAMILY>_RESULT <id> <word> <json>`). `run_c10.py` decides and prints its own `C10_RESULT <id> PASS|FAIL|LIMIT|INCONCLUSIVE <json>` line.
 The functional jobs (RLlib R1 to R3) print their own `C10_RESULT` line. The C9 jobs print `C9_RESULT`.
 
@@ -30,6 +30,8 @@ The functional jobs (RLlib R1 to R3) print their own `C10_RESULT` line. The C9 j
 | C10.rllib.R1 | `c10_rllib.py r1`: PPO, 4 env runners on 2 nodes | yes | PASS |
 | C10.rllib.R3 | `c10_rllib.py r3`: 2 learners on 2 nodes | yes | LIMIT |
 | C10.rllib.R2 | `c10_rllib.py r2`: 2 learners on 1 node with 2 GPUs (starts `gpu2`) | yes | PASS |
+
+The local e2e has two more tests on a small worker (`--pids-limit 1536`, `--cpus 6.72`, `CPU: 6`, 18 worker ports): `test_default` (each library's `default` mode completes with no WARNING: scenario F21) and `test_threads` (`c10_threads.py` gets refused thread starts with free ports: scenario F22).
 
 ## Phase commands
 

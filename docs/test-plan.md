@@ -11,7 +11,7 @@ The live cycles C0–C10 ran by hand before the suite existed. Their plans are i
 | L1 Unit | pure logic, fake clock, `responses`, `moto` | dev box | $0 | each change (fast run) |
 | L2 Integration | provider + Ray v2 `NodeProviderAdapter` + fake vast; head server + bootstrap processes; bootloader in Docker | dev box | $0 | full run, once per step |
 | L3 Local end-to-end | real Ray, real bootloader and bootstrap in Docker, a fake vast that runs containers (step 11) | dev box | $0 | from step 11 |
-| L4 Live suite | `ray-vast-pypi/tests/live/`: the claim matrix below | dev box, AWS, vast | free $0; aws < $0.40; lifecycle about $2.5; libraries about $5 | before a release |
+| L4 Live suite | `ray-vast-pypi/tests/live/`: the claim matrix below | dev box, AWS, vast | free $0; aws < $0.40; lifecycle about $2.5; libraries about $5.5 | before a release |
 
 The commands for the fast and the full run are in [CONTRIBUTING.md](../ray-vast-pypi/CONTRIBUTING.md).
 
@@ -72,7 +72,7 @@ Run from `ray-vast-pypi/` on the dev box, with the admin AWS profile `personal` 
 | `none` | No cluster. Unit, integration and local Docker runs, the public vast offer search, plain AWS calls, or a short own cluster (A02, A03). | admin (A10: the restricted user) | $0; A03 under $0.10 EC2 |
 | `aws_only` | `tests/live/clusters/aws_only.yaml`: the head only, `rayproject/ray:2.59.0-py311-gpu` (it has an ENTRYPOINT). Worker type `impossible` (no offer matches) and `poor` (`max_dollars_per_hour` 0.001). | admin, us-west-2, `t3.large` | EC2 about $0.15 |
 | `lifecycle` | `tests/live/clusters/lifecycle.yaml`: the C8 shape. 2 GPU types × 2 workers, `candidate_factor` 2, the GPU image, no top-level `max_workers`, `idle_timeout_minutes` 2. | the restricted user `ray-vast-livetest-<date>` (fixture `restricted_user`), **us-east-2**, **`t3.medium`** | vast about $2.5, EC2 $0.10 |
-| `libraries` | One cluster for each host, from `tests/live/clusters/libraries.yaml` with only the worker type of that host: H1 (the `h1` type declares `CPU: 32`, so Ray gets 32 CPUs, any pids limit: the large-host case; vast sets `pids.max` = 256 × the CPU quota in whole cores, so many CPUs and 1280 do not occur together), H2 (a cgroup v2 host), H3 (2 `gpu` workers), `gpu2` (one 2-GPU host). A test names its host with its `where` parameter or the `host` marker. For each host with S3 jobs, an S3 test bucket and a least-privilege IAM user for `env_vars` (`LibrariesCluster.s3()`; deleted at the group teardown). Hosts pinned by `machine_id`; a host that does not match its probe is ended and blocked, at most 3 rentals (`libraries_setup.find_host`). | admin, us-west-2 | vast about $5, EC2 $1.30 (4 heads) |
+| `libraries` | One cluster for each host, from `tests/live/clusters/libraries.yaml` with only the worker type of that host: H1 (the `h1` type declares `CPU: 64`, so Ray gets 64 CPUs on a host with 64 or more effective cores, any pids limit: more CPUs than B = 54, the case of rule 1 where the process settings are needed), H2 (the same on a cgroup v2 host), H3 (2 `gpu` workers), `gpu2` (one 2-GPU host), H4 (the `h4` type declares `CPU: 16`; the query asks for 128 or more host cores and 16 to 32 effective cores, and the probe for 4 or more visible CPUs for each core of the CPU quota: LB15). A test names its host with its `where` parameter or the `host` marker. For each host with S3 jobs, an S3 test bucket and a least-privilege IAM user for `env_vars` (`LibrariesCluster.s3()`; deleted at the group teardown). Hosts pinned by `machine_id` (H1, H2 and H4 from the S6 survey); a host that does not match its probe is ended and blocked, at most 3 rentals (`libraries_setup.find_host`). | admin, us-west-2 | vast about $5.5, EC2 $1.60 (5 heads) |
 | `release` | The packaged `gpu-24gb.yaml` (only the region can change), a clean venv, `pip install ray-vast "ray[default]==2.59.*"` from PyPI. Runs only with `RAYVAST_LIVE_RELEASE=<version>`, after the publish. | admin | vast under $1 |
 
 ## Claim matrix
@@ -103,6 +103,8 @@ Doc references: `getting-started` = `ray-vast-pypi/docs/getting-started.md`; oth
 | F18 | Python 3.10 install | free, release, box_disk | none | README:29-30; getting-started:8, :10 | In `python:3.10`: the wheel installs, `ray-vast --help` works, the fast unit run passes (in an editable source tree next to `docs/test-plan.md`, the layout that the unit tests need) | audit A | no |
 | F19 | Offer queries of the examples and the docs | free | none | the 3 example YAMLs; node-types.md:8-20, :46-52, :67-80, :94-100; troubleshoot.md:119; core.md:76 | Each example type has ≥ 4 offers on ≥ 3 machines, and its first `candidate_factor` offers fit `max_dollars_per_hour`; vast accepts each query of node-types.md | audit A, C | no |
 | F20 | Doc snippets in Ray 2.59 | free, box_disk | none | core.md:47-60, :71-72; data.md:51-64; tune.md:49-60; train.md:49-69; serve.md:54-66; rllib.md:47-56, :60-71 | Every Python block of the library pages compiles; their imports work in the Ray 2.59 GPU image (torch 2.7.1 from pip); the core blocks run on a local node | audit C | no |
+| F21 | Local rule 1: the default code on a worker with CPUs ≤ B | free, limits | none | rule 1 of each library page ("Do you need the process settings?"); limits.md (the B table) | With the real head and bootstrap (tests/manual/c10): one worker with `--pids-limit 1536` and `--cpus 6.72` (a vast host with 7 effective cores), `CPU: 6`, 18 worker ports (B = 14). The default code of core, data, tune, serve, train and rllib (one process for each CPU, Ray's default `num_cpus`): each completes, the worker stays alive, no refused fork, no process-limit WARNING | 2026-10-17 user decision | no |
+| F22 | Local rule 2: threads reach the pids limit while ports are free | free, limits | none | rule 2 of each library page ("Threads and child processes"); limits.md (your own threads) | On the F21 worker: 6 tasks (one for each CPU, Ray's default `num_cpus`) start 200 threads each. At least one task gets `can't start new thread`, with fewer Ray worker processes than the 18 ports. The refused forks, the WARNING and the node's fate are data | 2026-10-17 user decision | no |
 
 ### aws
 
@@ -133,7 +135,7 @@ Doc references: `getting-started` = `ray-vast-pypi/docs/getting-started.md`; oth
 
 | ID | Name | Markers | Fixture | Claims proved | Pass criterion | Origin | Destructive |
 |---|---|---|---|---|---|---|---|
-| LB00 | Host probe on every libraries host | libraries, limits | libraries | limits.md:29, :34, :36 | One run for each host (`LB00[H1]`, `[H2]`, `[H3]`, `[gpu2]`). Each host recorded: `pids.max`, cgroup, CPU quota, ports, soft limit, threads of each worker process, enroll time. Ray CPUs = the declared `CPU`, cores (affinity, quota) at least 90% of it. H1: 32 or more Ray CPUs, a pids limit. H2: v2 | audit C | no |
+| LB00 | Host probe on every libraries host | libraries, limits | libraries | limits.md:29, :34, :36 | One run for each host (`LB00[H1]`, `[H2]`, `[H3]`, `[gpu2]`). Each host recorded: `pids.max`, cgroup, CPU quota, ports, soft limit, threads of each worker process, enroll time. Ray CPUs = the declared `CPU`, cores (affinity, quota) at least 90% of it. H1: 64 or more Ray CPUs, a pids limit. H2: v2 | audit C | no |
 | LB01 | Jobs workflow | libraries | libraries | jobs.md:8-31, :52-69, :103 | `--working-dir` file read on each node; `runtime_env` pip torch with CUDA on 2 GPU nodes; `ray job list`, `logs --follow`, `stop` → STOPPED | C9.0.2–C9.0.4 | no |
 | LB02 | Core functions and the core snippet | libraries, limits | libraries | core.md:7-8, :43-75; jobs.md:132 | On H3: PACK and STRICT_SPREAD, actor restarts, 2 GB object between hosts (MB/s recorded); the core snippet with the hosts' CPUS / B completes with no WARNING | C9.5.1–C9.5.3, audit C | no |
 | LB03 | Data snippet, verbatim | libraries, limits | libraries | data.md:8, :39-77 | On H1 and on H3: S3 parquet (about 3 GB) with `env_vars` keys of the least-privilege user, the snippet settings at the host's B: SUCCEEDED, output in S3, no refused fork, no crash | audit C | no |
@@ -143,7 +145,8 @@ Doc references: `getting-started` = `ray-vast-pypi/docs/getting-started.md`; oth
 | LB07 | Train snippet with 2 GPUs and S3 | libraries, limits | libraries | train.md:7, :47-77, :91-93; limits.md:63 | On `gpu2`: the train.md snippet (NCCL, STRICT_PACK, 2 workers, S3): checkpoint in S3, both GPUs, no WARNING; the default storage gives the documented error | C9.3.1, C9.3.4 | no |
 | LB09 | Serve snippet, HTTP and autoscaling | libraries, limits | libraries | serve.md:7-8, :19-34, :50-74, :81-82, :88 | On H3: `num_replicas` = B × workers with `num_cpus` CPUS / B → at most B on each worker; HTTP through the serve.md tunnel: all 200, also after the job; `curl` on the head :8000 → 200; GPU replicas 1 GPU each; autoscaling up to B × workers | C9.4.1–C9.4.4, audit C | no |
 | LB10 | RLlib env runners and learners | libraries, limits | libraries | rllib.md:7-8, :41-82 | `LB10[H3]`: the env runner snippet (2 runners, CPUS / B) runs 2 iterations, no WARNING. `LB10[gpu2]`: the learner snippet → 2 iterations, 0 errors (`num_cpus_per_learner` recorded) | C10 R1, R2, audit C | no |
-| LB11 | Process-limit pairs on H1 and H2, diagnostics, refused forks | libraries, limits | libraries | every library "Settings", "What does not work" and "If it fails" table; limits.md:40-47; troubleshoot.md:9, :70, :100-104 | On H1 and on H2, for core, data, tune, serve, train and rllib: tuned (the documented values at that host's B) completes, node alive; many hangs or fails with the head WARNING `ports in use N of N`, node alive. A refused fork (pids.events max or the WARNING refused count rises) fails a tuned run, because then the advice is wrong. The refused forks of a many run are data. During `serve.many` on H1, the 3 diagnostics steps: the dashboard log API opens a `worker-*.err` with `No available ports`; `ray job logs` shows the documented text; the WARNING names the worker. Then a task starts threads until `EAGAIN`: the refused forks, the WARNING and the node's fate are data, not a pass criterion | C10 phase A, T11, audit C, C9 pids finding | yes (many, forks) |
+| LB11 | Process-limit pairs on H1 and H2, diagnostics, refused forks | libraries, limits | libraries | every library "Settings", "What does not work" and "If it fails" table; limits.md:40-47; troubleshoot.md:9, :70, :100-104 | On H1 and on H2 (64 Ray CPUs on 64 or more effective cores, 58 ports, B = 54: more CPUs than B, so rule 1 says that the settings are needed), for core, data, tune, serve, train and rllib: tuned (the documented values at that host's B) completes, node alive; many hangs or fails with the head WARNING `ports in use N of N`, node alive. A refused fork (pids.events max or the WARNING refused count rises) fails a tuned run, because then the advice is wrong. The refused forks of a many run are data. During `serve.many` on H1, the 3 diagnostics steps: the dashboard log API opens a `worker-*.err` with `No available ports`; `ray job logs` shows the documented text; the WARNING names the worker. Then a task starts threads until `EAGAIN`: the refused forks, the WARNING and the node's fate are data, not a pass criterion | C10 phase A, T11, audit C, C9 pids finding | yes (many, forks) |
+| LB15 | Threads per process on a host with many visible CPUs | libraries, limits | libraries | rule 2 of each library page (the numbers "measured in LB15"); limits.md and troubleshoot.md (your own threads) | On H4 (4 or more visible CPUs for each quota core): `jobs/lb_threads.py` for Data (read, map, groupby), Train (TorchTrainer with a DataLoader), RLlib (PPO with env runners) and a task that imports pyarrow and torch, first with Ray's defaults, then with the fixes (`OMP_NUM_THREADS`, `pyarrow.set_cpu_count`, `torch.set_num_threads`, 2 threads). Each run completes, and the threads of each process (`/proc/<pid>/task`), the `pids.current` peak and the refused forks are recorded. A fixed run with a Ray worker process above 60 threads is recorded, not a failure | 2026-10-17 user decision | no |
 
 ### release
 
@@ -184,25 +187,27 @@ Decided with the user (decisions.md, 2026-10-17). Each claim keeps the proof in 
 
 | Marker | Scenarios |
 |---|---|
-| free | 20 |
+| free | 22 |
 | aws | 8 |
 | lifecycle | 7 |
-| libraries | 11 |
+| libraries | 12 |
 | release | 4 (F17, F18, R01, R02) |
 | security | 10 (F06, A02, A05, A07, A09, A10, L01, L03, L04, L07) |
 | failure | 3 (A03, L07, L10) |
-| limits | 12 (F05, F16, L03, LB00, LB02, LB03, LB04, LB06, LB07, LB09, LB10, LB11) |
+| limits | 15 (F05, F16, F21, F22, L03, LB00, LB02, LB03, LB04, LB06, LB07, LB09, LB10, LB11, LB15) |
 | exclusive_account (a need) | 1 (A02) |
 | box_disk (a need) | 3 (F17, F18, F20) |
 
 | Fixture | Scenarios |
 |---|---|
-| none | 23 (F01–F20, A02, A03, A10) |
+| none | 25 (F01–F22, A02, A03, A10) |
 | aws_only | 5 (A01, A05, A07, A08, A09) |
 | lifecycle | 7 |
-| libraries | 11 |
+| libraries | 12 |
 | release | 2 |
-| **Total** | **48** |
+| **Total** | **51** |
+
+Changes on 2026-10-17, later (from 48): added F21 and F22 (the two rules of the library pages, local), LB15 (threads per process on H4, not run yet). H1 and H2 declare `CPU: 64` on hosts with 64 or more effective cores, so LB11 runs where Ray has more CPUs than B. The smaller hosts (H3, gpu2) keep the scenarios that use the defaults or the doc snippets.
 
 Changes on 2026-10-17 (from 61): A04, A06, A11, A12, A13, L06, L08, L09 and LB08 are removed; L11 and LB14 are group teardown checks; LB12 and LB13 are part of LB11. H1 is the large-host case (32 or more Ray CPUs, any pids limit).
 
