@@ -1,0 +1,38 @@
+cluster_name: rvtest-lib-h3-7fec
+idle_timeout_minutes: 5
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head:
+    resources:
+      CPU: 0
+    node_config:
+      region: us-west-2
+      instance_type: t3.large
+  gpu:
+    resources:
+      CPU: 4
+      GPU: 1
+    min_workers: 0
+    max_workers: 2
+    node_config:
+      disk_gb: 60
+      offer_query:
+        gpu_ram:
+          gte: 8000
+          lt: 70000
+        compute_cap:
+          gte: 600
+          lt: 900
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500
+        machine_id:
+          notin:
+          - 32816
+          - 51706
+          - 55704

@@ -1,0 +1,41 @@
+{
+ "id": "LB10[gpu2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792197457.282854,
+ "checks": [
+  {
+   "name": "the learner snippet on gpu2 (num_cpus_per_learner 0.3): 2 iterations, 0 errors",
+   "ok": false,
+   "detail": "{'elapsed_s': 1912.7, 'errors': 1, 'iterations': None}"
+  }
+ ],
+ "data": {
+  "shape_wait_gpu2_s": 2.9,
+  "num_cpus_per_learner": 0.3,
+  "rllib_learners_substitutions": [
+   {
+    "doc": "libraries/rllib.md",
+    "old": "num_cpus_per_learner=2.4",
+    "new": "num_cpus_per_learner=0.3"
+   },
+   {
+    "doc": "libraries/rllib.md",
+    "old": "tune.Tuner(config.algo_class",
+    "new": "grid = tune.Tuner(config.algo_class"
+   }
+  ],
+  "rllib_learners": {
+   "elapsed_s": 1912.7,
+   "errors": 1,
+   "iterations": null
+  }
+ },
+ "outcome": "failed",
+ "message": "AssertionError: the learner snippet on gpu2 (num_cpus_per_learner 0.3): 2 iterations, 0 errors: {'elapsed_s': 1912.7, 'errors': 1, 'iterations': None}",
+ "ended": 1792199505.281918,
+ "wall_s": 2048.0
+}

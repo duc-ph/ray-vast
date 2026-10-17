@@ -1,0 +1,1451 @@
+2026-10-17 01:01:17,011	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:37469[22m
+2026-10-17 01:01:17,028	INFO cli.py:569 -- 2026-10-16 17:56:51,724	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job tune_snippet-79a41b: python lb_snippet.py tune
+2026-10-16 17:56:53,560	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.94.33.168:6379...
+2026-10-16 17:56:53,591	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START tune 1792198613.6
+--- snippet.py ---
+from ray import tune
+
+tuner = tune.Tuner(
+    tune.with_resources(trainable, {"cpu": 0.5}),                 # CPUS / B
+    param_space={"x": tune.uniform(0, 1)},
+    tune_config=tune.TuneConfig(num_samples=60, metric="score", mode="max",
+                                max_concurrent_trials=5),        # B // 2
+    run_config=tune.RunConfig(storage_path="s3://ray-vast-rvtest-20261017-fcde/lb06/experiments"),
+)
+tuner.fit()
+--- end ---
+╭──────────────────────────────────────────────────────────────────╮
+│ Configuration for experiment     trainable_2026-10-16_17-56-54   │
+├──────────────────────────────────────────────────────────────────┤
+│ Search algorithm                 BasicVariantGenerator           │
+│ Scheduler                        FIFOScheduler                   │
+│ Number of trials                 60                              │
+╰──────────────────────────────────────────────────────────────────╯
+
+View detailed results here: ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-16_17-33-40_263304_7/artifacts/2026-10-16_17-56-55/trainable_2026-10-16_17-56-54/driver_artifacts`
+
+Trial status: 5 PENDING
+Current time: 2026-10-16 17:56:56. Total running time: 0s
+Logical resource usage: 0/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+╭─────────────────────────────────────────────╮
+│ Trial name              status            x │
+├─────────────────────────────────────────────┤
+│ trainable_a5f5e_00000   PENDING    0.303462 │
+│ trainable_a5f5e_00001   PENDING    0.788254 │
+│ trainable_a5f5e_00002   PENDING    0.235802 │
+│ trainable_a5f5e_00003   PENDING    0.726949 │
+│ trainable_a5f5e_00004   PENDING    0.761317 │
+╰─────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00001 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00001 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.78825 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00002 started with configuration:
+╭───────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00002 config            │
+├───────────────────────────────────────────────┤
+│ x                                      0.2358 │
+╰───────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00004 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00004 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.76132 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=19252, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00001_1_x=0.7883_2026-10-16_17-56-56/checkpoint_000000)
+
+Trial trainable_a5f5e_00000 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00000 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.30346 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00003 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00003 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.72695 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00001 completed after 3 iterations at 2026-10-16 17:57:07. Total running time: 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00001 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.45666 │
+│ time_total_s                                        4.75263 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.57651 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00002 completed after 3 iterations at 2026-10-16 17:57:07. Total running time: 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00002 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     1.5077 │
+│ time_total_s                                        4.86468 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                                0.4716 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00004 completed after 3 iterations at 2026-10-16 17:57:08. Total running time: 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00004 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.50657 │
+│ time_total_s                                        4.98318 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.52263 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=19267, ip=143.55.45.86)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x7f83c2933ce0>
+[36m(trainable pid=19267, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(trainable pid=19267, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(trainable pid=19267, ip=143.55.45.86)[0m     def _remove(item, selfref=ref(self)):
+[36m(trainable pid=19267, ip=143.55.45.86)[0m 
+[36m(trainable pid=19267, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(trainable pid=19267, ip=143.55.45.86)[0m     raise_sys_exit_with_custom_error_message(
+[36m(trainable pid=19267, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(trainable pid=19267, ip=143.55.45.86)[0m SystemExit: 1
+[36m(trainable pid=20150, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00000_0_x=0.3035_2026-10-16_17-56-56/checkpoint_000001)[32m [repeated 11x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+
+Trial trainable_a5f5e_00006 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00006 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.91748 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00007 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00007 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.11835 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00000 completed after 3 iterations at 2026-10-16 17:57:15. Total running time: 18s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00000 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.81897 │
+│ time_total_s                                         9.3866 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.60692 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00003 completed after 3 iterations at 2026-10-16 17:57:15. Total running time: 19s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00003 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.81259 │
+│ time_total_s                                        9.35878 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                1.4539 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00005 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00005 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.74045 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=19500, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00006_6_x=0.9175_2026-10-16_17-57-07/checkpoint_000001)[32m [repeated 6x across cluster][0m
+
+Trial trainable_a5f5e_00006 completed after 3 iterations at 2026-10-16 17:57:18. Total running time: 22s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00006 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     1.4945 │
+│ time_total_s                                         4.8488 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.83496 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=19500, ip=143.55.45.86)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x7fdbec3a7ce0>
+[36m(trainable pid=19500, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(trainable pid=19500, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(trainable pid=19500, ip=143.55.45.86)[0m     def _remove(item, selfref=ref(self)):
+[36m(trainable pid=19500, ip=143.55.45.86)[0m 
+[36m(trainable pid=19500, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(trainable pid=19500, ip=143.55.45.86)[0m     raise_sys_exit_with_custom_error_message(
+[36m(trainable pid=19500, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(trainable pid=19500, ip=143.55.45.86)[0m SystemExit: 1
+
+Trial trainable_a5f5e_00007 completed after 3 iterations at 2026-10-16 17:57:20. Total running time: 24s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00007 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.48046 │
+│ time_total_s                                        4.82733 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                                0.2367 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00008 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00008 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.19329 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=19665, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00008_8_x=0.1933_2026-10-16_17-57-15/checkpoint_000000)[32m [repeated 5x across cluster][0m
+
+Trial trainable_a5f5e_00009 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00009 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.32784 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00011 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00011 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.40606 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00008 completed after 3 iterations at 2026-10-16 17:57:25. Total running time: 29s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00008 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.46964 │
+│ time_total_s                                         4.7938 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.38657 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial status: 8 TERMINATED | 3 RUNNING | 2 PENDING
+Current time: 2026-10-16 17:57:26. Total running time: 30s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00006 with score=1.8349582760529384 and params={'x': 0.9174791380264692}
+╭──────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status              x     iter     total time (s)      score │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00005   RUNNING      0.740449        3            9.32817   1.4809   │
+│ trainable_a5f5e_00009   RUNNING      0.327841                                        │
+│ trainable_a5f5e_00011   RUNNING      0.406058                                        │
+│ trainable_a5f5e_00000   TERMINATED   0.303462        3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254        3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802        3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949        3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317        3            4.98318   1.52263  │
+│ trainable_a5f5e_00006   TERMINATED   0.917479        3            4.8488    1.83496  │
+│ trainable_a5f5e_00007   TERMINATED   0.118348        3            4.82733   0.236696 │
+│ trainable_a5f5e_00008   TERMINATED   0.193287        3            4.7938    0.386574 │
+│ trainable_a5f5e_00010   PENDING      0.243826                                        │
+│ trainable_a5f5e_00012   PENDING      0.788681                                        │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00005 completed after 3 iterations at 2026-10-16 17:57:26. Total running time: 30s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00005 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     2.8051 │
+│ time_total_s                                        9.32817 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                1.4809 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00010 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00010 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.24383 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=20485, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00009_9_x=0.3278_2026-10-16_17-57-15/checkpoint_000000)[32m [repeated 5x across cluster][0m
+
+Trial trainable_a5f5e_00012 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00012 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.78868 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00013 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00013 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.31971 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00011 completed after 3 iterations at 2026-10-16 17:57:32. Total running time: 36s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00011 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.47259 │
+│ time_total_s                                        4.84379 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.81212 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=19859, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00012_12_x=0.7887_2026-10-16_17-57-25/checkpoint_000000)[32m [repeated 6x across cluster][0m
+
+Trial trainable_a5f5e_00009 completed after 3 iterations at 2026-10-16 17:57:35. Total running time: 39s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00009 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.79144 │
+│ time_total_s                                        9.24513 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.65568 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00012 completed after 3 iterations at 2026-10-16 17:57:36. Total running time: 40s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00012 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.48104 │
+│ time_total_s                                        4.85478 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.57736 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00013 completed after 3 iterations at 2026-10-16 17:57:37. Total running time: 41s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00013 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.48837 │
+│ time_total_s                                        4.81897 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.63942 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00010 completed after 3 iterations at 2026-10-16 17:57:37. Total running time: 41s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00010 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     2.7899 │
+│ time_total_s                                        9.23861 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.48765 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00014 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00014 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.47658 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00015 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00015 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.27845 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00017 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00017 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.06284 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00018 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00018 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.34426 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=20060, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00015_15_x=0.2784_2026-10-16_17-57-35/checkpoint_000000)[32m [repeated 9x across cluster][0m
+
+Trial trainable_a5f5e_00016 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00016 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.51907 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00015 completed after 3 iterations at 2026-10-16 17:57:46. Total running time: 50s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00015 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.49071 │
+│ time_total_s                                        4.81969 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.55689 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00017 completed after 3 iterations at 2026-10-16 17:57:48. Total running time: 52s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00017 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.51799 │
+│ time_total_s                                        4.90697 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.12568 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=20091, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00018_18_x=0.3443_2026-10-16_17-57-37/checkpoint_000002)[32m [repeated 10x across cluster][0m
+
+Trial trainable_a5f5e_00018 completed after 3 iterations at 2026-10-16 17:57:51. Total running time: 54s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00018 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.51423 │
+│ time_total_s                                        4.82833 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.68851 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00014 completed after 3 iterations at 2026-10-16 17:57:51. Total running time: 55s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00014 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.80968 │
+│ time_total_s                                        9.36758 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.95316 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00020 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00020 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.48671 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=20842, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00016_16_x=0.5191_2026-10-16_17-57-36/checkpoint_000001)[32m [repeated 3x across cluster][0m
+
+Trial trainable_a5f5e_00019 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00019 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.26692 │
+╰────────────────────────────────────────────────╯
+
+Trial status: 18 TERMINATED | 3 RUNNING | 2 PENDING
+Current time: 2026-10-16 17:57:56. Total running time: 1min 0s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00006 with score=1.8349582760529384 and params={'x': 0.9174791380264692}
+╭──────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status              x     iter     total time (s)      score │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00016   RUNNING      0.519069        2            6.50374   0.519069 │
+│ trainable_a5f5e_00019   RUNNING      0.266924                                        │
+│ trainable_a5f5e_00020   RUNNING      0.486713        1            1.85235   0        │
+│ trainable_a5f5e_00000   TERMINATED   0.303462        3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254        3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802        3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949        3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317        3            4.98318   1.52263  │
+│ trainable_a5f5e_00021   PENDING      0.181153                                        │
+│ trainable_a5f5e_00022   PENDING      0.244844                                        │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
+13 more TERMINATED
+
+Trial trainable_a5f5e_00021 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00021 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.18115 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00022 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00022 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.24484 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00016 completed after 3 iterations at 2026-10-16 17:57:57. Total running time: 1min 1s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00016 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     2.8439 │
+│ time_total_s                                        9.34764 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.03814 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=20390, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00021_21_x=0.1812_2026-10-16_17-57-51/checkpoint_000001)[32m [repeated 8x across cluster][0m
+
+Trial trainable_a5f5e_00020 completed after 3 iterations at 2026-10-16 17:58:01. Total running time: 1min 5s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00020 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.46605 │
+│ time_total_s                                        4.78489 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.97343 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00021 completed after 3 iterations at 2026-10-16 17:58:03. Total running time: 1min 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00021 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.46161 │
+│ time_total_s                                        4.74629 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.36231 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00022 completed after 3 iterations at 2026-10-16 17:58:04. Total running time: 1min 8s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00022 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.54143 │
+│ time_total_s                                        4.91879 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.48969 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00023 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00023 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.32163 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=21010, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00019_19_x=0.2669_2026-10-16_17-57-46/checkpoint_000002)[32m [repeated 5x across cluster][0m
+
+Trial trainable_a5f5e_00019 completed after 3 iterations at 2026-10-16 17:58:08. Total running time: 1min 11s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00019 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.78892 │
+│ time_total_s                                        9.29021 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.53385 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00025 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00025 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.82297 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00024 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00024 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.86675 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00026 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00026 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.19604 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00027 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00027 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.76434 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=21255, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00024_24_x=0.8667_2026-10-16_17-58-01/checkpoint_000000)[32m [repeated 3x across cluster][0m
+
+Trial trainable_a5f5e_00025 completed after 3 iterations at 2026-10-16 17:58:15. Total running time: 1min 19s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00025 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.48716 │
+│ time_total_s                                        4.85986 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.64595 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00026 completed after 3 iterations at 2026-10-16 17:58:18. Total running time: 1min 21s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00026 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.52422 │
+│ time_total_s                                        5.03901 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.39207 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=21173, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00023_23_x=0.3216_2026-10-16_17-57-57/checkpoint_000002)[32m [repeated 10x across cluster][0m
+
+Trial trainable_a5f5e_00027 completed after 3 iterations at 2026-10-16 17:58:18. Total running time: 1min 22s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00027 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.49902 │
+│ time_total_s                                        4.85479 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.52867 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00023 completed after 3 iterations at 2026-10-16 17:58:19. Total running time: 1min 22s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00023 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.85607 │
+│ time_total_s                                        9.34095 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.64327 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00024 completed after 3 iterations at 2026-10-16 17:58:23. Total running time: 1min 27s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00024 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.78774 │
+│ time_total_s                                        9.22872 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                1.7335 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00029 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00029 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.45365 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00028 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00028 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.00995 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00030 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00030 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.87155 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=20898, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00029_29_x=0.4536_2026-10-16_17-58-18/checkpoint_000000)[32m [repeated 3x across cluster][0m
+
+Trial status: 28 TERMINATED | 3 RUNNING | 2 PENDING
+Current time: 2026-10-16 17:58:26. Total running time: 1min 30s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00006 with score=1.8349582760529384 and params={'x': 0.9174791380264692}
+╭────────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status                x     iter     total time (s)      score │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00028   RUNNING      0.00994825                                        │
+│ trainable_a5f5e_00029   RUNNING      0.453649          1            1.86368   0        │
+│ trainable_a5f5e_00030   RUNNING      0.871554          1            1.90952   0        │
+│ trainable_a5f5e_00000   TERMINATED   0.303462          3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254          3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802          3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949          3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317          3            4.98318   1.52263  │
+│ trainable_a5f5e_00031   PENDING      0.276871                                          │
+│ trainable_a5f5e_00032   PENDING      0.772759                                          │
+╰────────────────────────────────────────────────────────────────────────────────────────╯
+23 more TERMINATED
+
+Trial trainable_a5f5e_00031 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00031 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.27687 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00032 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00032 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.77276 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00029 completed after 3 iterations at 2026-10-16 17:58:29. Total running time: 1min 32s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00029 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.51449 │
+│ time_total_s                                         5.0606 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                                0.9073 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=21016, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00032_32_x=0.7728_2026-10-16_17-58-23/checkpoint_000000)[32m [repeated 7x across cluster][0m
+
+Trial trainable_a5f5e_00030 completed after 3 iterations at 2026-10-16 17:58:34. Total running time: 1min 38s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00030 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.07993 │
+│ time_total_s                                        5.50719 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.74311 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=20902, ip=143.55.45.86)[0m Exception ignored in: <function WeakSet.__init__.<locals>._remove at 0x7fb3b0427ce0>
+[36m(trainable pid=20902, ip=143.55.45.86)[0m Traceback (most recent call last):
+[36m(trainable pid=20902, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/_weakrefset.py", line 39, in _remove
+[36m(trainable pid=20902, ip=143.55.45.86)[0m     def _remove(item, selfref=ref(self)):
+[36m(trainable pid=20902, ip=143.55.45.86)[0m 
+[36m(trainable pid=20902, ip=143.55.45.86)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1063, in sigterm_handler
+[36m(trainable pid=20902, ip=143.55.45.86)[0m     raise_sys_exit_with_custom_error_message(
+[36m(trainable pid=20902, ip=143.55.45.86)[0m   File "python/ray/_raylet.pyx", line 714, in ray._raylet.raise_sys_exit_with_custom_error_message
+[36m(trainable pid=20902, ip=143.55.45.86)[0m SystemExit: 1
+[36m(trainable pid=21016, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00032_32_x=0.7728_2026-10-16_17-58-23/checkpoint_000001)[32m [repeated 3x across cluster][0m
+
+Trial trainable_a5f5e_00033 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00033 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.85507 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00028 completed after 3 iterations at 2026-10-16 17:58:37. Total running time: 1min 41s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00028 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.80003 │
+│ time_total_s                                        9.26816 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                0.0199 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00032 completed after 3 iterations at 2026-10-16 17:58:38. Total running time: 1min 41s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00032 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     1.4793 │
+│ time_total_s                                        5.05314 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.54552 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00034 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00034 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.64142 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=21203, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00034_34_x=0.6414_2026-10-16_17-58-34/checkpoint_000000)[32m [repeated 6x across cluster][0m
+
+Trial trainable_a5f5e_00035 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00035 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.37121 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00036 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00036 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.18197 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00031 completed after 3 iterations at 2026-10-16 17:58:44. Total running time: 1min 48s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00031 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.83499 │
+│ time_total_s                                        9.36953 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.55374 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=21707, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00033_33_x=0.8551_2026-10-16_17-58-29/checkpoint_000001)[32m [repeated 4x across cluster][0m
+
+Trial trainable_a5f5e_00034 completed after 3 iterations at 2026-10-16 17:58:48. Total running time: 1min 51s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00034 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.51572 │
+│ time_total_s                                        4.97612 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.28284 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00035 completed after 3 iterations at 2026-10-16 17:58:49. Total running time: 1min 53s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00035 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.49609 │
+│ time_total_s                                        4.79972 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.74242 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00036 completed after 3 iterations at 2026-10-16 17:58:50. Total running time: 1min 53s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00036 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.52943 │
+│ time_total_s                                        4.87098 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.36394 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00037 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00037 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.52517 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00039 started with configuration:
+╭───────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00039 config            │
+├───────────────────────────────────────────────┤
+│ x                                      0.3797 │
+╰───────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00040 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00040 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.01883 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00033 completed after 3 iterations at 2026-10-16 17:58:55. Total running time: 1min 59s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00033 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.80259 │
+│ time_total_s                                        9.27093 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.71015 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00038 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00038 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.97093 │
+╰────────────────────────────────────────────────╯
+
+Trial status: 37 TERMINATED | 4 RUNNING | 1 PENDING
+Current time: 2026-10-16 17:58:56. Total running time: 2min 0s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00006 with score=1.8349582760529384 and params={'x': 0.9174791380264692}
+╭───────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status               x     iter     total time (s)      score │
+├───────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00037   RUNNING      0.52517                                          │
+│ trainable_a5f5e_00038   RUNNING      0.970931                                         │
+│ trainable_a5f5e_00039   RUNNING      0.379703                                         │
+│ trainable_a5f5e_00040   RUNNING      0.0188291                                        │
+│ trainable_a5f5e_00000   TERMINATED   0.303462         3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254         3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802         3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949         3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317         3            4.98318   1.52263  │
+│ trainable_a5f5e_00041   PENDING      0.776745                                         │
+╰───────────────────────────────────────────────────────────────────────────────────────╯
+32 more TERMINATED
+[36m(trainable pid=21491, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00039_39_x=0.3797_2026-10-16_17-58-50/checkpoint_000000)[32m [repeated 7x across cluster][0m
+[36m(trainable pid=21924, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00037_37_x=0.5252_2026-10-16_17-58-44/checkpoint_000001)[32m [repeated 8x across cluster][0m
+
+Trial trainable_a5f5e_00041 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00041 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.77674 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00039 completed after 3 iterations at 2026-10-16 17:59:05. Total running time: 2min 9s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00039 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.47333 │
+│ time_total_s                                        4.79035 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.75941 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00040 completed after 3 iterations at 2026-10-16 17:59:05. Total running time: 2min 9s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00040 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.57128 │
+│ time_total_s                                        4.94307 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.03766 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=21637, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00041_41_x=0.7767_2026-10-16_17-58-55/checkpoint_000000)[32m [repeated 2x across cluster][0m
+
+Trial trainable_a5f5e_00037 completed after 3 iterations at 2026-10-16 17:59:09. Total running time: 2min 13s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00037 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.85449 │
+│ time_total_s                                        9.37179 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.05034 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00038 completed after 3 iterations at 2026-10-16 17:59:09. Total running time: 2min 13s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00038 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                     2.8673 │
+│ time_total_s                                        9.46536 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.94186 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00045 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00045 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.78041 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00043 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00043 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.02292 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00042 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00042 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.58112 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00044 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00044 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.01994 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00041 completed after 3 iterations at 2026-10-16 17:59:17. Total running time: 2min 20s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00041 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.52019 │
+│ time_total_s                                         4.9236 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.55349 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=21804, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00043_43_x=0.0229_2026-10-16_17-59-05/checkpoint_000000)[32m [repeated 5x across cluster][0m
+[36m(trainable pid=22252, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00042_42_x=0.5811_2026-10-16_17-59-05/checkpoint_000001)[32m [repeated 10x across cluster][0m
+
+Trial status: 42 TERMINATED | 4 RUNNING | 1 PENDING
+Current time: 2026-10-16 17:59:27. Total running time: 2min 31s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00038 with score=1.9418616874393388 and params={'x': 0.9709308437196694}
+╭────────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status               x     iter     total time (s)       score │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00042   RUNNING      0.581119         1            3.68229   0         │
+│ trainable_a5f5e_00043   RUNNING      0.0229226        3            4.87278   0.0458452 │
+│ trainable_a5f5e_00044   RUNNING      0.0199426        2            3.46105   0.0199426 │
+│ trainable_a5f5e_00045   RUNNING      0.780407         2            3.42679   0.780407  │
+│ trainable_a5f5e_00000   TERMINATED   0.303462         3            9.3866    0.606924  │
+│ trainable_a5f5e_00001   TERMINATED   0.788254         3            4.75263   1.57651   │
+│ trainable_a5f5e_00002   TERMINATED   0.235802         3            4.86468   0.471604  │
+│ trainable_a5f5e_00003   TERMINATED   0.726949         3            9.35878   1.4539    │
+│ trainable_a5f5e_00004   TERMINATED   0.761317         3            4.98318   1.52263   │
+│ trainable_a5f5e_00046   PENDING      0.25176                                           │
+╰────────────────────────────────────────────────────────────────────────────────────────╯
+37 more TERMINATED
+
+Trial trainable_a5f5e_00046 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00046 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.25176 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00043 completed after 3 iterations at 2026-10-16 17:59:27. Total running time: 2min 31s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00043 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.49318 │
+│ time_total_s                                        4.87278 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.04585 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00044 completed after 3 iterations at 2026-10-16 17:59:27. Total running time: 2min 31s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00044 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.55439 │
+│ time_total_s                                        5.01544 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.03989 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00045 completed after 3 iterations at 2026-10-16 17:59:27. Total running time: 2min 31s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00045 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.53575 │
+│ time_total_s                                        4.96253 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.56081 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=22252, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00042_42_x=0.5811_2026-10-16_17-59-05/checkpoint_000002)
+
+Trial trainable_a5f5e_00042 completed after 3 iterations at 2026-10-16 17:59:30. Total running time: 2min 34s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00042 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.79118 │
+│ time_total_s                                        9.23813 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.16224 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=22434, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00046_46_x=0.2518_2026-10-16_17-59-17/checkpoint_000000)
+
+Trial trainable_a5f5e_00048 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00048 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.74444 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00049 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00049 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.43964 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00047 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00047 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.99454 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00050 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00050 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.29229 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=22165, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00049_49_x=0.4396_2026-10-16_17-59-27/checkpoint_000000)
+[36m(trainable pid=22255, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00050_50_x=0.2923_2026-10-16_17-59-30/checkpoint_000000)
+
+Trial trainable_a5f5e_00050 completed after 3 iterations at 2026-10-16 17:59:48. Total running time: 2min 52s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00050 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.51551 │
+│ time_total_s                                        4.88529 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.58457 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00048 completed after 3 iterations at 2026-10-16 17:59:48. Total running time: 2min 52s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00048 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.45572 │
+│ time_total_s                                        4.75876 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.48888 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00049 completed after 3 iterations at 2026-10-16 17:59:48. Total running time: 2min 52s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00049 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.48111 │
+│ time_total_s                                        4.81355 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.87929 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00046 completed after 3 iterations at 2026-10-16 17:59:48. Total running time: 2min 52s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00046 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.81019 │
+│ time_total_s                                        9.69415 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.50352 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=22590, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00047_47_x=0.9945_2026-10-16_17-59-27/checkpoint_000001)[32m [repeated 11x across cluster][0m
+
+Trial trainable_a5f5e_00052 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00052 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.93896 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00053 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00053 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.77241 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00054 started with configuration:
+╭───────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00054 config            │
+├───────────────────────────────────────────────┤
+│ x                                      0.6849 │
+╰───────────────────────────────────────────────╯
+[36m(trainable pid=22521, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00054_54_x=0.6849_2026-10-16_17-59-48/checkpoint_000000)[32m [repeated 4x across cluster][0m
+
+Trial status: 50 TERMINATED | 4 RUNNING | 1 PENDING
+Current time: 2026-10-16 17:59:59. Total running time: 3min 3s
+Logical resource usage: 2.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00047 with score=1.9890703712639495 and params={'x': 0.9945351856319747}
+╭───────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status               x     iter     total time (s)      score │
+├───────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00047   RUNNING      0.994535         3            9.64054   1.98907  │
+│ trainable_a5f5e_00052   RUNNING      0.938955                                         │
+│ trainable_a5f5e_00053   RUNNING      0.772412                                         │
+│ trainable_a5f5e_00054   RUNNING      0.684898                                         │
+│ trainable_a5f5e_00000   TERMINATED   0.303462         3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254         3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802         3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949         3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317         3            4.98318   1.52263  │
+│ trainable_a5f5e_00051   PENDING      0.0403511                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────╯
+45 more TERMINATED
+
+Trial trainable_a5f5e_00051 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00051 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.04035 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00047 completed after 3 iterations at 2026-10-16 17:59:59. Total running time: 3min 3s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00047 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    2.80238 │
+│ time_total_s                                        9.64054 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               1.98907 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=22520, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00053_53_x=0.7724_2026-10-16_17-59-48/checkpoint_000002)[32m [repeated 4x across cluster][0m
+
+Trial trainable_a5f5e_00053 completed after 3 iterations at 2026-10-16 18:00:03. Total running time: 3min 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00053 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.46857 │
+│ time_total_s                                        4.84445 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.54482 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00054 completed after 3 iterations at 2026-10-16 18:00:03. Total running time: 3min 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00054 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.52249 │
+│ time_total_s                                        4.87909 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                                1.3698 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00052 completed after 3 iterations at 2026-10-16 18:00:03. Total running time: 3min 7s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00052 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.54467 │
+│ time_total_s                                        4.90565 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.87791 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00056 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00056 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.33765 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00057 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00057 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.84336 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00058 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00058 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.86088 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00055 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00055 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.38864 │
+╰────────────────────────────────────────────────╯
+[36m(trainable pid=22808, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00057_57_x=0.8434_2026-10-16_18-00-03/checkpoint_000000)[32m [repeated 5x across cluster][0m
+
+Trial trainable_a5f5e_00051 completed after 3 iterations at 2026-10-16 18:00:16. Total running time: 3min 20s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00051 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    3.14843 │
+│ time_total_s                                        9.68808 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                0.0807 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=23098, ip=185.62.108.226)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00056_56_x=0.3377_2026-10-16_18-00-03/checkpoint_000001)[32m [repeated 9x across cluster][0m
+
+Trial trainable_a5f5e_00059 started with configuration:
+╭────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00059 config             │
+├────────────────────────────────────────────────┤
+│ x                                      0.32409 │
+╰────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00057 completed after 3 iterations at 2026-10-16 18:00:25. Total running time: 3min 29s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00057 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.49751 │
+│ time_total_s                                        4.84783 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.68673 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00058 completed after 3 iterations at 2026-10-16 18:00:25. Total running time: 3min 29s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00058 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.47758 │
+│ time_total_s                                        4.84626 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               1.72175 │
+╰─────────────────────────────────────────────────────────────╯
+[36m(trainable pid=23025, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54/trainable_a5f5e_00059_59_x=0.3241_2026-10-16_18-00-16/checkpoint_000000)[32m [repeated 2x across cluster][0m
+
+Trial trainable_a5f5e_00055 completed after 3 iterations at 2026-10-16 18:00:29. Total running time: 3min 33s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00055 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    3.16732 │
+│ time_total_s                                        9.70477 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                               0.77729 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial trainable_a5f5e_00056 completed after 3 iterations at 2026-10-16 18:00:29. Total running time: 3min 33s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00056 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    3.17529 │
+│ time_total_s                                        9.69722 │
+│ training_iteration                                        3 │
+│ node                                   ...137f2719741dade1d │
+│ score                                                0.6753 │
+╰─────────────────────────────────────────────────────────────╯
+
+Trial status: 59 TERMINATED | 1 RUNNING
+Current time: 2026-10-16 18:00:29. Total running time: 3min 33s
+Logical resource usage: 1.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00047 with score=1.9890703712639495 and params={'x': 0.9945351856319747}
+╭──────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status              x     iter     total time (s)      score │
+├──────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00059   RUNNING      0.324092        2            3.37111   0.324092 │
+│ trainable_a5f5e_00000   TERMINATED   0.303462        3            9.3866    0.606924 │
+│ trainable_a5f5e_00001   TERMINATED   0.788254        3            4.75263   1.57651  │
+│ trainable_a5f5e_00002   TERMINATED   0.235802        3            4.86468   0.471604 │
+│ trainable_a5f5e_00003   TERMINATED   0.726949        3            9.35878   1.4539   │
+│ trainable_a5f5e_00004   TERMINATED   0.761317        3            4.98318   1.52263  │
+╰──────────────────────────────────────────────────────────────────────────────────────╯
+54 more TERMINATED
+
+Trial trainable_a5f5e_00059 completed after 3 iterations at 2026-10-16 18:00:39. Total running time: 3min 42s
+╭─────────────────────────────────────────────────────────────╮
+│ Trial trainable_a5f5e_00059 result                          │
+├─────────────────────────────────────────────────────────────┤
+│ checkpoint_dir_name                       checkpoint_000002 │
+│ time_this_iter_s                                    1.47653 │
+│ time_total_s                                        4.84764 │
+│ training_iteration                                        3 │
+│ node                                   ...670c9c5e0f78e8b7d │
+│ score                                               0.64818 │
+╰─────────────────────────────────────────────────────────────╯
+2026-10-16 18:01:06,980	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to 'ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54' in 27.9482s.
+
+Trial status: 60 TERMINATED
+Current time: 2026-10-16 18:01:06. Total running time: 4min 10s
+Logical resource usage: 0.5/10 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:P100, 0.0/1.0 accelerator_type:GeForce-RTX-3090)
+Current best trial: a5f5e_00047 with score=1.9890703712639495 and params={'x': 0.9945351856319747}
+╭─────────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name              status                x     iter     total time (s)       score │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│ trainable_a5f5e_00000   TERMINATED   0.303462          3            9.3866    0.606924  │
+│ trainable_a5f5e_00001   TERMINATED   0.788254          3            4.75263   1.57651   │
+│ trainable_a5f5e_00002   TERMINATED   0.235802          3            4.86468   0.471604  │
+│ trainable_a5f5e_00003   TERMINATED   0.726949          3            9.35878   1.4539    │
+│ trainable_a5f5e_00004   TERMINATED   0.761317          3            4.98318   1.52263   │
+│ trainable_a5f5e_00005   TERMINATED   0.740449          3            9.32817   1.4809    │
+│ trainable_a5f5e_00006   TERMINATED   0.917479          3            4.8488    1.83496   │
+│ trainable_a5f5e_00007   TERMINATED   0.118348          3            4.82733   0.236696  │
+│ trainable_a5f5e_00008   TERMINATED   0.193287          3            4.7938    0.386574  │
+│ trainable_a5f5e_00009   TERMINATED   0.327841          3            9.24513   0.655683  │
+│ trainable_a5f5e_00010   TERMINATED   0.243826          3            9.23861   0.487651  │
+│ trainable_a5f5e_00011   TERMINATED   0.406058          3            4.84379   0.812117  │
+│ trainable_a5f5e_00012   TERMINATED   0.788681          3            4.85478   1.57736   │
+│ trainable_a5f5e_00013   TERMINATED   0.319712          3            4.81897   0.639425  │
+│ trainable_a5f5e_00014   TERMINATED   0.476581          3            9.36758   0.953162  │
+│ trainable_a5f5e_00015   TERMINATED   0.278446          3            4.81969   0.556892  │
+│ trainable_a5f5e_00016   TERMINATED   0.519069          3            9.34764   1.03814   │
+│ trainable_a5f5e_00017   TERMINATED   0.0628402         3            4.90697   0.12568   │
+│ trainable_a5f5e_00018   TERMINATED   0.344255          3            4.82833   0.68851   │
+│ trainable_a5f5e_00019   TERMINATED   0.266924          3            9.29021   0.533849  │
+│ trainable_a5f5e_00020   TERMINATED   0.486713          3            4.78489   0.973427  │
+│ trainable_a5f5e_00021   TERMINATED   0.181153          3            4.74629   0.362306  │
+│ trainable_a5f5e_00022   TERMINATED   0.244844          3            4.91879   0.489687  │
+│ trainable_a5f5e_00023   TERMINATED   0.321634          3            9.34095   0.643269  │
+│ trainable_a5f5e_00024   TERMINATED   0.866749          3            9.22872   1.7335    │
+│ trainable_a5f5e_00025   TERMINATED   0.822974          3            4.85986   1.64595   │
+│ trainable_a5f5e_00026   TERMINATED   0.196036          3            5.03901   0.392073  │
+│ trainable_a5f5e_00027   TERMINATED   0.764336          3            4.85479   1.52867   │
+│ trainable_a5f5e_00028   TERMINATED   0.00994825        3            9.26816   0.0198965 │
+│ trainable_a5f5e_00029   TERMINATED   0.453649          3            5.0606    0.907299  │
+│ trainable_a5f5e_00030   TERMINATED   0.871554          3            5.50719   1.74311   │
+│ trainable_a5f5e_00031   TERMINATED   0.276871          3            9.36953   0.553743  │
+│ trainable_a5f5e_00032   TERMINATED   0.772759          3            5.05314   1.54552   │
+│ trainable_a5f5e_00033   TERMINATED   0.855073          3            9.27093   1.71015   │
+│ trainable_a5f5e_00034   TERMINATED   0.641421          3            4.97612   1.28284   │
+│ trainable_a5f5e_00035   TERMINATED   0.371211          3            4.79972   0.742423  │
+│ trainable_a5f5e_00036   TERMINATED   0.181969          3            4.87098   0.363938  │
+│ trainable_a5f5e_00037   TERMINATED   0.52517           3            9.37179   1.05034   │
+│ trainable_a5f5e_00038   TERMINATED   0.970931          3            9.46536   1.94186   │
+│ trainable_a5f5e_00039   TERMINATED   0.379703          3            4.79035   0.759406  │
+│ trainable_a5f5e_00040   TERMINATED   0.0188291         3            4.94307   0.0376582 │
+│ trainable_a5f5e_00041   TERMINATED   0.776745          3            4.9236    1.55349   │
+│ trainable_a5f5e_00042   TERMINATED   0.581119          3            9.23813   1.16224   │
+│ trainable_a5f5e_00043   TERMINATED   0.0229226         3            4.87278   0.0458452 │
+│ trainable_a5f5e_00044   TERMINATED   0.0199426         3            5.01544   0.0398853 │
+│ trainable_a5f5e_00045   TERMINATED   0.780407          3            4.96253   1.56081   │
+│ trainable_a5f5e_00046   TERMINATED   0.25176           3            9.69415   0.503521  │
+│ trainable_a5f5e_00047   TERMINATED   0.994535          3            9.64054   1.98907   │
+│ trainable_a5f5e_00048   TERMINATED   0.744438          3            4.75876   1.48888   │
+│ trainable_a5f5e_00049   TERMINATED   0.439643          3            4.81355   0.879287  │
+│ trainable_a5f5e_00050   TERMINATED   0.292286          3            4.88529   0.584571  │
+│ trainable_a5f5e_00051   TERMINATED   0.0403511         3            9.68808   0.0807023 │
+│ trainable_a5f5e_00052   TERMINATED   0.938955          3            4.90565   1.87791   │
+│ trainable_a5f5e_00053   TERMINATED   0.772412          3            4.84445   1.54482   │
+│ trainable_a5f5e_00054   TERMINATED   0.684898          3            4.87909   1.3698    │
+│ trainable_a5f5e_00055   TERMINATED   0.388644          3            9.70477   0.777289  │
+│ trainable_a5f5e_00056   TERMINATED   0.337652          3            9.69722   0.675304  │
+│ trainable_a5f5e_00057   TERMINATED   0.843365          3            4.84783   1.68673   │
+│ trainable_a5f5e_00058   TERMINATED   0.860876          3            4.84626   1.72175   │
+│ trainable_a5f5e_00059   TERMINATED   0.324092          3            4.84764   0.648183  │
+╰─────────────────────────────────────────────────────────────────────────────────────────╯
+
+LB_RESULT tune PASS {"checkpoints": 60, "elapsed_s": 258.0, "errors": 0, "experiment_path": "ray-vast-rvtest-20261017-fcde/lb06/experiments/trainable_2026-10-16_17-56-54", "results": 60, "trial_nodes": ["e4cf6aaa", "fa6c41ea"]}

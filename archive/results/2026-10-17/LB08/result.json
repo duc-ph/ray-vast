@@ -1,0 +1,165 @@
+{
+ "id": "LB08",
+ "markers": [
+  "libraries"
+ ],
+ "fixture": "libraries",
+ "started": 1792198968.6383164,
+ "checks": [
+  {
+   "name": "c9_3_3_train_gloo.py: LIMIT",
+   "ok": true,
+   "detail": "{'backend': 'gloo', 'elapsed_s': 202.4, 'epochs_reported': 0, 'error_class': 'ControllerError', 'error_head': ['Training failed due to controller error:', '\\x1b[36mray::execute._setup_torch_process_group()\\x1b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)', '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute', '    return fn(*fn_args, **fn_kwargs)', '           ^^^^^^^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group', '    dist.init_process_group(', '  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper', '    return func(*args, **kwargs)', '           ^^^^^^^^^^^^^^^^^^^^^'], 'num_workers': 2, 'seconds_to_error': 199.4, 'strategy': 'STRICT_SPREAD', 'traceback_tail': ['  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\\n    res = trainer.fit()\\n          ^^^^^^^^^^^^^\\n', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\\n    raise result.error\\n', 'ray.train.ControllerError: Training failed due to controller error:\\n\\x1b[36mray::execute._setup_torch_process_group()\\x1b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute\\n    return fn(*fn_args, **fn_kwargs)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group\\n    dist.init_process_group(\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\\n    return func(*args, **kwargs)\\n           ^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\\n    func_return = func(*args, **kwargs)\\n                  ^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1710, in init_process_group\\n    store, rank, world_size = next(rendezvous_iterator)\\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 278, in _env_rendezvous_handler\\n    store = _create_c10d_store(\\n            ^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 198, in _create_c10d_store\\n    return TCPStore(\\n           ^^^^^^^^^\\ntorch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).\\n'], 'use_gpu': False}"
+  },
+  {
+   "name": "c9_3_2_train_nccl.py: LIMIT",
+   "ok": true,
+   "detail": "{'backend': 'nccl', 'elapsed_s': 202.3, 'epochs_reported': 0, 'error_class': 'ControllerError', 'error_head': ['Training failed due to controller error:', '\\x1b[36mray::execute._setup_torch_process_group()\\x1b[39m (pid=28415, ip=185.62.108.226, actor_id=d6e8441dd753217be33fa5c81a000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f436a2c1ad0>)', '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', '           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute', '    return fn(*fn_args, **fn_kwargs)', '           ^^^^^^^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group', '    dist.init_process_group(', '  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper', '    return func(*args, **kwargs)', '           ^^^^^^^^^^^^^^^^^^^^^'], 'num_workers': 2, 'seconds_to_error': 199.5, 'strategy': 'STRICT_SPREAD', 'traceback_tail': ['  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\\n    res = trainer.fit()\\n          ^^^^^^^^^^^^^\\n', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\\n    raise result.error\\n', 'ray.train.ControllerError: Training failed due to controller error:\\n\\x1b[36mray::execute._setup_torch_process_group()\\x1b[39m (pid=28415, ip=185.62.108.226, actor_id=d6e8441dd753217be33fa5c81a000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f436a2c1ad0>)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute\\n    return fn(*fn_args, **fn_kwargs)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group\\n    dist.init_process_group(\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\\n    return func(*args, **kwargs)\\n           ^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\\n    func_return = func(*args, **kwargs)\\n                  ^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1710, in init_process_group\\n    store, rank, world_size = next(rendezvous_iterator)\\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 278, in _env_rendezvous_handler\\n    store = _create_c10d_store(\\n            ^^^^^^^^^^^^^^^^^^^\\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 198, in _create_c10d_store\\n    return TCPStore(\\n           ^^^^^^^^^\\ntorch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 33485).\\n'], 'use_gpu': True}"
+  },
+  {
+   "name": "c9_3_5_store_port.py: LIMIT",
+   "ok": true,
+   "detail": "{'elapsed_s': 252.2, 'gloo': [{'error': 'no answer within 240 s (hangs in init_process_group)', 'ok': False}, {'error_class': 'RuntimeError', 'error_head': ['Gloo connectFullMesh failed with [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:144] no error'], 'ok': False, 's': 0.4, 'traceback_tail': ['  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1717, in init_process_group\\n    default_pg, _ = _new_process_group_helper(\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1942, in _new_process_group_helper\\n    backend_class = ProcessGroupGloo(\\n                    ^^^^^^^^^^^^^^^^^\\n', 'RuntimeError: Gloo connectFullMesh failed with [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:144] no error\\n']}], 'port': 42575, 'ranks': [{'has_vast_ports': True, 'hostname': 'ca0951cd3ce1', 'ip': '143.55.45.86', 'node': 'fa6c41ea', 'private_ip': '172.17.0.3'}, {'has_vast_ports': True, 'hostname': 'f96baa9c1fb1', 'ip': '185.62.108.226', 'node': 'e4cf6aaa', 'private_ip': '172.17.0.5'}], 'stage': 'gloo', 'store': [{'ok': True, 's': 1.2}, {'ok': True, 's': 3.0}]}"
+  },
+  {
+   "name": "gloo DDP on 2 workers: DistStoreError or DistNetworkError after about 3 min (train.md:91)",
+   "ok": true,
+   "detail": "199.4"
+  }
+ ],
+ "data": {
+  "shape_wait_s": 2.8,
+  "H3": {
+   "B": 10,
+   "CPUS": 5.0,
+   "hosts": [
+    {
+     "container_id": "56320908",
+     "machine_id": 8966,
+     "ports": 14,
+     "ray_cpus": 5.0,
+     "pids.max": "1280"
+    },
+    {
+     "container_id": "56320897",
+     "machine_id": 3969,
+     "ports": 14,
+     "ray_cpus": 5.0,
+     "pids.max": "1280"
+    }
+   ]
+  },
+  "c9_3_3_train_gloo": {
+   "backend": "gloo",
+   "elapsed_s": 202.4,
+   "epochs_reported": 0,
+   "error_class": "ControllerError",
+   "error_head": [
+    "Training failed due to controller error:",
+    "\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute",
+    "    return fn(*fn_args, **fn_kwargs)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group",
+    "    dist.init_process_group(",
+    "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper",
+    "    return func(*args, **kwargs)",
+    "           ^^^^^^^^^^^^^^^^^^^^^"
+   ],
+   "num_workers": 2,
+   "seconds_to_error": 199.4,
+   "strategy": "STRICT_SPREAD",
+   "traceback_tail": [
+    "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n",
+    "ray.train.ControllerError: Training failed due to controller error:\n\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute\n    return fn(*fn_args, **fn_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group\n    dist.init_process_group(\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\n    func_return = func(*args, **kwargs)\n                  ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1710, in init_process_group\n    store, rank, world_size = next(rendezvous_iterator)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 278, in _env_rendezvous_handler\n    store = _create_c10d_store(\n            ^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 198, in _create_c10d_store\n    return TCPStore(\n           ^^^^^^^^^\ntorch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).\n"
+   ],
+   "use_gpu": false
+  },
+  "c9_3_2_train_nccl": {
+   "backend": "nccl",
+   "elapsed_s": 202.3,
+   "epochs_reported": 0,
+   "error_class": "ControllerError",
+   "error_head": [
+    "Training failed due to controller error:",
+    "\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=28415, ip=185.62.108.226, actor_id=d6e8441dd753217be33fa5c81a000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f436a2c1ad0>)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute",
+    "    return fn(*fn_args, **fn_kwargs)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group",
+    "    dist.init_process_group(",
+    "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper",
+    "    return func(*args, **kwargs)",
+    "           ^^^^^^^^^^^^^^^^^^^^^"
+   ],
+   "num_workers": 2,
+   "seconds_to_error": 199.5,
+   "strategy": "STRICT_SPREAD",
+   "traceback_tail": [
+    "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n",
+    "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n",
+    "ray.train.ControllerError: Training failed due to controller error:\n\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=28415, ip=185.62.108.226, actor_id=d6e8441dd753217be33fa5c81a000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f436a2c1ad0>)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute\n    return fn(*fn_args, **fn_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group\n    dist.init_process_group(\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\n    func_return = func(*args, **kwargs)\n                  ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1710, in init_process_group\n    store, rank, world_size = next(rendezvous_iterator)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 278, in _env_rendezvous_handler\n    store = _create_c10d_store(\n            ^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 198, in _create_c10d_store\n    return TCPStore(\n           ^^^^^^^^^\ntorch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 33485).\n"
+   ],
+   "use_gpu": true
+  },
+  "c9_3_5_store_port": {
+   "elapsed_s": 252.2,
+   "gloo": [
+    {
+     "error": "no answer within 240 s (hangs in init_process_group)",
+     "ok": false
+    },
+    {
+     "error_class": "RuntimeError",
+     "error_head": [
+      "Gloo connectFullMesh failed with [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:144] no error"
+     ],
+     "ok": false,
+     "s": 0.4,
+     "traceback_tail": [
+      "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1717, in init_process_group\n    default_pg, _ = _new_process_group_helper(\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n",
+      "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1942, in _new_process_group_helper\n    backend_class = ProcessGroupGloo(\n                    ^^^^^^^^^^^^^^^^^\n",
+      "RuntimeError: Gloo connectFullMesh failed with [/pytorch/third_party/gloo/gloo/transport/tcp/pair.cc:144] no error\n"
+     ]
+    }
+   ],
+   "port": 42575,
+   "ranks": [
+    {
+     "has_vast_ports": true,
+     "hostname": "ca0951cd3ce1",
+     "ip": "143.55.45.86",
+     "node": "fa6c41ea",
+     "private_ip": "172.17.0.3"
+    },
+    {
+     "has_vast_ports": true,
+     "hostname": "f96baa9c1fb1",
+     "ip": "185.62.108.226",
+     "node": "e4cf6aaa",
+     "private_ip": "172.17.0.5"
+    }
+   ],
+   "stage": "gloo",
+   "store": [
+    {
+     "ok": true,
+     "s": 1.2
+    },
+    {
+     "ok": true,
+     "s": 3.0
+    }
+   ]
+  }
+ },
+ "outcome": "failed",
+ "message": "interrupted: the test did not end (no call report)",
+ "ended": 1792199789.7556558,
+ "wall_s": 821.1
+}

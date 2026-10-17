@@ -1,0 +1,277 @@
+2026-10-17 01:06:49,884	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:58013[22m
+2026-10-17 01:06:49,896	INFO cli.py:569 -- 2026-10-16 18:03:17,417	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9_3_3_train_gloo-a37e2f: python c9_3_3_train_gloo.py
+C9_START C9.3.3 1792198999.3 small=False min_nodes=2
+2026-10-16 18:03:22,270	INFO worker.py:1686 -- Using address 35.94.33.168:6379 set in the environment variable RAY_ADDRESS
+2026-10-16 18:03:22,274	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.94.33.168:6379...
+2026-10-16 18:03:22,306	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(TrainController pid=6502)[0m Requesting resources: {'CPU': 1} * 2
+[36m(TrainController pid=6502)[0m Attempting to start training worker group of size 2 with the following resources: [{'CPU': 1}] * 2
+[36m(RayTrainWorker pid=25587, ip=143.55.45.86)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[36m(RayTrainWorker pid=25587, ip=143.55.45.86)[0m [W1016 18:03:40.100742508 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m [W1016 18:05:51.528053316 socket.cpp:929] [c10d] The server socket on [fdff:ffff:3a66:6666:663a:3965:3535:3a30]:4283 has timed out, will retry.
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m [W1016 18:05:52.320171336 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3[32m [repeated 2x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(TrainController pid=6502)[0m Error in control loop iteration: [36mray::execute._setup_torch_process_group()[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py", line 137, in execute
+[36m(TrainController pid=6502)[0m     return fn(*fn_args, **fn_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 145, in _setup_torch_process_group
+[36m(TrainController pid=6502)[0m     dist.init_process_group(
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+[36m(TrainController pid=6502)[0m     func_return = func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m                   ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1710, in init_process_group
+[36m(TrainController pid=6502)[0m     store, rank, world_size = next(rendezvous_iterator)
+[36m(TrainController pid=6502)[0m                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 278, in _env_rendezvous_handler
+[36m(TrainController pid=6502)[0m     store = _create_c10d_store(
+[36m(TrainController pid=6502)[0m             ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 198, in _create_c10d_store
+[36m(TrainController pid=6502)[0m     return TCPStore(
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^
+[36m(TrainController pid=6502)[0m torch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(TrainController pid=6502)[0m Traceback (most recent call last):
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 844, in _run_control_loop_iteration
+[36m(TrainController pid=6502)[0m     result = await self._step()
+[36m(TrainController pid=6502)[0m              ^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520, in _resume_span
+[36m(TrainController pid=6502)[0m     return await method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 652, in _step
+[36m(TrainController pid=6502)[0m     return self._execute_resize_decision(controller_state.scaling_decision)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487, in _resume_span
+[36m(TrainController pid=6502)[0m     return method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 314, in _execute_resize_decision
+[36m(TrainController pid=6502)[0m     self._start_worker_group(
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487, in _resume_span
+[36m(TrainController pid=6502)[0m     return method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 486, in _start_worker_group
+[36m(TrainController pid=6502)[0m     self._worker_group = self.worker_group_cls.create(
+[36m(TrainController pid=6502)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 126, in create
+[36m(TrainController pid=6502)[0m     worker_group._start()
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 219, in _start
+[36m(TrainController pid=6502)[0m     raise e
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 212, in _start
+[36m(TrainController pid=6502)[0m     self._start_impl(
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 367, in _start_impl
+[36m(TrainController pid=6502)[0m     callback.after_worker_group_start(self)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/callback.py", line 67, in after_worker_group_start
+[36m(TrainController pid=6502)[0m     return self.after_execution_group_start(worker_group)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/callbacks/backend_setup.py", line 22, in after_execution_group_start
+[36m(TrainController pid=6502)[0m     self._backend.on_start(execution_group, self._backend_config)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 266, in on_start
+[36m(TrainController pid=6502)[0m     ray.get(setup_futures)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(TrainController pid=6502)[0m     return fn(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(TrainController pid=6502)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(TrainController pid=6502)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+[36m(TrainController pid=6502)[0m     raise value.as_instanceof_cause()
+[36m(TrainController pid=6502)[0m ray.exceptions.RayTaskError(DistNetworkError): [36mray::execute._setup_torch_process_group()[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py", line 137, in execute
+[36m(TrainController pid=6502)[0m     return fn(*fn_args, **fn_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 145, in _setup_torch_process_group
+[36m(TrainController pid=6502)[0m     dist.init_process_group(
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+[36m(TrainController pid=6502)[0m     func_return = func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m                   ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1710, in init_process_group
+[36m(TrainController pid=6502)[0m     store, rank, world_size = next(rendezvous_iterator)
+[36m(TrainController pid=6502)[0m                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 278, in _env_rendezvous_handler
+[36m(TrainController pid=6502)[0m     store = _create_c10d_store(
+[36m(TrainController pid=6502)[0m             ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 198, in _create_c10d_store
+[36m(TrainController pid=6502)[0m     return TCPStore(
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^
+[36m(TrainController pid=6502)[0m torch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(TrainController pid=6502)[0m [FailurePolicy] RAISE
+[36m(TrainController pid=6502)[0m   Source: controller
+[36m(TrainController pid=6502)[0m   Error count: 1 (max allowed: 0)
+[36m(TrainController pid=6502)[0m Error: Training failed due to controller error:
+[36m(TrainController pid=6502)[0m [36mray::execute._setup_torch_process_group()[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py", line 137, in execute
+[36m(TrainController pid=6502)[0m     return fn(*fn_args, **fn_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 145, in _setup_torch_process_group
+[36m(TrainController pid=6502)[0m     dist.init_process_group(
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+[36m(TrainController pid=6502)[0m     func_return = func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m                   ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1710, in init_process_group
+[36m(TrainController pid=6502)[0m     store, rank, world_size = next(rendezvous_iterator)
+[36m(TrainController pid=6502)[0m                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 278, in _env_rendezvous_handler
+[36m(TrainController pid=6502)[0m     store = _create_c10d_store(
+[36m(TrainController pid=6502)[0m             ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 198, in _create_c10d_store
+[36m(TrainController pid=6502)[0m     return TCPStore(
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^
+[36m(TrainController pid=6502)[0m torch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(TrainController pid=6502)[0m Traceback (most recent call last):
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 844, in _run_control_loop_iteration
+[36m(TrainController pid=6502)[0m     result = await self._step()
+[36m(TrainController pid=6502)[0m              ^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 520, in _resume_span
+[36m(TrainController pid=6502)[0m     return await method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 652, in _step
+[36m(TrainController pid=6502)[0m     return self._execute_resize_decision(controller_state.scaling_decision)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487, in _resume_span
+[36m(TrainController pid=6502)[0m     return method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 314, in _execute_resize_decision
+[36m(TrainController pid=6502)[0m     self._start_worker_group(
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/util/tracing/tracing_helper.py", line 487, in _resume_span
+[36m(TrainController pid=6502)[0m     return method(self, *_args, **_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/controller/controller.py", line 486, in _start_worker_group
+[36m(TrainController pid=6502)[0m     self._worker_group = self.worker_group_cls.create(
+[36m(TrainController pid=6502)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 126, in create
+[36m(TrainController pid=6502)[0m     worker_group._start()
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 219, in _start
+[36m(TrainController pid=6502)[0m     raise e
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 212, in _start
+[36m(TrainController pid=6502)[0m     self._start_impl(
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker_group.py", line 367, in _start_impl
+[36m(TrainController pid=6502)[0m     callback.after_worker_group_start(self)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/callback.py", line 67, in after_worker_group_start
+[36m(TrainController pid=6502)[0m     return self.after_execution_group_start(worker_group)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/callbacks/backend_setup.py", line 22, in after_execution_group_start
+[36m(TrainController pid=6502)[0m     self._backend.on_start(execution_group, self._backend_config)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 266, in on_start
+[36m(TrainController pid=6502)[0m     ray.get(setup_futures)
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+[36m(TrainController pid=6502)[0m     return fn(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+[36m(TrainController pid=6502)[0m     values, debugger_breakpoint = worker.get_objects(
+[36m(TrainController pid=6502)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1053, in get_objects
+[36m(TrainController pid=6502)[0m     raise value.as_instanceof_cause()
+[36m(TrainController pid=6502)[0m ray.train.ControllerError: Training failed due to controller error:
+[36m(TrainController pid=6502)[0m [36mray::execute._setup_torch_process_group()[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py", line 137, in execute
+[36m(TrainController pid=6502)[0m     return fn(*fn_args, **fn_kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py", line 145, in _setup_torch_process_group
+[36m(TrainController pid=6502)[0m     dist.init_process_group(
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+[36m(TrainController pid=6502)[0m     return func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+[36m(TrainController pid=6502)[0m     func_return = func(*args, **kwargs)
+[36m(TrainController pid=6502)[0m                   ^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1710, in init_process_group
+[36m(TrainController pid=6502)[0m     store, rank, world_size = next(rendezvous_iterator)
+[36m(TrainController pid=6502)[0m                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 278, in _env_rendezvous_handler
+[36m(TrainController pid=6502)[0m     store = _create_c10d_store(
+[36m(TrainController pid=6502)[0m             ^^^^^^^^^^^^^^^^^^^
+[36m(TrainController pid=6502)[0m   File "/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py", line 198, in _create_c10d_store
+[36m(TrainController pid=6502)[0m     return TCPStore(
+[36m(TrainController pid=6502)[0m            ^^^^^^^^^
+[36m(TrainController pid=6502)[0m torch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m [W1016 18:05:54.056671837 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m [E1016 18:06:40.232596630 socket.cpp:1019] [c10d] The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m [E1016 18:06:40.236162476 TCPStore.cpp:331] [c10d] TCP client failed to connect/validate to host 143.55.45.86:43363 - timed out (try=0, timeout=180000ms): The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m Exception raised from throwTimeoutError at /pytorch/torch/csrc/distributed/c10d/socket.cpp:1021 (most recent call first):
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x98 (0x7f143d8c65e8 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libc10.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #1: <unknown function> + 0x5ba8bfe (0x7f142297fbfe in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #2: <unknown function> + 0x136920d (0x7f141e14020d in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #3: <unknown function> + 0x5bf579d (0x7f14229cc79d in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #4: <unknown function> + 0x5bf5949 (0x7f14229cc949 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #5: <unknown function> + 0x5bf5d01 (0x7f14229ccd01 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #6: <unknown function> + 0x5ba3eeb (0x7f142297aeeb in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #7: c10d::TCPStore::TCPStore(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, c10d::TCPStoreOptions const&) + 0x4b5 (0x7f142297d7f5 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cpu.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #8: <unknown function> + 0xc20a05 (0x7f143e56ea05 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_python.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #9: <unknown function> + 0xc55324 (0x7f143e5a3324 in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_python.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #10: <unknown function> + 0x38a1ac (0x7f143dcd81ac in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_python.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #11: <unknown function> + 0x205df6 (0x559ed39eadf6 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #12: _PyObject_MakeTpCall + 0x244 (0x559ed39c5e14 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #13: <unknown function> + 0x2384d6 (0x559ed3a1d4d6 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #14: _PyObject_Call + 0x120 (0x559ed3a06e50 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #15: <unknown function> + 0x21f3ac (0x559ed3a043ac in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #16: <unknown function> + 0x1e111e (0x559ed39c611e in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #17: <unknown function> + 0x388d2b (0x7f143dcd6d2b in /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_python.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #18: _PyObject_MakeTpCall + 0x244 (0x559ed39c5e14 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #19: _PyEval_EvalFrameDefault + 0x636 (0x559ed39d4716 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #20: <unknown function> + 0x28a0ee (0x559ed3a6f0ee in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #21: <unknown function> + 0x20cb6b (0x559ed39f1b6b in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #22: PyObject_Vectorcall + 0x2c (0x559ed39e0bdc in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #23: _PyEval_EvalFrameDefault + 0x636 (0x559ed39d4716 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #24: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #25: PyObject_Call + 0x135 (0x559ed3a06bd5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #26: _PyEval_EvalFrameDefault + 0x4507 (0x559ed39d85e7 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #27: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #28: PyObject_Call + 0x135 (0x559ed3a06bd5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #29: _PyEval_EvalFrameDefault + 0x4507 (0x559ed39d85e7 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #30: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #31: PyObject_Call + 0x135 (0x559ed3a06bd5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #32: _PyEval_EvalFrameDefault + 0x4507 (0x559ed39d85e7 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #33: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #34: PyObject_Call + 0x135 (0x559ed3a06bd5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #35: _PyEval_EvalFrameDefault + 0x4507 (0x559ed39d85e7 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #36: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #37: PyObject_Call + 0x135 (0x559ed3a06bd5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #38: _PyEval_EvalFrameDefault + 0x4507 (0x559ed39d85e7 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #39: _PyFunction_Vectorcall + 0x165 (0x559ed39fbda5 in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #40: PyVectorcall_Call + 0xf5 (0x559ed397df2d in ray::execute._setup_torch_process_group)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #41: <unknown function> + 0x91f1ff (0x7f197e71c1ff in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #42: <unknown function> + 0x99c6b6 (0x7f197e7996b6 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #43: <unknown function> + 0x91f1ff (0x7f197e71c1ff in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #44: <unknown function> + 0xa4f40f (0x7f197e84c40f in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #45: std::_Function_handler<ray::Status (ray::rpc::Address const&, ray::rpc::TaskType, std::string, ray::core::RayFunction const&, std::unordered_map<std::string, double, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, double> > > const&, std::vector<std::shared_ptr<ray::RayObject>, std::allocator<std::shared_ptr<ray::RayObject> > > const&, std::vector<ray::rpc::ObjectReference, std::allocator<ray::rpc::ObjectReference> > const&, std::string const&, std::string const&, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*, std::shared_ptr<ray::LocalMemoryBuffer>&, bool*, std::string*, std::string*, std::vector<ray::ConcurrencyGroup, std::allocator<ray::ConcurrencyGroup> > const&, std::string, bool, bool, bool, long, long, std::optional<std::string> const&), ray::Status (*)(ray::rpc::Address const&, ray::rpc::TaskType, std::string, ray::core::RayFunction const&, std::unordered_map<std::string, double, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, double> > > const&, std::vector<std::shared_ptr<ray::RayObject>, std::allocator<std::shared_ptr<ray::RayObject> > > const&, std::vector<ray::rpc::ObjectReference, std::allocator<ray::rpc::ObjectReference> > const&, std::string, std::string, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*, std::shared_ptr<ray::LocalMemoryBuffer>&, bool*, std::string*, std::string*, std::vector<ray::ConcurrencyGroup, std::allocator<ray::ConcurrencyGroup> > const&, std::string, bool, bool, bool, long, long, std::optional<std::string>)>::_M_invoke(std::_Any_data const&, ray::rpc::Address const&, ray::rpc::TaskType&&, std::string&&, ray::core::RayFunction const&, std::unordered_map<std::string, double, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, double> > > const&, std::vector<std::shared_ptr<ray::RayObject>, std::allocator<std::shared_ptr<ray::RayObject> > > const&, std::vector<ray::rpc::ObjectReference, std::allocator<ray::rpc::ObjectReference> > const&, std::string const&, std::string const&, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*&&, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*&&, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*&&, std::shared_ptr<ray::LocalMemoryBuffer>&, bool*&&, std::string*&&, std::string*&&, std::vector<ray::ConcurrencyGroup, std::allocator<ray::ConcurrencyGroup> > const&, std::string&&, bool&&, bool&&, bool&&, long&&, long&&, std::optional<std::string> const&) + 0x1c6 (0x7f197e72a1f6 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #46: ray::core::CoreWorker::ExecuteTask(ray::TaskSpecification const&, std::optional<std::unordered_map<std::string, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > >, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > > > > > >, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*, google::protobuf::RepeatedPtrField<ray::rpc::ObjectReferenceCount>*, bool*, std::string*, std::string*) + 0x132d (0x7f197e8fdd3d in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #47: std::_Function_handler<ray::Status (ray::TaskSpecification const&, std::optional<std::unordered_map<std::string, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > >, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > > > > > >, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*, google::protobuf::RepeatedPtrField<ray::rpc::ObjectReferenceCount>*, bool*, std::string*, std::string*), std::_Bind<ray::Status (ray::core::CoreWorker::*(ray::core::CoreWorker*, std::_Placeholder<1>, std::_Placeholder<2>, std::_Placeholder<3>, std::_Placeholder<4>, std::_Placeholder<5>, std::_Placeholder<6>, std::_Placeholder<7>, std::_Placeholder<8>, std::_Placeholder<9>))(ray::TaskSpecification const&, std::optional<std::unordered_map<std::string, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > >, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > > > > > >, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*, google::protobuf::RepeatedPtrField<ray::rpc::ObjectReferenceCount>*, bool*, std::string*, std::string*)> >::_M_invoke(std::_Any_data const&, ray::TaskSpecification const&, std::optional<std::unordered_map<std::string, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > >, std::hash<std::string>, std::equal_to<std::string>, std::allocator<std::pair<std::string const, std::vector<std::pair<long, double>, std::allocator<std::pair<long, double> > > > > > >&&, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*&&, std::vector<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> >, std::allocator<std::pair<ray::ObjectID, std::shared_ptr<ray::RayObject> > > >*&&, std::vector<std::pair<ray::ObjectID, bool>, std::allocator<std::pair<ray::ObjectID, bool> > >*&&, google::protobuf::RepeatedPtrField<ray::rpc::ObjectReferenceCount>*&&, bool*&&, std::string*&&, std::string*&&) + 0x87 (0x7f197e8c0547 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #48: <unknown function> + 0xbfef2f (0x7f197e9fbf2f in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #49: ray::core::OrderedActorTaskExecutionQueue::AcceptRequestOrRejectIfCanceled(ray::TaskID, ray::core::TaskToExecute&) + 0x124 (0x7f197ea02414 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #50: <unknown function> + 0xc067f3 (0x7f197ea037f3 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #51: <unknown function> + 0xc0c49a (0x7f197ea0949a in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #52: <unknown function> + 0xc0d7ce (0x7f197ea0a7ce in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #53: ray::core::TaskReceiver::QueueTaskForExecution(ray::rpc::PushTaskRequest, ray::rpc::PushTaskReply*, std::function<void (ray::Status, std::function<void ()>, std::function<void ()>)>) + 0xe8f (0x7f197e9fdd9f in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #54: <unknown function> + 0xb0623f (0x7f197e90323f in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #55: <unknown function> + 0x114307b (0x7f197ef4007b in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #56: <unknown function> + 0x11382eb (0x7f197ef352eb in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #57: <unknown function> + 0xc2010b (0x7f197ea1d10b in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #58: <unknown function> + 0x169fb9b (0x7f197f49cb9b in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #59: <unknown function> + 0x16a1539 (0x7f197f49e539 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #60: <unknown function> + 0x16a1c42 (0x7f197f49ec42 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #61: ray::core::CoreWorker::RunTaskExecutionLoop() + 0x132 (0x7f197e8be912 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m frame #62: ray::core::CoreWorkerProcessImpl::RunWorkerTaskExecutionLoop() + 0x41 (0x7f197e916ce1 in /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so)
+[36m(RayTrainWorker pid=25851, ip=185.62.108.226)[0m 
+C9_RESULT C9.3.3 LIMIT {"backend": "gloo", "elapsed_s": 202.4, "epochs_reported": 0, "error_class": "ControllerError", "error_head": ["Training failed due to controller error:", "\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)", "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute", "    return fn(*fn_args, **fn_kwargs)", "           ^^^^^^^^^^^^^^^^^^^^^^^^^", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group", "    dist.init_process_group(", "  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper", "    return func(*args, **kwargs)", "           ^^^^^^^^^^^^^^^^^^^^^"], "num_workers": 2, "seconds_to_error": 199.4, "strategy": "STRICT_SPREAD", "traceback_tail": ["  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n", "ray.train.ControllerError: Training failed due to controller error:\n\u001b[36mray::execute._setup_torch_process_group()\u001b[39m (pid=25851, ip=185.62.108.226, actor_id=df4784df0e25b57be78d58ec19000000, repr=<ray.train.v2._internal.execution.worker_group.worker.RayTrainWorker object at 0x7f1484152cd0>)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/worker_group/worker.py\", line 137, in execute\n    return fn(*fn_args, **fn_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/torch/config.py\", line 145, in _setup_torch_process_group\n    dist.init_process_group(\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\n    func_return = func(*args, **kwargs)\n                  ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1710, in init_process_group\n    store, rank, world_size = next(rendezvous_iterator)\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 278, in _env_rendezvous_handler\n    store = _create_c10d_store(\n            ^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/rendezvous.py\", line 198, in _create_c10d_store\n    return TCPStore(\n           ^^^^^^^^^\ntorch.distributed.DistNetworkError: The client socket has timed out after 180000ms while trying to connect to (143.55.45.86, 43363).\n"], "use_gpu": false}

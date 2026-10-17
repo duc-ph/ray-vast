@@ -1,0 +1,46 @@
+cluster_name: rvtest-life-f9e2
+idle_timeout_minutes: 2
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head:
+    resources:
+      CPU: 0
+    node_config:
+      region: us-east-2
+      instance_type: t3.medium
+  gpu-a:
+    resources:
+      CPU: 4
+      GPU: 1
+    min_workers: 0
+    max_workers: 2
+    node_config:
+      disk_gb: 40
+      offer_query:
+        gpu_ram:
+          gte: 8000
+          lt: 24570
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500
+  gpu-b:
+    resources:
+      CPU: 4
+      GPU: 1
+    min_workers: 0
+    max_workers: 2
+    node_config:
+      disk_gb: 40
+      offer_query:
+        gpu_ram:
+          gte: 24570
+          lt: 70000
+        inet_down:
+          gte: 500
+        inet_up:
+          gte: 500

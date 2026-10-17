@@ -1,0 +1,109 @@
+2026-10-17 00:49:58,975	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:43315[22m
+2026-10-17 00:49:58,987	INFO cli.py:569 -- 2026-10-16 17:48:54,442	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job data_gpu-1898f2: python lb_data_tuned.py gpu
+C9_START LB04.gpu 1792198136.9 small=False min_nodes=2
+2026-10-16 17:48:56,881	INFO worker.py:1686 -- Using address 35.94.33.168:6379 set in the environment variable RAY_ADDRESS
+2026-10-16 17:48:56,887	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.94.33.168:6379...
+2026-10-16 17:48:56,918	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_SETTINGS {'B': 10, 'max_hash_shuffle_aggregators': 2, 'resource_limits_cpu': 2, 'read_concurrency': 2, 'override_num_blocks': 5}
+2026-10-16 17:48:57,165	WARNING util.py:650 -- The argument ``concurrency`` is deprecated in Ray 2.51. Please specify argument ``compute`` instead. For more information, see https://docs.ray.io/en/master/data/transforming-data.html#stateful-transforms.
+2026-10-16 17:48:57,237	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hCmcJrnVUqpGxtrAhFv_0. Full logs are in /tmp/ray/session_2026-10-16_17-33-40_263304_7/logs/ray-data
+2026-10-16 17:48:57,237	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hCmcJrnVUqpGxtrAhFv_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange] -> ActorPoolMapOperator[MapBatches(Scorer)] -> TaskPoolMapOperator[Project]
+[2026-10-16 17:48:57,347 E 3244 3244] core_worker.cc:2297: Actor with class name: 'MapWorker(MapBatches(Scorer))' and ID: '51c0cd28c4ef29fac744d4070d000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+2026-10-16 17:48:57,372	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-16 17:48:57,649	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCmcJrnVUqpGxtrAhFv_0 =======
+2026-10-16 17:48:57,649	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:48:57,650	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store (pending: 2 GPU)
+2026-10-16 17:48:57,650	INFO logging_progress.py:181 -- 
+2026-10-16 17:48:57,650	INFO logging_progress.py:231 -- ReadRange: 0/1
+2026-10-16 17:48:57,650	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 4 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 17:48:57,650	INFO logging_progress.py:231 -- MapBatches(Scorer): 0/1
+2026-10-16 17:48:57,650	INFO logging_progress.py:233 --   Tasks: 0; Actors: 2 (running=0, restarting=0, pending=2, active=0, idle=0, util=0.000, tasks_in_flight=0); Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store; [all objects local]
+2026-10-16 17:48:57,650	INFO logging_progress.py:231 -- Project: 0/1
+2026-10-16 17:48:57,650	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:48:57,651	INFO logging_progress.py:192 -- =================================================================
+[36m(MapWorker(MapBatches(Scorer)) pid=11487, ip=143.55.45.86)[0m /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_19b77f1e3f250bf6/lb_data_tuned.py:72: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:203.)
+[36m(MapWorker(MapBatches(Scorer)) pid=11487, ip=143.55.45.86)[0m   x = self.torch.as_tensor(batch["data"], dtype=self.torch.float32, device=self.device)
+2026-10-16 17:49:07,655	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCmcJrnVUqpGxtrAhFv_0 =======
+2026-10-16 17:49:07,655	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:49:07,655	INFO logging_progress.py:227 -- Active & requested resources: 2/2 CPU, 78.4MiB/113.4GiB memory, 1/2 GPU, 81.3MiB/14.7GiB object store (pending: 1 GPU)
+2026-10-16 17:49:07,655	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:07,655	INFO logging_progress.py:231 -- ReadRange: 40000/200000
+2026-10-16 17:49:07,655	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 3 (0.0B); Resources: 1.0 CPU, 78.4MiB memory, 78.4MiB object store
+2026-10-16 17:49:07,655	INFO logging_progress.py:231 -- MapBatches(Scorer): 40000/200000
+2026-10-16 17:49:07,655	INFO logging_progress.py:233 --   Tasks: 0; Actors: 2 (running=1, restarting=0, pending=1, active=0, idle=1, util=0.000, tasks_in_flight=0); Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 1.0 GPU, 2.9MiB object store; [all objects local]
+2026-10-16 17:49:07,655	INFO logging_progress.py:231 -- Project: 0/1
+2026-10-16 17:49:07,655	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 17:49:07,656	INFO logging_progress.py:192 -- =================================================================
+[36m(MapWorker(MapBatches(Scorer)) pid=12189, ip=185.62.108.226)[0m /tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_19b77f1e3f250bf6/lb_data_tuned.py:72: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:203.)
+[36m(MapWorker(MapBatches(Scorer)) pid=12189, ip=185.62.108.226)[0m   x = self.torch.as_tensor(batch["data"], dtype=self.torch.float32, device=self.device)
+2026-10-16 17:49:17,725	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCmcJrnVUqpGxtrAhFv_0 =======
+2026-10-16 17:49:17,725	INFO logging_progress.py:225 -- Total Progress: 120000/200000
+2026-10-16 17:49:17,725	INFO logging_progress.py:227 -- Active & requested resources: 2/2 CPU, 5.2MiB/113.4GiB memory, 18.8MiB/14.7GiB object store
+2026-10-16 17:49:17,725	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:17,725	INFO logging_progress.py:231 -- ReadRange: 200000/200000
+2026-10-16 17:49:17,725	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:49:17,725	INFO logging_progress.py:231 -- MapBatches(Scorer): 200000/200000
+2026-10-16 17:49:17,725	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 5.8MiB object store; [all objects local]
+2026-10-16 17:49:17,725	INFO logging_progress.py:231 -- Project: 120000/200000
+2026-10-16 17:49:17,725	INFO logging_progress.py:233 --   Tasks: 2 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 2.0 CPU, 5.2MiB memory, 13.0MiB object store
+2026-10-16 17:49:17,725	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 17:49:22,907	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hCmcJrnVUqpGxtrAhFv_0 execution finished in 25.67 seconds
+2026-10-16 17:49:24,691	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hCnJa65fp4sDYqkkqqc_0. Full logs are in /tmp/ray/session_2026-10-16_17-33-40_263304_7/logs/ray-data
+2026-10-16 17:49:24,691	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hCnJa65fp4sDYqkkqqc_0: InputDataBuffer[Input] -> TaskPoolMapOperator[Project] -> HashAggregateOperator[HashAggregate(key_columns=('node',), num_partitions=5)]
+2026-10-16 17:49:24,720	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCnJa65fp4sDYqkkqqc_0 =======
+2026-10-16 17:49:24,721	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:49:24,721	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-16 17:49:24,721	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:24,721	INFO logging_progress.py:231 -- Project: 0/1
+2026-10-16 17:49:24,721	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 4 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 17:49:24,721	INFO logging_progress.py:231 -- HashAggregate(key_columns=('node',), num_partitions=5): 0/1
+2026-10-16 17:49:24,721	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:49:24,721	INFO logging_progress.py:231 --     - Shuffle: 0/1
+2026-10-16 17:49:24,721	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 17:49:24,721	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 17:49:31,204	INFO hash_aggregate.py:161 -- Estimated memory requirement for aggregating aggregator (partitions=5, aggregators=2, dataset (estimate)=0.0GiB): shuffle=5.7MiB, output=2.3MiB, total=8.0MiB, 
+2026-10-16 17:49:34,815	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCnJa65fp4sDYqkkqqc_0 =======
+2026-10-16 17:49:34,815	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:49:34,815	INFO logging_progress.py:227 -- Active & requested resources: 5.5/2 CPU, 2.0GiB/113.4GiB memory, 11.4MiB/14.7GiB object store
+2026-10-16 17:49:34,815	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:34,815	INFO logging_progress.py:231 -- Project: 200000/200000
+2026-10-16 17:49:34,816	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 11.4MiB object store
+2026-10-16 17:49:34,816	INFO logging_progress.py:231 -- HashAggregate(key_columns=('node',), num_partitions=5): 0/1
+2026-10-16 17:49:34,816	INFO logging_progress.py:233 --   Tasks: 5 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 5.5 CPU, 2.0GiB memory, 0.0B object store
+2026-10-16 17:49:34,816	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-16 17:49:34,816	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 17:49:34,816	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 17:49:42,479	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hCnJa65fp4sDYqkkqqc_0 execution finished in 17.79 seconds
+2026-10-16 17:49:42,495	INFO dataset.py:4508 -- Tip: Use `take_batch()` instead of `take() / show()` to return records in pandas or numpy batch format.
+2026-10-16 17:49:42,508	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hCnlaTCucH7yVz75Qbg_0. Full logs are in /tmp/ray/session_2026-10-16_17-33-40_263304_7/logs/ray-data
+2026-10-16 17:49:42,508	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hCnlaTCucH7yVz75Qbg_0: InputDataBuffer[Input] -> TaskPoolMapOperator[Project] -> HashAggregateOperator[HashAggregate(key_columns=(), num_partitions=1)] -> LimitOperator[limit=1]
+2026-10-16 17:49:42,540	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCnlaTCucH7yVz75Qbg_0 =======
+2026-10-16 17:49:42,540	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:49:42,540	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-16 17:49:42,540	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:42,540	INFO logging_progress.py:231 -- Project: 0/1
+2026-10-16 17:49:42,540	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 4 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-16 17:49:42,540	INFO logging_progress.py:231 -- HashAggregate(key_columns=(), num_partitions=1): 0/1
+2026-10-16 17:49:42,540	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:49:42,540	INFO logging_progress.py:231 --     - Shuffle: 0/1
+2026-10-16 17:49:42,541	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 17:49:42,541	INFO logging_progress.py:231 -- limit=1: 0/1
+2026-10-16 17:49:42,541	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:49:42,541	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 17:49:49,153	INFO hash_aggregate.py:161 -- Estimated memory requirement for aggregating aggregator (partitions=1, aggregators=1, dataset (estimate)=0.0GiB): shuffle=1.5MiB, output=1.5MiB, total=3.1MiB, 
+2026-10-16 17:49:52,541	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hCnlaTCucH7yVz75Qbg_0 =======
+2026-10-16 17:49:52,541	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-16 17:49:52,541	INFO logging_progress.py:227 -- Active & requested resources: 1.25/2 CPU, 1.0GiB/113.4GiB memory, 312.5KiB/14.7GiB object store
+2026-10-16 17:49:52,541	INFO logging_progress.py:181 -- 
+2026-10-16 17:49:52,541	INFO logging_progress.py:231 -- Project: 200000/200000
+2026-10-16 17:49:52,541	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 312.5KiB object store
+2026-10-16 17:49:52,541	INFO logging_progress.py:231 -- HashAggregate(key_columns=(), num_partitions=1): 160000/1
+2026-10-16 17:49:52,541	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.2 CPU, 1.0GiB memory, 12.0B object store
+2026-10-16 17:49:52,541	INFO logging_progress.py:231 --     - Shuffle: 4/?
+2026-10-16 17:49:52,541	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-16 17:49:52,541	INFO logging_progress.py:231 -- limit=1: 0/1
+2026-10-16 17:49:52,541	INFO logging_progress.py:233 --   Tasks: 0; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-16 17:49:52,541	INFO logging_progress.py:192 -- =================================================================
+2026-10-16 17:49:53,216	INFO streaming_executor.py:365 -- ✔️  Dataset dataset_034hCnlaTCucH7yVz75Qbg_0 execution finished in 10.71 seconds
+C9_RESULT LB04.gpu PASS {"devices": ["cuda"], "elapsed_s": 56.4, "rows": 200000, "rows_per_node": {"e4cf6aaa": 160000, "fa6c41ea": 40000}, "rows_per_s": 7268, "scored": 200000, "seconds": 27.5, "settings": {"B": 10, "max_hash_shuffle_aggregators": 2, "override_num_blocks": 5, "read_concurrency": 2, "resource_limits_cpu": 2}}

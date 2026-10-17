@@ -1,0 +1,24 @@
+2026-10-17 00:46:53,775	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:45403[22m
+2026-10-17 00:46:54,063	INFO cli.py:569 -- 2026-10-16 17:46:29,939	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job probe-7121c1: python node_probe.py
+2026-10-16 17:46:31,743	INFO worker.py:1686 -- Using address 18.218.80.18:6379 set in the environment variable RAY_ADDRESS
+2026-10-16 17:46:31,748	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.218.80.18:6379...
+2026-10-16 17:46:31,778	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[33m(raylet)[0m The node with node id: 273a22755e7693a30decebfb786a1ffab191c137f49a612020784097 and address: 96.241.192.5 and node name: 96.241.192.5 has been marked dead because the detector has missed too many heartbeats from it. This can happen when a 	(1) raylet crashes unexpectedly (OOM, etc.) 
+	(2) raylet has lagging heartbeats due to slow network or busy workload.
+Traceback (most recent call last):
+  File "/tmp/ray/session_2026-10-16_17-35-48_258965_7/runtime_resources/working_dir_files/_ray_pkg_415ea42157a3b788/node_probe.py", line 103, in <module>
+    ids = ray.get([ray.remote(num_cpus=0)(lambda: os.environ.get("CONTAINER_ID")).options(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+    raise value
+ray.exceptions.TaskUnschedulableError: The task is not schedulable: The node specified via NodeAffinitySchedulingStrategy doesn't exist any more or is infeasible, and soft=False was specified. lease_id=040000000a000000ffffffffffffffffffffffffffffffffffffffffffffffff, name=<lambda>

@@ -1,0 +1,63 @@
+{
+ "id": "LB00[gpu2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792196740.5038073,
+ "checks": [
+  {
+   "name": "gpu2 56321071: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 3072)",
+   "ok": true,
+   "detail": "(44, 44)"
+  },
+  {
+   "name": "gpu2 56321071: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
+   "ok": true,
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '12', 'RAY_worker_maximum_startup_concurrency': '8'}"
+  },
+  {
+   "name": "gpu2 56321071: Ray CPUs = the real core count (affinity and quota)",
+   "ok": true,
+   "detail": "(12.0, 32, {'cpu.cfs_period_us': '100000', 'cpu.cfs_quota_us': '1228800'})"
+  },
+  {
+   "name": "gpu2 56321071: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
+   "ok": true,
+   "detail": "2.5"
+  }
+ ],
+ "data": {
+  "gpu2_56321071": {
+   "machine_id": 29278,
+   "pids.max": "3072",
+   "cgroup": "v1",
+   "cpu_quota": {
+    "cpu.cfs_period_us": "100000",
+    "cpu.cfs_quota_us": "1228800"
+   },
+   "affinity": 32,
+   "ray_cpus": 12.0,
+   "ports": 44,
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "12",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "worker_threads": [
+    17,
+    24,
+    27,
+    36,
+    42
+   ],
+   "cpu_count": 32,
+   "enroll_s_from_first_running_sample": 2.5
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792197457.281743,
+ "wall_s": 716.8
+}

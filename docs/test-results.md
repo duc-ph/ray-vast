@@ -779,3 +779,139 @@ Product changes found by this work (both with a red test first):
 - An unknown AWS profile or missing credentials printed a traceback. Now one line (tests `test_main_with_an_unknown_profile_prints_one_line_without_a_traceback`, `test_main_down_without_aws_credentials_prints_one_line_without_a_traceback`).
 
 Doc bug found by the local runs of the libraries jobs (fixed): tune.md, Settings. A trial that asks `{"cpu": CPUS / B}` and starts a task with `num_cpus = CPUS / B` fails with "No trial resources are available" (local C10 check, `lb_tuned.py tune` at pids.max 1280, 14 ports: ERROR). tune.md now gives such a trial `tune.PlacementGroupFactory([{"CPU": CPUS / B}, {"CPU": CPUS / B}])`, and LB11 `tune.tuned` runs that code: PASS in the local C10 check (18 trials, 25 s). The same check ran `lb_tuned.py train` and `rllib` with the train.md and rllib.md values: both PASS, so those pages need no change.
+
+<!-- live-suite 2026-10-17 start -->
+## Live suite 2026-10-17
+
+Written by `tests/live/summarize.py` from `archive/results/2026-10-17/`.
+
+| ID | Result | Time (s) | Line | Evidence |
+|---|---|---|---|---|
+| F01 | NOT RUN | | | |
+| F02 | NOT RUN | | | |
+| F03 | NOT RUN | | | |
+| F04 | NOT RUN | | | |
+| F05 | NOT RUN | | | |
+| F06 | NOT RUN | | | |
+| F07 | NOT RUN | | | |
+| F08 | NOT RUN | | | |
+| F09 | NOT RUN | | | |
+| F10 | NOT RUN | | | |
+| F11 | NOT RUN | | | |
+| F12 | NOT RUN | | | |
+| F13 | NOT RUN | | | |
+| F14 | NOT RUN | | | |
+| F15 | NOT RUN | | | |
+| F16 | NOT RUN | | | |
+| F17 | NOT RUN | | | |
+| F18 | NOT RUN | | | |
+| F19 | NOT RUN | | | |
+| F20 | NOT RUN | | | |
+| A01 | NOT RUN | | | |
+| A02 | NOT RUN | | | |
+| A03 | NOT RUN | | | |
+| A04 | NOT RUN | | | |
+| A05 | NOT RUN | | | |
+| A06 | NOT RUN | | | |
+| A07 | NOT RUN | | | |
+| A08 | NOT RUN | | | |
+| A09 | NOT RUN | | | |
+| A10 | NOT RUN | | | |
+| A11 | NOT RUN | | | |
+| A12 | NOT RUN | | | |
+| A13 | NOT RUN | | | |
+| L01 | PASS | 0.7 | up as the restricted user exits 0: 559.9; the head runs in us-east-2 with t3.medium: ('us-east-2b', 't3.medium'); the head role has the boundary; the state file saved the restricted profile | `2026-10-17/L01/` |
+| L02 | PASS | 316.4 | c8_job SUCCEEDED with 4 containers: SUCCEEDED; both node types: ['gpu-a', 'gpu-b']; bundle 0: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-d1929428-eb3c-777d-f101-91cfd03f34ea)'); bundle 1: 1 GPU, gpu_ids [0]: ([0], 'GPU 0: NVIDIA GeForce RTX 5060 Ti (UUID: GPU-407d0c99-ab97- | `2026-10-17/L02/` |
+| L03 | PASS | 26.3 | probe job SUCCEEDED on 4 workers: ('SUCCEEDED', 4); 56321651: uid 1000, Ray 2.59.0: (1000, '2.59.0'); 56321651: no CONTAINER_API_KEY or RAYVAST_JOIN_TOKEN in os.environ; 56321651: PID 1 is the bootstrap (GPU image ENTRYPOINT kept); 56321651: /tmp/rayvast 700, files 600 or 644 for certs: {'ca.pem': ' | `2026-10-17/L03/` |
+| L04 | FAIL | 14.4 | check failed: 56321651: agent port answers 401 without the token (InvalidURL) | `2026-10-17/L04/` |
+| L05 | PASS | 3.4 | monitor.log has the rent line; monitor.log has the enrolled line; monitor.log has the ending line; the `Dropping the empty legacy field` lines are not errors: ['2026-10-16 17:35:50,043\tWARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is | `2026-10-17/L05/` |
+| L06 | PASS | 14.3 | 56321651: /proc/1/environ holds CONTAINER_API_KEY and RAYVAST_JOIN_TOKEN (a task can read them); 56321651: the key reads its own instance (200) and not another (401 or 403): {'other': 401, 'own': 200}; 56321651: uid 1000 cannot read /root/.ssh; 56321632: /proc/1/environ holds CONTAINER_API_KEY and R | `2026-10-17/L06/` |
+| L07 | FAIL | 166.2 | check failed: TERM: the report reaches the head within 1 s (1.77) | `2026-10-17/L07/` |
+| L08 | FAIL | 25.5 | IndexError: list index out of range | `2026-10-17/L08/` |
+| L09 | FAIL | 29.8 | check failed: `rebooting` is not an unknown status () | `2026-10-17/L09/` |
+| L10 | PASS | 860.7 | head stopped with a worker enrolled and a candidate loading; worker 56322499 destroys itself within 300 s + 30 s heartbeat + 15 s: 65; candidate 56322500 is gone within 10 min plus its pull: 65; candidate 56322510 is gone within 10 min plus its pull: 65; candidate 56322513 is gone within 10 min plus | `2026-10-17/L10/` |
+| L11 | FAIL | 0.4 | check failed: down: left nothing () | `2026-10-17/L11/` |
+| LB00[H1] | FAIL | 975.5 | livekit.HostNotFound: no host matched {'pids_max': 1280, 'cgroup': 'v1', 'cpus': {'gte': 36}} in 3 rentals (machines 148655, 58013, 36376) | `2026-10-17/LB00[H1]/` |
+| LB00[H2] | PASS | 600.3 | H2: cgroup v2: {'machine_id': 51706, 'pids.max': '1536', 'cgroup': 'v2'}; H2 56320907: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1536): (18, 18); H2 56320907: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_worke | `2026-10-17/LB00[H2]/` |
+| LB00[H3] | PASS | 578.6 | H3 56320908: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1280): (14, 14); H3 56320908: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '5', 'RAY_worker_maximum_startup_concurrency': '8'}; H3 56 | `2026-10-17/LB00[H3]/` |
+| LB00[gpu2] | PASS | 716.8 | gpu2 56321071: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 3072): (44, 44); gpu2 56321071: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8: {'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '12', 'RAY_worker_maximum_startup_concurrency': '8'}; | `2026-10-17/LB00[gpu2]/` |
+| LB01 | PASS | 472.7 | --working-dir: data/hello.txt read by tasks on both workers: {'cwd_example': '/tmp/ray/session_2026-10-16_17-33-40_263304_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896', 'elapsed_s': 7.7, 'file_ok': True, 'ips': ['143.55.45.86', '185.62.108.226'], 'tasks_per_node': {'e4cf6aaa': 4, | `2026-10-17/LB01/` |
+| LB02 | PASS | 174.7 | PACK on one worker, STRICT_SPREAD on both: {'elapsed_s': 12.2, 'pack_bundles': {'0': 'e4cf6aaa', '1': 'e4cf6aaa', '2': 'e4cf6aaa', '3': 'e4cf6aaa'}, 'pack_task_nodes': ['e4cf6aaa', 'e4cf6aaa', 'e4cf6aaa', 'e4cf6aaa'], 'spread_bundles': {'0': 'fa6c41ea', '1': 'e4cf6aaa'}, 'spread_task_nodes': ['fa6c4 | `2026-10-17/LB02/` |
+| LB03[H1] | FAIL | 1831.8 | AssertionError: the LB03 input was not written: FAILED ('make_parquet', 'FAIL', {'error_class': 'ExecutionTimeoutError', 'error_head': ["Dataset execution made no progress for at least 1800s of scheduling time (timeout: 1800s). No output was taken and no blocks moved through any operator's queues in | `2026-10-17/LB03[H1]/` |
+| LB04 | PASS | 232.5 | C9.1.3 with the data.md settings at B 10: SUCCEEDED: ('SUCCEEDED', {'dataset_gb': 3.0, 'elapsed_s': 124.6, 'group_total': 1430, 'groupby_s': 55.5, 'groups': 16, 'rows': 1430, 'settings': {'B': 10, 'max_hash_shuffle_aggregators': 2, 'override_num_blocks': 5, 'read_concurrency': 2, 'resource_limits_cp | `2026-10-17/LB04/` |
+| LB05 | PASS | 363.5 | c9_1_1_data_cpu.py with the defaults: {'count': 3333334, 'elapsed_s': 23.5, 'expected': 3333334, 'first': [{'id': 0}, {'id': 6}, {'id': 12}], 'rows': 10000000, 'rows_per_s': 856884, 'seconds': 23.34, 'task_nodes': {'e4cf6aaa': 38, 'fa6c41ea': 46}}; c9_1_2_data_objstore.py with the defaults: {'checks | `2026-10-17/LB05/` |
+| LB06 | FAIL | 406.1 | check failed: the default storage_path: `Unable to set up cluster storage ... not accessible by worker nodes` (tune.md:83) ({'elapsed_s': 10.1, 'errors': 4, 'experiment_path': '/home/ray/ray_results/c9_2_4', 'storage': 'default', 'trials': [{'checkpoint': None, 'error': '\x1b[36mray::ImplicitFunc.tr | `2026-10-17/LB06/` |
+| LB07 | FAIL | 284.5 | interrupted: the test did not end (no call report) | `2026-10-17/LB07/` |
+| LB08 | FAIL | 821.1 | interrupted: the test did not end (no call report) | `2026-10-17/LB08/` |
+| LB09 | NOT RUN | | | |
+| LB10[gpu2] | FAIL | 2048.0 | check failed: the learner snippet on gpu2 (num_cpus_per_learner 0.3): 2 iterations, 0 errors ({'elapsed_s': 1912.7, 'errors': 1, 'iterations': None}) | `2026-10-17/LB10[gpu2]/` |
+| LB11[H1] | FAIL | 242.0 | interrupted: the test did not end (no call report) | `2026-10-17/LB11[H1]/` |
+| LB11[H2] | FAIL | 2449.0 | interrupted: the test did not end (no call report) | `2026-10-17/LB11[H2]/` |
+| LB12 | NOT RUN | | | |
+| LB13 | NOT RUN | | | |
+| LB14 | NOT RUN | | | |
+| R01 | NOT RUN | | | |
+| R02 | NOT RUN | | | |
+
+Spend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate from the hours):
+
+| Group | Cluster | vast | Hours | EC2 |
+|---|---|---|---|---|
+| lifecycle | rvtest-life-f9e2 | $0.4077 | 0.6 h | $0.03 |
+
+vast spend of each run (the credit before and after, plus the auto top-ups in between):
+
+| Run | vast | Top-ups |
+|---|---|---|
+| 002539-287730 | $2.1200 | $10.00 |
+<!-- live-suite 2026-10-17 end -->
+### Notes on the live suite run of 2026-10-17 (lifecycle and libraries, stopped)
+
+The run stopped early on the user's decision: the suite gets a refactor before the next run. No scenario of this run is a final record. The records of the smoke run (`--keep-cluster`, L01 and LB00) are in `archive/results/2026-10-16/`.
+
+Last state of each scenario (run `002539-287730`, `-n 8`, fresh clusters):
+
+- PASS: L01, L02, L03, L05, L06, L10, LB00[H2], LB00[H3], LB00[gpu2], LB01, LB02, LB04, LB05.
+- L04 FAIL (test bug, fixed, not re-run): `node_probe.py` read the agent HTTP port from the raylet command line. Ray 2.59 gives it to the dashboard agent process (`--listen-port`).
+- L07 FAIL (test bug, fixed, not re-run): the 1.5 s limit counted from t0, before the driver schedules the signal task. The report came 0.05 s after the signal. Also the limit had no source in the spec (see "Timing bounds").
+- L08 FAIL (follow-on of L07): L07 stopped before its replacement joined. The probe of L08 hit the dead node (`TaskUnschedulableError`), so it had no nodes (IndexError).
+- L09 FAIL (product bug, fixed with a red test): the provider logged `unknown vast actual_status 'rebooting'`. `rebooting` is now a pending status. The refusal and the destroy passed (gone 2.9 s after the refusal).
+- L11 FAIL (test bug, fixed, not re-run): after L10 the state file is gone, and `down` needs `--profile` (cli.md). `Cluster.down` now adds it.
+- LB00[H1], LB03[H1] FAIL (host spec, fixed, not re-run): see "H1". LB03[H1] then failed in its fixture: the parquet input job (`lb_make_parquet.py`) made no progress for 1800 s on the 38-CPU host 36376 that `find` left (cause not analysed).
+- LB06 FAIL (test bug, fixed, not re-run): the 60-trial snippet, ASHA and GPU trials passed. The default-storage check read the result line, which cuts each error to 300 characters. The job log has the documented error. The check reads the log now.
+- LB10[gpu2] FAIL (not analysed): the learner snippet gave 1 error and no iterations after 1913 s.
+- LB07, LB08, LB11[H1], LB11[H2]: interrupted by the stop (records say "interrupted").
+- Not run: LB03[H3], LB09, LB10[H3], LB12, LB13, LB14.
+
+H1. In C9, m32816 gave 48 Ray CPUs. Since the cgroup v1 quota fix it gives 5 (quota 5.76 cores). The probes of 2026-10-17 show that vast sets `pids.max` = 256 × the CPU quota, rounded down (1280 at 5.76, 1536 at 6.72, 1792 at 7.68, 2816 at 11.52, 9728 at 38.4, 11776 at 46.08, 15616 at 61.44). So no host has many Ray CPUs and `pids.max` 1280. The first try (want 36 or more CPUs, query `cpu_cores_effective` ≥ 40) rented m148655 (61 CPUs, 15616, v1), m58013 (46, 11776, v2) and m36376 (38, 9728, v1): no match. H1 is now `pids.max` 1280 and cgroup v1, with m32816 first and `cpu_cores_effective` 5.5 to 6.5 as the fallback.
+
+Hosts (pids.max, cgroup, Ray CPUs, CPU quota, enroll time from the suite's first `running` sample): H2 m51706 (1536, v2, 6, 6.912, about 0 s); H3 m3969 (1280, v1, 5, 5.76) and m29217 (1536, v1, 6, 6.144); gpu2 m3969 (2816, v1, 11, 11.52); lifecycle workers (1792, 2816, 1280, 1536, all v1; enroll −2.6 to 7.0 s). The smoke run had the enroll times wrong by −25190 s: see the test fixes.
+
+Test-script changes (all in `ray-vast-pypi/tests/live/`):
+
+- `livekit.log_epoch`: monitor.log times are in the head container's time zone. The rayproject/ray images set `TZ=America/Los_Angeles`. Red: `test_log_epoch_reads_a_monitor_log_time_in_the_time_zone_of_the_head_container` (no such function).
+- `livekit.outcome_of`: a test that SIGTERM stopped was recorded as passed (no call report). Red: `test_a_test_without_a_call_report_is_not_recorded_as_passed` (no such function); mutation: without the branch the test fails with `'passed' == 'failed'`.
+- `Cluster.down` adds `--profile` without a state file; `node_probe.py` reads the agent port from the agent process; LB06 and LB07 read the storage errors from the job log; L07 uses the signal time.
+
+Timing bounds (each bound now cites the spec or a user doc, or is a safety bound with the time recorded as data):
+
+| Scenario | Before | Now |
+|---|---|---|
+| L02 enroll | ≤ 45 s | −15 to 75 s (design.md:56, :86: 1 min; the suite's 10 s samples) |
+| L02 idle to 0 | ≤ idle_timeout + 120 s | ≤ idle_timeout + 300 s (control-cost.md:24; safety bound) |
+| L07 report | ≤ 1.5 s after t0 | the head logs the report (design.md:262 has no time) |
+| L07 gone from vast | ≤ 20 s | ≤ 60 s (safety bound) |
+| L07 Ray node DEAD | ≤ 60 s | DEAD within 300 s (safety bound) |
+| L08 destroy after the cut | 240 to 345 s | 240 to 400 s (design.md:246, :258, :265: 300 s) |
+| L09 gone after the refusal | ≤ 20 s | ≤ 60 s (safety bound) |
+| L10 worker gone | ≤ 345 s | ≤ 360 s (design.md:246, :258, :261) |
+| L10 candidate gone | ≤ 20 min | ≤ 30 min (design.md:144, :155, :260, after its pull) |
+| LB00 enroll | ≤ 45 s | −15 to 75 s (design.md:86) |
+| LB08 gloo error | ≤ 300 s | unchanged, cites train.md:91 |
+| R02 tutorial | ≤ 30 min | unchanged, cites getting-started.md:4 |
+
+worker-lifecycle.md now says that the 2026-10-14 times are one measured run, not limits.
+
+Workarounds: the 4 libraries clusters survived the stop (SIGINT ended the xdist workers before their teardown). They were ended by hand with `ray-vast down` (`_session/libraries-*/down_by_hand.log`, each `left: nothing`). The smoke run's restricted IAM user `ray-vast-livetest-20261016` (kept by `--keep-cluster`) was deleted by hand.
+
+Spend: smoke run vast $0.52, EC2 about $0.20 (5 heads, 0.6 h). Run `002539-287730`: vast $2.12 (credit diff corrected for one $10 top-up), EC2 about $0.40 (4 × t3.large and 1 × t3.medium, about 1 h). Cleanup at 01:26Z: vast label sweep 0 left; AWS check empty for every cluster of both runs in us-west-2 and us-east-2; no ray-vast role, test user, key pair, test group or bucket left; the secret scan of `archive/results/2026-10-16` and `2026-10-17` found no file.
