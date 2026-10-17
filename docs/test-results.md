@@ -957,6 +957,6 @@ Fix: at a DELETE, the fake vast stops the container (`docker kill`, `docker wait
 
 Other changes of step 0:
 
-- `twine` is in the `test` extras of `pyproject.toml`. The first free run in a new venv failed F17 with `FileNotFoundError: .venv/bin/twine` (environment, not a product bug).
+- `twine` and `awscli` are in the `test` extras of `pyproject.toml`. The first free run in a new venv failed F17 with `FileNotFoundError: .venv/bin/twine`. The first `free or aws` run did not start: the suite runs the documented `aws` commands from the venv (`restricted.py`, A02), and the venv had no `aws` (environment, not a product bug).
 - Incident: a load test for the repro (6 containers that wrote output with no log size limit) filled the root disk of the dev box for about 1 min. The containers were removed at once, and the free space went back to 76 GB. Other runs on the box at that time could get `ENOSPC`. The next load test used `--log-opt max-size=20m`.
 - F18 failed once in an instrumented run: the temporary debug lines in `fake_vast_server.py` wrote to a path that does not exist in the Python 3.10 container. The debug lines are removed.
