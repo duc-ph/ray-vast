@@ -5,17 +5,17 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792235558.0964887,
+ "started": 1792254731.3315778,
  "checks": [
   {
    "name": "the train.md snippet: fit returns",
    "ok": true,
-   "detail": "('SUCCEEDED', {'elapsed_s': 31.5, 'fit': 'returned'})"
+   "detail": "('SUCCEEDED', {'elapsed_s': 133.1, 'fit': 'returned'})"
   },
   {
    "name": "2 epochs on 2 ranks on the gpu2 worker, cuda, one GPU id each, 2 different GPUs",
-   "ok": false,
-   "detail": "[]"
+   "ok": true,
+   "detail": "[{'rank': 1, 'epoch': 1, 'device': 'cuda:1', 'gpu_ids': ['1'], 'node': '70efc7db'}, {'rank': 0, 'epoch': 1, 'device': 'cuda:0', 'gpu_ids': ['0'], 'node': '70efc7db'}]"
   },
   {
    "name": "checkpoints in S3",
@@ -30,7 +30,7 @@
   {
    "name": "1 GPU with the default storage_path: `A local path on the head node is not accessible by worker nodes`",
    "ok": true,
-   "detail": "{'backend': None, 'elapsed_s': 22.3, 'epochs_reported': 1, 'error_class': 'WorkerGroupError', 'error_head': ['Training failed due to worker errors:', '[Rank 0 Error Snippet]:', 'Traceback (most recent call last):', '  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func', '    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn', '    return fn(*args, **kwargs)', '           ^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...', '... (Output truncated. See individual worker logs for full details) ...', \"stem='local',\", \"  storage_fs_path='/home/ray/ray_results',\"], 'num_workers': 1, 'seconds_to_error': 19.1, 'strategy': 'PACK', 'traceback_tail': ['  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\\n    res = trainer.fit()\\n          ^^^^^^^^^^^^^\\n', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\\n    raise result.error\\n', 'ray.train.WorkerGroupError: Training failed due to worker errors:\\n[Rank 0 Error Snippet]:\\nTraceback (most recent call last):\\n  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func\\n    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn\\n    return fn(*args, **kwargs)\\n           ^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...\\n... (Output truncated. See individual worker logs for full details) ...\\nstem=\\'local\\',\\n  storage_fs_path=\\'/home/ray/ray_results\\',\\n  experiment_dir_name=\\'c9_C9.3.1_1792235650\\',\\n>\\nCheck that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster (\\'s3://bucket\\' or \\'/mnt/nfs\\'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html\\n\\n'], 'use_gpu': True}"
+   "detail": "{'backend': None, 'elapsed_s': 26.5, 'epochs_reported': 1, 'error_class': 'WorkerGroupError', 'error_head': ['Training failed due to worker errors:', '[Rank 0 Error Snippet]:', 'Traceback (most recent call last):', '  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func', '    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn', '    return fn(*args, **kwargs)', '           ^^^^^^^^^^^^^^^^^^^', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...', '... (Output truncated. See individual worker logs for full details) ...', \"stem='local',\", \"  storage_fs_path='/home/ray/ray_results',\"], 'num_workers': 1, 'seconds_to_error': 23.3, 'strategy': 'PACK', 'traceback_tail': ['  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\\n    res = trainer.fit()\\n          ^^^^^^^^^^^^^\\n', '  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\\n    raise result.error\\n', 'ray.train.WorkerGroupError: Training failed due to worker errors:\\n[Rank 0 Error Snippet]:\\nTraceback (most recent call last):\\n  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func\\n    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn\\n    return fn(*args, **kwargs)\\n           ^^^^^^^^^^^^^^^^^^^\\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...\\n... (Output truncated. See individual worker logs for full details) ...\\nstem=\\'local\\',\\n  storage_fs_path=\\'/home/ray/ray_results\\',\\n  experiment_dir_name=\\'c9_C9.3.1_1792255095\\',\\n>\\nCheck that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster (\\'s3://bucket\\' or \\'/mnt/nfs\\'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html\\n\\n'], 'use_gpu': True}"
   }
  ],
  "data": {
@@ -38,12 +38,12 @@
    {
     "doc": "libraries/train.md",
     "old": "{\"CPU\": 2.4, \"GPU\": 1}",
-    "new": "{\"CPU\": 0.074, \"GPU\": 1}"
+    "new": "{\"CPU\": 0.111, \"GPU\": 1}"
    },
    {
     "doc": "libraries/train.md",
     "old": "\"s3://my-bucket/experiments\"",
-    "new": "\"s3://ray-vast-rvtest-20261017-a763/lb07/experiments\""
+    "new": "\"s3://ray-vast-rvtest-20261017-1e42/lb07/experiments\""
    },
    {
     "doc": "libraries/train.md",
@@ -51,17 +51,54 @@
     "new": "    train_body(loader)\n"
    }
   ],
-  "train_ranks": [],
+  "train_ranks": [
+   {
+    "rank": 1,
+    "epoch": 0,
+    "device": "cuda:1",
+    "gpu_ids": [
+     "1"
+    ],
+    "node": "70efc7db"
+   },
+   {
+    "rank": 0,
+    "epoch": 0,
+    "device": "cuda:0",
+    "gpu_ids": [
+     "0"
+    ],
+    "node": "70efc7db"
+   },
+   {
+    "rank": 1,
+    "epoch": 1,
+    "device": "cuda:1",
+    "gpu_ids": [
+     "1"
+    ],
+    "node": "70efc7db"
+   },
+   {
+    "rank": 0,
+    "epoch": 1,
+    "device": "cuda:0",
+    "gpu_ids": [
+     "0"
+    ],
+    "node": "70efc7db"
+   }
+  ],
   "default_storage": {
    "backend": null,
-   "elapsed_s": 22.3,
+   "elapsed_s": 26.5,
    "epochs_reported": 1,
    "error_class": "WorkerGroupError",
    "error_head": [
     "Training failed due to worker errors:",
     "[Rank 0 Error Snippet]:",
     "Traceback (most recent call last):",
-    "  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func",
+    "  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func",
     "    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))",
     "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn",
     "    return fn(*args, **kwargs)",
@@ -72,18 +109,18 @@
     "  storage_fs_path='/home/ray/ray_results',"
    ],
    "num_workers": 1,
-   "seconds_to_error": 19.1,
+   "seconds_to_error": 23.3,
    "strategy": "PACK",
    "traceback_tail": [
-    "  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n",
+    "  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n",
     "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n",
-    "ray.train.WorkerGroupError: Training failed due to worker errors:\n[Rank 0 Error Snippet]:\nTraceback (most recent call last):\n  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func\n    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...\n... (Output truncated. See individual worker logs for full details) ...\nstem='local',\n  storage_fs_path='/home/ray/ray_results',\n  experiment_dir_name='c9_C9.3.1_1792235650',\n>\nCheck that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html\n\n"
+    "ray.train.WorkerGroupError: Training failed due to worker errors:\n[Rank 0 Error Snippet]:\nTraceback (most recent call last):\n  File \"/tmp/ray/session_2026-10-17_09-32-01_703104_7/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func\n    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...\n... (Output truncated. See individual worker logs for full details) ...\nstem='local',\n  storage_fs_path='/home/ray/ray_results',\n  experiment_dir_name='c9_C9.3.1_1792255095',\n>\nCheck that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html\n\n"
    ],
    "use_gpu": true
   }
  },
- "outcome": "failed",
- "message": "AssertionError: 1 check(s) failed: 2 epochs on 2 ranks on the gpu2 worker, cuda, one GPU id each, 2 different GPUs",
- "ended": 1792235678.2045147,
- "wall_s": 120.1
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792255122.7229266,
+ "wall_s": 391.4
 }

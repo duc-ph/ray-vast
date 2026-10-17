@@ -1,0 +1,70 @@
+2026-10-17 11:14:38,054	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:38563[22m
+2026-10-17 11:14:38,068	INFO cli.py:569 -- 2026-10-17 04:14:05,238	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job c9_3_1_train_1gpu-be34da: python c9_3_1_train_1gpu.py
+C9_START C9.3.1 1792235647.5 small=False min_nodes=2
+2026-10-17 04:14:10,562	INFO worker.py:1686 -- Using address 52.37.75.64:6379 set in the environment variable RAY_ADDRESS
+2026-10-17 04:14:10,566	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 52.37.75.64:6379...
+2026-10-17 04:14:10,603	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+[36m(TrainController pid=2077)[0m Requesting resources: {'GPU': 1} * 1
+[36m(TrainController pid=2077)[0m Attempting to start training worker group of size 1 with the following resources: [{'GPU': 1}] * 1
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m Setting up process group for: env:// [rank=0, world_size=1]
+[36m(TrainController pid=2077)[0m [2026-10-17 04:14:23,750 E 2077 2114] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: 'cd48c3e75e8b59d4383374be07000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(TrainController pid=2077)[0m Started training worker group of size 1: 
+[36m(TrainController pid=2077)[0m - (ip=38.247.78.6, pid=4857) world_rank=0, local_rank=0, node_rank=0
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m C9_TRAIN rank=0 node=1411878bd88a3d994cdd4718f26fe94b6bee8f8bb0f2a98482f5f8ba device=cuda:0 backend=nccl
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m C9_TRAIN rank=0 node=1411878bd88a3d994cdd4718f26fe94b6bee8f8bb0f2a98482f5f8ba device=cuda:0 backend=nccl
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m Moving model to device: cuda:0
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m Error in training function:
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m Traceback (most recent call last):
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py", line 70, in train_func
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py", line 299, in _wrapped_fn
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     return fn(*args, **kwargs)
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/train_fn_utils.py", line 125, in report
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     get_train_fn_utils().report(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/train_fn_utils.py", line 172, in report
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     return get_internal_train_context().report(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/context.py", line 473, in report
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     training_report = self._upload_checkpoint(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m                       ^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_common/retry.py", line 156, in inner
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     return call_with_retry(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m            ^^^^^^^^^^^^^^^^
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_common/retry.py", line 129, in call_with_retry
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     raise e from None
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_common/retry.py", line 107, in call_with_retry
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     return f(*args, **kwargs)
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m            ^^^^^^^^^^^^^^^^^^
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/context.py", line 320, in _upload_checkpoint
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     self.storage_context.persist_current_checkpoint(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/storage.py", line 495, in persist_current_checkpoint
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     self._check_validation_file()
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/execution/storage.py", line 442, in _check_validation_file
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m     raise RuntimeError(
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m RuntimeError: Unable to set up cluster storage with the following settings:
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m StorageContext<
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   storage_filesystem='local',
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   storage_fs_path='/home/ray/ray_results',
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m   experiment_dir_name='c9_C9.3.1_1792235650',
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m >
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m Check that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html
+[36m(RayTrainWorker pid=4857, ip=38.247.78.6)[0m 
+[36m(TrainController pid=2077)[0m [FailurePolicy] RAISE
+[36m(TrainController pid=2077)[0m   Source: worker group
+[36m(TrainController pid=2077)[0m   Error count: 1 (max allowed: 0)
+[36m(TrainController pid=2077)[0m Error: Training failed due to worker errors:
+[36m(TrainController pid=2077)[0m [Rank 0 Error Snippet]:
+[36m(TrainController pid=2077)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...
+[36m(TrainController pid=2077)[0m ... (Output truncated. See individual worker logs for full details) ...
+[36m(TrainController pid=2077)[0m stem='local',
+[36m(TrainController pid=2077)[0m   experiment_dir_name='c9_C9.3.1_1792235650',
+[36m(TrainController pid=2077)[0m ray.train.WorkerGroupError: Training failed due to worker errors:
+[36m(TrainController pid=2077)[0m [Rank 0 Error Snippet]:
+[36m(TrainController pid=2077)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...
+[36m(TrainController pid=2077)[0m ... (Output truncated. See individual worker logs for full details) ...
+[36m(TrainController pid=2077)[0m stem='local',
+[36m(TrainController pid=2077)[0m   experiment_dir_name='c9_C9.3.1_1792235650',
+[36m(TrainController pid=2077)[0m 
+C9_RESULT C9.3.1 LIMIT {"backend": null, "elapsed_s": 22.3, "epochs_reported": 1, "error_class": "WorkerGroupError", "error_head": ["Training failed due to worker errors:", "[Rank 0 Error Snippet]:", "Traceback (most recent call last):", "  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func", "    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn", "    return fn(*args, **kwargs)", "           ^^^^^^^^^^^^^^^^^^^", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...", "... (Output truncated. See individual worker logs for full details) ...", "stem='local',", "  storage_fs_path='/home/ray/ray_results',"], "num_workers": 1, "seconds_to_error": 19.1, "strategy": "PACK", "traceback_tail": ["  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 86, in run\n    res = trainer.fit()\n          ^^^^^^^^^^^^^\n", "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n", "ray.train.WorkerGroupError: Training failed due to worker errors:\n[Rank 0 Error Snippet]:\nTraceback (most recent call last):\n  File \"/tmp/ray/session_2026-10-17_04-05-44_634617_8/runtime_resources/working_dir_files/_ray_pkg_97ba245c9a73e896/c9train.py\", line 70, in train_func\n    ray.train.report(metrics, checkpoint=Checkpoint.from_directory(d))\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/_internal/util.py\", line 299, in _wrapped_fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/trai...\n... (Output truncated. See individual worker logs for full details) ...\nstem='local',\n  storage_fs_path='/home/ray/ray_results',\n  experiment_dir_name='c9_C9.3.1_1792235650',\n>\nCheck that all nodes in the cluster have read/write access to the configured storage path. `RunConfig(storage_path)` should be set to a cloud storage URI or a shared filesystem path accessible by all nodes in your cluster ('s3://bucket' or '/mnt/nfs'). A local path on the head node is not accessible by worker nodes. See: https://docs.ray.io/en/latest/train/user-guides/persistent-storage.html\n\n"], "use_gpu": true}

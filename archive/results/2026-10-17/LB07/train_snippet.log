@@ -1,9 +1,9 @@
-2026-10-17 11:14:03,694	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:38563[22m
-2026-10-17 11:14:03,705	INFO cli.py:569 -- 2026-10-17 04:13:20,329	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job train_snippet-19eeec: python lb_snippet.py train
-2026-10-17 04:13:22,581	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 52.37.75.64:6379...
-2026-10-17 04:13:22,620	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-LB_START train 1792235602.6
+2026-10-17 16:38:07,503	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:56521[22m
+2026-10-17 16:38:07,518	INFO cli.py:569 -- 2026-10-17 09:34:03,609	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job train_snippet-e7af79: python lb_snippet.py train
+2026-10-17 09:35:52,892	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.215.10.186:6379...
+2026-10-17 09:35:52,925	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START train 1792254952.9
 --- snippet.py ---
 import torch
 from ray.train import RunConfig, ScalingConfig
@@ -18,28 +18,32 @@ trainer = TorchTrainer(
     scaling_config=ScalingConfig(
         num_workers=2,                  # at most B // 2 = 5; for GPUs, the GPUs of one worker
         use_gpu=True,
-        resources_per_worker={"CPU": 0.074, "GPU": 1},   # CPUS / B
+        resources_per_worker={"CPU": 0.111, "GPU": 1},   # CPUS / B
         placement_strategy="STRICT_PACK",   # all Train worker processes on one worker
     ),
-    run_config=RunConfig(storage_path="s3://ray-vast-rvtest-20261017-a763/lb07/experiments"),
+    run_config=RunConfig(storage_path="s3://ray-vast-rvtest-20261017-1e42/lb07/experiments"),
 )
 trainer.fit()
 --- end ---
-[36m(TrainController pid=1649)[0m Requesting resources: {'CPU': 0.074, 'GPU': 1} * 2
-[36m(TrainController pid=1649)[0m Attempting to start training worker group of size 2 with the following resources: [{'CPU': 0.074, 'GPU': 1}] * 2
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Setting up process group for: env:// [rank=0, world_size=2]
-[36m(TrainController pid=1649)[0m [2026-10-17 04:13:40,869 E 1649 1682] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: 'ab34daa66eb492bc32fbba8c06000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
-[36m(TrainController pid=1649)[0m Started training worker group of size 2: 
-[36m(TrainController pid=1649)[0m - (ip=38.247.78.6, pid=4237) world_rank=0, local_rank=0, node_rank=0
-[36m(TrainController pid=1649)[0m - (ip=38.247.78.6, pid=4238) world_rank=1, local_rank=1, node_rank=0
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Moving model to device: cuda:0
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Wrapping provided model in DistributedDataParallel.
-[36m(RayTrainWorker pid=4238, ip=38.247.78.6)[0m LB_RANK {"rank": 1, "epoch": 0, "device": "cuda:1", "gpu_ids": ["1"], "node": "1411878b"}
-[36m(RayTrainWorker pid=4238, ip=38.247.78.6)[0m LB_RANK {"rank": 1, "epoch": 0, "device": "cuda:1", "gpu_ids": ["1"], "node": "1411878b"}
-[36m(RayTrainWorker pid=4238, ip=38.247.78.6)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'epoch': 0, 'loss': 0.19485637545585632}, validation=False) from rank 1
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-a763/lb07/experiments/ray_train_run-2026-10-17_04-13-25/checkpoint_2026-10-17_04-13-44.348847)
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Reporting training result 1: TrainingReport(checkpoint=Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-a763/lb07/experiments/ray_train_run-2026-10-17_04-13-25/checkpoint_2026-10-17_04-13-44.348847), metrics={'epoch': 0, 'loss': 0.13846394419670105}, validation=False) from rank 0
-[36m(RayTrainWorker pid=4238, ip=38.247.78.6)[0m Reporting training result 2: TrainingReport(checkpoint=None, metrics={'epoch': 1, 'loss': 0.11769567430019379}, validation=False) from rank 1
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-a763/lb07/experiments/ray_train_run-2026-10-17_04-13-25/checkpoint_2026-10-17_04-13-47.984998)
-[36m(RayTrainWorker pid=4237, ip=38.247.78.6)[0m Reporting training result 2: TrainingReport(checkpoint=Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-a763/lb07/experiments/ray_train_run-2026-10-17_04-13-25/checkpoint_2026-10-17_04-13-47.984998), metrics={'epoch': 1, 'loss': 0.12603428959846497}, validation=False) from rank 0
-LB_RESULT train PASS {"elapsed_s": 31.5, "fit": "returned"}
+[36m(TrainController pid=1006)[0m Requesting resources: {'CPU': 0.111, 'GPU': 1} * 2
+[36m(TrainController pid=1006)[0m Attempting to start training worker group of size 2 with the following resources: [{'CPU': 0.111, 'GPU': 1}] * 2
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[36m(RayTrainWorker pid=3818, ip=143.55.45.86)[0m [W1017 09:37:52.087695605 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(TrainController pid=1006)[0m [2026-10-17 09:37:52,488 E 1006 1042] core_worker.cc:2297: Actor with class name: 'PreemptionWatcher' and ID: '32813fbce24413ffb944fbc403000000' has constructor arguments in the object store and max_restarts > 0. If the arguments in the object store go out of scope or are lost, the actor restart will fail. See https://github.com/ray-project/ray/issues/53727 for more details.
+[36m(TrainController pid=1006)[0m Started training worker group of size 2: 
+[36m(TrainController pid=1006)[0m - (ip=143.55.45.86, pid=3820) world_rank=0, local_rank=0, node_rank=0
+[36m(TrainController pid=1006)[0m - (ip=143.55.45.86, pid=3818) world_rank=1, local_rank=1, node_rank=0
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Moving model to device: cuda:0
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Wrapping provided model in DistributedDataParallel.
+[36m(RayTrainWorker pid=3818, ip=143.55.45.86)[0m Reporting training result 1: TrainingReport(checkpoint=None, metrics={'epoch': 0, 'loss': 0.33240944147109985}, validation=False) from rank 1
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m [W1017 09:37:52.120182380 socket.cpp:200] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-1e42/lb07/experiments/ray_train_run-2026-10-17_09-35-56/checkpoint_2026-10-17_09-37-58.004924)
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Reporting training result 1: TrainingReport(checkpoint=Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-1e42/lb07/experiments/ray_train_run-2026-10-17_09-35-56/checkpoint_2026-10-17_09-37-58.004924), metrics={'epoch': 0, 'loss': 0.3849930763244629}, validation=False) from rank 0
+[36m(RayTrainWorker pid=3818, ip=143.55.45.86)[0m Reporting training result 2: TrainingReport(checkpoint=None, metrics={'epoch': 1, 'loss': 0.21629813313484192}, validation=False) from rank 1
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Checkpoint successfully created at: Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-1e42/lb07/experiments/ray_train_run-2026-10-17_09-35-56/checkpoint_2026-10-17_09-38-00.114611)
+[36m(RayTrainWorker pid=3820, ip=143.55.45.86)[0m Reporting training result 2: TrainingReport(checkpoint=Checkpoint(filesystem=s3, path=ray-vast-rvtest-20261017-1e42/lb07/experiments/ray_train_run-2026-10-17_09-35-56/checkpoint_2026-10-17_09-38-00.114611), metrics={'epoch': 1, 'loss': 0.25420618057250977}, validation=False) from rank 0
+LB_RANK {"rank": 1, "epoch": 0, "device": "cuda:1", "gpu_ids": ["1"], "node": "70efc7db"}
+LB_RANK {"rank": 0, "epoch": 0, "device": "cuda:0", "gpu_ids": ["0"], "node": "70efc7db"}
+LB_RANK {"rank": 1, "epoch": 1, "device": "cuda:1", "gpu_ids": ["1"], "node": "70efc7db"}
+LB_RANK {"rank": 0, "epoch": 1, "device": "cuda:0", "gpu_ids": ["0"], "node": "70efc7db"}
+LB_RESULT train PASS {"elapsed_s": 133.1, "fit": "returned"}

@@ -1,1 +1,49 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="6" time="109.902" timestamp="2026-10-17T10:42:34.005291+00:00" hostname="ip-172-31-17-228"><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_serve.py-300]" time="99.613" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_data.py-300]" time="98.952" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_train.py-600]" time="107.363" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_tune.py-600]" time="108.475" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_core.py-300]" time="98.500" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_rllib.py-600]" time="100.634" /></testsuite></testsuites>
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="6" time="121.907" timestamp="2026-10-17T16:22:01.847840+00:00" hostname="ip-172-31-17-228"><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_core.py-300]" time="107.176"><failure message="AssertionError: (['the job did not complete (ERROR)'], {'seconds': 17.0, 'job': 'ERROR', 'params': &quot;{'actors': 6, 'actor_cpus': 'default', 'child_cpus': 1}&quot;, 'ports': 18, ...})&#10;assert 'FAIL' == 'PASS'&#10;  &#10;  - PASS&#10;  + FAIL">make_cluster = &lt;function make_cluster.&lt;locals&gt;.make at 0x70148fb8a5c0&gt;
+script = 'c10_core.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs &lt;= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+&gt;       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (ERROR)'], {'seconds': 17.0, 'job': 'ERROR', 'params': "{'actors': 6, 'actor_cpus': 'default', 'child_cpus': 1}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError</failure></testcase><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_data.py-300]" time="102.812"><failure message="AssertionError: (['the job did not complete (None)'], {'seconds': 19.3, 'job': None, 'params': &quot;{'blocks': 40, 'rows': 40000, 'map_num_cpus': 1}&quot;, 'ports': 18, ...})&#10;assert 'FAIL' == 'PASS'&#10;  &#10;  - PASS&#10;  + FAIL">make_cluster = &lt;function make_cluster.&lt;locals&gt;.make at 0x7f88d892a5c0&gt;
+script = 'c10_data.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs &lt;= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+&gt;       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (None)'], {'seconds': 19.3, 'job': None, 'params': "{'blocks': 40, 'rows': 40000, 'map_num_cpus': 1}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError</failure></testcase><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_train.py-600]" time="120.247" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_tune.py-600]" time="114.886" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_rllib.py-600]" time="116.057" /><testcase classname="tests.manual.c10.test_c10_local_e2e" name="test_default[c10_serve.py-300]" time="106.460"><failure message="AssertionError: (['the job did not complete (None)'], {'seconds': 20.4, 'job': None, 'params': &quot;{'num_replicas': 6, 'replica_cpu': 'default 1'}&quot;, 'ports': 18, ...})&#10;assert 'FAIL' == 'PASS'&#10;  &#10;  - PASS&#10;  + FAIL">make_cluster = &lt;function make_cluster.&lt;locals&gt;.make at 0x7bf34ab5e5c0&gt;
+script = 'c10_serve.py', guard_s = 300
+
+    @pytest.mark.parametrize("script,guard_s", SMALL_CASES)
+    def test_default(make_cluster, script, guard_s):
+        """Rule 1: the default code completes on a worker with CPUs &lt;= B, the worker stays alive, no refused fork, and the
+        head writes no process-limit WARNING line."""
+        status, reasons, data = run_pair_mode(make_cluster, script, "default", SMALL["pids_limit"], guard_s, SMALL["cpus"], SMALL["quota"])
+        assert data["ports"] == 18, data
+&gt;       assert status == "PASS", (reasons, data)
+E       AssertionError: (['the job did not complete (None)'], {'seconds': 20.4, 'job': None, 'params': "{'num_replicas': 6, 'replica_cpu': 'default 1'}", 'ports': 18, ...})
+E       assert 'FAIL' == 'PASS'
+E         
+E         - PASS
+E         + FAIL
+
+../tests/manual/c10/test_c10_local_e2e.py:212: AssertionError</failure></testcase></testsuite></testsuites>

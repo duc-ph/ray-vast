@@ -1,0 +1,96 @@
+2026-10-17 03:40:56,570	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:8265[22m
+2026-10-17 03:40:56,685	SUCC cli.py:66 -- [32m-------------------------------------------------------[39m
+2026-10-17 03:40:56,685	SUCC cli.py:67 -- [32mJob 'raysubmit_vn3G5z5FEB6Wf6Bj' submitted successfully[39m
+2026-10-17 03:40:56,685	SUCC cli.py:68 -- [32m-------------------------------------------------------[39m
+2026-10-17 03:40:56,685	INFO cli.py:330 -- [36mNext steps[39m
+2026-10-17 03:40:56,685	INFO cli.py:331 -- Query the logs of the job:
+2026-10-17 03:40:56,685	INFO cli.py:333 -- [1mray job logs raysubmit_vn3G5z5FEB6Wf6Bj[22m
+2026-10-17 03:40:56,685	INFO cli.py:335 -- Query the status of the job:
+2026-10-17 03:40:56,686	INFO cli.py:337 -- [1mray job status raysubmit_vn3G5z5FEB6Wf6Bj[22m
+2026-10-17 03:40:56,686	INFO cli.py:339 -- Request the job to be stopped:
+2026-10-17 03:40:56,686	INFO cli.py:341 -- [1mray job stop raysubmit_vn3G5z5FEB6Wf6Bj[22m
+2026-10-17 03:40:56,689	INFO cli.py:351 -- Tailing logs until the job exits (disable with --no-wait):
+2026-10-17 03:40:56,669	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_vn3G5z5FEB6Wf6Bj: python c10_serve.py full
+C10_START C10.serve full 1792233658.8 guard_s=300.0
+2026-10-17 03:40:58,786	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 172.17.0.12:6379...
+2026-10-17 03:40:58,830	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=16.0 ports=14 budget=10
+C10_PARAMS {'num_replicas': 10, 'replica_cpu': 1.6}
+[36m(ProxyActor pid=1415)[0m INFO 2026-10-17 03:41:05,844 proxy 172.17.0.12 -- Proxy starting on node fb44bbaa2d24a6227d12cddd2d219ccbfb0ad23be32a4b666390f7c7 (HTTP port: 8000).
+INFO 2026-10-17 03:41:05,896 serve 1294 -- Started Serve in namespace "serve".
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:05,906 controller 1353 -- Deploying new version of Deployment(name='Echo', app='c10') (initial target replicas: 10).
+[36m(ProxyActor pid=1415)[0m INFO 2026-10-17 03:41:05,893 proxy 172.17.0.12 -- Got updated endpoints: {}.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:06,010 controller 1353 -- Adding 10 replicas to Deployment(name='Echo', app='c10').
+INFO 2026-10-17 03:41:09,936 serve 1294 -- Application 'c10' is ready.
+INFO 2026-10-17 03:41:09,946 serve 1294 -- Started <ray.serve._private.router.SharedRouterLongPollClient object at 0x7fda4417db50>.
+[36m(ServeReplica:c10:Echo pid=308)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/serve/_private/replica.py:3934: UserWarning: Calling sync method '__call__' directly on the asyncio loop. In a future version, sync methods will be run in a threadpool by default. Ensure your sync methods are thread safe or keep the existing behavior by making them `async def`. Opt into the new behavior by setting RAY_SERVE_RUN_SYNC_IN_THREADPOOL=1.
+[36m(ServeReplica:c10:Echo pid=308)[0m   warnings.warn(
+[36m(ServeReplica:c10:Echo pid=308)[0m INFO 2026-10-17 03:41:10,004 c10_Echo nu8jtmc3 8c9507e2-fb84-4929-91c8-1b52c1d7661d -- CALL __call__ OK 5.2ms
+[36m(ServeReplica:c10:Echo pid=308)[0m INFO 2026-10-17 03:41:10,006 c10_Echo nu8jtmc3 2c7d7399-f890-4b69-9639-35a96e0eeeba -- CALL __call__ OK 4.5ms
+[36m(ServeReplica:c10:Echo pid=308)[0m INFO 2026-10-17 03:41:10,008 c10_Echo nu8jtmc3 ecd46100-e00c-4775-8ec6-d5870cd4fef2 -- CALL __call__ OK 5.3ms
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:10,050 controller 1353 -- Removing 10 replicas from Deployment(name='Echo', app='c10').
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,103 controller 1353 -- Replica(id='j6107c1w', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,104 controller 1353 -- Replica(id='4x6l4y0z', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,105 controller 1353 -- Replica(id='nu8jtmc3', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,106 controller 1353 -- Replica(id='m042weng', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,110 controller 1353 -- Replica(id='08kzqa7h', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,110 controller 1353 -- Replica(id='i9yvartm', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,110 controller 1353 -- Replica(id='5u9d3ykv', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,111 controller 1353 -- Replica(id='j6cywpgz', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,112 controller 1353 -- Replica(id='36eerdbe', deployment='Echo', app='c10') is stopped.
+[36m(ServeController pid=1353)[0m INFO 2026-10-17 03:41:12,112 controller 1353 -- Replica(id='z2xhs54d', deployment='Echo', app='c10') is stopped.
+[36m(ProxyActor pid=243)[0m INFO 2026-10-17 03:41:08,750 proxy 172.17.0.12 -- Proxy starting on node c5916b99180bf2d20bc14f17dd17448770666e104be3d691ccbafb3a (HTTP port: 8000).
+[36m(ProxyActor pid=243)[0m INFO 2026-10-17 03:41:08,817 proxy 172.17.0.12 -- Got updated endpoints: {}.
+[33m(raylet)[0m Task ServeController.graceful_shutdown failed. There are infinite retries remaining, so the task will be retried. Error: The actor is dead because it was killed by `ray.kill`.
+[33m(raylet)[0m Task ServeController.listen_for_change failed. There are infinite retries remaining, so the task will be retried. Error: The actor is dead because it was killed by `ray.kill`.
+C10_RESULT C10.serve COMPLETED {"alive_nodes": ["c5916b99180bf2d20bc14f17dd17448770666e104be3d691ccbafb3a"], "answers": 40, "elapsed_s": 14.1, "mode": "full", "num_replicas": 10, "replica_cpu": 1.6, "seconds": 9.9}
+2026-10-17 03:41:17,744	SUCC cli.py:66 -- [32m------------------------------------------[39m
+2026-10-17 03:41:17,744	SUCC cli.py:67 -- [32mJob 'raysubmit_vn3G5z5FEB6Wf6Bj' succeeded[39m
+2026-10-17 03:41:17,744	SUCC cli.py:68 -- [32m------------------------------------------[39m
+2026-10-17 03:40:56,618	INFO dashboard_sdk.py:423 -- Package gcs://_ray_pkg_0ab5bb543cb5e21a.zip already exists, skipping upload.
+2026-10-17 03:41:17,739	INFO sdk.py:520 -- WebSocket closed for job raysubmit_vn3G5z5FEB6Wf6Bj with close code 1000
+
+--- head log
+2026-10-17 03:40:57,198	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:40:57,198	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:40:57,198	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:02,211	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:02,211	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:02,211	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:07,229	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:07,229	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:07,229	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:12,246	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:12,246	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:12,246	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:17,259	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:17,259	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:17,259	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:22,269	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:22,269	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:22,269	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:27,278	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:27,278	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:27,278	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:32,288	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:32,288	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:32,288	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:37,297	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:37,297	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:37,297	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:42,307	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:42,307	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:42,307	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:47,316	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:47,317	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:47,317	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:52,326	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:52,326	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:52,326	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:41:57,337	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:41:57,337	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:41:57,337	INFO util.py:402 -- setting max workers for head node type to 0
+2026-10-17 03:42:02,349	WARNING util.py:279 -- Dropping the empty legacy field head_node. head_nodeis not supported for ray>=2.0.0. It is recommended to removehead_node from the cluster config.
+2026-10-17 03:42:02,349	WARNING util.py:279 -- Dropping the empty legacy field worker_nodes. worker_nodesis not supported for ray>=2.0.0. It is recommended to removeworker_nodes from the cluster config.
+2026-10-17 03:42:02,349	INFO util.py:402 -- setting max workers for head node type to 0

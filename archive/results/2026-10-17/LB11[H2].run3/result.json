@@ -1,0 +1,513 @@
+{
+ "id": "LB11[H2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792245394.2348619,
+ "checks": [
+  {
+   "name": "H2 has a pids limit",
+   "ok": true,
+   "detail": "15616"
+  },
+  {
+   "name": "core.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "core.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "serve.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "serve.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "train.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "train.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "rllib.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "rllib.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "core.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "core.many: PASS",
+   "ok": true,
+   "detail": "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 66"
+  },
+  {
+   "name": "data.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "data.many: PASS",
+   "ok": true,
+   "detail": "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 4"
+  },
+  {
+   "name": "tune.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "tune.many: FAIL",
+   "ok": false,
+   "detail": "the job did not fail (COMPLETED): no advice is needed at this size; no head pids/ports WARNING line for the node"
+  },
+  {
+   "name": "serve.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "serve.many: PASS",
+   "ok": true,
+   "detail": "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 53"
+  },
+  {
+   "name": "train.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "train.many: PASS",
+   "ok": true,
+   "detail": "ERROR, warning seen, node alive, refused forks 0, 'No available ports' lines 2"
+  },
+  {
+   "name": "rllib.tuned: PASS",
+   "ok": true,
+   "detail": "completed, node alive, no refused fork"
+  },
+  {
+   "name": "rllib.many: PASS",
+   "ok": true,
+   "detail": "DEGRADED, warning seen, node alive, refused forks 0, 'No available ports' lines 24"
+  }
+ ],
+ "data": {
+  "H2_rentals": [
+   {
+    "machine_id": 154116,
+    "pids_max": 15616,
+    "cgroup": "v2",
+    "cores": 61.2,
+    "match": true,
+    "query": {
+     "machine_id": {
+      "in": [
+       149678,
+       153955,
+       154115,
+       154116
+      ]
+     }
+    }
+   }
+  ],
+  "host": {
+   "machine_id": 154116,
+   "container_id": "56402890",
+   "pids.max": "15616",
+   "cgroup": "v2",
+   "ray_cpus": 64.0,
+   "ports": 58
+  },
+  "core.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "actor_cpus": 1.185,
+    "actors": 27,
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "child_cpus": 1.185,
+    "done": 200,
+    "elapsed_s": 28.4,
+    "items": 200,
+    "mode": "tuned",
+    "seconds": 28.0
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'actors': 27, 'actor_cpus': 1.185, 'child_cpus': 1.185}"
+  },
+  "core.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 66"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 600.0,
+    "guard_s": 600.0,
+    "mode": "many",
+    "progress": {
+     "actor_cpus": 0.1,
+     "actors": 200,
+     "child_cpus": 0.1,
+     "done": 57,
+     "items": 200
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 07:01:50,094\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1719 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 07:06:55,373\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1719 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'actors': 200, 'actor_cpus': 0.1, 'child_cpus': 0.1}"
+  },
+  "data.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "blocks": 27,
+    "elapsed_s": 25.1,
+    "groups": 16,
+    "map_concurrency": 13,
+    "map_num_cpus": 0.05,
+    "max_hash_shuffle_aggregators": 13,
+    "mode": "tuned2",
+    "read_concurrency": 13,
+    "resource_limits_cpu": 13,
+    "rows": 400000,
+    "seconds": 24.7,
+    "total": 400000
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'blocks': 27, 'rows': 400000, 'map_num_cpus': 0.05, 'max_hash_shuffle_aggregators': 13, 'resource_limits_cpu': 13, 'read_concurrency': 13, 'map_concurrency': 13}"
+  },
+  "data.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 4"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 900.0,
+    "guard_s": 900.0,
+    "mode": "many",
+    "progress": {
+     "blocks": 400,
+     "map_num_cpus": 0.05,
+     "rows": 400000,
+     "stage": "groupby"
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 07:17:36,553\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 2000 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 07:22:41,777\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1995 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 07:27:46,991\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 2008 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'blocks': 400, 'rows': 400000, 'map_num_cpus': 0.05}"
+  },
+  "tune.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "bundles": [
+     1.1852,
+     1.1852
+    ],
+    "elapsed_s": 58.6,
+    "errors": 0,
+    "max_concurrent_trials": 27,
+    "mode": "tuned",
+    "results": 62,
+    "seconds": 58.5,
+    "task_cpu": 1.1852,
+    "trials": 62
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'trials': 62, 'bundles': [1.1852, 1.1852], 'task_cpu': 1.1852, 'max_concurrent_trials': 27}"
+  },
+  "tune.many": {
+   "verdict": "FAIL",
+   "reasons": [
+    "the job did not fail (COMPLETED): no advice is needed at this size",
+    "no head pids/ports WARNING line for the node"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "bundle_cpu": 0.1,
+    "elapsed_s": 235.0,
+    "errors": 0,
+    "max_concurrent_trials": null,
+    "mode": "many",
+    "results": 62,
+    "seconds": 234.9,
+    "trials": 62
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'trials': 62, 'bundle_cpu': 0.1, 'max_concurrent_trials': None}"
+  },
+  "serve.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "answers": 40,
+    "elapsed_s": 56.1,
+    "mode": "full",
+    "num_replicas": 54,
+    "replica_cpu": 1.1851851851851851,
+    "seconds": 50.2
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'num_replicas': 54, 'replica_cpu': 1.1851851851851851}"
+  },
+  "serve.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 53"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 600.0,
+    "guard_s": 600.0,
+    "mode": "many",
+    "progress": {
+     "num_replicas": 62,
+     "replica_cpu": 0.1,
+     "stage": "serve.run"
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 07:41:00,602\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 2980 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-17 07:46:05,789\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 2980 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'num_replicas': 62, 'replica_cpu': 0.1}"
+  },
+  "train.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "cpu_per_worker": 1.1852,
+    "dataloader_workers": 2,
+    "elapsed_s": 137.0,
+    "error": null,
+    "mode": "tuned",
+    "num_workers": 27,
+    "placement_strategy": "STRICT_PACK",
+    "seconds": 136.9
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'num_workers': 27, 'cpu_per_worker': 1.1852, 'placement_strategy': 'STRICT_PACK', 'dataloader_workers': 2}"
+  },
+  "train.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "ERROR, warning seen, node alive, refused forks 0, 'No available ports' lines 2"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "ERROR",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 400.9,
+    "error_class": "ControllerError",
+    "error_head": [
+     "Training failed due to controller error:",
+     "The actor is not schedulable: Could not create the actor because worker startup repeatedly failed.",
+     "Failed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa."
+    ],
+    "mode": "many",
+    "progress": {
+     "cpu_per_worker": 1,
+     "dataloader_workers": 2,
+     "num_workers": 62
+    },
+    "traceback_tail": [
+     "  File \"/tmp/ray/session_2026-10-17_06-56-25_047639_7/runtime_resources/working_dir_files/_ray_pkg_64b02a995520f5dc/c10_train.py\", line 55, in <module>\n    run_config=RunConfig(name=f\"c10_train_{mode}_{int(t)}\", failure_config=FailureConfig(max_failures=0))).fit()\n                                                                                                           ^^^^^\n",
+     "  File \"/home/ray/anaconda3/lib/python3.11/site-packages/ray/train/v2/api/data_parallel_trainer.py\", line 193, in fit\n    raise result.error\n",
+     "ray.train.ControllerError: Training failed due to controller error:\nThe actor is not schedulable: Could not create the actor because worker startup repeatedly failed.\nFailed to startup worker after retrying 5 times. This is most often caused by errors in the worker's Python environment setup. For example, pip / uv install failures, a broken py_executable, or a dependency conflict in the cluster image. For additional context, please look at the raylet.err on node 4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa.\n"
+    ]
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 07:58:19,146\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1723 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'num_workers': 62, 'cpu_per_worker': 1, 'dataloader_workers': 2}"
+  },
+  "rllib.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 38.2,
+    "mode": "tuned",
+    "num_cpus_per_env_runner": 1.1852,
+    "num_env_runners": 27,
+    "num_envs_per_env_runner": 3,
+    "returns": 14.743827160493824,
+    "seconds": 38.1
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'num_env_runners': 27, 'num_envs_per_env_runner': 3, 'num_cpus_per_env_runner': 1.1852}"
+  },
+  "rllib.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "DEGRADED, warning seen, node alive, refused forks 0, 'No available ports' lines 24"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "DEGRADED",
+    "alive_nodes": [
+     "4ebb4ee8308b96c230f46441c70408678fd4d59a733f739b112f8cfa"
+    ],
+    "elapsed_s": 406.0,
+    "env_runners_started": 58,
+    "environments": 62,
+    "learner_nodes": {},
+    "mode": "many",
+    "num_cpus_per_env_runner": 1,
+    "num_env_runners": 62,
+    "num_envs_per_env_runner": 1,
+    "returns": [
+     21.153846153846153
+    ],
+    "runner_nodes": {
+     "4ebb4ee8": 58
+    },
+    "seconds": 401.1,
+    "worker_nodes": 1
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-17 08:07:57,931\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 0 refused forks/threads (+0), pids 1723 of 15616, worker ports in use 58 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'num_env_runners': 62, 'num_envs_per_env_runner': 1, 'environments': 62, 'num_cpus_per_env_runner': 1}"
+  },
+  "refused_forks": {
+   "job": {
+    "pids.max": "15616",
+    "events_before": "max 0",
+    "current_before": "206",
+    "refused": "can't start new thread",
+    "started": 15406,
+    "current_at_peak": "15616",
+    "events_at_peak": "max 1",
+    "events_after": "max 60",
+    "current_after": "211"
+   },
+   "warning": "2026-10-17 08:16:04,825\tWARNING head_server.py:302 -- worker slot-1-e610b0 (instance 56402890, ip 154.42.3.235) is at its process limit: 60 refused forks/threads (+60), pids 157 of 15616, worker ports in use 0 of 58. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-v",
+   "outcome": "node alive"
+  }
+ },
+ "outcome": "failed",
+ "message": "AssertionError: 1 check(s) failed: tune.many: FAIL",
+ "ended": 1792250274.9548507,
+ "wall_s": 4880.7
+}

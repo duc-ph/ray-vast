@@ -1,0 +1,10 @@
+2026-10-17 13:58:51,035	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36239[22m
+2026-10-17 13:58:51,046	INFO cli.py:569 -- 2026-10-17 06:58:28,771	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job core-tuned-bb99b4: python c10_core.py tuned
+C10_START C10.core tuned 1792245510.6 guard_s=600.0
+2026-10-17 06:58:30,631	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.166.89.145:6379...
+2026-10-17 06:58:30,661	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'actors': 27, 'actor_cpus': 1.185, 'child_cpus': 1.185}
+[33m(raylet)[0m WARNING: 32 PYTHON worker processes have been started on node: c1933d006df1d0106f010b43ae636f3faa79e662dd1a7a1631e1f5d6 with address: 38.247.78.28, which is 4x the maximum expected startup concurrency (8). This could be a result of using a large number of actors, tasks blocked in ray.get() calls, or tasks with fractional CPU requests (e.g., num_cpus=0.1) allowing high concurrency. See https://github.com/ray-project/ray/issues/3644 for some discussion of workarounds.
+C10_RESULT C10.core COMPLETED {"actor_cpus": 1.185, "actors": 27, "alive_nodes": ["c1933d006df1d0106f010b43ae636f3faa79e662dd1a7a1631e1f5d6"], "child_cpus": 1.185, "done": 200, "elapsed_s": 19.7, "items": 200, "mode": "tuned", "seconds": 19.3}

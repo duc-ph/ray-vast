@@ -2,22 +2,34 @@
  "id": "teardown",
  "markers": [],
  "fixture": "libraries-gpu2",
- "started": 1792245324.844082,
+ "started": 1792255122.7233944,
  "checks": [
   {
    "name": "down while a worker runs: `destroyed N vast instance(s)` with N >= 1 (cli.md:125)",
-   "ok": false,
-   "detail": "None"
+   "ok": true,
+   "detail": "destroyed 1 vast instance(s)"
+  },
+  {
+   "name": "the S3 test bucket is deleted",
+   "ok": true,
+   "detail": "ray-vast-rvtest-20261017-1e42"
+  },
+  {
+   "name": "the IAM test user is deleted",
+   "ok": true,
+   "detail": "ray-vast-livetest-20261017-s3-gpu2"
   },
   {
    "name": "the cluster ended cleanly (liverun.end_cluster)",
-   "ok": false,
-   "detail": "before the down: RuntimeError: ssh cat /home/ubuntu/ray-vast-rvtest-lib-gpu2-8d5f/cluster.yaml: exit 1: cat: /home/ubuntu/ray-vast-rvtest-lib-gpu2-8d5f/cluster.yaml: No such file or directory\n; down while a worker runs: `destroyed N vast instance(s)` with N >= 1 (cli.md:125)"
+   "ok": true,
+   "detail": ""
   }
  ],
- "data": {},
- "outcome": "failed",
- "message": "before the down: RuntimeError: ssh cat /home/ubuntu/ray-vast-rvtest-lib-gpu2-8d5f/cluster.yaml: exit 1: cat: /home/ubuntu/ray-vast-rvtest-lib-gpu2-8d5f/cluster.yaml: No such file or directory\n; down while a worker runs: `destroyed N vast instance(s)` with N >= 1 (cli.md:125)",
- "ended": 1792245361.234114,
- "wall_s": 36.4
+ "data": {
+  "shape_wait_s": 3.9
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792255275.233291,
+ "wall_s": 152.5
 }

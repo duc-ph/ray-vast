@@ -1000,3 +1000,15 @@ Cause of the missing WARNING (product bug, fixed with a red test; debug run on a
 The same lost port explains tune.many: 57 trial actors took 57 ports, and one free port ran all the 0.5 s evaluation tasks one after the other. Fix (test): each evaluation task takes 10 s (`EVAL_S`), as a real evaluation takes seconds. Then one or two free ports cannot end the work within the 600 s guard. This is the second and last fix loop of LB11.
 
 Debug cost (DBG2): H1 about 1 h (about $0.65 vast, EC2 about $0.08).
+
+### Final run, stopped (run of 34d3d65; free group, LB07, LB11)
+
+`-m "free or libraries" -k "test_F or LB07 or LB11" -n 14`. The user stopped the run during LB11 (tune.many). The pytest got SIGTERM, and its teardown did not run. Clusters libraries-h1 (rvtest-lib-h1-288d) and libraries-h2 (rvtest-lib-h2-940e) were brought down by hand (`_session/libraries-h1/down_manual.log`, `_session/libraries-h2/down_manual.log`: `destroyed 1 vast instance(s)`, `left: nothing`). Then the vast listing had 0 instances, and AWS had no rvtest instance, security group, key pair, role, instance profile or test user in us-west-2 and us-east-2.
+
+- F01 to F20, F22: PASS. F14 PASS (the 4th run in a row with the fix, with `-n 14`).
+- F21 FAIL (environment): 3 of the 6 default jobs (data, serve, core) got `OutOfMemoryError: ... 29.23GB used / 30.81GB limit`. The local worker containers share the 30 GB of the dev box, and `-n 14` ran F21 together with the other local scenarios. F21 passed in all runs before with `-n 12` or `-n 16` and fewer local scenarios at the same time. No fix and no re-run (the user stopped the loop).
+- LB07: PASS (the `up` fix of c4e6df7; rank rows through the actor).
+- LB11[H1] and LB11[H2]: stopped. The pairs that ended passed: core.tuned, core.many (WARNING), data.tuned, data.many (3 WARNINGs on each host), tune.tuned. serve, train, rllib and tune.many did not run. So the port-count fix (34d3d65) and the tune.many fix (`EVAL_S`) are not proven live.
+- Kept from the earlier runs: L03 PASS, LB15 PASS (run 134831-2588952).
+
+Spend of this run: vast credit 8.23 → 6.67, about $1.56. EC2 about $0.3.
