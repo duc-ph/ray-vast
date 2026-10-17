@@ -64,11 +64,12 @@ def reserve_ports(count):
 
 
 class World:
-    """Ports (one reserved block in 20000-29999): head A and B, vast, and the 64 worker host ports."""
+    """Ports (one reserved block in 20000-29999): head A and B, vast, and the 64 worker host ports. `identity_ports`:
+    the number of identity ports that vast maps (the env has VAST_TCP_PORT_70000 up to this count)."""
 
     def __init__(self, tmp_path, *, head_ip="127.0.0.1", public_ip="127.0.0.1", gcs_address=None,
                  api_key="FAKEKEY-vast-container-api-key", join_token="FAKEJOINTOKEN" + "ab" * 26, instance_id=424242,
-                 bootstrap_bytes=None):
+                 bootstrap_bytes=None, identity_ports=64):
         self.pki_dir = Path(tmp_path) / "pki"
         self.ca_pem, self.token = pki.write_head_files(self.pki_dir, head_ip)
         self.started = False
@@ -77,6 +78,7 @@ class World:
         self.instance_id = instance_id
         self.head_ip = head_ip
         self.public_ip = public_ip
+        self.identity_ports = identity_ports
         block, self._port_lock = reserve_ports(67)  # one block, so the head ports can never fall inside the worker ports
         self.port_base = block
         head_ports = block + 64
@@ -103,7 +105,7 @@ class World:
             "PUBLIC_IPADDR": self.public_ip,
             "RAYVAST_VAST_API": f"http://{self.head_ip}:{self.vast_port}",
         }
-        for i in range(64):
+        for i in range(self.identity_ports):
             env[f"VAST_TCP_PORT_{70000 + i}"] = str(self.port_base + i)
         env.update(overrides)
         return env

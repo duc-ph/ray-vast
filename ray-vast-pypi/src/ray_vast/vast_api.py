@@ -9,7 +9,7 @@ import requests
 log = logging.getLogger(__name__)
 
 BASE_URL = "https://console.vast.ai/api/v0"
-IDENTITY_PORTS = range(70000, 70064)
+IDENTITY_PORTS = range(70000, 70064)  # at most; a rental asks for the first min(64, offer direct_port_count)
 TIMEOUT_S = 30
 TRIES = 5
 BACKOFF_BASE_S = 1.0
@@ -99,12 +99,13 @@ class VastClient:
             raise VastError("POST /bundles/: HTTP 404", status=404)
         return resp.json()["offers"]
 
-    def create_instance(self, offer_id, image, env, args, label, disk_gb):
-        """Rent `offer_id` and return the new instance ID. The per-instance key in the response is dropped."""
+    def create_instance(self, offer_id, image, env, args, label, disk_gb, identity_ports):
+        """Rent `offer_id` with the first `identity_ports` identity ports and return the new instance ID. The
+        per-instance key in the response is dropped."""
         body = {
             "client_id": "me",
             "image": image,
-            "env": {**{f"-p {p}:{p}": "1" for p in IDENTITY_PORTS}, **env},
+            "env": {**{f"-p {p}:{p}": "1" for p in IDENTITY_PORTS[:identity_ports]}, **env},
             "runtype": "args",
             "args": args,
             "label": label,

@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+- Breaking: ray-vast no longer adds `verified = true` and `datacenter = true` to the offer query. The provider field `allow_non_datacenter` is removed: `up` stops with an error that says what to do. `down`, `attach` and `dashboard` accept it. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type (highly recommended). The example YAMLs have them. Read [Keep the verified and datacenter filters](https://duc-ph.github.io/ray-vast/how-to/node-types/#keep-the-verified-and-datacenter-filters).
+- The added core filter is `cpu_cores_effective >= max(CPU, 4)`. A host with fewer cores has a process limit below 640, and its 4 worker ports had no room for threads.
+- The added port filter is `direct_port_count >= 10`, not 64. Each rental asks for the smaller of 64 and the offer's `direct_port_count` identity ports. The worker gets the mapped identity ports minus 6 as worker ports, or fewer with a process limit. Before, the filter left out about 20 % of the verified machines.
+    - Protocol: the `/enroll` body has 10 to 64 identity ports, from 70000 up.
 - Ray gets the `CPU` of the node type on each worker (`ray start --num-cpus=<CPU>`). Before, Ray got the whole cores of the container's CPU quota. vast gives a quota of 0.96 × the offer's effective cores, so an offer with 8 cores gave Ray 7 CPUs. Ray now plans and runs with the same `CPU`. Read [CPU and GPU](https://duc-ph.github.io/ray-vast/how-to/node-types/#cpu-and-gpu).
     - The head refuses a worker with fewer cores than 90 % of `CPU` (the smaller of its CPU affinity and its CPU quota). It destroys the instance and blocks the host for 30 days, as for a wrong GPU count.
-    - The offer filter stays `cpu_cores_effective >= CPU`.
+    - The offer filter is `cpu_cores_effective >= max(CPU, 4)` (next item).
     - Protocol: the `/enroll` body has `cpu_quota` (cores, or null), and `cpu_count` is the CPU affinity. The answer has `num_cpus`.
 - The process limit of vast containers (`pids.max`) no longer kills a worker under load. Too much work now waits for a port. It does not crash the worker. Read [The process limit of vast hosts](https://duc-ph.github.io/ray-vast/reference/limits/#the-process-limit-of-vast-hosts).
     - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`).

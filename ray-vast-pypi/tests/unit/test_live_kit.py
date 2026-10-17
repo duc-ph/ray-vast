@@ -626,11 +626,12 @@ def test_the_live_tests_take_the_worker_port_formula_from_the_product_and_never_
 
 
 @pytest.mark.parametrize("probe, limits", [
-    ({"pids.max": "max", "ray_cpus": 48.0}, (58, 29)),    # no limit: all 58 worker ports
-    ({"ray_cpus": 8.0}, (58, 8)),                         # no pids.max file; the soft limit is the CPUs
-    ({"pids.max": "1280", "ray_cpus": 16.0}, (14, 7)),    # (1280 - 400) // 60
-    ({"pids.max": "500", "ray_cpus": 4.0}, (4, 2)),       # at least 4 ports
-    ({"pids.max": "11776", "ray_cpus": 46.0}, (58, 29)),  # at most 58 ports
+    ({"pids.max": "max", "ray_cpus": 48.0, "identity_ports": 64}, (58, 29)),    # no limit: all 58 worker ports
+    ({"ray_cpus": 8.0, "identity_ports": 64}, (58, 8)),                         # no pids.max file; the soft limit is the CPUs
+    ({"pids.max": "1280", "ray_cpus": 16.0, "identity_ports": 64}, (14, 7)),    # (1280 - 400) // 60
+    ({"pids.max": "500", "ray_cpus": 4.0, "identity_ports": 64}, (4, 2)),       # at least 4 ports
+    ({"pids.max": "11776", "ray_cpus": 46.0, "identity_ports": 64}, (58, 29)),  # at most 58 ports
+    ({"pids.max": "11776", "ray_cpus": 46.0, "identity_ports": 20}, (14, 7)),   # 20 mapped identity ports: 14 worker ports
 ])
 def test_the_expected_limits_of_a_node_probe_are_the_worker_ports_and_soft_limit_of_the_bootstrap(probe, limits):
     assert livekit.expected_limits(probe) == limits

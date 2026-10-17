@@ -90,8 +90,7 @@ For a short explanation, read [Enrollment and the join token](explanation/enroll
 
 **A dishonest host** (design 9)
 
-- ray-vast adds `datacenter = true` and `verified = true` to every offer query.
-- `allow_non_datacenter: true` removes the datacenter filter. Then `up` shows a warning.
+- ray-vast does not add `datacenter` or `verified` to the offer query. We highly recommend `datacenter: {eq: true}` and `verified: {eq: true}` in every node type. The example YAMLs have them.
 - These filters make a bad host less likely. They do not stop a bad host. Read the next section.
 
 ## What a malicious vast host can do
@@ -156,7 +155,7 @@ The metrics port (Prometheus export) answers HTTP 200 without a token and withou
 
 ### Worker ports are open to the internet
 
-All 64 worker ports are open on the public IP of the host. TLS and the token protect the services.
+All identity ports of a worker (at most 64) are open on the public IP of the host. TLS and the token protect the services.
 A DDoS or a connection flood can stop single workers. It cannot stop the cluster.
 
 ### Job credentials go to every worker

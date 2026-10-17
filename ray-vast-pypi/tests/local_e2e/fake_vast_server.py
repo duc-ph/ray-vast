@@ -171,7 +171,8 @@ class FakeVast:
             docker_args += ["--cap-add", "NET_ADMIN"]
         elif instance_id - self._first_id < self.silent_hosts:
             args = ["sleep", "infinity"]
-        env.update({f"VAST_TCP_PORT_{70000 + i}": str(block + i) for i in range(64)})
+        mapped = sum(1 for k in body["env"] if k.startswith("-p "))  # vast maps the identity ports that the rental asks for
+        env.update({f"VAST_TCP_PORT_{70000 + i}": str(block + i) for i in range(mapped)})
         env_file = Path(self._tmp.name, f"{name}.env")
         env_file.write_text("".join(f"{k}={v}\n" for k, v in env.items()))
         run = subprocess.run(
@@ -193,5 +194,6 @@ class FakeVast:
 
 def make_offers(count):
     """Cheapest first. Every offer is its own machine."""
-    return [{"id": 500 + i, "machine_id": 900 + i, "dph_total": round(0.10 + 0.01 * i, 2), "inet_down": 1000.0}
+    return [{"id": 500 + i, "machine_id": 900 + i, "dph_total": round(0.10 + 0.01 * i, 2), "inet_down": 1000.0,
+             "direct_port_count": 64}
             for i in range(count)]

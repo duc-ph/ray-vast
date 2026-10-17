@@ -38,9 +38,9 @@ def make(**edits):
     return config
 
 
-def query(allow_non_datacenter=False, **node_config):
+def query(**node_config):
     node_type = {"resources": {"CPU": 4, "GPU": 2}, "node_config": node_config}
-    return build_offer_query(node_type, allow_non_datacenter, "w")
+    return build_offer_query(node_type, "w")
 
 
 def test_offer_query_adds_gpu_count_filter():
@@ -51,22 +51,32 @@ def test_offer_query_adds_cpu_floor_filter():
     assert query(offer_query={})["cpu_cores_effective"] == {"gte": 4}
 
 
+def test_offer_query_cpu_floor_is_at_least_4_cores():
+    # Below about 3 effective cores, pids.max is below 640: 4 worker ports with no thread room (S6).
+    node_type = {"resources": {"CPU": 1, "GPU": 0}, "node_config": {"offer_query": {}}}
+    assert build_offer_query(node_type, "w")["cpu_cores_effective"] == {"gte": 4}
+
+
+def test_offer_query_rejects_cpu_filter_below_the_4_core_floor():
+    node_type = {"resources": {"CPU": 1, "GPU": 0}, "node_config": {"offer_query": {"cpu_cores_effective": {"gte": 2}}}}
+    with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'.*looser"):
+        build_offer_query(node_type, "w")
+
+
 def test_offer_query_adds_port_count_filter():
-    assert query(offer_query={})["direct_port_count"] == {"gte": 64}
+    # 6 fixed identity ports plus the minimum of 4 worker ports.
+    assert query(offer_query={})["direct_port_count"] == {"gte": 10}
 
 
-def test_offer_query_adds_datacenter_filter():
-    assert query(offer_query={})["datacenter"] == {"eq": True}
-
-
-def test_offer_query_leaves_datacenter_out_when_non_datacenter_allowed():
-    assert "datacenter" not in query(True, offer_query={})
-
-
-def test_offer_query_adds_verified_and_rentable_filters():
+def test_offer_query_adds_rentable_filter_only():
     result = query(offer_query={})
-    assert result["verified"] == {"eq": True}
     assert result["rentable"] == {"eq": True}
+    assert "verified" not in result and "datacenter" not in result
+
+
+def test_offer_query_keeps_the_user_verified_and_datacenter_filters():
+    result = query(offer_query={"verified": {"eq": False}, "datacenter": {"eq": False}})
+    assert result["verified"] == {"eq": False} and result["datacenter"] == {"eq": False}
 
 
 def test_offer_query_keeps_user_filters():
@@ -86,7 +96,7 @@ def test_offer_query_keeps_stricter_cpu_filter_with_upper_bound():
 
 def test_offer_query_keeps_higher_cpu_floor():
     node_type = {"resources": {"CPU": 8, "GPU": 1}, "node_config": {"offer_query": {"cpu_cores_effective": {"gte": 16}}}}
-    assert build_offer_query(node_type, False, "w")["cpu_cores_effective"] == {"gte": 16}
+    assert build_offer_query(node_type, "w")["cpu_cores_effective"] == {"gte": 16}
 
 
 def test_offer_query_accepts_cpu_gt_at_or_above_floor():
@@ -96,7 +106,7 @@ def test_offer_query_accepts_cpu_gt_at_or_above_floor():
 def test_offer_query_rejects_looser_cpu_filter():
     node_type = {"resources": {"CPU": 8, "GPU": 1}, "node_config": {"offer_query": {"cpu_cores_effective": {"gte": 4}}}}
     with pytest.raises(ValueError, match=r"'w'.*'cpu_cores_effective'.*looser"):
-        build_offer_query(node_type, False, "w")
+        build_offer_query(node_type, "w")
 
 
 def test_offer_query_accepts_higher_port_floor():
@@ -105,7 +115,7 @@ def test_offer_query_accepts_higher_port_floor():
 
 def test_offer_query_rejects_looser_port_filter():
     with pytest.raises(ValueError, match=r"'w'.*'direct_port_count'"):
-        query(offer_query={"direct_port_count": {"gte": 32}})
+        query(offer_query={"direct_port_count": {"gte": 9}})
 
 
 def test_offer_query_accepts_gpu_count_as_in_list():
@@ -173,11 +183,6 @@ def test_offer_query_rejects_contradicting_gpu_count():
         query(offer_query={"num_gpus": {"eq": 1}})
 
 
-def test_offer_query_rejects_contradicting_datacenter():
-    with pytest.raises(ValueError, match=r"'w'.*'datacenter'"):
-        query(offer_query={"datacenter": {"eq": False}})
-
-
 def test_offer_query_rejects_unknown_operator():
     with pytest.raises(ValueError, match=r"'w'.*'dlperf'.*'min'"):
         query(offer_query={"dlperf": {"min": 40}})
@@ -222,7 +227,7 @@ def test_bootstrap_fills_defaults():
     config, _ = bootstrap_config(make())
     provider = config["provider"]
     assert provider["candidate_factor"] == 2
-    assert provider["allow_non_datacenter"] is False and "order_by" not in provider
+    assert "allow_non_datacenter" not in provider and "order_by" not in provider
     assert config["available_node_types"]["head"]["node_config"]["instance_type"] == "t3.large"
     assert config["available_node_types"]["w"]["node_config"]["disk_gb"] == 50
     assert config["auth"]["ssh_user"] == "ray"
@@ -295,9 +300,9 @@ def test_bootstrap_warns_when_cpu_is_above_worker_ports():
     assert len(warnings) == 1 and "'w'" in warnings[0] and "58" in warnings[0]
 
 
-def test_bootstrap_warns_on_non_datacenter():
-    _, warnings = bootstrap_config(make(**{"provider.allow_non_datacenter": True}))
-    assert len(warnings) == 1 and "allow_non_datacenter" in warnings[0]
+def test_old_allow_non_datacenter_field_is_removed():
+    with pytest.raises(ValueError, match=r"provider.allow_non_datacenter is no longer a field \(removed: .*offer_query"):
+        check_old_provider_fields({"allow_non_datacenter": True})
 
 
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.name)
@@ -320,7 +325,7 @@ def test_live_example_query_returns_offers(path):
     for name, node_type in config["available_node_types"].items():
         if name == config["head_node_type"]:
             continue
-        body = build_offer_query(node_type, config["provider"]["allow_non_datacenter"], name)
+        body = build_offer_query(node_type, name)
         response = requests.post(
             "https://console.vast.ai/api/v0/bundles/",
             json={**body, "limit": 5, "type": "on-demand"},

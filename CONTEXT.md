@@ -48,7 +48,7 @@ The tests that a candidate must pass before it can enroll: the local checks of t
 _Avoid_: probe, preflight
 
 **Port check**:
-The host check that the head does from outside: a TCP connect to each of the candidate's 64 identity ports.
+The host check that the head does from outside: a TCP connect to each identity port of the candidate (10 to 64 ports).
 _Avoid_: outside check
 
 **Blocklist**:

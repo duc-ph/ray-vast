@@ -17,6 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from . import pki
+from .config import MIN_DIRECT_PORTS
 from .vast_api import IDENTITY_PORTS
 
 log = logging.getLogger(__name__)
@@ -154,7 +155,9 @@ class HeadServer:
                 raise ValueError("types")
             if cpu_quota is not None and (type(cpu_quota) not in (int, float) or not 0 < cpu_quota <= 4096):
                 raise ValueError("cpu_quota")  # type(): a bool is not a quota
-            if sorted(ports) != list(IDENTITY_PORTS) or not all(0 < p < 65536 for p in ports.values()):
+            # The worker has the identity ports that the provider rented: 70000 up, at least MIN_DIRECT_PORTS of them.
+            if sorted(ports) != list(IDENTITY_PORTS[:max(len(ports), MIN_DIRECT_PORTS)]) \
+                    or not all(0 < p < 65536 for p in ports.values()):
                 raise ValueError("ports")
             if len(set(ports.values())) != len(ports) or not 1 <= cpu_count <= 4096 or not 0 <= gpu_count <= 64:
                 raise ValueError("values")

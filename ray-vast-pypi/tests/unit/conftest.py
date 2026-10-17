@@ -28,7 +28,7 @@ class FakeVast:
         self.last_query = query
         return list(self.offers)
 
-    def create_instance(self, offer_id, image, env, args, label, disk_gb):
+    def create_instance(self, offer_id, image, env, args, label, disk_gb, identity_ports):
         self._call("create_instance")
         hook, self.on_create = self.on_create, None
         if hook:
@@ -36,7 +36,8 @@ class FakeVast:
         if self.fail_create:
             raise VastError("PUT: HTTP 500")
         self.next_id += 1
-        self.requests.append(dict(offer_id=offer_id, image=image, env=env, args=args, label=label, disk_gb=disk_gb))
+        self.requests.append(dict(offer_id=offer_id, image=image, env=env, args=args, label=label, disk_gb=disk_gb,
+                                  identity_ports=identity_ports))
         self.instances[self.next_id] = {"id": self.next_id, "label": label, "actual_status": "loading",
                                         "public_ipaddr": None, "status_msg": ""}
         return self.next_id
@@ -65,8 +66,9 @@ class Clock:
         return self.now
 
 
-def offer(offer_id, machine_id, dph=0.5, inet_down=1000):
-    return {"id": offer_id, "machine_id": machine_id, "dph_total": dph, "inet_down": inet_down}
+def offer(offer_id, machine_id, dph=0.5, inet_down=1000, direct_port_count=64):
+    return {"id": offer_id, "machine_id": machine_id, "dph_total": dph, "inet_down": inet_down,
+            "direct_port_count": direct_port_count}
 
 
 @pytest.fixture(scope="session")

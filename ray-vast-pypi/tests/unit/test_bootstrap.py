@@ -176,7 +176,30 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     (48, 900, 8, 4), (48, 500, 4, 2), (48, 100, 4, 2),
 ])
 def test_worker_ports_fit_the_pids_limit_and_the_soft_limit_leaves_free_ports(cpus, pids_max, ports, soft_limit):
-    assert bootstrap.worker_ports_and_soft_limit(cpus, pids_max) == (ports, soft_limit)
+    assert bootstrap.worker_ports_and_soft_limit(cpus, pids_max, 64) == (ports, soft_limit)
+
+
+@pytest.mark.parametrize("pids_max, identity_ports, ports", [
+    (None, 20, 14),   # 20 identity ports: 6 fixed, 14 worker ports
+    (1280, 30, 14),   # the pids limit (14) is below the mapped ports (24)
+    (3328, 30, 24),   # the mapped ports (24) are below the pids limit (48)
+    (500, 20, 4),     # the minimum of 4 worker ports
+    (None, 10, 4),    # the fewest identity ports that an offer can have (direct_port_count >= 10)
+])
+def test_worker_ports_are_at_most_the_mapped_identity_ports_minus_the_6_fixed(pids_max, identity_ports, ports):
+    assert bootstrap.worker_ports_and_soft_limit(48, pids_max, identity_ports)[0] == ports
+
+
+@pytest.mark.slow
+def test_a_worker_with_20_identity_ports_enrolls_them_and_gives_ray_14_worker_ports(new_world):
+    world = new_world(identity_ports=20)
+    world.start()
+    run = world.run()
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat") and run.ray_out.exists()), run.stdout
+    p = world.port_base
+    assert world.head.bodies("A", "/enroll")[0]["ports"] == {str(70000 + i): p + i for i in range(20)}
+    assert "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 20)) in run.ray["argv"]
+    assert world.head.bodies("B", "/heartbeat")[-1]["ports_total"] == 14
 
 
 def cgroup_dir(tmp_path, layout, pids_max, events="max 17\n"):

@@ -63,11 +63,11 @@ A worker is a vast container that has enrolled and runs Ray.
 
 Read [Enrollment and the join token](enrollment.md) and [Worker life cycle and the watchdog](worker-lifecycle.md).
 
-## NAT and the 64 identity ports
+## NAT and the identity ports
 
 A vast container is behind NAT. vast maps some host ports into the container.
 
-Each worker asks vast for 64 ports: the identity ports 70000 to 70063. vast gives a host port P for each, and maps P to the same P in the container.
+Each worker asks vast for up to 64 ports: the identity ports from 70000 up. The count is the smaller of 64 and the offer's `direct_port_count`. vast gives a host port P for each, and maps P to the same P in the container.
 Ray advertises the public IP of the host and the ports P. So other nodes reach the worker directly.
 
 | Identity port | Use |
@@ -78,10 +78,10 @@ Ray advertises the public IP of the host and the ports P. So other nodes reach t
 | 70003 | Dashboard agent gRPC |
 | 70004 | Dashboard agent HTTP (job port, 127.0.0.1 only) |
 | 70005 | Runtime-env agent (127.0.0.1 only) |
-| 70006–70063 | up to 58 Ray worker processes (fewer with a process limit) |
+| 70006 up to 70063 | Ray worker processes: the mapped identity ports minus 6, at most 58 (fewer with a process limit) |
 
-The provider adds `direct_port_count >= 64` to every offer query, so every host can give the 64 ports.
-Before a candidate enrolls, the head connects to all 64 ports from outside (the port check).
+The provider adds `direct_port_count >= 10` to every offer query: the 6 fixed ports and at least 4 worker ports. A host with 20 direct ports gives 20 identity ports, so at most 14 worker ports.
+Before a candidate enrolls, the head connects to all its identity ports from outside (the port check).
 
 ## The networking shim
 

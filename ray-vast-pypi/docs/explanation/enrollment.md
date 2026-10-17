@@ -19,14 +19,14 @@ sequenceDiagram
   participant V as vast
   participant W as Candidate (vast container)
   participant H as Head server
-  P->>V: rent offer (image, label, 64 ports, bootloader, env with join token)
+  P->>V: rent offer (image, label, up to 64 identity ports, bootloader, env with join token)
   V->>W: pull image, start container
   P->>P: sees candidate running: add security group rule for its IP
   W->>H: GET /bootstrap (port A), check SHA-256
   W->>H: GET /ca.pem (port A), check CA fingerprint
-  W->>W: local host checks, open listeners on the 64 ports
+  W->>W: local host checks, open listeners on its identity ports
   W->>H: POST /enroll (instance ID, join token, checks, port map)
-  H->>W: port check: TCP connect to all 64 ports
+  H->>W: port check: TCP connect to all its identity ports
   H->>W: 200: node cert and key, cluster token, shim, Ray parameters
   W->>W: start Ray (TLS, token, shim)
   loop every 30 s
@@ -43,7 +43,7 @@ sequenceDiagram
     - the container has its own network namespace;
     - `/dev/shm` is empty.
 5. **Enroll.** The bootstrap sends `POST /enroll` with its instance ID, the join token, the check results, its port map, its CPU affinity and CPU quota, and its GPU count.
-6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results, the GPU count and the CPU cores. Then it connects to all 64 ports from outside (the port check).
+6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results, the GPU count and the CPU cores. Then it connects to all its identity ports from outside (the port check).
 7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the cluster token, the shim and the Ray parameters (the GCS address and the `CPU` of the node type). The worker already has the CA: it pinned it in step 3.
 8. **Ray.** The bootstrap removes the secrets from Ray's environment, and starts Ray. Ray joins the head with TLS and the token.
 

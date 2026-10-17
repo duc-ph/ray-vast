@@ -28,9 +28,9 @@ The head container logs in the local time zone of the head.
 ## A worker never arrives
 
 1. **Check the demand.** Run `sudo docker exec ray-vast-head ray status` on the head. Look at "Pending" and "Recent failures".
-2. **Check the offers.** A narrow query can match no offer. The datacenter filter removes many offers. In `monitor.log`, look for `no rentable offer matches the node type query`. Make the query wider.
+2. **Check the offers.** A narrow query can match no offer. The `verified` and `datacenter` filters remove many offers. In `monitor.log`, look for `no rentable offer matches the node type query`. Make the query wider.
 3. **Check the budget.** Look for `every matching offer would pass max_dollars_per_hour`. Raise the budget or choose cheaper GPUs.
-4. **Check the enrollment.** Look for `enroll refused` and `ending instance`. A host can fail a host check (egress IP, capabilities, own network namespace, `/dev/shm`, the 64 identity ports, the CPU or GPU count). The provider puts the host on the blocklist for this cluster and rents another one.
+4. **Check the enrollment.** Look for `enroll refused` and `ending instance`. A host can fail a host check (egress IP, capabilities, own network namespace, `/dev/shm`, the identity ports, the CPU or GPU count). The provider puts the host on the blocklist for this cluster and rents another one.
 5. **Check the pull time.** A big image on a slow host can pass the pull limit. Add `inet_down: {gte: 500}` to the query. Read [Use GPU images](gpu-images.md).
 
 ### `LaunchFailed` in `ray status`
@@ -95,7 +95,7 @@ The worker log has one line with the values that ray-vast chose:
 bootstrap: limits: pids.max 1280 (cgroup v1), cpus 5, worker ports 14, soft limit 5, grpc threads 4, startup concurrency 8
 ```
 
-`pids.max none` means that the container has no limit. Then the worker gets all 58 worker ports.
+`pids.max none` means that the container has no limit. Then the worker gets all its worker ports: the identity ports minus 6, at most 58.
 
 ### What to do
 

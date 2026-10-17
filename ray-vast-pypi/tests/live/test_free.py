@@ -322,7 +322,7 @@ def test_F19_offer_queries_of_the_examples_and_the_docs(record):
         for name, node_type in config["available_node_types"].items():
             if name == config["head_node_type"]:
                 continue
-            offers = client.search_offers(build_offer_query(node_type, provider["allow_non_datacenter"], name))
+            offers = client.search_offers(build_offer_query(node_type, name))
             machines = {o["machine_id"] for o in offers}
             first = sorted(o["dph_total"] for o in offers)[:provider["candidate_factor"]]
             rows.append({"source": path.name, "type": name, "offers": len(offers), "machines": len(machines),
@@ -330,7 +330,7 @@ def test_F19_offer_queries_of_the_examples_and_the_docs(record):
             check(record, f"{path.name} {name}: >= 4 offers on >= 3 machines", len(offers) >= 4 and len(machines) >= 3, rows[-1])
             check(record, f"{path.name} {name}: the first candidates fit the budget", sum(first) <= provider["max_dollars_per_hour"], rows[-1])
     for source, node_type in _doc_queries():
-        offers = client.search_offers(build_offer_query(node_type, False, source))
+        offers = client.search_offers(build_offer_query(node_type, source))
         rows.append({"source": source, "query": node_type["node_config"]["offer_query"], "offers": len(offers)})
         check(record, f"{source}: vast accepts the query", isinstance(offers, list), len(offers))
     record.evidence("offers.json", json.dumps(rows, indent=1))

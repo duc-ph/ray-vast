@@ -73,7 +73,7 @@ cluster <cluster_name> is up. Head IP <head ip>.
 
 `up` adds lines that start with `warning:` when they apply. They come in this order:
 
-1. After the `installing` line: the warnings of the YAML checks (`CPU` above 58, `allow_non_datacenter`).
+1. After the `installing` line: the warnings of the YAML checks (`CPU` above 58).
 2. After the `head IP` line: an untested Ray version in the image.
 3. Just before the `cluster ... is up` line: a CA that expires within 14 days.
 

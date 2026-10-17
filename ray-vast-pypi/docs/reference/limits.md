@@ -13,7 +13,7 @@ The default AWS quota is 60 rules for each group, and the SSH rule uses one. So 
 
 ## 58 worker ports for each worker
 
-Each worker has 64 ports. Ray uses 6 fixed ports. The other 58 are for Ray worker processes.
+Each worker has up to 64 identity ports: the smaller of 64 and the offer's `direct_port_count` (at least 10). Ray uses 6 fixed ports. The others (at most 58) are for Ray worker processes. A host with 20 direct ports gives at most 14 worker ports.
 Each Ray worker process (a task or an actor) needs one port. A driver runs on the head and uses no worker port.
 A worker with a process limit gets fewer worker ports. Read [The process limit of vast hosts](#the-process-limit-of-vast-hosts).
 
@@ -33,7 +33,7 @@ ray-vast keeps each worker below its limit:
 
 - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). Then a Ray task or actor process has 25 to 29 threads, not about 50, and a Serve replica with a FastAPI ingress has 50. We measured these numbers with `RAY_num_grpc_internal_threads=4` on a simulated 48-core host (2026-10-16).
 - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
-- The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at most 58 and at least 4. With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
+- The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at least 4, and at most the identity ports minus 6 (at most 58). With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
 - The library pages use B = worker ports − 4: the number of worker processes that your work can use on one worker. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
 - The process limit does not change the Ray CPUs. Ray gets the `CPU` of the node type. Read [CPU and GPU](../how-to/node-types.md#cpu-and-gpu).
 
@@ -54,7 +54,7 @@ Ray Train with PyTorch DDP over 2 or more workers does not work. This is true fo
 
 - The rendezvous (`TCPStore`) of rank 0 uses a random port.
 - Gloo and NCCL open more connections on random ports. They also send the container's private address to the other ranks.
-- vast maps only the 64 identity ports of each worker. Ray uses all of them.
+- vast maps only the identity ports of each worker (at most 64). Ray uses all of them.
 - Ray Train 2.59 has no setting for the rendezvous port.
 
 The job fails after about 3 minutes with `DistNetworkError` or `DistStoreError ... 1/2 clients joined`.

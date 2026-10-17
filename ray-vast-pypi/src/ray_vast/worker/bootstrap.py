@@ -35,7 +35,8 @@ PIDS_RESERVE = 400
 # PIDS_PER_WORKER: threads of the heaviest common Ray worker process (a Serve replica: 50), plus 10 for the user's threads.
 PIDS_PER_WORKER = 60
 MIN_WORKER_PORTS = 4
-WORKER_PORT_IDS = range(70006, 70064)  # the identity ports for Ray worker processes (5.5)
+IDENTITY_PORT_IDS = range(70000, 70064)  # at most; vast maps the ones that the provider rented (VAST_TCP_PORT_*)
+FIXED_PORTS = 6  # 70000-70005: the fixed Ray ports; the rest are worker ports (5.5)
 # Inode of the initial network namespace (new kernels, old kernels). A container with its own netns has another one.
 HOST_NETNS_INODES = (0xEFFFFFF9, 0xF0000000)
 ENROLL_DEADLINE_S = 600
@@ -74,18 +75,18 @@ def parse_cpu_max(text):
     return None if quota == "max" else int(quota) / int(period)
 
 
-def worker_ports_and_soft_limit(cpus, pids_max):
+def worker_ports_and_soft_limit(cpus, pids_max, identity_ports):
     """Return (the number of worker ports that Ray gets, RAY_num_workers_soft_limit) (5.5). `pids_max` is the
-    container's process limit (pids.max), or None.
+    container's process limit (pids.max), or None. `identity_ports` is the number of identity ports that vast maps.
 
     A worker process needs a free worker port, so the port count caps the registered worker processes. A process that
     finds no free port exits, and its task or actor waits: the worker queues work instead of a failed thread start.
     The raylet keeps idle worker processes up to the soft limit, and it never ends one to free a port. So the soft
     limit is at most half the ports: a job that needs a new kind of worker process (another runtime env) finds a port.
     """
-    ports = len(WORKER_PORT_IDS)
+    ports = identity_ports - FIXED_PORTS
     if pids_max is not None:
-        ports = max(MIN_WORKER_PORTS, min(ports, (pids_max - PIDS_RESERVE) // PIDS_PER_WORKER))
+        ports = min(ports, max(MIN_WORKER_PORTS, (pids_max - PIDS_RESERVE) // PIDS_PER_WORKER))
     return ports, min(cpus, ports // 2)
 
 
@@ -274,7 +275,7 @@ def main():
         log(f"host checks: {checks}")
 
         # 3. Open a listener on every host port, for the head's port check.
-        ports = {str(70000 + i): int(env[f"VAST_TCP_PORT_{70000 + i}"]) for i in range(64)}
+        ports = {str(p): int(env[f"VAST_TCP_PORT_{p}"]) for p in IDENTITY_PORT_IDS if f"VAST_TCP_PORT_{p}" in env}
         listeners = []
         for port in ports.values():
             listener = socket.socket()
@@ -354,8 +355,8 @@ def main():
         except (OSError, ValueError):
             pids_max = None
         num_cpus = answer["num_cpus"]  # the node type's CPU (F4); the head refused fewer than 90% of it in cores
-        port_count, soft_limit = worker_ports_and_soft_limit(num_cpus, pids_max)
-        worker_ports = [ports[str(p)] for p in WORKER_PORT_IDS[:port_count]]
+        port_count, soft_limit = worker_ports_and_soft_limit(num_cpus, pids_max, len(ports))
+        worker_ports = [ports[str(p)] for p in IDENTITY_PORT_IDS[FIXED_PORTS:FIXED_PORTS + port_count]]
         ray_cmd = [
             sys.executable, "-c", "from ray.scripts.scripts import main; main()", "start", "--block",
             f"--address={answer['gcs_address']}", f"--node-ip-address={public_ip}",

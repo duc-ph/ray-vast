@@ -33,9 +33,9 @@ HERE = Path(__file__).parent
 # CPU 32, so Ray gets 32 CPUs, with any pids limit (CPU quota: m36376 38.4 cores, 9728, v1; m58013 46.08, 11776, v2;
 # m148655 61.44, 15616, v1).
 PINS = {
-    "h1": {"named": [36376, 58013, 148655], "fallback": {"cpu_cores_effective": {"gte": 32}},
+    "h1": {"named": [36376, 58013, 148655], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "cpu_cores_effective": {"gte": 32}},
            "want": {"cpus": {"gte": 32}, "limited": True}},
-    "h2": {"named": [51706, 55704], "fallback": {"gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
+    "h2": {"named": [51706, 55704], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
 }
 SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate is replaced
 HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}  # the worker type of each libraries host
@@ -133,7 +133,7 @@ class LibrariesCluster(Cluster):
         config["cluster_name"] = f"{config['cluster_name']}-{host.lower()}-{suffix}"
         config["available_node_types"] = {name: t for name, t in config["available_node_types"].items() if name in ("head", kind)}
         if kind in PINS:
-            found = vast().search_offers(build_offer_query(config["available_node_types"][kind], False, kind))
+            found = vast().search_offers(build_offer_query(config["available_node_types"][kind], kind))
             offers = [{k: o.get(k) for k in ("machine_id", "id", "gpu_name", "num_gpus", "cpu_cores", "cpu_cores_effective",
                                               "dph_total", "geolocation", "compute_cap")} for o in found]
             Path(group_dir).mkdir(parents=True, exist_ok=True)
@@ -182,7 +182,7 @@ class LibrariesCluster(Cluster):
             if named:
                 query = {"machine_id": {"in": named}}
                 if vast().search_offers(build_offer_query({**node_type, "node_config": {**node_type["node_config"], "offer_query": query}},
-                                                          False, kind)):
+                                                          kind)):
                     return query
             query = dict(pin["fallback"])
         else:

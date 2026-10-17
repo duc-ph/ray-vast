@@ -189,6 +189,19 @@ def test_duplicate_ports_are_a_400(env):
     assert enroll(env, 11, ports=ports).status_code == 400
 
 
+def test_a_worker_with_fewer_identity_ports_enrolls(env):
+    # The provider rents min(64, the offer's direct_port_count) identity ports, so a worker can have 10 to 64.
+    add_candidate(env, 11)
+    assert enroll(env, 11, ports={str(70000 + i): env.ports[str(70000 + i)] for i in range(20)}).status_code == 200
+
+
+@pytest.mark.parametrize("ids", [range(9), [*range(10), 11], range(65)], ids=["9", "gap", "65"])
+def test_identity_ports_other_than_70000_up_to_a_count_of_10_to_64_are_a_400(env, ids):
+    add_candidate(env, 11)
+    ports = {str(70000 + i): 30000 + i for i in ids}
+    assert enroll(env, 11, ports=ports).status_code == 400 and env.end.ended == []
+
+
 @pytest.mark.parametrize("cpu, gpu", [(0, 1), (5000, 1), (8, -1), (8, 65)])
 def test_out_of_range_cpu_or_gpu_count_is_a_400(env, cpu, gpu):
     add_candidate(env, 11)

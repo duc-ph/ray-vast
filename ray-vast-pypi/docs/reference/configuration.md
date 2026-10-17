@@ -33,7 +33,6 @@ ray-vast does not use the Ray fields `file_mounts`, `setup_commands`, `initializ
 | `image` | string | required | Docker image for the head and the workers. Read [Use GPU images](../how-to/gpu-images.md). |
 | `max_dollars_per_hour` | number above 0 | required | Limit for the sum of `dph_total` over all workers and candidates. The provider does not rent above it. A missing value is an error, not "no limit". |
 | `candidate_factor` | integer | `2` | The provider rents up to this many candidates for each slot. It destroys the extra candidates when the slots are full. |
-| `allow_non_datacenter` | boolean | `false` | If true, ray-vast does not add the `datacenter = true` filter, and `up` shows a warning. Read [Security model](../security.md). |
 
 ray-vast sets `type`, `module` and `disable_node_updaters` itself. Do not set them.
 
@@ -52,6 +51,7 @@ A YAML with one of these `provider` fields gets an error. The error tells what t
 | `cert_max_age_days` | Removed. The CA and the certificates always live 365 days. |
 | `image_size_gb` | Removed. `up` measures the image. |
 | `order_by` | Removed. The provider always rents the cheapest offers first (`dph_total`). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
+| `allow_non_datacenter` | Removed. ray-vast adds no `datacenter` filter. Set `datacenter: {eq: true}` and `verified: {eq: true}` in the `offer_query` of each node type (highly recommended). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
 
 ## `available_node_types`: the head
 
@@ -104,11 +104,11 @@ ray-vast adds these filters:
 | Field | Filter | Your own filter on this field |
 |---|---|---|
 | `num_gpus` | `eq: <GPU>` | Must be the same (`eq` or `in` with the one value `GPU`). |
-| `cpu_cores_effective` | `gte: <CPU>` | Allowed when it is at least as strict. |
-| `direct_port_count` | `gte: 64` | Allowed when it is at least as strict. |
-| `verified` | `eq: true` | Must be the same. |
+| `cpu_cores_effective` | `gte: <the larger of CPU and 4>` | Allowed when it is at least as strict. |
+| `direct_port_count` | `gte: 10` (the 6 fixed identity ports and at least 4 worker ports) | Allowed when it is at least as strict. |
 | `rentable` | `eq: true` | Must be the same. |
-| `datacenter` | `eq: true`, unless `allow_non_datacenter` | Must be the same. |
+
+ray-vast does not add `verified` or `datacenter`. We highly recommend `verified: {eq: true}` and `datacenter: {eq: true}` in every query. Read [Keep the verified and datacenter filters](../how-to/node-types.md#keep-the-verified-and-datacenter-filters).
 
 The search also sends `type: on-demand` and `limit: 100`.
 

@@ -2,7 +2,11 @@ import copy
 
 QUERY_OPS = {"eq", "neq", "gt", "gte", "lt", "lte", "in", "notin"}
 MB_FIELDS = ("gpu_ram", "cpu_ram", "gpu_total_ram")
-WORKER_PORTS = 58
+WORKER_PORTS = 58  # at most: the identity ports 70006-70063
+# The added filter floors (design section 9). An offer needs the 6 fixed identity ports plus the bootstrap's minimum of 4
+# worker ports. Below about 3 effective cores, pids.max is below 640 (S6): 4 worker ports with no thread room.
+MIN_DIRECT_PORTS = 10
+MIN_CORES = 4
 # Ray's validate_config() needs these; ray-vast does not use them (no node updaters).
 RAY_EMPTY_FIELDS = (
     "file_mounts",
@@ -16,7 +20,6 @@ RAY_EMPTY_FIELDS = (
 )
 PROVIDER_DEFAULTS = {
     "candidate_factor": 2,
-    "allow_non_datacenter": False,
 }
 HEAD_INSTANCE_TYPE = "t3.large"
 PORT_A, PORT_B = 7443, 7444  # head server ports: download and enrollment (TLS); heartbeat and reports (mTLS)
@@ -31,10 +34,12 @@ OLD_PROVIDER_FIELDS = {
     "key_name": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
     "key_file": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
     "order_by": "removed: ray-vast always rents the cheapest offers first (dph_total)",
+    "allow_non_datacenter": "removed: ray-vast adds no datacenter filter; set datacenter and verified in the offer_query "
+                            "of each node type (highly recommended: datacenter: {eq: true}, verified: {eq: true})",
 }
 
 
-def build_offer_query(node_type_config, allow_non_datacenter, name):
+def build_offer_query(node_type_config, name):
     """Return the vast API query: the user's offer_query plus the filters that ray-vast adds."""
     resources = node_type_config["resources"]
     user_query = node_type_config.get("node_config", {}).get("offer_query") or {}
@@ -65,13 +70,10 @@ def build_offer_query(node_type_config, allow_non_datacenter, name):
 
     added = {
         "num_gpus": {"eq": resources["GPU"]},
-        "cpu_cores_effective": {"gte": resources["CPU"]},
-        "direct_port_count": {"gte": 64},
-        "verified": {"eq": True},
+        "cpu_cores_effective": {"gte": max(resources["CPU"], MIN_CORES)},
+        "direct_port_count": {"gte": MIN_DIRECT_PORTS},
         "rentable": {"eq": True},
     }
-    if not allow_non_datacenter:
-        added["datacenter"] = {"eq": True}
     merged = dict(user_query)
     for field, condition in added.items():
         user = user_query.get(field)
@@ -116,8 +118,6 @@ def bootstrap_config(config):
     for field in RAY_EMPTY_FIELDS:
         config.setdefault(field, [] if field.endswith(("commands", "files")) else {})
     config.setdefault("auth", {}).setdefault("ssh_user", "ray")
-    if provider["allow_non_datacenter"]:
-        warnings.append("provider.allow_non_datacenter is true: non-datacenter hosts are allowed")
 
     node_types = config.get("available_node_types") or {}
     head_type = config.get("head_node_type")
@@ -146,7 +146,7 @@ def bootstrap_config(config):
         if not node_config.get("offer_query"):
             raise ValueError(f"node type {name!r}: node_config.offer_query is required")
         node_config.setdefault("disk_gb", 50)
-        build_offer_query(node_type, provider["allow_non_datacenter"], name)
+        build_offer_query(node_type, name)
         if resources["CPU"] > WORKER_PORTS:
             warnings.append(f"node type {name!r}: resources.CPU {resources['CPU']} is above the {WORKER_PORTS} worker ports")
 

@@ -1,3 +1,4 @@
+import copy
 import importlib.metadata
 import json
 import os
@@ -267,11 +268,12 @@ def test_up_without_the_image_info_line_stops_with_a_clear_error(aws, cluster_ya
 
 
 def test_up_shows_config_warnings(aws, cluster_yaml, wheel, tmp_path):
-    raw = dict(CLUSTER_YAML, provider={**CLUSTER_YAML["provider"], "allow_non_datacenter": True})
+    raw = copy.deepcopy(CLUSTER_YAML)
+    raw["available_node_types"]["gpu"]["resources"]["CPU"] = 59
     cluster_yaml.write_text(yaml.safe_dump(raw))
     messages = []
     run_up(aws, cluster_yaml, wheel, tmp_path, out=messages.append)
-    assert any(m.startswith("warning:") and "allow_non_datacenter" in m for m in messages)
+    assert any(m.startswith("warning:") and "above the 58 worker ports" in m for m in messages)
 
 
 def test_up_denied_by_iam_creates_nothing_else(aws, cluster_yaml, wheel, tmp_path):
@@ -935,6 +937,14 @@ def test_main_up_with_the_old_provider_region_names_the_new_place(home, cluster_
     cluster_yaml.write_text(yaml.safe_dump(raw))
     assert cli.main(["up", str(cluster_yaml)]) == 1
     assert "provider.region is no longer a field (moved: set node_config.region of the head node type)" in capsys.readouterr().err
+
+
+def test_main_up_with_the_old_allow_non_datacenter_says_it_is_removed(home, cluster_yaml, capsys):
+    raw = yaml.safe_load(cluster_yaml.read_text())
+    raw["provider"]["allow_non_datacenter"] = True
+    cluster_yaml.write_text(yaml.safe_dump(raw))
+    assert cli.main(["up", str(cluster_yaml)]) == 1
+    assert "provider.allow_non_datacenter is no longer a field (removed: " in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("command", ["up", "down"])

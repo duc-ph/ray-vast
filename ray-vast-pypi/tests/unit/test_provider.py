@@ -65,6 +65,13 @@ def test_create_rents_candidates_and_returns_slots_without_waiting(env):
     assert env.vast.last_query["num_gpus"] == {"eq": 1}
 
 
+def test_each_rental_asks_for_the_identity_ports_that_its_offer_has_up_to_64(env):
+    env.vast.offers = [offer(1, 11, direct_port_count=20), offer(2, 12, direct_port_count=249)]
+    create(env.make())
+    assert [r["identity_ports"] for r in env.vast.requests] == [20, 64]
+    assert env.vast.last_query["direct_port_count"] == {"gte": 10}
+
+
 def test_create_without_offers_raises_and_leaves_no_slot(env):
     p = env.make()
     with pytest.raises(NodeLaunchException) as e:

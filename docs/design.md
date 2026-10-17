@@ -47,12 +47,12 @@ This is the full flow, from a Ray demand to a running worker and back. Each step
 
 1. **Demand (Ray).** A task, an actor or a placement group needs resources that no node has. Autoscaler v2, in the Ray monitor on the head, chooses a node type and calls `create_node_with_resources_and_labels(node_config, tags, count=n)` from a launcher thread.
 2. **Slots (provider).** The provider makes n slots (`slot-<n>-<hex6>`). The n slots of one call are one request.
-3. **Rent (provider, in the same call).** The provider searches the vast offers with the node type's query plus the added filters (section 9). It skips the hosts on the blocklist and the offers that would pass `max_dollars_per_hour`. It rents up to k × n candidates (k = `candidate_factor`, default 2) with `PUT /asks/<offer>/`. Each create request has the image, the label `ray-vast:<cluster>`, the 64 identity ports, the bootloader as the container command, and the env with a new join token for this candidate (5.1). The call then returns the slot IDs, and v2 shows the slots as allocated nodes.
+3. **Rent (provider, in the same call).** The provider searches the vast offers with the node type's query plus the added filters (section 9). It skips the hosts on the blocklist and the offers that would pass `max_dollars_per_hour`. It rents up to k × n candidates (k = `candidate_factor`, default 2) with `PUT /asks/<offer>/`. Each create request has the image, the label `ray-vast:<cluster>`, the identity ports (the smaller of 64 and the offer's `direct_port_count`), the bootloader as the container command, and the env with a new join token for this candidate (5.1). The call then returns the slot IDs, and v2 shows the slots as allocated nodes.
    - If it rents nothing, the provider removes the slots and raises `NodeLaunchException` ("no offers" or "budget"). v2 tries again later.
 4. **Pull (vast).** vast pulls the image: `loading`, then `running`. The provider's reconcile thread lists the instances every 10 s. When it first sees the candidate `running` with a public IP, it records the IP and adds a security group rule for it (8.3). A candidate that is not `running` within the pull limit, or that shows `exited` or an error, is ended (section 4).
 5. **Bootloader (worker).** The container command is the bootloader. It finds a Python that can `import ray`, downloads the bootstrap from the head (port A), checks its SHA-256, and `exec`s it. The bootstrap is now PID 1.
-6. **Bootstrap, before enrollment (worker).** It downloads the CA cert and checks it against the pinned fingerprint. It runs the local host checks. It opens a listener on all 64 identity ports. It sends `POST /enroll` with its instance ID, the join token, the check results and its port map.
-7. **Enrollment (head server).** The head checks the request: a known candidate, from its own IP, with its own join token, with good host checks. It then connects to all 64 ports from outside (the port check). If a slot of the node type is free, it makes a node key and cert, marks the instance enrolled, sets the slot to `setting-up`, and answers with the cert, the key, the CA, the cluster token, the shim and the `ray start` parameters. If no slot is free, it destroys the candidate.
+6. **Bootstrap, before enrollment (worker).** It downloads the CA cert and checks it against the pinned fingerprint. It runs the local host checks. It opens a listener on each of its identity ports. It sends `POST /enroll` with its instance ID, the join token, the check results and its port map.
+7. **Enrollment (head server).** The head checks the request: a known candidate, from its own IP, with its own join token, with good host checks. It then connects to all its identity ports from outside (the port check). If a slot of the node type is free, it makes a node key and cert, marks the instance enrolled, sets the slot to `setting-up`, and answers with the cert, the key, the CA, the cluster token, the shim and the `ray start` parameters. If no slot is free, it destroys the candidate.
 8. **The other candidates (provider).** When every slot of a request has a worker, the next reconcile pass destroys the other candidates of that request. A candidate that does not enroll within 1 min after `running` is ended. A slot that has no pending candidate left is removed, and v2 asks again. After 3 failed slots in a row of one node type, the rent-loop breaker stops that type for 10 min.
 9. **Ray start (worker).** The bootstrap closes its listeners, writes the files, removes the secrets from Ray's environment, and starts `ray start --block` with `RAY_CLOUD_INSTANCE_ID=<slot id>` and the node type's `CPU` (from the `/enroll` answer). The raylet joins the GCS on the head (TLS, token, shim). v2 matches the Ray node to the slot by `RAY_CLOUD_INSTANCE_ID`, marks it running, and schedules the pending work on it.
 10. **Token check (worker).** The bootstrap checks that both agent ports on 127.0.0.1 answer 401 without the token, and reports the result. A failed check makes the head destroy the worker.
@@ -117,7 +117,7 @@ The provider sets these in the create request (`env`):
 | `RAYVAST_CLUSTER` | the cluster name |
 | `RAYVAST_JOIN_TOKEN` | the one-time join token of this instance: 32 random bytes, lowercase hex (secret) |
 
-vast sets: `CONTAINER_ID` (the instance ID), `CONTAINER_API_KEY` (secret, one for each instance), `PUBLIC_IPADDR`, and `VAST_TCP_PORT_70000` … `VAST_TCP_PORT_70063` (the host port P for each identity port; vast maps P→P).
+vast sets: `CONTAINER_ID` (the instance ID), `CONTAINER_API_KEY` (secret, one for each instance), `PUBLIC_IPADDR`, and `VAST_TCP_PORT_70000` up to at most `VAST_TCP_PORT_70063` (the host port P for each identity port that the create request asked for; vast maps P→P).
 
 For tests only, the bootstrap reads these when they are set: `RAYVAST_VAST_API` (vast API base URL, default `https://console.vast.ai/api/v0`), `RAYVAST_TIME_SCALE` (a float; all bootstrap timers are divided by it), `RAYVAST_DIR` (the directory for the files, default `/tmp/rayvast`), `RAYVAST_CGROUP_DIR` (the cgroup directory for the CPU quota files and the pids files, default `/sys/fs/cgroup`), `RAYVAST_SKIP_HOST_CHECKS` (`1` = report the checks but do not fail on them; for local Docker tests, where the egress IP is not `PUBLIC_IPADDR`).
 
@@ -151,7 +151,7 @@ The image's `ENTRYPOINT` stays. Docker runs it with the container command as its
    - `no_net_raw_admin`: bits 12 (NET_ADMIN) and 13 (NET_RAW) are clear in `CapBnd` of `/proc/self/status`. It reads `CapBnd` (the container's bounding set), not `CapEff`: a non-root PID 1 always has an empty `CapEff`.
    - `own_netns`: its own network namespace.
    - `shm_empty`: `/dev/shm` is empty.
-3. **Listeners.** Open a listener on all 64 identity ports (host ports P), for the head's port check.
+3. **Listeners.** Open a listener on each identity port that has a `VAST_TCP_PORT_700xx` variable (host ports P), for the head's port check.
 4. **Enroll.** `POST /enroll` (5.6). The body has the size of the CPU affinity (`cpu_count`) and the CPU quota in cores (`cpu_quota`): `cpu.max` on cgroup v2; `cpu/cpu.cfs_quota_us` / `cpu/cpu.cfs_period_us` on cgroup v1, where a quota of -1 or a period of 0 is no limit. No limit or no file gives null. A 503, a connection error or a timeout: try again after 10 s. A 403: report and destroy at once. No enrollment within 10 min of the start: destroy. The worker-side limit for one `/enroll` call is 120 s.
 
 ### 5.5 Port map (worker)
@@ -164,7 +164,7 @@ The image's `ENTRYPOINT` stays. Docker runs it with the container command as its
 | 70003 | agent gRPC | `--dashboard-agent-grpc-port` |
 | 70004 | agent HTTP (job port, 127.0.0.1 through the shim) | `--dashboard-agent-listen-port` |
 | 70005 | runtime-env agent (127.0.0.1 through the shim) | `--runtime-env-agent-port` |
-| 70006–70063 | up to 58 worker processes | `--worker-port-list` |
+| 70006 up to 70063 | worker processes: the mapped identity ports minus 6, at most 58 | `--worker-port-list` |
 
 The bootstrap uses the host ports P (`VAST_TCP_PORT_700xx`), not the identity numbers.
 
@@ -172,7 +172,7 @@ The bootstrap uses the host ports P (`VAST_TCP_PORT_700xx`), not the identity nu
 
 1. `RAY_num_grpc_internal_threads=4`, always. Ray's gRPC sizes its thread pools by `sysconf(_SC_NPROCESSORS_CONF)` (the host cores) unless this variable is set. Every process of `ray start` inherits it. Measured on a simulated 48-core host: a worker process has 25 threads, not 50; the raylet 59, not 85.
 2. `RAY_worker_maximum_startup_concurrency=8`, always. The raylet starts at most 8 worker processes at the same time (without it: `min(cores, Ray CPUs)`, 48 on a 48-core host). The variable wins over the `--maximum_startup_concurrency` flag of `ray start` (measured: at most 2 starting processes with the value 2, 39 without it). A starting process has threads before it can find a free port, so this caps the burst.
-3. Worker ports = 58 with no limit, else `max(4, min(58, (pids.max − 400) // 60))`.
+3. Worker ports = the mapped identity ports − 6 (at most 58) with no limit, else `min(identity ports − 6, max(4, (pids.max − 400) // 60))`. `worker_ports_and_soft_limit` in the bootstrap is the one place of this formula. The offer filter `direct_port_count >= 10` keeps at least 4 worker ports.
     - 400 = the threads of the fixed Ray processes and the bootstrap (about 160: raylet, dashboard agent, runtime-env agent, log monitor, `ray start`), plus 8 starting worker processes (8 × 25), plus 40 of headroom. A process that finds no free port also starts, and then exits. The startup concurrency caps these processes too.
     - 60 = the threads of the heaviest common worker process, plus 10 for the user's own threads. Measured with gRPC threads 4 on a simulated 48-core host: a Serve replica with a FastAPI ingress has 50 (its Python `grpcio` adds an event-engine pool of 16). A Ray Train worker process has 35, plus 3 for each `DataLoader` worker process. The Serve proxy has 35. A Data actor, an RLlib env runner, a task and an idle worker process have 25 to 29.
     - With 1280, the worker gets 14 ports. With 3328, it gets 48 ports.
@@ -188,7 +188,7 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 |---|---|---|---|
 | A | `GET /ca.pem` | — | the CA cert PEM (`application/x-pem-file`) |
 | A | `GET /bootstrap` | — | the bootstrap bytes (`text/x-python`) |
-| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …, "70063": P}, "cpu_count": int, "cpu_quota": float|null, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_cpus": int}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
+| A | `POST /enroll` | `{"instance_id": int, "join_token": str, "checks": {"egress_ip_ok": bool, "no_net_raw_admin": bool, "own_netns": bool, "shm_empty": bool, "details": str}, "ports": {"70000": P, …} (10 to 64 identity ports, from 70000 up), "cpu_count": int, "cpu_quota": float|null, "gpu_count": int}` | 200 `{"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address": "<head_ip>:6379", "num_cpus": int}`; 403 `{"reason"}` (refused); 503 `{"reason"}` (the head has not seen the instance `running` yet; try again) |
 | A | `POST /report` | `{"instance_id": int, "kind": "destroy", "reason": str}` (before enrollment) | 200 `{}` if it can be parsed. The head only logs it. |
 | B | `POST /heartbeat` | `{"instance_id": int, "pids_current": int\|null, "pids_max": int\|null, "pids_refused": int\|null, "ports_in_use": int\|null, "ports_total": int}` | 200 `{}`; 403 `{"reason": "unknown"}` when the head does not know this worker |
 | B | `POST /report` | `{"instance_id": int, "kind": "token_check", "ok": bool, "reason": str}` or `{"instance_id": int, "kind": "destroy", "reason": str}` | 200 `{}` |
@@ -197,8 +197,8 @@ All bodies and answers are JSON. Port A: TLS, no client cert. Port B: TLS, a cli
 
 - **Order of the checks:** the body (400 if it is not valid); a known candidate that is not enrolled yet; the source IP equals the candidate's public IP; the join token equals the candidate's token; the host checks; the GPU count and the CPU cores; the port check; a free slot. The head makes no vast call during `/enroll`.
 - **GPUs:** the worker's `gpu_count` is the number of `/dev/nvidia<N>` device nodes in its container. `/proc/driver/nvidia/gpus` is not used: it shows every GPU of the host (C5). The head accepts only a `gpu_count` equal to the node type's `GPU` (F4). So the worker starts Ray with its own `gpu_count`, and the answer has no GPU field.
-- **CPUs:** `cpu_count` is the size of the worker's CPU affinity (`os.sched_getaffinity`). `cpu_quota` is its cgroup CPU quota in cores (a float), or null when it has no quota (5.4). The cores are the smaller of the two (`cpu_count` when there is no quota). The head refuses cores below 0.9 × the node type's `CPU`. Reason: vast gives a quota of 0.96 × `cpu_cores_effective` (S6, 303 of 322 machines), and the offer filter is `cpu_cores_effective >= CPU`. The 0.9 also catches a future change of vast's factor. The answer's `num_cpus` is the node type's `CPU`, and the worker starts Ray with it (F4).
-- **Body limits:** `ports` holds 64 different values in 1–65535; `cpu_count` is 1–4096; `cpu_quota` is null or a number above 0 and at most 4096; `gpu_count` is 0–64. Other values give 400.
+- **CPUs:** `cpu_count` is the size of the worker's CPU affinity (`os.sched_getaffinity`). `cpu_quota` is its cgroup CPU quota in cores (a float), or null when it has no quota (5.4). The cores are the smaller of the two (`cpu_count` when there is no quota). The head refuses cores below 0.9 × the node type's `CPU`. Reason: vast gives a quota of 0.96 × `cpu_cores_effective` (S6, 303 of 322 machines), and the offer filter is `cpu_cores_effective >= max(CPU, 4)`. The 0.9 also catches a future change of vast's factor. The answer's `num_cpus` is the node type's `CPU`, and the worker starts Ray with it (F4).
+- **Body limits:** `ports` has the keys 70000 up to 70000 + n − 1, with n from 10 to 64 (the provider rents min(64, `direct_port_count`) identity ports, and the filter is `direct_port_count >= 10`), and n different values in 1–65535; `cpu_count` is 1–4096; `cpu_quota` is null or a number above 0 and at most 4096; `gpu_count` is 0–64. Other values give 400.
 - **Refusals without a destroy:** an unknown instance, an instance that is already enrolled, a wrong source IP, a missing or wrong join token. Reason: a stranger must not be able to kill our candidates. The provider's time limits end such candidates.
 - **Refusals with a destroy:** after a valid token, a failed host check, a `gpu_count` other than the node type's `GPU` (in both directions; blocklist `security`), fewer cores than 0.9 × the node type's `CPU` (blocklist `security`), a failed port check or no free slot destroys the candidate. A host fault also puts the host on the blocklist (section 4).
 - **Port check:** the head opens a TCP connection to every identity port P on the public IP, in parallel, 5 s limit for each. Every port must accept.
@@ -320,7 +320,7 @@ The head has no Elastic IP. A reboot keeps its IP. After an EC2 stop and start, 
 
 ### 8.1 Identity ports
 
-Each worker asks vast for the 64 identity ports 70000–70063 (`-p 700xx:700xx`). vast gives a host port P for each, maps P→P, and puts P in `VAST_TCP_PORT_700xx`. Ray advertises the public IP and the ports P, so other nodes reach the worker directly. The port map is in 5.5.
+Each worker asks vast for the identity ports from 70000 up (`-p 700xx:700xx`): the smaller of 64 and the offer's `direct_port_count`. A host with 10–63 direct ports is 137 of 705 verified machines (2026-10-17), so a fixed 64 left out about 20 % of them. vast gives a host port P for each, maps P→P, and puts P in `VAST_TCP_PORT_700xx`. Ray advertises the public IP and the ports P, so other nodes reach the worker directly. The port map is in 5.5.
 
 ### 8.2 Networking shim
 
@@ -345,7 +345,10 @@ Reason: without it, the runtime-env agent and the dashboard agent bind to the ad
 This section is about how the provider uses a node type. How to write one is in the user docs: [node types](../ray-vast-pypi/docs/how-to/node-types.md) and [configuration](../ray-vast-pypi/docs/reference/configuration.md).
 
 - A node type has declared resources (`CPU`, `GPU`) and an `offer_query` in the vast API JSON form (a YAML mapping, MB units). There is no parser for the vast CLI syntax.
-- The provider adds these filters: `num_gpus = GPU`, `cpu_cores_effective >= CPU`, `direct_port_count >= 64`, `verified = true`, `rentable = true`, `datacenter = true` (unless `allow_non_datacenter`). A user filter on an added field must be at least as strict, and is merged.
+- The provider adds these filters: `num_gpus = GPU`, `cpu_cores_effective >= max(CPU, 4)`, `direct_port_count >= 10`, `rentable = true`. A user filter on an added field must be at least as strict, and is merged.
+    - The core floor of 4: below about 3 effective cores, `pids.max` is below 640 (S6), and the 4 worker ports have no thread room (B = 0).
+    - The port floor of 10: the 6 fixed identity ports and the minimum of 4 worker ports (5.5).
+- `verified = true` and `datacenter = true` are recommended, not added. The example YAMLs have them as normal `offer_query` lines. Reason (S6): verified hosts did not start in 12 min in 2 % of the rentals, deverified hosts in 50 %; all identity ports were reachable from outside on 100 % of the datacenter hosts and 77 % of the unverified hosts.
 - The search sends `type: on-demand`, `limit: 100`, and sorts by `dph_total` ascending (the cheapest first). The user cannot change the order.
 - `up` stops with an error if the declared resources contradict the query, or if the head type does not declare `resources: {CPU: 0}`.
 

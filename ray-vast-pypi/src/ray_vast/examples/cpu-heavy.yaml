@@ -14,7 +14,6 @@ provider:
   image: rayproject/ray:2.59.0-py311-gpu   # image for the head and the workers
   max_dollars_per_hour: 4.0           # hard limit for the sum of dph_total over all workers and candidates
   # candidate_factor: 2           # candidates rented for each requested worker (default: 2)
-  # allow_non_datacenter: false     # true allows non-datacenter hosts (default: false; read the security model first)
 
 head_node_type: head
 available_node_types:
@@ -30,6 +29,11 @@ available_node_types:
     node_config:
       # disk_gb: 50                 # disk of the instance in GB (default: 50)
       offer_query:                  # required: which vast offers this type can rent (vast API form)
+        # Highly recommended: keep these two lines (vast host survey, 2026-10-17). Not started in 12 min: 2% of verified
+        # hosts, 50% of deverified hosts. All identity ports reachable from outside: 100% of datacenter hosts, 77% of
+        # unverified hosts.
+        verified: {eq: true}
+        datacenter: {eq: true}
         gpu_ram: {gte: 8000}                # MB (any size: few hosts have 32 cores and a small GPU)
         cpu_ram: {gte: 64000}               # MB
         dlperf: {gte: 20}

@@ -127,7 +127,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 | `ray up`, `ray attach`, `ray exec`, `ray rsync-*`. | Use the `ray-vast` commands, `--working-dir` and `runtime_env`. |
 | Results on a worker's disk. Ray removes idle workers, and a worker destroys itself when it loses the head. | Write results, checkpoints and logs to cloud storage (for example S3). |
 | A local output path (for example `/tmp/out`). The files stay on each worker. | Write shared output to a cloud bucket. |
-| A library that opens its own connections between workers on other ports. Only the 64 identity ports of each worker are open. | Keep that work on one worker. |
+| A library that opens its own connections between workers on other ports. Only the identity ports of each worker (at most 64) are open. | Keep that work on one worker. |
 
 Ray traffic between workers goes over the public internet. Large objects moved at 3 to 30 MB/s between hosts in our tests. The rate depends on the hosts.
 

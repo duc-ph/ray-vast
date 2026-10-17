@@ -315,11 +315,12 @@ def host_facts(probe, machine_id):
 
 def expected_limits(probe):
     """(worker ports, RAY_num_workers_soft_limit) that the bootstrap must set on the node of one NODE_PROBE row: the
-    product's own formula (ray_vast.worker.bootstrap.worker_ports_and_soft_limit) on the probed Ray CPUs and pids.max.
+    product's own formula (ray_vast.worker.bootstrap.worker_ports_and_soft_limit) on the probed Ray CPUs, pids.max and
+    mapped identity ports.
     A test never writes the formula again (a unit test greps for it)."""
     from ray_vast.worker.bootstrap import worker_ports_and_soft_limit
     facts = host_facts(probe, probe.get("machine_id"))
-    return worker_ports_and_soft_limit(facts["cpus"], facts["pids_max"])
+    return worker_ports_and_soft_limit(facts["cpus"], facts["pids_max"], probe["identity_ports"])
 
 
 NEEDS = {  # the markers that declare a need of a test; conftest registers them and xdist_group maps them

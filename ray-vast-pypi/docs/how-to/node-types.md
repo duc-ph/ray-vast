@@ -14,6 +14,8 @@ available_node_types:
     node_config:
       disk_gb: 80
       offer_query:
+        verified: {eq: true}                # highly recommended: keep these two lines
+        datacenter: {eq: true}
         gpu_ram: {gte: 24000, lte: 32000}   # MB
         dlperf: {gte: 40}
         inet_down: {gte: 500}
@@ -24,9 +26,27 @@ available_node_types:
 - `node_config.offer_query` is a YAML mapping in the vast API JSON form.
 - `node_config.disk_gb` is the disk size of the instance. The default is 50 GB. Make it large enough for the image and your data.
 
+## Keep the verified and datacenter filters
+
+ray-vast does not add `verified` or `datacenter` to the query. You set them. We highly recommend `verified: {eq: true}` and `datacenter: {eq: true}` in every node type. The example YAMLs have them.
+
+The vast host survey of 2026-10-17 measured these rates:
+
+| Hosts | Not started in 12 min | All identity ports reachable from outside |
+|---|---|---|
+| Verified | 2 % | 99 % |
+| Unverified | 9 % | 77 % |
+| Deverified | 50 % | 87 % |
+| Datacenter | 10 % | 100 % |
+| Non-datacenter | 21 % | 89 % |
+
+A host that does not start, or that fails the port check, costs a retry. Then the worker arrives later. These filters also make a dishonest host less likely. Read [Security model](../security.md).
+
 ## CPU and GPU
 
-The provider adds `cpu_cores_effective >= CPU` and `num_gpus == GPU` to the query.
+The provider adds `cpu_cores_effective >= max(CPU, 4)` and `num_gpus == GPU` to the query.
+
+- The core floor is 4 or more. Reason: vast sets the container process limit (`pids.max`) to 256 × the CPU quota in whole cores. Below about 3 effective cores, the limit is below 640. Then the worker gets the minimum of 4 worker ports with no room for their threads. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker).
 
 - Ray gets the declared `CPU` on each worker. A host with more cores gives no more Ray CPUs. To use more cores, declare a larger `CPU`.
 - Ray plans new workers with the same `CPU` value. So Ray starts the number of workers that the work needs.
@@ -69,12 +89,16 @@ Use this to make one node type for each CPU size:
     resources: {CPU: 8, GPU: 1}
     node_config:
       offer_query:
+        verified: {eq: true}
+        datacenter: {eq: true}
         gpu_ram: {gte: 24000}
         cpu_cores_effective: {gte: 8, lt: 16}
   gpu-large:
     resources: {CPU: 16, GPU: 1}
     node_config:
       offer_query:
+        verified: {eq: true}
+        datacenter: {eq: true}
         gpu_ram: {gte: 24000}
         cpu_cores_effective: {gte: 16, lt: 32}
 ```
@@ -87,7 +111,7 @@ Set a GPU memory range and a `dlperf` minimum.
 - GPU memory tiers in the vast market: 8, 12, 16, 24, 32, 48, 80, 96 and 140+ GB. The speed can be very different inside one tier.
 - `dlperf` is vast's deep learning speed score. Use it for speed.
 - Do not use `total_flops`. It is FP32 speed without tensor cores.
-- The datacenter filter removes many offers. A narrow query can match no offer.
+- The `verified` and `datacenter` filters remove many offers. A narrow query can match no offer.
 
 ## Optional filters
 

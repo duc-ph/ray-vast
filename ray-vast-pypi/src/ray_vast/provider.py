@@ -7,7 +7,7 @@ Ray loads it from `provider: {type: external, module: ray_vast.provider.VastNode
 - `head_ip`: the head public IP (required).
 - `secrets_dir`: directory with `ca.pem`, `ca.key`, `head.pem`, `head.key`, `token` and `vast_api_key` (required).
 - `security_group_ids` (the cluster's 5 groups, in order), `region` (of the head), `image`, `max_dollars_per_hour`: required.
-- `candidate_factor`, `allow_non_datacenter`: defaults from `config.PROVIDER_DEFAULTS`.
+- `candidate_factor`: default from `config.PROVIDER_DEFAULTS`.
 - `image_size_gb` (optional; `up` measures it): the pull limit is `2 x image_size / inet_down`, clamped to 5-15 min.
   Without it, 15 min.
 - `vast_api_url`, `port_a`, `port_b` (optional, tests only): the vast API base URL (the local end-to-end tests point it at
@@ -48,7 +48,7 @@ from .aws_sg import SecurityGroupRules, SgQuotaError, ec2_client_config
 from .config import PORT_A, PORT_B, PROVIDER_DEFAULTS, build_offer_query
 from .head_server import HeadServer
 from .state import BREAKER_FAILED_SLOTS, Candidate, ClusterState, Slot
-from .vast_api import VastClient, VastError, label, sweep
+from .vast_api import IDENTITY_PORTS, VastClient, VastError, label, sweep
 
 log = logging.getLogger(__name__)
 
@@ -172,8 +172,7 @@ class VastNodeProvider(NodeProvider):
             raise NodeLaunchException("repeated enrollment failures", f"node type {node_type!r}: {BREAKER_FAILED_SLOTS} slots "
                                       f"in a row ended with no enrolled worker; no launches for {pause_left:.0f} s more",
                                       None)
-        query = build_offer_query({"resources": {"GPU": 0, **resources}, "node_config": node_config},
-                                  self._cfg["allow_non_datacenter"], node_type)
+        query = build_offer_query({"resources": {"GPU": 0, **resources}, "node_config": node_config}, node_type)
         request_id = uuid.uuid4().hex
         with self.state.lock:
             slots = [Slot(self.state.new_slot_id(), node_type, dict(tags)) for _ in range(count)]
@@ -213,7 +212,8 @@ class VastNodeProvider(NodeProvider):
                 try:
                     instance_id = self._vast.create_instance(
                         offer["id"], self._cfg["image"], {**env, "RAYVAST_JOIN_TOKEN": join_token},
-                        ["sh", "-c", self._bootloader], self._label, node_config["disk_gb"])
+                        ["sh", "-c", self._bootloader], self._label, node_config["disk_gb"],
+                        identity_ports=min(len(IDENTITY_PORTS), offer["direct_port_count"]))
                 except VastError as e:
                     log.warning("renting offer %s failed: %s", offer["id"], e)
                 finally:

@@ -49,6 +49,10 @@ provider:
 
 Then a bad host costs a retry, and a worker can arrive later.
 
+## Keep the verified and datacenter filters
+
+An unverified or non-datacenter host can be cheaper. But more of these hosts never start, or fail the port check. Each such host costs a retry, and the worker arrives later. Keep `verified: {eq: true}` and `datacenter: {eq: true}` in the offer query. Read [Keep the verified and datacenter filters](node-types.md#keep-the-verified-and-datacenter-filters).
+
 ## The EC2 head
 
 The head runs until you run `ray-vast down`. The default `t3.large` costs about $0.08 per hour in `us-west-2`, plus the 60 GB disk.

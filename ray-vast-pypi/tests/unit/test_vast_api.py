@@ -38,7 +38,7 @@ def test_search_offers_sends_query_and_returns_offers(client):
 @responses.activate
 def test_create_instance_returns_id_and_adds_identity_ports(client):
     responses.put(f"{BASE_URL}/asks/12345678/", json=CREATE_OK)
-    iid = client.create_instance(12345678, "img:1", {"A": "b"}, ["bash", "-c", "x"], "lbl", 20)
+    iid = client.create_instance(12345678, "img:1", {"A": "b"}, ["bash", "-c", "x"], "lbl", 20, identity_ports=64)
     sent = json.loads(responses.calls[0].request.body)
     assert iid == 12345678
     assert sent["client_id"] == "me" and sent["runtype"] == "args" and sent["disk"] == 20
@@ -46,6 +46,14 @@ def test_create_instance_returns_id_and_adds_identity_ports(client):
     assert sent["env"]["A"] == "b"
     assert [k for k in sent["env"] if k.startswith("-p ")] == [f"-p {p}:{p}" for p in range(70000, 70064)]
     assert all(v == "1" for k, v in sent["env"].items() if k.startswith("-p "))
+
+
+@responses.activate
+def test_create_instance_asks_for_the_given_number_of_identity_ports(client):
+    responses.put(f"{BASE_URL}/asks/12345678/", json=CREATE_OK)
+    client.create_instance(12345678, "img:1", {}, [], "lbl", 20, identity_ports=20)
+    sent = json.loads(responses.calls[0].request.body)
+    assert [k for k in sent["env"] if k.startswith("-p ")] == [f"-p {p}:{p}" for p in range(70000, 70020)]
 
 
 @responses.activate
@@ -95,11 +103,11 @@ def test_4xx_does_not_retry(client, sleeps):
 def test_create_retries_429_but_not_5xx(client, sleeps):
     responses.put(f"{BASE_URL}/asks/1/", status=429)
     responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
-    assert client.create_instance(1, "img", {}, [], "l", 20) == 12345678
+    assert client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64) == 12345678
     assert len(sleeps) == 1
     responses.put(f"{BASE_URL}/asks/2/", status=502)
     with pytest.raises(VastError):
-        client.create_instance(2, "img", {}, [], "l", 20)
+        client.create_instance(2, "img", {}, [], "l", 20, identity_ports=64)
     assert len(responses.calls) == 3
 
 
@@ -112,10 +120,10 @@ def test_secrets_never_leak(client, caplog):
     responses.put(f"{BASE_URL}/asks/3/", json={"success": False, "instance_api_key": SECRET, "error": "gone"})
     responses.put(f"{BASE_URL}/asks/4/", status=500, body=f'{{"instance_api_key": "{SECRET}"}}')
     responses.put(f"{BASE_URL}/asks/5/", body=requests.ConnectionError(f"Bearer ACCOUNTKEY {SECRET}"))
-    texts.append(str(client.create_instance(1, "img", {}, [], "l", 20)))
+    texts.append(str(client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)))
     for offer in (2, 3, 4, 5):
         with pytest.raises(VastError) as e:
-            client.create_instance(offer, "img", {}, [], "l", 20)
+            client.create_instance(offer, "img", {}, [], "l", 20, identity_ports=64)
         texts += [str(e.value), repr(e.value), str(e.value.__cause__), str(e.value.__context__)]
     everything = "\n".join(texts) + caplog.text
     assert SECRET not in everything
@@ -139,7 +147,7 @@ def test_error_body_is_redacted_before_truncation(client):
 def test_create_failure_message_has_no_secret_fields(client):
     responses.put(f"{BASE_URL}/asks/1/", json={"success": False, "error": "no_such_ask", "instance_api_key": SECRET})
     with pytest.raises(VastError) as e:
-        client.create_instance(1, "img", {}, [], "l", 20)
+        client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)
     assert "no_such_ask" in str(e.value) and SECRET not in str(e.value)
 
 
@@ -167,7 +175,7 @@ def test_every_call_has_a_timeout(client):
     responses.get(f"{BASE_URL}/instances/", json={"instances": []})
     responses.delete(f"{BASE_URL}/instances/1/", json={"success": True})
     client.search_offers({})
-    client.create_instance(1, "img", {}, [], "l", 20)
+    client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)
     client.list_instances()
     client.destroy_instance(1)
     assert len(responses.calls) == 4
@@ -210,7 +218,7 @@ def test_live_search_with_gpu_24gb_example_query():
     from ray_vast.config import bootstrap_config, build_offer_query
 
     config, _ = bootstrap_config(yaml.safe_load((pathlib.Path(ray_vast.__file__).parent / "examples" / "gpu-24gb.yaml").read_text()))
-    query = build_offer_query(config["available_node_types"]["gpu24"], config["provider"]["allow_non_datacenter"], "gpu24")
+    query = build_offer_query(config["available_node_types"]["gpu24"], "gpu24")
     key = os.environ.get("VAST_API_KEY") or LIVE_KEY.read_text().strip()
     offers = VastClient(key).search_offers(query)  # raises on HTTP 400 if the body (type: on-demand) is not accepted
     print(len(offers), "offers for", query)
@@ -232,7 +240,7 @@ def test_create_does_not_retry_a_lost_connection(client, sleeps):
     responses.put(f"{BASE_URL}/asks/1/", body=requests.ConnectionError("boom"))
     responses.put(f"{BASE_URL}/asks/1/", json=CREATE_OK)
     with pytest.raises(VastError):
-        client.create_instance(1, "img", {}, [], "l", 20)
+        client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)
     assert len(responses.calls) == 1 and sleeps == []
 
 
@@ -240,14 +248,14 @@ def test_create_does_not_retry_a_lost_connection(client, sleeps):
 def test_create_with_success_false_raises_even_when_it_returns_a_contract(client):
     responses.put(f"{BASE_URL}/asks/1/", json={"success": False, "new_contract": 5})
     with pytest.raises(VastError):
-        client.create_instance(1, "img", {}, [], "l", 20)
+        client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)
 
 
 @responses.activate
 def test_create_on_missing_offer_raises_404(client):
     responses.put(f"{BASE_URL}/asks/1/", status=404)
     with pytest.raises(VastError) as e:
-        client.create_instance(1, "img", {}, [], "l", 20)
+        client.create_instance(1, "img", {}, [], "l", 20, identity_ports=64)
     assert e.value.status == 404
 
 
@@ -273,7 +281,7 @@ def test_create_error_that_echoes_the_env_does_not_show_the_join_token(client, c
     echo = json.dumps({"error": "invalid_args", "env": {"RAYVAST_JOIN_TOKEN": token, "RAYVAST_CLUSTER": "c1"}})
     responses.put(f"{BASE_URL}/asks/1/", status=400, body=echo)
     with pytest.raises(VastError) as e:
-        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token}, [], "l", 20)
+        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token}, [], "l", 20, identity_ports=64)
     assert "invalid_args" in str(e.value)
     assert token not in str(e.value) + repr(e.value) + caplog.text
 
@@ -288,6 +296,6 @@ def test_create_error_in_plain_text_does_not_show_the_join_token(client, caplog,
     token = "d4" * 32
     responses.put(f"{BASE_URL}/asks/1/", status=status, **answer(token))
     with pytest.raises(VastError) as e:
-        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token, "RAYVAST_CLUSTER": "c1"}, [], "l", 20)
+        client.create_instance(1, "img", {"RAYVAST_JOIN_TOKEN": token, "RAYVAST_CLUSTER": "c1"}, [], "l", 20, identity_ports=64)
     assert "rejected" in str(e.value)
     assert token not in str(e.value) + repr(e.value) + caplog.text

@@ -82,6 +82,7 @@ def probe(all_ids):
         "rayvast_file_modes": modes, "cap_net_admin_bnd": bool(cap_bnd >> 12 & 1), "cap_net_raw_bnd": bool(cap_bnd >> 13 & 1),
         "cgroup": "v2" if v2 else "v1", "cpu_quota": quota, "affinity": len(os.sched_getaffinity(0)),
         "agent_ports": ports, "worker_threads": sorted(worker_threads),
+        "identity_ports": sum(1 for k in os.environ if k.startswith("VAST_TCP_PORT_")),
         "agent_http_no_token": http_status(f"http://127.0.0.1:{ports.get('dashboard_agent_listen_port')}/") if ports else None,
         "runtime_env_no_token": http_status(f"http://127.0.0.1:{ports.get('runtime_env_agent_port')}/") if ports else None,
         "listen": {k: listen_addresses(v) for k, v in ports.items()},
