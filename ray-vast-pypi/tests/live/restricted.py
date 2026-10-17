@@ -10,9 +10,8 @@ from pathlib import Path
 
 import boto3
 
-import livekit
 from cluster import ADMIN_PROFILE, BIN
-from window import wait_until
+from liverun import assert_ours, wait_until
 
 POLICY = "ray-vast-user"
 
@@ -22,7 +21,7 @@ class RestrictedUser:
         self.dir = Path(out_dir)
         self.dir.mkdir(parents=True, exist_ok=True)
         self.name = f"ray-vast-livetest-{date.replace('-', '')}"
-        livekit.assert_ours(self.name)
+        assert_ours(self.name)
         self.profile = "ray-vast-livetest"
         self.credentials_file = Path(tmp_dir) / "credentials"
         self.iam = boto3.Session(profile_name=ADMIN_PROFILE).client("iam")
@@ -86,7 +85,7 @@ class RestrictedUser:
         return self
 
     def delete(self):
-        livekit.assert_ours(self.name)
+        assert_ours(self.name)
         try:
             for key in self.iam.list_access_keys(UserName=self.name)["AccessKeyMetadata"]:
                 self.iam.delete_access_key(UserName=self.name, AccessKeyId=key["AccessKeyId"])

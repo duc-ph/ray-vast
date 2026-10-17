@@ -16,10 +16,8 @@ import botocore.exceptions
 import pytest
 import yaml
 
-import livekit
-from livekit import check
 from cluster import ADMIN_PROFILE, BIN, aws_leftovers, wait_port
-from window import wait_until
+from liverun import assert_ours, wait_until
 
 pytestmark = pytest.mark.aws
 REGION = "us-west-2"
@@ -69,7 +67,7 @@ def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
     arn = f"arn:aws:iam::{account}:policy/{BOUNDARY}"
     roles = [r["RoleName"] for page in iam.get_paginator("list_roles").paginate() for r in page["Roles"]
              if r["RoleName"].startswith("ray-vast-")]
-    check(record, "no ray-vast role uses the boundary now", not roles, roles)
+    record.require("no ray-vast role uses the boundary now", not roles, roles)
     for version in iam.list_policy_versions(PolicyArn=arn)["Versions"]:
         if not version["IsDefaultVersion"]:
             iam.delete_policy_version(PolicyArn=arn, VersionId=version["VersionId"])
@@ -80,10 +78,10 @@ def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
         done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
         expected = (f"the IAM policy {BOUNDARY} does not exist in AWS account {account}. Create it once (one command): "
                     "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created.")
-        check(record, "up exits 1 with the message and the link", done.returncode == 1 and expected in done.stderr, done.stderr[-400:])
+        record.check("up exits 1 with the message and the link", done.returncode == 1 and expected in done.stderr, done.stderr[-400:])
         left = aws_leftovers(cluster.name, REGION)  # before any `down`: the claim is that `up` made nothing
-        check(record, "nothing was made", left == [], left)
-        check(record, "no state file", not (cluster.state_dir / f"{cluster.name}.json").exists(), "")
+        record.check("nothing was made", left == [], left)
+        record.check("no state file", not (cluster.state_dir / f"{cluster.name}.json").exists(), "")
     finally:
         # The getting-started command, verbatim except the profile name.
         command = ("IAM_DIR=\"$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam\"\n"
@@ -93,43 +91,43 @@ def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
                               capture_output=True, text=True, timeout=120)
         record.evidence("recreate.txt", f"$ {command}\nexit {done.returncode}\n{done.stdout}{done.stderr}")
         assert done.returncode == 0, done.stderr
-    check(record, "the documented command made the policy again", iam.get_policy(PolicyArn=arn)["Policy"]["PolicyName"] == BOUNDARY, "")
+    record.check("the documented command made the policy again", iam.get_policy(PolicyArn=arn)["Policy"]["PolicyName"] == BOUNDARY, "")
 
 
 @pytest.mark.failure
 def test_A03_down_recovery(record, new_cluster, tmp_path):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
     terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything. The end of
-    the test checks AWS and vast after each `down` (the `new_cluster` factory: livekit.end_cluster)."""
+    the test checks AWS and vast after each `down` (the `new_cluster` factory: liverun.end_cluster)."""
     a = new_cluster(small_config("a03a"), record.dir / "a", tmp_path / "home_a")
     out = run_until(a, ["up", a.yaml, "--profile", ADMIN_PROFILE], lambda: a.key_file.exists())
     record.data("a_up_output_tail", out[-300:])
-    check(record, "(a) up was stopped after the key pair", a.key_file.exists() or "Traceback" in out or "KeyboardInterrupt" in out, out[-200:])
+    record.check("(a) up was stopped after the key pair", a.key_file.exists() or "Traceback" in out or "KeyboardInterrupt" in out, out[-200:])
     done = a.down()
-    check(record, "(a) down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
+    record.check("(a) down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
 
     b = new_cluster(small_config("a03b"), record.dir / "b", tmp_path / "home_b")
     ec2 = admin("ec2")
     from ray_vast import commands
     run_until(b, ["up", b.yaml, "--profile", ADMIN_PROFILE], lambda: bool(commands._head_instances(ec2, b.name)))
     heads = commands._head_instances(ec2, b.name)
-    check(record, "(c) a head exists", heads, [h["InstanceId"] for h in heads])
+    record.require("(c) a head exists", heads, [h["InstanceId"] for h in heads])
     ids = [h["InstanceId"] for h in heads]
     ec2.terminate_instances(InstanceIds=ids)
     # Not the boto3 waiter: it fails at once when it sees the head still `pending`.
     terminated = wait_until(lambda: [i["State"]["Name"] for r in ec2.describe_instances(InstanceIds=ids)["Reservations"]
                                      for i in r["Instances"]], 600, done=lambda states: all(s == "terminated" for s in states), poll_s=10)
-    check(record, "(c) the head is terminated by hand (within 600 s)", terminated.ok, terminated.seen or terminated.error)
+    record.check("(c) the head is terminated by hand (within 600 s)", terminated.ok, terminated.seen or terminated.error)
     if b.state_dir.joinpath(f"{b.name}.json").exists():
         done = b.cli("attach", b.yaml)
-        check(record, "attach without a running head: one-line error", done.returncode == 1 and f"no running head for cluster {b.name}"
-              in done.stderr, done.stderr[-200:])
+        record.check("attach without a running head: one-line error", done.returncode == 1 and f"no running head for cluster {b.name}"
+             in done.stderr, done.stderr[-200:])
     (b.state_dir / f"{b.name}.json").unlink(missing_ok=True)
     import shutil
     shutil.rmtree(b.state_dir / b.name, ignore_errors=True)  # the SSH key: `down` needs none
     done = b.down()  # no state file: `down --profile`
-    check(record, "(b, c, d) down without state file, key or head: left nothing", done.returncode == 0 and "left: nothing" in done.stdout,
-          done.stdout[-300:])
+    record.check("(b, c, d) down without state file, key or head: left nothing", done.returncode == 0 and "left: nothing" in done.stdout,
+         done.stdout[-300:])
 
 
 @pytest.mark.security
@@ -163,7 +161,7 @@ def test_A10_restricted_user_denials(record, restricted_user):
         except botocore.exceptions.ClientError as e:
             code = e.response["Error"]["Code"]
         lines.append(f"{name}: {code}")
-        check(record, f"{name} is denied", code in ("AccessDenied", "UnauthorizedOperation"), code)
+        record.check(f"{name} is denied", code in ("AccessDenied", "UnauthorizedOperation"), code)
     record.evidence("denials.txt", "\n".join(lines) + "\n")
 
 
@@ -182,12 +180,12 @@ def test_A05_head_network_exposure(record, aws_only):
             reach[port] = type(e).__name__
     record.data("from_operator", reach)
     for port, result in reach.items():
-        check(record, f"port {port} is closed from the operator machine", result != "open", result)
+        record.check(f"port {port} is closed from the operator machine", result != "open", result)
     listen = aws_only.ssh("sudo ss -ltnH")
     record.evidence("ss_ltn.txt", listen)
     for port in (8265, 6384, 6385):
         addresses = {line.split()[3].rsplit(":", 1)[0] for line in listen.splitlines() if line.split()[3].endswith(f":{port}")}
-        check(record, f"port {port} listens on 127.0.0.1 only", addresses == {"127.0.0.1"}, sorted(addresses))
+        record.check(f"port {port} listens on 127.0.0.1 only", addresses == {"127.0.0.1"}, sorted(addresses))
     # T9: with a job running, the head sends no packet to its own public IP (the shim rewrites those connects).
     capture = subprocess.Popen([*aws_only.ssh_args(), f"sudo timeout 60 tcpdump -nni any -c 50 'dst host {head} and not port 22' 2>&1"],
                                stdout=subprocess.PIPE, text=True)
@@ -198,8 +196,8 @@ def test_A05_head_network_exposure(record, aws_only):
     out = capture.communicate(timeout=120)[0]
     record.evidence("tcpdump_to_own_public_ip.txt", out)
     packets = re.search(r"(\d+) packets captured", out)
-    check(record, "job during the capture", status == "SUCCEEDED", status)
-    check(record, "0 packets to the head's own public IP", packets is not None and packets.group(1) == "0", packets and packets.group(0))
+    record.check("job during the capture", status == "SUCCEEDED", status)
+    record.check("0 packets to the head's own public IP", packets is not None and packets.group(1) == "0", packets and packets.group(0))
 
 
 def test_A08_no_offer_and_budget_texts(record, aws_only):
@@ -223,9 +221,9 @@ def test_A08_no_offer_and_budget_texts(record, aws_only):
     record.evidence("monitor_slice.log", "\n".join(w.lines()))
     record.evidence("ray_status.txt", status)
     for key, text in texts.items():
-        check(record, f"monitor.log: {text}", key in found, found.get(key, "")[:300])
-    check(record, "ray status shows LaunchFailed", "LaunchFailed" in status, "")
-    check(record, "0 vast rentals", aws_only.instances() == [] and not any(r.get("instances") for r in aws_only.timeline), "")
+        record.check(f"monitor.log: {text}", key in found, found.get(key, "")[:300])
+    record.check("ray status shows LaunchFailed", "LaunchFailed" in status, "")
+    record.check("0 vast rentals", aws_only.instances() == [] and not any(r.get("instances") for r in aws_only.timeline), "")
 
 
 @pytest.mark.security
@@ -235,15 +233,15 @@ def test_A09_token_on_every_ray_call(record, aws_only):
         done = subprocess.run([str(BIN / "ray"), "job", "submit", "--address", env["RAY_ADDRESS"], "--", "echo", "hi"], env=bare,
                               capture_output=True, text=True, timeout=300)
         record.evidence("submit_without_token.txt", done.stdout + done.stderr)
-        check(record, "ray job submit without RAY_AUTH_* fails", done.returncode != 0, (done.stdout + done.stderr)[-300:])
+        record.check("ray job submit without RAY_AUTH_* fails", done.returncode != 0, (done.stdout + done.stderr)[-300:])
         script = ("import os, time\nfrom ray.job_submission import JobSubmissionClient\n"
                   "c = JobSubmissionClient(os.environ['RAY_ADDRESS'])\nsid = c.submit_job(entrypoint='echo 12345')\n"
                   "while str(c.get_job_status(sid).value) not in ('SUCCEEDED', 'FAILED', 'STOPPED'): time.sleep(2)\n"
                   "print('STATUS', c.get_job_status(sid).value, c.get_job_logs(sid).strip())\n")
         done = subprocess.run([str(BIN / "python"), "-c", script], env=env, capture_output=True, text=True, timeout=300)
         record.evidence("job_submission_client.txt", done.stdout + done.stderr)
-        check(record, "JobSubmissionClient with the export line: SUCCEEDED", "STATUS SUCCEEDED" in done.stdout and "12345" in done.stdout,
-              done.stdout[-200:])
+        record.check("JobSubmissionClient with the export line: SUCCEEDED", "STATUS SUCCEEDED" in done.stdout and "12345" in done.stdout,
+             done.stdout[-200:])
 
 
 @pytest.mark.security
@@ -252,9 +250,9 @@ def test_A07_the_boundary_caps_the_head_role(record, aws_only):
     boundary are denied, and a rule on an untagged group is denied, while a rule on a cluster group works."""
     iam, ec2 = admin("iam"), admin("ec2")
     role = f"ray-vast-{aws_only.name}"
-    livekit.assert_ours(role)
+    assert_ours(role)
     untagged_name = f"ray-vast-{aws_only.name}-untagged"
-    livekit.assert_ours(untagged_name)
+    assert_ours(untagged_name)
     untagged = ec2.create_security_group(GroupName=untagged_name, Description="A07 untagged")["GroupId"]
     iam.put_role_policy(RoleName=role, PolicyName="livetest-extra", PolicyDocument=json.dumps({"Version": "2012-10-17", "Statement": [
         {"Effect": "Allow", "Action": ["s3:ListAllMyBuckets", "ec2:CreateSecurityGroup", "ec2:AuthorizeSecurityGroupIngress"], "Resource": "*"}]}))
@@ -283,9 +281,9 @@ print("A07", json.dumps(out))
         record.evidence("from_the_head.txt", out)
         result = json.loads(re.search(r"A07 (\{.*\})", out).group(1))
         for name in ("s3 ListAllMyBuckets", "ec2 CreateSecurityGroup", "authorize on an untagged group"):
-            check(record, f"{name} is denied", result[name] in ("AccessDenied", "UnauthorizedOperation"), result[name])
+            record.check(f"{name} is denied", result[name] in ("AccessDenied", "UnauthorizedOperation"), result[name])
         for name in ("authorize on cluster group 1", "revoke on cluster group 1"):
-            check(record, f"{name} works", result[name] == "ALLOWED", result[name])
+            record.check(f"{name} works", result[name] == "ALLOWED", result[name])
     finally:
         iam.delete_role_policy(RoleName=role, PolicyName="livetest-extra")
         ec2.delete_security_group(GroupId=untagged)
@@ -300,19 +298,19 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     record.evidence("up.txt", up["stdout"] + up["stderr"])
     record.data("up_s", up["wall_s"])
     lines = up["stdout"].splitlines()
-    check(record, "up: first line names the source", lines[0].startswith("installing ray-vast from a wheel built from the source tree"), lines[0])
+    record.check("up: first line names the source", lines[0].startswith("installing ray-vast from a wheel built from the source tree"), lines[0])
     for pattern in (r"^head instance i-\w+ starting$", r"^head IP [\d.]+$", rf"^cluster {aws_only.name} is up\. Head IP [\d.]+\.$",
                     rf"^  dashboard: ray-vast dashboard \S+   \(then open http://127\.0\.0\.1:8265\)$", r"^  shell:     ray-vast attach \S+$"):
-        check(record, f"up output line {pattern}", any(re.match(pattern, line) for line in lines), "")
+        record.check(f"up output line {pattern}", any(re.match(pattern, line) for line in lines), "")
     state = aws_only.state
     record.evidence("state.json", json.dumps(state, indent=1))
-    check(record, "state file: region, profile, head, groups, role, instance profile",
-          state.get("region") == REGION and state.get("profile") == ADMIN_PROFILE and state.get("head_instance_id") and
-          len(state.get("security_group_ids", [])) == 5 and state.get("role_name") == state.get("instance_profile_name") == f"ray-vast-{aws_only.name}",
-          {k: v for k, v in state.items() if k != "security_group_ids"})
+    record.check("state file: region, profile, head, groups, role, instance profile",
+         state.get("region") == REGION and state.get("profile") == ADMIN_PROFILE and state.get("head_instance_id") and
+         len(state.get("security_group_ids", [])) == 5 and state.get("role_name") == state.get("instance_profile_name") == f"ray-vast-{aws_only.name}",
+         {k: v for k, v in state.items() if k != "security_group_ids"})
     key = aws_only.key_file
-    check(record, "ssh_key.pem mode 600, its directory 700", oct(key.stat().st_mode & 0o777) == "0o600" and
-          oct(key.parent.stat().st_mode & 0o777) == "0o700", (oct(key.stat().st_mode & 0o777), oct(key.parent.stat().st_mode & 0o777)))
+    record.check("ssh_key.pem mode 600, its directory 700", oct(key.stat().st_mode & 0o777) == "0o600" and
+         oct(key.parent.stat().st_mode & 0o777) == "0o700", (oct(key.stat().st_mode & 0o777), oct(key.parent.stat().st_mode & 0o777)))
 
     ec2 = admin("ec2")
     head = ec2.describe_instances(InstanceIds=[state["head_instance_id"]])["Reservations"][0]["Instances"][0]
@@ -321,10 +319,10 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     eips = ec2.describe_addresses(Filters=[{"Name": "instance-id", "Values": [head["InstanceId"]]}])["Addresses"]
     record.data("head", {"type": head["InstanceType"], "image": image["Name"], "volume": [volume["Size"], volume["VolumeType"]],
                          "imds": head["MetadataOptions"]["HttpTokens"], "eips": len(eips)})
-    check(record, "head: t3.large (the default), Ubuntu 24.04 amd64", head["InstanceType"] == "t3.large" and
-          "ubuntu-noble-24.04-amd64" in image["Name"], image["Name"])
-    check(record, "head: 60 GiB gp3, IMDSv2 required, no Elastic IP", volume["Size"] == 60 and volume["VolumeType"] == "gp3" and
-          head["MetadataOptions"]["HttpTokens"] == "required" and not eips, "")
+    record.check("head: t3.large (the default), Ubuntu 24.04 amd64", head["InstanceType"] == "t3.large" and
+         "ubuntu-noble-24.04-amd64" in image["Name"], image["Name"])
+    record.check("head: 60 GiB gp3, IMDSv2 required, no Elastic IP", volume["Size"] == 60 and volume["VolumeType"] == "gp3" and
+         head["MetadataOptions"]["HttpTokens"] == "required" and not eips, "")
     name = f"ray-vast-{aws_only.name}"
     tagged = {"instance": head["Tags"], "volume": volume.get("Tags", []),
               "key pair": ec2.describe_key_pairs(KeyNames=[name])["KeyPairs"][0].get("Tags", [])}
@@ -332,19 +330,19 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
         tagged[group["GroupName"]] = group["Tags"]
     tagged["role"] = admin("iam").get_role(RoleName=name)["Role"].get("Tags", [])
     for what, tags in tagged.items():
-        check(record, f"{what} has the tag ray-vast-cluster={aws_only.name}", {"Key": "ray-vast-cluster", "Value": aws_only.name} in tags, "")
+        record.check(f"{what} has the tag ray-vast-cluster={aws_only.name}", {"Key": "ray-vast-cluster", "Value": aws_only.name} in tags, "")
     boundary = admin("iam").get_role(RoleName=name)["Role"].get("PermissionsBoundary", {}).get("PermissionsBoundaryArn", "")
-    check(record, "the head role has the boundary", boundary.endswith(f":policy/{BOUNDARY}"), boundary)
+    record.check("the head role has the boundary", boundary.endswith(f":policy/{BOUNDARY}"), boundary)
     shm = aws_only.ssh("sudo docker exec ray-vast-head df -k /dev/shm | tail -1; grep MemTotal /proc/meminfo")
     shm_kb, mem_kb = int(shm.split()[1]), int(re.search(r"MemTotal:\s+(\d+)", shm).group(1))
-    check(record, "head /dev/shm = 0.33 x RAM", abs(shm_kb / mem_kb - 0.33) < 0.02, round(shm_kb / mem_kb, 3))
+    record.check("head /dev/shm = 0.33 x RAM", abs(shm_kb / mem_kb - 0.33) < 0.02, round(shm_kb / mem_kb, 3))
     head_yaml = yaml.safe_load(aws_only.ssh(f"cat /home/ubuntu/ray-vast-{aws_only.name}/cluster.yaml"))
-    check(record, "the head YAML has the measured image_size_gb", isinstance(head_yaml["provider"].get("image_size_gb"), int),
-          head_yaml["provider"].get("image_size_gb"))
+    record.check("the head YAML has the measured image_size_gb", isinstance(head_yaml["provider"].get("image_size_gb"), int),
+         head_yaml["provider"].get("image_size_gb"))
 
     # attach and dashboard with the saved profile (no --profile, no AWS_PROFILE)
     done = aws_only.cli("attach", aws_only.yaml, input="echo ATTACH_OK $(whoami)\nexit\n", timeout=120)
-    check(record, "attach with the saved profile opens a shell on the head", "ATTACH_OK ubuntu" in done.stdout, done.stdout[-200:])
+    record.check("attach with the saved profile opens a shell on the head", "ATTACH_OK ubuntu" in done.stdout, done.stdout[-200:])
     proc = subprocess.Popen([str(BIN / "ray-vast"), "dashboard", str(aws_only.yaml)], env=aws_only.env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, start_new_session=True)
     try:
@@ -352,29 +350,29 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
         ok = wait_port(8265, 60)
         token_file = aws_only.state_dir / aws_only.name / "token"
         env_line = f"  export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH={token_file}\n"
-        check(record, "dashboard prints the export line before the tunnel ends", env_line in first, first)
-        check(record, "the tunnel opens 8265", ok, "")
-        check(record, "token file mode 600", oct(token_file.stat().st_mode & 0o777) == "0o600", oct(token_file.stat().st_mode & 0o777))
+        record.check("dashboard prints the export line before the tunnel ends", env_line in first, first)
+        record.check("the tunnel opens 8265", ok, "")
+        record.check("token file mode 600", oct(token_file.stat().st_mode & 0o777) == "0o600", oct(token_file.stat().st_mode & 0o777))
         os.killpg(proc.pid, signal.SIGINT)  # Ctrl-C in a terminal goes to the whole process group (ray-vast and its ssh)
         rest = proc.communicate(timeout=60)[0]
     finally:
         if proc.poll() is None:
             os.killpg(proc.pid, signal.SIGKILL)
     record.evidence("dashboard.txt", "".join(first) + rest)
-    check(record, "Ctrl-C prints `tunnel closed`, exit 0", "tunnel closed" in rest and proc.returncode == 0, (rest[-100:], proc.returncode))
+    record.check("Ctrl-C prints `tunnel closed`, exit 0", "tunnel closed" in rest and proc.returncode == 0, (rest[-100:], proc.returncode))
     for how, extra, env in (("AWS_PROFILE=bogus", [], {"AWS_PROFILE": "bogus"}), ("--profile bogus", ["--profile", "bogus"], {})):
         done = aws_only.cli("dashboard", aws_only.yaml, *extra, env=env, timeout=120)
-        check(record, f"dashboard with {how} fails on that profile (it wins over the saved one)", done.returncode != 0 and
-              "bogus" in done.stderr, done.stderr.strip()[-200:])
+        record.check(f"dashboard with {how} fails on that profile (it wins over the saved one)", done.returncode != 0 and
+             "bogus" in done.stderr, done.stderr.strip()[-200:])
     hidden = aws_only.key_file.with_suffix(".hidden")
     aws_only.key_file.rename(hidden)
     try:
         done = aws_only.cli("attach", aws_only.yaml, timeout=120)
-        check(record, "attach without the SSH key: the documented error", done.returncode == 1 and
-              f"no SSH key for cluster {aws_only.name} at" in done.stderr, done.stderr[-200:])
+        record.check("attach without the SSH key: the documented error", done.returncode == 1 and
+             f"no SSH key for cluster {aws_only.name} at" in done.stderr, done.stderr[-200:])
     finally:
         hidden.rename(aws_only.key_file)
-    check(record, "0 vast rentals", not any(r.get("instances") for r in aws_only.timeline), "")
+    record.check("0 vast rentals", not any(r.get("instances") for r in aws_only.timeline), "")
 
     # down with no flag: the saved profile
     started = time.time()
@@ -382,9 +380,9 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     record.evidence("down.txt", done.stdout + done.stderr)
     record.data("down_s", round(time.time() - started, 1))
     out = done.stdout.splitlines()
-    check(record, "down: terminating head first", out and out[0].startswith("terminating head i-"), out[:1])
-    check(record, "down: 5 groups, key pair, instance profile, role", sum(line.startswith("deleted security group sg-") for line in out) == 5
-          and f"deleted key pair {name}" in out and f"deleted instance profile {name}" in out and f"deleted role {name}" in out, out)
-    check(record, "down: left nothing, exit 0", done.returncode == 0 and out[-1] == "left: nothing", out[-1:])
-    check(record, "state files and the key are gone", not (aws_only.state_dir / f"{aws_only.name}.json").exists() and
-          not aws_only.key_file.parent.exists(), "")
+    record.check("down: terminating head first", out and out[0].startswith("terminating head i-"), out[:1])
+    record.check("down: 5 groups, key pair, instance profile, role", sum(line.startswith("deleted security group sg-") for line in out) == 5
+         and f"deleted key pair {name}" in out and f"deleted instance profile {name}" in out and f"deleted role {name}" in out, out)
+    record.check("down: left nothing, exit 0", done.returncode == 0 and out[-1] == "left: nothing", out[-1:])
+    record.check("state files and the key are gone", not (aws_only.state_dir / f"{aws_only.name}.json").exists() and
+         not aws_only.key_file.parent.exists(), "")

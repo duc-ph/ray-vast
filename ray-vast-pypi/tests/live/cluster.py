@@ -1,5 +1,6 @@
-"""A live cluster for the suite: the `ray-vast` CLI in a private HOME, SSH to the head, a tunnel, jobs, and the AWS and vast
-checks. Every command output goes to `<dir>/cli.log`. Secrets (the cluster token, join tokens) stay in memory."""
+"""The two cluster kinds of the suite (their interface: livecloud.py) and the cloud guards. `Cluster`: a suite cluster, the
+`ray-vast` CLI in a private HOME, SSH to the head, a tunnel, jobs. `ReleaseCluster`: the getting-started tutorial. Every
+command output goes to `<dir>/cli.log`. Secrets (the cluster token, join tokens) stay in memory."""
 import json
 import os
 import re
@@ -7,7 +8,6 @@ import signal
 import socket
 import subprocess
 import sys
-import threading
 import time
 import urllib.request
 from contextlib import contextmanager
@@ -17,11 +17,13 @@ import boto3
 import yaml
 
 from ray_vast import commands
+from ray_vast.config import HEAD_INSTANCE_TYPE
 from ray_vast.vast_api import VastClient, label
 
 import livejob
-import livekit
 import window
+from livepoller import Poller
+from liverun import assert_ours
 
 BIN = Path(sys.executable).parent
 RAY_VAST = [str(BIN / "ray-vast")]
@@ -66,13 +68,13 @@ def wait_port(port, timeout=60):
 
 
 class Cluster:
-    """`run` is the livekit.Run of the suite: the cluster joins it here, once. `kept` (--keep-cluster): the run does not
-    end the cluster."""
+    """A suite cluster (a YAML of tests/live/clusters/). `run` is the liverun.Run of the suite: the cluster joins it here,
+    once. `kept` (--keep-cluster, decided in conftest.py): the run does not end the cluster."""
 
     def __init__(self, run, config, out_dir, home, kept=False, profile=ADMIN_PROFILE, credentials_file=None):
         self.kept = kept
         self.name = config["cluster_name"]
-        livekit.assert_ours(f"ray-vast-{self.name}")
+        assert_ours(f"ray-vast-{self.name}")
         self.config = config
         self.dir = Path(out_dir)
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -81,7 +83,8 @@ class Cluster:
         self.yaml = self.dir / "cluster.yaml"
         self.yaml.write_text(yaml.safe_dump(config, sort_keys=False))
         self.profile = profile
-        self.region = config["available_node_types"][config["head_node_type"]]["node_config"]["region"]
+        head = config["available_node_types"][config["head_node_type"]]["node_config"]
+        self.region, self.head_instance_type = head["region"], head.get("instance_type", HEAD_INSTANCE_TYPE)
         aws_dir = Path.home() / ".aws"
         self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "PYTHONUNBUFFERED": "1",
                     "AWS_CONFIG_FILE": os.environ.get("AWS_CONFIG_FILE", str(aws_dir / "config")),
@@ -89,10 +92,9 @@ class Cluster:
                     "PATH": f"{BIN}:{os.environ['PATH']}"}
         self.env.pop("AWS_PROFILE", None)
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
-        self.records = [self.dir]  # the directories that livekit.end_cluster scans; the record fixture adds each scenario's
+        self.records = [self.dir]  # the directories that liverun.end_cluster scans; Run.record adds each scenario's
         self.up_output = self.last_down = None
-        self.timeline = []
-        self._poller = None
+        self.poller = Poller(vast, label(self.name), self.dir / "vast_timeline.jsonl", self.secrets)
         self.run = run
         run.register(self)
 
@@ -120,11 +122,15 @@ class Cluster:
 
     def down(self, *extra, env=None):
         """`down`; without a state file (an earlier `down` deleted it) `down` needs `--profile` (cli.md), so it gets the
-        cluster's profile. The result is `last_down` (livekit.end_cluster runs no second `down` after a clean one)."""
+        cluster's profile. The result is `last_down` (liverun.end_cluster runs no second `down` after a clean one)."""
         if not self.state and "--profile" not in extra:
             extra = (*extra, "--profile", self.profile)
         self.last_down = self.cli("down", self.yaml, *extra, env=env)
         return self.last_down
+
+    @property
+    def timeline(self):
+        return self.poller.timeline
 
     # --- state and SSH ---------------------------------------------------------------------------------------------
     @property
@@ -212,60 +218,26 @@ class Cluster:
             proc.wait(timeout=30)
 
     def job(self, env, entrypoint, out_dir=None, **options):
-        """One Ray job on this cluster through the tunnel `env` (livejob.run: its files or working dir, env vars, secrets,
-        result prefix, timeout, wait). The submit command and the log go to `out_dir` (default: the cluster's directory);
-        the job's secrets join the run's secret scan. Returns the livejob.Job."""
-        return livejob.run(env, entrypoint, out_dir=out_dir or self.dir, sink=self.run.secret, **options)
+        """One Ray job on this cluster through the tunnel `env` (livejob.run: its working dir, runtime env, secrets, result
+        prefix, timeout, wait). The submit command and the log go to `out_dir` (default: the cluster's directory); the
+        job's secrets join the run's secret scan. Returns the livejob.Job."""
+        for secret in options.get("secrets", ()):
+            self.run.secret(secret)
+        return livejob.run(env, entrypoint, out_dir=out_dir or self.dir, **options)
 
     def probe(self, env, out_dir, name="probe", check=True):
         """jobs/node_probe.py on every worker: its NODE_PROBE rows, each with the `machine_id` of its vast instance. A probe
         job that does not succeed raises RuntimeError (check=False: the rows that it printed)."""
         job = self.job(env, ["python", "node_probe.py"], out_dir, name=name, timeout=900,
-                       files=[JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"])
+                       working_dir=livejob.workdir(JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"))
         if check and job.status != "SUCCEEDED":
             raise RuntimeError(f"node probe {name}: {job.status}")
         machines = {str(i["id"]): i.get("machine_id") for i in self.instances()}
         return [dict(row, machine_id=machines.get(str(row.get("container_id")))) for row in job.lines("NODE_PROBE")]
 
     # --- vast --------------------------------------------------------------------------------------------------------
-    def start_poller(self, period=10):
-        """Every `period` s: the cluster's vast instances into `vast_timeline.jsonl` (no env), and their join tokens into
-        memory for the secret scan."""
-        stop = threading.Event()
-
-        def run():
-            with open(self.dir / "vast_timeline.jsonl", "a") as f:
-                while not stop.is_set():
-                    row = {"t": round(time.time(), 1)}
-                    try:
-                        found = [i for i in vast().list_instances() if i.get("label") == label(self.name)]
-                        for i in found:
-                            env = i.get("extra_env") or []
-                            pairs = env.items() if isinstance(env, dict) else [p for p in env if isinstance(p, (list, tuple)) and len(p) == 2]
-                            token = next((v for k, v in pairs if k == "RAYVAST_JOIN_TOKEN"), None)
-                            if token and token not in self.secrets:
-                                self.secrets.append(token)
-                        row["instances"] = [{k: i.get(k) for k in ("id", "actual_status", "dph_total", "machine_id", "public_ipaddr",
-                                                                   "start_date", "cpu_cores_effective", "gpu_name")} for i in found]
-                    except Exception as e:  # one bad sample must not end the timeline
-                        row["error"] = type(e).__name__
-                    self.timeline.append(row)
-                    f.write(json.dumps(row) + "\n")
-                    f.flush()
-                    stop.wait(period)
-
-        thread = threading.Thread(target=run, daemon=True)
-        thread.start()
-        self._poller = (stop, thread)
-
-    def stop_poller(self):
-        if self._poller:
-            self._poller[0].set()
-            self._poller[1].join(timeout=60)
-            self._poller = None
-
     def instances(self):
-        return [i for i in vast().list_instances() if i.get("label") == label(self.name)]
+        return self.poller.instances()
 
     def container_log(self, instance_id):
         """The container log of one vast instance (fetch it before the destroy: vast keeps none after)."""
@@ -285,12 +257,12 @@ class ReleaseCluster:
     Cluster. It follows the getting-started tutorial verbatim, so it differs from a suite cluster in three ways: its name
     (`gpu-24gb`, from the packaged YAML) is not a suite name, it runs the plain `ray-vast` CLI of a clean venv with
     ray-vast from PyPI, and its YAML is the packaged one (only `region` changes). Like every cluster it joins the run when it
-    is made, and livekit.end_cluster ends it. `up()` is the tutorial up to `ray-vast up`; `shell(script)` runs a script in
+    is made, and liverun.end_cluster ends it. `up()` is the tutorial up to `ray-vast up`; `shell(script)` runs a script in
     the tutorial's directory (`work`) with the tutorial's env (`env`).
     `gpu-24gb` is not a suite name, so a user can have a cluster of that name on the same account. The release cluster
     therefore refuses to start when a vast instance with its label or an AWS resource of `ray-vast-gpu-24gb` already
     exists: it raises before it joins the run, and nothing ends or destroys anything. Its end sweeps only the vast
-    instances that its own poller saw (livekit.end_cluster)."""
+    instances that its own poller saw (liverun.end_cluster)."""
 
     def __init__(self, run, out_dir, home, region, version):
         self.name, self.region, self.version, self.kept = "gpu-24gb", region, version, False
@@ -308,12 +280,23 @@ class ReleaseCluster:
                     "AWS_CONFIG_FILE": str(Path("~/.aws/config").expanduser()),
                     "AWS_SHARED_CREDENTIALS_FILE": str(Path("~/.aws/credentials").expanduser())}
         self.env.pop("VIRTUAL_ENV", None)
-        self.records, self.secrets, self.timeline, self._poller = [self.dir], [], [], None
+        self.records, self.secrets = [self.dir], []
+        self.poller = Poller(vast, label(self.name), self.dir / "vast_timeline.jsonl", self.secrets)
         self.up_output = self.last_down = self.started = None
         run.register(self)
 
-    # The vast poller and the instance list of Cluster: they use only name, dir, secrets, timeline and _poller.
-    start_poller, stop_poller, instances = Cluster.start_poller, Cluster.stop_poller, Cluster.instances
+    @property
+    def timeline(self):
+        return self.poller.timeline
+
+    @property
+    def head_instance_type(self):
+        """The head type of the packaged YAML (after the `cp` of `up`), else the default."""
+        head = (self.config.get("available_node_types") or {}).get(self.config.get("head_node_type"), {})
+        return head.get("node_config", {}).get("instance_type", HEAD_INSTANCE_TYPE)
+
+    def instances(self):
+        return self.poller.instances()
 
     def shell(self, script, timeout=1800):
         done = subprocess.run(["bash", "-c", f"cd {self.work} && {script}"], env=self.env, capture_output=True, text=True,
@@ -391,7 +374,7 @@ def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
     """The account-wide AWS check at the end of a run (as the admin): every resource with a suite cluster name
     (`ray-vast-rvtest-*`) in `regions` (instances and volumes by the cluster tag, security groups, key pairs) and in IAM
     (roles, instance profiles), except the kept clusters in `skip`. It finds what a cluster that never reached
-    livekit.end_cluster left. A suite run in parallel on the same account would show here too."""
+    liverun.end_cluster left. A suite run in parallel on the same account would show here too."""
     session = boto3.Session(profile_name=profile)
     kept = [f"ray-vast-{name}" for name in skip]
 

@@ -3,7 +3,7 @@ the window opened. All the head log regexes and the time-zone logic of the suite
 
 The head adapter (a `cluster.Cluster`, or a fake in tests/unit/test_live_window.py): `monitor_log(start_line)`,
 `monitor_log_length()`, `head_time_zone()`, `instances()` (the vast listing of the cluster now) and `timeline` (the
-cluster's poller samples, `Cluster.start_poller`)."""
+cluster's poller samples, livepoller.Poller)."""
 import ast
 import re
 import time
@@ -140,38 +140,6 @@ class Window:
                    if any(s == "running" for _, s in seen)}
         enrolled = {e.instance: e.t for e in self.events("enrolled")}
         return {iid: round(t - running[iid], 1) for iid, t in enrolled.items() if iid in running}
-
-
-@dataclass
-class Wait:
-    """The end of a wait: `ok` (also its truth value), the seconds it took, the last value that `look` gave (None if it
-    gave none), and the last error of `look` (None if it raised none)."""
-    ok: bool
-    elapsed: float
-    seen: object
-    error: str | None = None
-
-    def __bool__(self):
-        return self.ok
-
-
-def wait_until(look, timeout, done=bool, poll_s=10, clock=time):
-    """Call `look()` until `done(seen)` is true or `timeout` s passed, every `poll_s` s (never past the timeout). `look`
-    runs at least once. A `look` (or `done`) that raises gives `error` (`<error type>: <message>`) and the wait goes on:
-    one failed sample must not end it. Returns a Wait."""
-    start, seen, error = clock.time(), None, None
-    while True:
-        try:
-            value = look()
-            seen = value
-            if done(value):
-                return Wait(True, round(clock.time() - start, 1), seen, error)
-        except Exception as e:  # noqa: BLE001
-            error = f"{type(e).__name__}: {str(e)[:200]}"
-        left = timeout - (clock.time() - start)
-        if left <= 0:
-            return Wait(False, round(clock.time() - start, 1), seen, error)
-        clock.sleep(min(poll_s, left))
 
 
 def phase(status):

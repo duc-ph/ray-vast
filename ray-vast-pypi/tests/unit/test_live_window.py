@@ -1,11 +1,14 @@
 """The observation window of the live suite (`tests/live/window.py`): the head log events since a window opened, their
-head-clock times, the vast instances that it saw, and `wait_until`. Through its interface, with a fake head (recorded
-monitor.log excerpts and vast listings from archive/results/2026-10-1*/, in tests/fixtures/window/) and a fake clock."""
+head-clock times, the vast instances that it saw, and the wait of the suite (`liverun.wait_until`). Through its
+interface, with a fake head (recorded monitor.log excerpts and vast listings from archive/results/2026-10-1*/, in
+tests/fixtures/window/, with documentation addresses in place of the real IP addresses) and a fake clock."""
 import json
-import re
+import sys
 from pathlib import Path
 
-from live import window
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "live"))  # the live suite imports its modules by their own names
+import liverun  # noqa: E402
+import window  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "window"
 
@@ -57,7 +60,7 @@ class FakeHead:
 # --- the head clock ---------------------------------------------------------------------------------------------------
 def test_event_times_are_epochs_of_the_head_time_zone_in_summer_time_and_in_winter_time():
     # The rayproject/ray images set TZ=America/Los_Angeles. The expected epochs come from `TZ=America/Los_Angeles date -d`.
-    enrolled = "2026-10-16 17:36:34,988\tINFO head_server.py:230 -- enrolled instance 56321086 (machine 8966, ip 185.62.108.226) into slot-2-e2d2df"
+    enrolled = "2026-10-16 17:36:34,988\tINFO head_server.py:230 -- enrolled instance 56321086 (machine 8966, ip 203.0.113.11) into slot-2-e2d2df"
     winter = enrolled.replace("2026-10-16 17:36:34,988", "2026-01-15 09:30:00,500")
     head = FakeHead()
     w = window.Window(head, clock=FakeClock())
@@ -88,7 +91,7 @@ def test_the_rent_enroll_and_end_lines_of_a_scale_up_and_an_idle_scale_down():
     rented = w.events("rented")
     assert [(e.fields["node_type"], e.fields["rented"]) for e in rented] == [("gpu-b", 2), ("gpu-a", 2), ("gpu-b", 2), ("gpu-a", 2)]
     enrolled = w.events("enrolled")[0]
-    assert (enrolled.instance, enrolled.fields, enrolled.t) == (56321086, {"machine": 8966, "ip": "185.62.108.226", "slot": "slot-2-e2d2df"},
+    assert (enrolled.instance, enrolled.fields, enrolled.t) == (56321086, {"machine": 8966, "ip": "203.0.113.11", "slot": "slot-2-e2d2df"},
                                                                 1792197394.988)
     ending = w.events("ending")
     assert [(e.instance, e.reason) for e in ending][:2] == [(56321088, "its request has no free slot left"),
@@ -113,7 +116,7 @@ def test_a_reboot_gives_an_unknown_status_line_and_a_refused_enrollment():
     [unknown] = w.events("unknown_status")
     assert unknown.fields == {"status": "rebooting"} and unknown.t == 1792198035.057
     [refused] = w.events("refused")
-    assert (refused.instance, refused.reason, refused.fields) == (56322074, "already enrolled", {"ip": "143.55.45.86"})
+    assert (refused.instance, refused.reason, refused.fields) == (56322074, "already enrolled", {"ip": "198.51.100.16"})
     assert [e.instance for e in w.events("enrolled")] == [56322159]
 
 
@@ -130,7 +133,7 @@ def test_the_process_limit_warning_names_its_worker_and_its_counts():
     warnings = w.events("process_limit")
     assert len(warnings) == 2
     assert warnings[0].instance == 56320907 and {k: v for k, v in warnings[0].fields.items() if k not in ("advice", "docs")} == {
-        "slot": "slot-1-a37a29", "ip": "81.183.231.113", "refused": 0, "refused_new": 0, "pids": 589, "pids_max": 1536,
+        "slot": "slot-1-a37a29", "ip": "198.51.100.18", "refused": 0, "refused_new": 0, "pids": 589, "pids_max": 1536,
         "ports_in_use": 18, "ports_total": 18}
     assert w.events("process_limit", instances=[56320907]) == warnings and w.events("process_limit", instances=[1]) == []
     # The recorded runs had no refused fork; this line is the recorded one with refusals.
@@ -206,7 +209,7 @@ def test_wait_until_an_event_arrives_gives_success_the_elapsed_time_and_what_it_
     head = FakeHead(log[:3])
     clock = FakeClock(1792197900.0, on_sleep=lambda t: head.log.append(log[len(head.log)]))
     w = window.Window(head, clock=clock)
-    waited = window.wait_until(lambda: w.events("destroy_request"), timeout=60, poll_s=2, clock=clock)
+    waited = liverun.wait_until(lambda: w.events("destroy_request"), timeout=60, poll_s=2, clock=clock)
     assert waited and waited.ok and waited.elapsed == 2 and waited.seen[0].reason == "received SIGTERM"
 
 
@@ -214,7 +217,7 @@ def test_wait_until_with_a_done_test_on_the_vast_listing():
     listings = [[{"id": 1, "actual_status": "running"}]] * 3 + [[]]
     clock = FakeClock()
     w = window.Window(FakeHead(listings=listings), clock=clock)
-    waited = window.wait_until(w.vast_now, timeout=600, done=lambda seen: not seen, poll_s=15, clock=clock)
+    waited = liverun.wait_until(w.vast_now, timeout=600, done=lambda seen: not seen, poll_s=15, clock=clock)
     assert (waited.ok, waited.elapsed, waited.seen) == (True, 45, [])
     assert w.vast_seen()[1][-1][1] == "gone"
 
@@ -222,7 +225,7 @@ def test_wait_until_with_a_done_test_on_the_vast_listing():
 def test_a_wait_that_times_out_gives_the_elapsed_time_and_the_last_thing_seen_and_never_sleeps_past_its_timeout():
     clock = FakeClock()
     w = window.Window(FakeHead(listings=[[{"id": 7, "actual_status": "loading"}]]), clock=clock)
-    waited = window.wait_until(w.vast_now, timeout=25, done=lambda seen: not seen, poll_s=10, clock=clock)
+    waited = liverun.wait_until(w.vast_now, timeout=25, done=lambda seen: not seen, poll_s=10, clock=clock)
     assert not waited and (waited.ok, waited.elapsed, waited.seen) == (False, 25, [{"id": 7, "actual_status": "loading"}])
     assert clock.slept == [10, 10, 5]
 
@@ -237,40 +240,10 @@ def test_a_look_that_raises_gives_its_error_keeps_the_last_good_value_and_the_wa
         return answer
 
     clock = FakeClock()
-    assert window.wait_until(look, timeout=60, done=lambda s: s == "RUNNING", poll_s=5, clock=clock).elapsed == 5
+    assert liverun.wait_until(look, timeout=60, done=lambda s: s == "RUNNING", poll_s=5, clock=clock).elapsed == 5
     answers = iter([RuntimeError("ssh: exit 255")] * 3)
-    waited = window.wait_until(look, timeout=10, poll_s=5, clock=clock)
+    waited = liverun.wait_until(look, timeout=10, poll_s=5, clock=clock)
     assert (waited.ok, waited.seen, waited.error) == (False, None, "RuntimeError: ssh: exit 255")
     answers = iter(["PENDING", RuntimeError("ssh: exit 255"), RuntimeError("ssh: exit 255")])  # a later error keeps "PENDING"
-    waited = window.wait_until(look, timeout=10, done=lambda s: s == "RUNNING", poll_s=5, clock=clock)
+    waited = liverun.wait_until(look, timeout=10, done=lambda s: s == "RUNNING", poll_s=5, clock=clock)
     assert (waited.ok, waited.seen, waited.error) == (False, "PENDING", "RuntimeError: ssh: exit 255")
-
-
-# --- one window module ----------------------------------------------------------------------------------------------
-# A head log read, a time-zone conversion, the old helpers, or a regex or a substring test on a head log message.
-MESSAGES = r"enrolled instance|ending instance|asks to be destroyed|process limit|refused forks|actual_status|candidates|legacy field|Failed to launch"
-HEAD_LOG = re.compile(r"\.monitor_log\(|wc -l <|date \+%z|strptime|log_epoch|log_mark|node_warnings|WARNING_PATTERN|REFUSED_PATTERN|"
-                      rf"re\.\w+\(r?\"[^\"]*(?:{MESSAGES})|\"[^\"]*(?:{MESSAGES})[^\"]*\" in \w")
-WAIT_LOOP = re.compile(r"while time\.time\(\)|deadline = time\.time\(\)|for attempt in range")
-
-
-def scan(sources):
-    """{file name: the head log reads, head log messages and wait loops in it} of the live suite sources {name: text}."""
-    found = {}
-    for name, text in sources.items():
-        hits = [] if name in ("window.py", "cluster.py") else HEAD_LOG.findall(text)
-        hits += WAIT_LOOP.findall(text) if name.startswith("test_") or name in ("restricted.py", "libraries_setup.py") else []
-        if hits:
-            found[name] = hits
-    return found
-
-
-def test_only_the_window_module_reads_the_head_log_and_the_tests_have_no_wait_loop_of_their_own():
-    """The cluster adapter (cluster.py) reads monitor.log for the window; every other module asks the window. (A scenario
-    may run the documented `grep "process limit"` through `ray-vast attach` as the claim that it tests.)"""
-    live = Path(window.__file__).parent
-    assert scan({p.name: p.read_text() for p in sorted(live.glob("*.py"))}) == {}
-    old = ('lines = c.monitor_log(start)\nm = re.search(r"enrolled instance (\\d+)", x)\nu = [x for x in lines if "unknown vast actual_status" in x]\n'
-           'deadline = time.time() + 60\n')
-    assert scan({"test_x.py": old}) == {"test_x.py": [".monitor_log(", 're.search(r"enrolled instance', '"unknown vast actual_status" in x',
-                                                      "deadline = time.time()"]}

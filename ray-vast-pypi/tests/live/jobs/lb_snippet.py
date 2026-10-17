@@ -1,5 +1,5 @@
 # Live suite, group libraries: run one snippet of a user doc (docs/libraries/*.md) and check what it did.
-# The test copies the snippet from the doc (livekit.doc_snippet: only the B and CPUS values, the bucket names and the
+# The test copies the snippet from the doc (libraries_setup.doc_snippet: only the B and CPUS values, the bucket names and the
 # recorded `...` bodies change) into `snippet.py` in the working dir. This script defines what the snippet needs and does
 # not define itself (the prelude), runs the snippet with exec() as the job's main code, then checks the result
 # (the epilogue). It prints one last line: `LB_RESULT <lib> PASS|FAIL <json>`, and exits 0 on PASS.

@@ -1,6 +1,7 @@
-"""The parallel live suite: the real `tests/live/conftest.py` runs a small suite under pytest-xdist, with fake `cluster`,
-`restricted` and `libraries_setup` modules (no cloud call). Each fake `up`, `down`, test and end-of-run sweep writes one
-line to `events.log` with its process id and time, so the test sees which process did what, and when."""
+"""The parallel live suite: the real `tests/live/conftest.py` runs a small suite under pytest-xdist, with a fake
+`livecloud` module, the one factory of the cluster kinds and the cloud guards (no cloud call). The fake clusters have the
+cluster interface that livecloud.py writes down. Each fake `up`, `down`, test and end-of-run sweep writes one line to
+`events.log` with its process id and time, so the test sees which process did what, and when."""
 import json
 import os
 import shutil
@@ -13,10 +14,9 @@ import pytest
 
 LIVE = Path(__file__).resolve().parents[1] / "live"
 
-FAKE_CLUSTER = '''
+FAKE_CLOUD = '''
 import json, os, time
 from pathlib import Path
-ADMIN_PROFILE = "personal"
 REPO = Path(__file__).parent
 
 
@@ -29,14 +29,32 @@ class Done:
     stdout, stderr, returncode = "left: nothing\\n", "", 0
 
 
-class Cluster:
-    def __init__(self, run, config, out_dir, home, kept=False, profile=None, credentials_file=None):
-        self.name, self.config, self.dir, self.home, self.kept = config["cluster_name"], config, Path(out_dir), Path(home), kept
+class Poller:
+    def __init__(self, timeline=()):
+        self.timeline = list(timeline)
+
+    def start(self, period=10):
+        pass
+
+    def stop(self):
+        pass
+
+
+class FakeCluster:
+    """A cluster of the livecloud interface with no cloud: its state file is the only thing that `up` makes."""
+    head_instance_type = "t3.large"
+
+    def __init__(self, run, name, out_dir, home, kept=False, timeline=()):
+        self.name, self.dir, self.home, self.kept = name, Path(out_dir), Path(home), kept
         self.dir.mkdir(parents=True, exist_ok=True)
-        self.yaml, self.region, self.secrets, self.timeline, self.up_output = self.dir / "cluster.yaml", "us-west-2", [], [], None
-        self.records, self.last_down = [self.dir], None
+        self.yaml, self.region, self.secrets, self.up_output, self.last_down = self.dir / "cluster.yaml", "us-west-2", [], None, None
+        self.records, self.poller = [self.dir], Poller(timeline)
         self.state_file = self.home / ".ray-vast" / f"{self.name}.json"
-        run.register(self)  # as the real Cluster
+        run.register(self)  # as every cluster kind
+
+    @property
+    def timeline(self):
+        return self.poller.timeline
 
     @property
     def state(self):
@@ -68,14 +86,48 @@ class Cluster:
     def collect_token(self):
         return "token"
 
-    def start_poller(self):
-        pass
 
-    def stop_poller(self):
-        pass
+class LibrariesCluster(FakeCluster):
+    def keep_one_worker(self, record):
+        event("KEEP_ONE", self.name)
+
+    def end_checks(self, record, done):
+        event("END_CHECKS", self.name, "kept" if done is None else "ended")
+        return []
 
 
-def aws_leftovers(name, region, profile=ADMIN_PROFILE):
+class RestrictedUser:
+    def __init__(self, tmp_dir):
+        self.profile, self.credentials_file, self.secret = "ray-vast-livetest", Path(tmp_dir) / "credentials", "user-secret"
+
+    def reuse(self):
+        return False
+
+    def create(self):
+        event("USER_CREATE")
+
+    def delete(self):
+        event("USER_DELETE")
+
+
+def suite_cluster(run, config, out_dir, home, kept=False, user=None):
+    return FakeCluster(run, config["cluster_name"], out_dir, home, kept)
+
+
+def libraries_cluster(run, group_dir, home, host, suffix, kept):
+    return LibrariesCluster(run, f"rvtest-lib-{host.lower()}-{suffix}", group_dir, home, kept)
+
+
+def release_cluster(run, out_dir, home, region, version):
+    """The release cluster: the user's YAML verbatim, so its name is not a suite name. Its poller saw instance 7."""
+    return FakeCluster(run, "gpu-24gb", out_dir, home, timeline=[{"t": 1.0, "instances": [{"id": 7}]}])
+
+
+def restricted_user(out_dir, tmp_dir, date):
+    return RestrictedUser(tmp_dir)
+
+
+def aws_leftovers(name, region):
     event("AWSCHECK", name)
     return []
 
@@ -88,7 +140,7 @@ def invoices():
     return []
 
 
-def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
+def aws_account_leftovers(regions, skip):
     event("ACCOUNTCHECK", *regions)
     return []
 
@@ -100,56 +152,13 @@ def sweep_label(labels, prefixes=(), ids=None):
 
 def vast_key():
     return "fake-vast-key"
-
-
-class ReleaseCluster(Cluster):
-    """The release cluster: the user's YAML verbatim, so its name is not a suite name."""
-    def __init__(self, run, out_dir, home, region, version):
-        super().__init__(run, {"cluster_name": "gpu-24gb"}, out_dir, home)
-        self.timeline = [{"t": 1.0, "instances": [{"id": 7}]}]  # its poller saw instance 7
-'''
-
-FAKE_RESTRICTED = '''
-from pathlib import Path
-from cluster import event
-
-
-class RestrictedUser:
-    def __init__(self, out_dir, tmp_dir, date):
-        self.profile, self.credentials_file, self.secret = "ray-vast-livetest", Path(tmp_dir) / "credentials", "user-secret"
-
-    def reuse(self):
-        return False
-
-    def create(self):
-        event("USER_CREATE")
-
-    def delete(self):
-        event("USER_DELETE")
-'''
-
-FAKE_LIBRARIES_SETUP = '''
-from cluster import Cluster, event
-
-
-class LibrariesCluster(Cluster):
-    def __init__(self, run, group_dir, home, host, suffix, kept):
-        config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
-        super().__init__(run, config, group_dir, home, kept)
-
-    def keep_one_worker(self, record):
-        event("KEEP_ONE", self.name)
-
-    def end_checks(self, record, done):
-        event("END_CHECKS", self.name, "kept" if done is None else "ended")
-        return []
 '''
 
 SUITE = '''
 import os
 import time
 import pytest
-from cluster import event
+from livecloud import event
 
 
 def leak(record):
@@ -230,15 +239,17 @@ def test_F01_free(record, n):
 
 
 def _suite(tmp_path):
+    """The real conftest and the real modules of tests/live (linked), the fake livecloud, and the small suite."""
     suite = tmp_path / "suite"
     (suite / "clusters").mkdir(parents=True)
-    for name in ("conftest.py", "livekit.py"):
-        shutil.copy(LIVE / name, suite / name)
+    shutil.copy(LIVE / "conftest.py", suite / "conftest.py")
+    for path in LIVE.glob("*.py"):
+        if not path.name.startswith("test_") and path.name not in ("conftest.py", "livecloud.py"):
+            (suite / path.name).symlink_to(path)
+    (suite / "jobs").symlink_to(LIVE / "jobs")
     for name in ("aws_only.yaml", "lifecycle.yaml"):
         shutil.copy(LIVE / "clusters" / name, suite / "clusters" / name)
-    (suite / "cluster.py").write_text(FAKE_CLUSTER)
-    (suite / "restricted.py").write_text(FAKE_RESTRICTED)
-    (suite / "libraries_setup.py").write_text(FAKE_LIBRARIES_SETUP)
+    (suite / "livecloud.py").write_text(FAKE_CLOUD)
     (suite / "test_suite.py").write_text(SUITE)
     return suite
 
@@ -253,7 +264,7 @@ def _run(tmp_path, suite, *args, extra_env=None):
     done = subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-o", "addopts=", "-q", *args, str(suite)],
                           cwd=suite, env=env, capture_output=True, text=True, timeout=300)
     events = []
-    for line in (marks / "events.log").read_text().splitlines():
+    for line in ((marks / "events.log").read_text() if (marks / "events.log").exists() else "").splitlines():
         parts = line.split()
         events.append((parts[0], parts[1:-2], int(parts[-2].split("=")[1]), float(parts[-1].split("=")[1])))
     return done.returncode, done.stdout + done.stderr, events
@@ -281,7 +292,7 @@ def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_r
     box = [e for e in events if e[0] == "RUN" and e[1][0] in ("F17", "F20")]
     assert len(box) == 2 and len({e[2] for e in box}) == 1                      # `box_disk`: one process, one after the other
     assert [e[0] for e in events].count("USER_CREATE") == 1 and [e[0] for e in events].count("USER_DELETE") == 1
-    for name, (_, _, pid, _) in ups.items():  # livekit.end_cluster, in the process of the cluster: down, its sweep, its AWS check
+    for name, (_, _, pid, _) in ups.items():  # liverun.end_cluster, in the process of the cluster: down, its sweep, its AWS check
         assert [(e[0], e[1]) for e in events if e[2] == pid and name in " ".join(e[1]) and e[0] in ("DOWN", "SWEEP", "AWSCHECK")] == [
             ("DOWN", [name]), ("SWEEP", [f"ray-vast:{name}"]), ("AWSCHECK", [name])], name
     final = [e for e in events if e[0] in ("SWEEP", "ACCOUNTCHECK") and not any(f.startswith("ray-vast:") for f in e[1])]
@@ -301,7 +312,7 @@ def test_each_cluster_group_ends_with_its_teardown_checks_and_a_down_that_leaves
     for group in groups:
         teardown = json.loads((tmp_path / "results" / "_session" / group / "teardown" / "result.json").read_text())
         assert teardown["outcome"] == "passed" and [(c["name"], c["ok"]) for c in teardown["checks"]] == [
-            ("the cluster ended cleanly (livekit.end_cluster)", True)], (group, teardown)
+            ("the cluster ended cleanly (liverun.end_cluster)", True)], (group, teardown)
     libraries = [e for e in events if e[0] in ("KEEP_ONE", "DOWN", "END_CHECKS", "SWEEP") and e[1][0].removeprefix("ray-vast:").startswith("rvtest-lib-")]
     for name in {e[1][0] for e in libraries if e[0] == "DOWN"}:
         assert [e[0] for e in libraries if name in e[1][0]] == ["KEEP_ONE", "DOWN", "END_CHECKS", "SWEEP"]  # one worker runs at the `down`
@@ -337,7 +348,7 @@ def test_a_kept_cluster_is_reused_never_ended_or_swept_and_a_run_without_the_opt
 
 
 RELEASE_SUITE = '''
-from cluster import event
+from livecloud import event
 
 
 def test_R01_up(record, release):
@@ -379,35 +390,33 @@ def test_a_secret_in_a_record_is_found_once_by_the_end_of_the_cluster_that_owns_
     assert sum("L02/leak.txt" in p for p in problems) == 1 and sum("LB01/leak.txt" in p for p in problems) == 1  # no second scan
 
 
-FAKE_WINDOW = '''
-from dataclasses import dataclass
+FAST_WAIT = '''
+"""A plugin for this test (`-p fastwait`): each wait of the suite (liverun.wait_until) runs on a fake clock, so a wait
+of 1800 s ends at once."""
+import liverun
+
+real_wait_until = liverun.wait_until
 
 
-@dataclass
-class Wait:
-    ok: bool
-    elapsed: float
-    seen: object
-    error: str = None
+class Clock:
+    t = 0.0
 
-    def __bool__(self):
-        return self.ok
+    def time(self):
+        return self.t
+
+    def sleep(self, s):
+        self.t += s
 
 
 def wait_until(look, timeout, done=bool, poll_s=10, clock=None):
-    """The wait at once: one look, and the time is up."""
-    seen = look()
-    return Wait(bool(done(seen)), float(timeout), seen)
+    return real_wait_until(look, timeout, done, poll_s, clock=Clock())
 
 
-def phase(status):
-    return "running"
+liverun.wait_until = wait_until
 '''
 
-LIFECYCLE_CLUSTER = '''
+LIFECYCLE_CLOUD = '''
 from contextlib import contextmanager
-
-JOBS = MANUAL = Path(__file__).parent
 
 
 class Job:
@@ -420,7 +429,7 @@ class Job:
         event("JOB_STOP")
 
 
-class LifecycleCluster(Cluster):
+class LifecycleCluster(FakeCluster):
     @contextmanager
     def tunnel(self):
         yield {}
@@ -433,7 +442,8 @@ class LifecycleCluster(Cluster):
         return [{"id": 41, "actual_status": "running"}]  # a worker that never goes
 
 
-Cluster = LifecycleCluster
+def suite_cluster(run, config, out_dir, home, kept=False, user=None):
+    return LifecycleCluster(run, config["cluster_name"], out_dir, home, kept)
 '''
 
 
@@ -442,9 +452,10 @@ Cluster = LifecycleCluster
 def test_a_wait_of_the_lifecycle_group_that_times_out_fails_its_test_and_never_passes_silently(tmp_path, hold_ready):
     suite = _suite(tmp_path)
     shutil.copy(LIVE / "test_lifecycle.py", suite / "test_lifecycle.py")
-    (suite / "window.py").write_text(FAKE_WINDOW)
-    (suite / "cluster.py").write_text(FAKE_CLUSTER + LIFECYCLE_CLUSTER)
-    code, out, events = _run(tmp_path, suite, "-k", "L10_head_loss", extra_env={} if hold_ready else {"HOLD_NEVER_READY": "1"})
+    (suite / "fastwait.py").write_text(FAST_WAIT)
+    (suite / "livecloud.py").write_text(FAKE_CLOUD + LIFECYCLE_CLOUD)
+    code, out, events = _run(tmp_path, suite, "-p", "fastwait", "-k", "L10_head_loss",
+                             extra_env={} if hold_ready else {"HOLD_NEVER_READY": "1"})
     assert code != 0, out
     record = tmp_path / "results" / "L10" / "result.json"
     if hold_ready:  # L10 waits for 0 workers before it asks for 4 again
@@ -458,47 +469,14 @@ def test_a_wait_of_the_lifecycle_group_that_times_out_fails_its_test_and_never_p
         assert [e[0] for e in events if e[0] in ("JOB", "JOB_STOP")] == ["JOB", "JOB_STOP"]
 
 
-LIBRARIES_CLUSTER = '''
-import sys
-
-BIN = Path(sys.executable).parent
-LIVE = Path(os.environ["REAL_LIVE"])
-JOBS, MANUAL = LIVE / "jobs", LIVE.parents[2] / "tests" / "manual"
-
-
-def free_port():
-    return 18000
-
-
-def wait_port(port, timeout=60):
-    return True
-'''
-
-FAKE_LIBRARIES_FOR_LB03 = '''
+LIBRARIES_CLOUD = '''
 from contextlib import contextmanager
 from types import SimpleNamespace
-
-from cluster import Cluster, event
-
-HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}
-PINS = {"h1": {"want": {"cpus": {"gte": 32}}}, "h2": {"want": {"cgroup": "v2"}}}
 
 
 def row(kind):
     return {"container_id": "41", "machine_id": 9, "node_id": f"node-{kind}", "ports": 18, "ray_cpus": 40, "pids.max": "9728",
             "node_type": kind}
-
-
-def probe(cluster, env, out_dir, name="probe"):
-    return {kind: [row(kind)] for kind, n in cluster.shape.items() if n}
-
-
-def alive_workers(cluster):
-    return {kind: [f"node-{kind}"] for kind, n in cluster.shape.items() if n}
-
-
-def b_and_cpus(rows):
-    return min(r["ports"] for r in rows) - 4, max(r["ray_cpus"] for r in rows)
 
 
 class Job(SimpleNamespace):
@@ -521,12 +499,12 @@ class Window:
         return []
 
 
-class LibrariesCluster(Cluster):
+class HostCluster(LibrariesCluster):
     """A cluster with no worker at its start (LB00[H1] found no host: its last mismatch was ended). A job runs only
     when a worker runs (else it makes no progress, as in the 2026-10-17 run)."""
-    def __init__(self, run, group_dir, home, host, suffix, kept):
-        config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
-        super().__init__(run, config, group_dir, home, kept)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.shape, self.matched = {}, {}
 
     @contextmanager
@@ -550,6 +528,9 @@ class LibrariesCluster(Cluster):
         self.matched[kind] = facts
         return facts, [dict(facts, match=True)]
 
+    def probe(self, env, out_dir, name="probe", check=True):
+        return [row(kind) for kind, n in self.shape.items() if n]
+
     def job(self, env, entrypoint, out_dir=None, name="job", **options):
         workers = sum(self.shape.values())
         event("JOB", name, f"workers={workers}")
@@ -562,6 +543,10 @@ class LibrariesCluster(Cluster):
 
     def end_checks(self, record, done):
         return []
+
+
+def libraries_cluster(run, group_dir, home, host, suffix, kept):
+    return HostCluster(run, f"rvtest-lib-{host.lower()}-{suffix}", group_dir, home, kept)
 '''
 
 
@@ -571,13 +556,29 @@ def test_lb03_writes_its_parquet_input_on_the_host_of_the_test_also_when_the_clu
     had found no host), and made no progress for 1800 s. The real test_libraries.py with a fake libraries cluster."""
     suite = _suite(tmp_path / "pkg" / "tests")  # test_libraries.py reads the docs at parents[2] / "docs"
     (tmp_path / "pkg" / "docs").symlink_to(LIVE.parents[1] / "docs")
-    for name in ("test_libraries.py", "livejob.py"):
-        shutil.copy(LIVE / name, suite / name)
-    (suite / "window.py").write_text(FAKE_WINDOW)
-    (suite / "cluster.py").write_text(FAKE_CLUSTER + LIBRARIES_CLUSTER)
-    (suite / "libraries_setup.py").write_text(FAKE_LIBRARIES_FOR_LB03)
-    code, out, events = _run(tmp_path, suite, "-k", "LB03 and H1", extra_env={"REAL_LIVE": str(LIVE)})
+    shutil.copy(LIVE / "test_libraries.py", suite / "test_libraries.py")
+    (suite / "livecloud.py").write_text(FAKE_CLOUD + LIBRARIES_CLOUD)
+    code, out, events = _run(tmp_path, suite, "-k", "LB03 and H1")
     jobs = [e[1] for e in events if e[0] in ("JOB", "SHAPE")]
     assert ["make_parquet", "workers=0"] not in jobs, jobs
     assert jobs[:2] == [["h1=1"], ["make_parquet", "workers=1"]], jobs
     assert code == 0, out
+
+
+CHECKS_SUITE = '''
+def test_A05_checks(record):
+    record.check("first claim", False, "no")
+    record.check("second claim", True)
+    record.evidence("after.txt", "the test went on after the false check")
+'''
+
+
+@pytest.mark.slow
+def test_a_false_check_fails_its_test_at_its_end_and_the_test_runs_on_until_then(tmp_path):
+    suite = _suite(tmp_path)
+    (suite / "test_checks.py").write_text(CHECKS_SUITE)
+    code, out, events = _run(tmp_path, suite, "-k", "A05_checks")
+    assert code != 0 and "first claim" in out, out
+    result = json.loads((tmp_path / "results" / "A05" / "result.json").read_text())
+    assert result["outcome"] == "failed" and "first claim" in result["message"], result
+    assert (tmp_path / "results" / "A05" / "after.txt").exists()

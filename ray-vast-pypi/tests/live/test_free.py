@@ -15,7 +15,6 @@ import pytest
 import yaml
 
 import window
-from livekit import check
 from cluster import BIN, MANUAL, vast
 
 PKG = Path(__file__).resolve().parents[2]
@@ -50,11 +49,11 @@ def summary(outcomes):
 
 
 def all_pass(record, label, code, outcomes, must_include=()):
-    check(record, f"{label}: exit 0", code == 0, summary(outcomes))
-    check(record, f"{label}: no failure or error", not [n for n, k in outcomes.items() if k in ("failure", "error")], summary(outcomes))
+    record.check(f"{label}: exit 0", code == 0, summary(outcomes))
+    record.check(f"{label}: no failure or error", not [n for n, k in outcomes.items() if k in ("failure", "error")], summary(outcomes))
     for part in must_include:
         names = [n for n, k in outcomes.items() if part in n and k == "passed"]
-        check(record, f"{label}: a passing test {part!r}", names, names[:3])
+        record.check(f"{label}: a passing test {part!r}", names, names[:3])
 
 
 def docker(*args, timeout=1800):
@@ -67,16 +66,16 @@ def docker(*args, timeout=1800):
 def test_F01_shim_rules_and_mutants(record):
     digest = hashlib.sha256(SHIM.read_bytes()).hexdigest()
     record.data("shim_sha256", digest)
-    check(record, "committed shim is the step 10c build", digest.startswith(SHIM_SHA256), digest)
+    record.check("committed shim is the step 10c build", digest.startswith(SHIM_SHA256), digest)
     code, outcomes = run_pytest(record, "test_shim", ["-o", "addopts=", "-p", "no:cacheprovider", "tests/integration/test_shim.py"])
     all_pass(record, "shim tests", code, outcomes)
-    check(record, "14 shim tests", len(outcomes) == 14, len(outcomes))
+    record.check("14 shim tests", len(outcomes) == 14, len(outcomes))
     done = subprocess.run([PY, "scripts/shim_mutants.py"], cwd=PKG, capture_output=True, text=True, timeout=1800)
     record.evidence("shim_mutants.txt", done.stdout + done.stderr)
     survivors = set(re.findall(r"^SURVIVED (\S+)", done.stdout, re.M))
-    check(record, "mutation run: the unchanged source builds the committed .so", done.returncode == 0, done.stdout[-300:])
-    check(record, "mutation run: only the 2 equivalent mutants survive",
-          survivors <= {"errno-save-removed-in-bind", "errno-save-removed-in-init"}, done.stdout.strip().splitlines()[-1])
+    record.check("mutation run: the unchanged source builds the committed .so", done.returncode == 0, done.stdout[-300:])
+    record.check("mutation run: only the 2 equivalent mutants survive",
+         survivors <= {"errno-save-removed-in-bind", "errno-save-removed-in-init"}, done.stdout.strip().splitlines()[-1])
 
 
 def test_F02_ray_node_with_a_fake_public_ip_and_the_shim(record):
@@ -103,11 +102,11 @@ echo "ERRNO99 $(grep -l 'Errno 99' /tmp/ray/session_latest/logs/* 2>/dev/null | 
         done = docker("run", "--rm", "-e", f"MODE={mode}", "-v", f"{SHIM.parent}:/shim:ro", RAY_IMAGE, "bash", "-c", script, timeout=600)
         out[mode] = done.stdout + done.stderr
         record.evidence(f"{mode}.txt", out[mode])
-    check(record, "shim: node ALIVE", 'NODES ["ALIVE"]' in out["shim"], re.findall(r"NODES .*", out["shim"]))
-    check(record, "shim: job ran a task", "RESULT 7" in out["shim"], "")
-    check(record, "shim: no Errno 99", "ERRNO99 0" in out["shim"], re.findall(r"ERRNO99 \d+", out["shim"]))
+    record.check("shim: node ALIVE", 'NODES ["ALIVE"]' in out["shim"], re.findall(r"NODES .*", out["shim"]))
+    record.check("shim: job ran a task", "RESULT 7" in out["shim"], "")
+    record.check("shim: no Errno 99", "ERRNO99 0" in out["shim"], re.findall(r"ERRNO99 \d+", out["shim"]))
     control_broken = "ERRNO99 0" not in out["control"] or "RESULT 7" not in out["control"]
-    check(record, "control without the shim: Errno 99 or no job", control_broken, re.findall(r"(ray start exit \d+|ERRNO99 \d+|NODES .*)", out["control"]))
+    record.check("control without the shim: Errno 99 or no job", control_broken, re.findall(r"(ray start exit \d+|ERRNO99 \d+|NODES .*)", out["control"]))
 
 
 def test_F03_config_and_cli_checks(record, tmp_path):
@@ -124,15 +123,15 @@ def test_F03_config_and_cli_checks(record, tmp_path):
         path.write_text(yaml.safe_dump(config))
         done = subprocess.run([str(BIN / "ray-vast"), "up", str(path)], env=env, capture_output=True, text=True, timeout=120)
         record.evidence(f"old_field_{field}.txt", done.stdout + done.stderr)
-        check(record, f"up rejects provider.{field} with what to do", done.returncode == 1 and
-              f"provider.{field} is no longer a field (" in done.stderr, done.stderr.strip()[-200:])
+        record.check(f"up rejects provider.{field} with what to do", done.returncode == 1 and
+             f"provider.{field} is no longer a field (" in done.stderr, done.stderr.strip()[-200:])
     for flag in ("--index-url", "--key-name", "--key-file"):
         done = subprocess.run([str(BIN / "ray-vast"), "up", "x.yaml", flag, "v"], env=env, capture_output=True, text=True, timeout=60)
-        check(record, f"up {flag}: exit 2, unrecognized", done.returncode == 2 and "unrecognized arguments" in done.stderr, done.stderr[-200:])
+        record.check(f"up {flag}: exit 2, unrecognized", done.returncode == 2 and "unrecognized arguments" in done.stderr, done.stderr[-200:])
     for command in ([], ["up"], ["down"], ["attach"], ["dashboard"]):
         done = subprocess.run([str(BIN / "ray-vast"), *command, "--help"], capture_output=True, text=True, timeout=60)
         record.evidence(f"help_{'_'.join(command) or 'top'}.txt", done.stdout)
-        check(record, f"ray-vast {' '.join(command)} --help", done.returncode == 0 and "usage: ray-vast" in done.stdout, "")
+        record.check(f"ray-vast {' '.join(command)} --help", done.returncode == 0 and "usage: ray-vast" in done.stdout, "")
 
 
 def test_F04_provider_state_logic(record):
@@ -157,8 +156,8 @@ def test_F06_head_server_and_pki(record):
     all_pass(record, "head server and PKI tests", code, outcomes)
     text = (PKG / "tests/unit/test_head_server.py").read_text()
     keys = re.search(r"\{\s*\"slot_id\".*?\}", text, re.S)
-    check(record, "a test asserts the exact enroll answer keys", keys is not None and "ca_pem" not in keys.group(0),
-          keys.group(0)[:200] if keys else "no such assertion")
+    record.check("a test asserts the exact enroll answer keys", keys is not None and "ca_pem" not in keys.group(0),
+         keys.group(0)[:200] if keys else "no such assertion")
 
 
 def test_F07_bootloader_in_docker(record):
@@ -168,7 +167,7 @@ def test_F07_bootloader_in_docker(record):
              must_include=["one_changed_byte", "without_ray_python", "exec_entrypoint", "signal_to_pid_1", "zombies"])
     code, outcomes = run_pytest(record, "missing_env", [*FULL, "tests/unit/test_bootstrap.py", "-k", "vast_instance_variables"])
     all_pass(record, "missing CONTAINER_ID or CONTAINER_API_KEY: log and wait", code, outcomes)
-    check(record, "both variables tested", len(outcomes) == 2, sorted(outcomes))
+    record.check("both variables tested", len(outcomes) == 2, sorted(outcomes))
 
 
 # --- F08-F15: the local end-to-end scenarios (step 11), each in its own run (they can run at the same time) ----------
@@ -191,7 +190,7 @@ def _local_e2e_test(scenario):
         code, outcomes = run_pytest(record, "local_e2e", ["-o", "addopts=", "-p", "no:cacheprovider", "-m", "local_e2e",
                                                          f"tests/local_e2e/test_local_e2e.py::{case}"])
         record.data("local_e2e_case", case)
-        check(record, f"{case} passed", code == 0 and outcomes.get(case) == "passed", (code, outcomes))
+        record.check(f"{case} passed", code == 0 and outcomes.get(case) == "passed", (code, outcomes))
     return test
 
 
@@ -214,7 +213,7 @@ def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
                                                          str(MANUAL / "c10" / "test_c10_local_e2e.py"), "-k", selected], timeout=7200,
                                 extra_env={"C10E_OUT": str(record.dir / "c10e")})
     all_pass(record, "C10 local pairs", code, outcomes)
-    check(record, "5 pair runs", len(outcomes) == 5, sorted(outcomes))
+    record.check("5 pair runs", len(outcomes) == 5, sorted(outcomes))
     text = "".join(p.read_text() for p in sorted((record.dir / "c10e").glob("*")))  # each run's result line, job log and head log
     for line in re.findall(r"C10E_RESULT .*", text):
         record.data(line.split(" ", 4)[1] + " " + line.split(" ", 4)[2] + " " + line.split(" ", 5)[4], line[:400])
@@ -223,7 +222,7 @@ def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
     warning = next((e for e in window.events(lines, "UTC", "process_limit") if e.fields["pids_max"] == 1280 and
                     e.fields["advice"] == "Ray work on this worker can queue, hang or fail." and
                     e.fields["docs"] == "https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"), None)
-    check(record, "the WARNING line has the documented format", warning is not None, warning.line[:200] if warning else "")
+    record.check("the WARNING line has the documented format", warning is not None, warning.line[:200] if warning else "")
 
 
 # --- F17-F20: package, Python 3.10, offers, doc snippets -----------------------------------------------------------
@@ -243,19 +242,19 @@ def test_F17_wheel_and_sdist(record, dist):
     wheel, sdist = next(dist.glob("*.whl")), next(dist.glob("*.tar.gz"))
     done = subprocess.run([str(BIN / "twine"), "check", "--strict", str(wheel), str(sdist)], capture_output=True, text=True, timeout=300)
     record.evidence("twine_check.txt", done.stdout + done.stderr)
-    check(record, "twine check --strict", done.returncode == 0, done.stdout.strip().splitlines()[-1:])
+    record.check("twine check --strict", done.returncode == 0, done.stdout.strip().splitlines()[-1:])
     names = zipfile.ZipFile(wheel).namelist()
     record.evidence("wheel_files.txt", "\n".join(names) + "\n")
     for need in ("ray_vast/shim/librayvast_shim.so", "ray_vast/worker/bootstrap.py", "ray_vast/worker/bootloader.sh",
                  "ray_vast/examples/gpu-24gb.yaml", "ray_vast/examples/gpu-80gb.yaml", "ray_vast/examples/cpu-heavy.yaml",
                  "ray_vast/iam/ray-vast-head-boundary.json", "ray_vast/iam/ray-vast-user.json"):
-        check(record, f"wheel has {need}", need in names, "")
+        record.check(f"wheel has {need}", need in names, "")
     shim = hashlib.sha256(zipfile.ZipFile(wheel).read("ray_vast/shim/librayvast_shim.so")).hexdigest()
-    check(record, "wheel shim = committed shim", shim == hashlib.sha256(SHIM.read_bytes()).hexdigest(), shim[:16])
+    record.check("wheel shim = committed shim", shim == hashlib.sha256(SHIM.read_bytes()).hexdigest(), shim[:16])
     metadata = zipfile.ZipFile(wheel).read(next(n for n in names if n.endswith("METADATA"))).decode()
-    check(record, "Requires-Dist ray[default]>=2.59", re.search(r"Requires-Dist: ray\[default\]>=2\.59", metadata) is not None, "")
-    check(record, "Requires-Python >=3.10", "Requires-Python: >=3.10" in metadata, "")
-    from livekit import scan_secrets
+    record.check("Requires-Dist ray[default]>=2.59", re.search(r"Requires-Dist: ray\[default\]>=2\.59", metadata) is not None, "")
+    record.check("Requires-Python >=3.10", "Requires-Python: >=3.10" in metadata, "")
+    from liverecords import scan_secrets
     from cluster import vast_key
     unpacked = dist / "unpacked"
     zipfile.ZipFile(wheel).extractall(unpacked)
@@ -264,7 +263,7 @@ def test_F17_wheel_and_sdist(record, dist):
     # The test files hold fake keys and `Bearer x` headers on purpose (they test the redaction); the real vast key is never there.
     real = [p for p in found if "/tests/" not in p.as_posix() or vast_key().encode() in p.read_bytes()]
     record.data("pattern_hits_in_test_files", [str(p.relative_to(unpacked)) for p in found if p not in real])
-    check(record, "no secret in the wheel or the sdist", not real, [str(p.relative_to(unpacked)) for p in real][:5])
+    record.check("no secret in the wheel or the sdist", not real, [str(p.relative_to(unpacked)) for p in real][:5])
 
 
 @pytest.mark.box_disk
@@ -286,12 +285,12 @@ python -m pytest -q -rfE -p no:cacheprovider tests/unit 2>&1
                   "-v", f"{PKG.parent / 'tests' / 'manual'}:/manual:ro", "python:3.10",
                   "bash", "-c", script, timeout=3600)
     record.evidence("py310.txt", done.stdout + done.stderr)
-    check(record, "Python 3.10", "Python 3.10" in done.stdout, re.findall(r"Python 3\.\S+", done.stdout))
-    check(record, "ray-vast --help works", "usage: ray-vast" in done.stdout, "")
+    record.check("Python 3.10", "Python 3.10" in done.stdout, re.findall(r"Python 3\.\S+", done.stdout))
+    record.check("ray-vast --help works", "usage: ray-vast" in done.stdout, "")
     passed = re.search(r"(\d+) passed", done.stdout)
     lines = done.stdout.strip().splitlines()
-    check(record, "fast unit run passes on 3.10", done.returncode == 0 and passed and "failed" not in lines[-1],
-          [x for x in lines if x.startswith(("FAILED", "ERROR"))][:5] + lines[-1:])
+    record.check("fast unit run passes on 3.10", done.returncode == 0 and passed and "failed" not in lines[-1],
+         [x for x in lines if x.startswith(("FAILED", "ERROR"))][:5] + lines[-1:])
 
 
 def _doc_queries():
@@ -327,12 +326,12 @@ def test_F19_offer_queries_of_the_examples_and_the_docs(record):
             first = sorted(o["dph_total"] for o in offers)[:provider["candidate_factor"]]
             rows.append({"source": path.name, "type": name, "offers": len(offers), "machines": len(machines),
                          "cheapest": [round(x, 3) for x in first], "budget": provider["max_dollars_per_hour"]})
-            check(record, f"{path.name} {name}: >= 4 offers on >= 3 machines", len(offers) >= 4 and len(machines) >= 3, rows[-1])
-            check(record, f"{path.name} {name}: the first candidates fit the budget", sum(first) <= provider["max_dollars_per_hour"], rows[-1])
+            record.check(f"{path.name} {name}: >= 4 offers on >= 3 machines", len(offers) >= 4 and len(machines) >= 3, rows[-1])
+            record.check(f"{path.name} {name}: the first candidates fit the budget", sum(first) <= provider["max_dollars_per_hour"], rows[-1])
     for source, node_type in _doc_queries():
         offers = client.search_offers(build_offer_query(node_type, source))
         rows.append({"source": source, "query": node_type["node_config"]["offer_query"], "offers": len(offers)})
-        check(record, f"{source}: vast accepts the query", isinstance(offers, list), len(offers))
+        record.check(f"{source}: vast accepts the query", isinstance(offers, list), len(offers))
     record.evidence("offers.json", json.dumps(rows, indent=1))
 
 
@@ -351,7 +350,7 @@ def test_F20_doc_snippets_run_in_ray_2_59(record, tmp_path):
             ok, detail = True, ""
         except SyntaxError as e:
             ok, detail = False, str(e)
-        check(record, f"{name} compiles", ok, detail)
+        record.check(f"{name} compiles", ok, detail)
     imports = sorted({line.strip() for _, b in blocks for line in b.splitlines() if re.match(r"\s*(import|from) \S+", line)})
     (tmp_path / "imports.py").write_text("\n".join(imports) + "\nprint('IMPORTS OK')\n")
     record.evidence("imports.py", (tmp_path / "imports.py").read_text())
@@ -359,12 +358,12 @@ def test_F20_doc_snippets_run_in_ray_2_59(record, tmp_path):
                   "pip install -q torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu >/tmp/pip.log 2>&1 || tail -5 /tmp/pip.log; "
                   "python /s/imports.py", timeout=3600)
     record.evidence("imports.txt", done.stdout + done.stderr)
-    check(record, "all snippet imports work in the Ray 2.59 image (torch from pip)", "IMPORTS OK" in done.stdout, done.stderr[-300:])
+    record.check("all snippet imports work in the Ray 2.59 image (torch from pip)", "IMPORTS OK" in done.stdout, done.stderr[-300:])
     # The page's two blocks, on a local node with the page's CPUS = 24, then one call through the pool.
     core = "\n".join(b for n, b in blocks if n.startswith("core_") and ("ray.remote" in b or "CPUS =" in b))
     (tmp_path / "core_run.py").write_text("import ray\nray.init(num_cpus=24)\n" + core +
                                           "\nprint('CPUS', CPUS, 'CALL', ray.get(pool[0].work.remote(1)))\n")
     done = docker("run", "--rm", "-v", f"{tmp_path}:/s:ro", RAY_IMAGE, "bash", "-c", "cd /tmp && timeout 600 python /s/core_run.py", timeout=900)
     record.evidence("core_run.txt", done.stdout + done.stderr)
-    check(record, "the core snippets run on a local node", done.returncode == 0 and "CPUS 24.0 CALL None" in done.stdout,
-          (done.stdout + done.stderr)[-300:])
+    record.check("the core snippets run on a local node", done.returncode == 0 and "CPUS 24.0 CALL None" in done.stdout,
+         (done.stdout + done.stderr)[-300:])

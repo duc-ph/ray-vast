@@ -5,7 +5,7 @@ run), the host pins of H1 and H2 (the offer query of each pinned type and the la
 How a scenario gets its hosts. The head's autoscaler reads `/home/ubuntu/ray-vast-<cluster>/cluster.yaml` again in each
 loop (Ray 2.59: autoscaler/v2/autoscaler.py calls `FileConfigReader.refresh_cached_autoscaling_config()` before each
 reconcile, and node_provider.py takes the `node_config` of a launch from that config). `LibrariesCluster.set_shape()` writes
-min_workers = max_workers for every worker type there (`livekit.shaped_config`), and the offer query of a pinned type.
+min_workers = max_workers for every worker type there (`shaped_config`), and the offer query of a pinned type.
 So the autoscaler starts exactly the workers of a scenario and ends the others; the library code needs no node pinning,
 and no demand can start a worker of another type. A host is blocked by a `machine_id` filter in that query (the provider
 itself does not block a destroyed host: C10, docs/test-results.md)."""
@@ -22,9 +22,8 @@ import yaml
 
 from ray_vast.config import build_offer_query
 
-import livekit
 from cluster import ADMIN_PROFILE, Cluster, vast
-from window import wait_until
+from liverun import assert_ours, wait_until
 
 HERE = Path(__file__).parent
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10, 2026-10-17) and the query to use when none of them is
@@ -42,14 +41,86 @@ HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}  # the worker 
 DATE8 = time.strftime("%Y%m%d", time.gmtime())
 
 
+class HostNotFound(Exception):
+    pass
+
+
+HOST_RENTALS_MAX = 3
+
+
+def find_host(want, rent, end):
+    """Rent a host until its probe matches `want` (for example {"cpus": {"gte": 32}, "cgroup": "v1"}: a value is the exact
+    value of that fact, or {"gte": n} for a number of at least n).
+    `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
+    ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
+    Returns (the matching probe, the list of tries); raises HostNotFound after HOST_RENTALS_MAX rentals."""
+    blocked, tries = [], []
+    for _ in range(HOST_RENTALS_MAX):
+        probe = rent(list(blocked))
+        match = all(probe.get(key) is not None and probe[key] >= value["gte"] if isinstance(value, dict) else probe.get(key) == value
+                    for key, value in want.items())
+        tries.append({**probe, "match": match})
+        if match:
+            return probe, tries
+        end(probe)
+        blocked.append(probe["machine_id"])
+    raise HostNotFound(f"no host matched {want} in {HOST_RENTALS_MAX} rentals (machines {', '.join(map(str, blocked))})")
+
+
+def shaped_config(config, shape, queries=None):
+    """The head's cluster YAML for one cluster shape ({node type: workers}): every worker type gets min_workers =
+    max_workers = its count (0 if not named), so the autoscaler starts exactly these workers and no other. `queries`
+    ({node type: offer_query}) replaces the offer query of a type (a host pin or a block). Returns a copy."""
+    import copy
+    config = copy.deepcopy(config)
+    for name, node_type in config["available_node_types"].items():
+        if name == config["head_node_type"]:
+            continue
+        node_type["min_workers"] = node_type["max_workers"] = shape.get(name, 0)
+        if name in (queries or {}):
+            node_type["node_config"]["offer_query"] = queries[name]
+    config["max_workers"] = sum(shape.values())
+    return config
+
+
+def host_facts(probe, machine_id):
+    """What `find_host` compares, from one NODE_PROBE row (jobs/node_probe.py): pids.max (None for "max" or no file),
+    the cgroup version, the Ray CPUs, and whether the container has a process limit."""
+    value = probe.get("pids.max")
+    pids_max = int(value) if value and value.isdigit() else None
+    return {"machine_id": machine_id, "pids_max": pids_max, "cgroup": probe.get("cgroup"), "cpus": int(probe["ray_cpus"]),
+            "limited": pids_max is not None}
+
+
+def expected_limits(probe):
+    """(worker ports, RAY_num_workers_soft_limit) that the bootstrap must set on the node of one NODE_PROBE row: the
+    product's own formula (ray_vast.worker.bootstrap.worker_ports_and_soft_limit) on the probed Ray CPUs, pids.max and
+    mapped identity ports."""
+    from ray_vast.worker.bootstrap import worker_ports_and_soft_limit
+    facts = host_facts(probe, probe.get("machine_id"))
+    return worker_ports_and_soft_limit(facts["cpus"], facts["pids_max"], probe["identity_ports"])
+
+
+def doc_snippet(markdown, heading, index, subs):
+    """The `index`-th ```python block in the section `heading` of a user doc, with each (old, new) substitution applied.
+    Each `old` must occur exactly once in the block, so a doc change makes the test fail, not test other code."""
+    section = markdown.split("\n" + heading + "\n", 1)[1].split("\n## ", 1)[0]
+    code = re.findall(r"```python\n(.*?)```", section, re.S)[index]
+    for old, new in subs:
+        if code.count(old) != 1:
+            raise ValueError(f"{old!r} is in the snippet {code.count(old)} times, not exactly once")
+        code = code.replace(old, new)
+    return code
+
+
 class S3Access:
     """The test bucket and the least-privilege IAM user of one host (admin calls; the log has no secret)."""
 
     def __init__(self, out_dir, host):
         self.bucket = f"ray-vast-rvtest-{DATE8}-{secrets.token_hex(2)}"
         self.user = f"ray-vast-livetest-{DATE8}-s3-{host.lower()}"
-        livekit.assert_ours(self.bucket)
-        livekit.assert_ours(self.user)
+        assert_ours(self.bucket)
+        assert_ours(self.user)
         session = boto3.Session(profile_name=ADMIN_PROFILE, region_name="us-west-2")
         self.s3, self.iam = session.client("s3"), session.client("iam")
         self.log = Path(out_dir) / "s3_iam.log"
@@ -90,7 +161,7 @@ class S3Access:
         return [o for page in pages for o in page.get("Contents", [])]
 
     def delete_bucket(self):
-        livekit.assert_ours(self.bucket)
+        assert_ours(self.bucket)
         try:
             keys = [{"Key": o["Key"]} for o in self.objects("")]
             for i in range(0, len(keys), 1000):
@@ -103,7 +174,7 @@ class S3Access:
             pass
 
     def delete_user(self):
-        livekit.assert_ours(self.user)
+        assert_ours(self.user)
         try:
             for key in self.iam.list_access_keys(UserName=self.user)["AccessKeyMetadata"]:
                 self.iam.delete_access_key(UserName=self.user, AccessKeyId=key["AccessKeyId"])
@@ -150,7 +221,7 @@ class LibrariesCluster(Cluster):
     def set_shape(self, shape):
         """Write the shape into the head's YAML (atomic: a new file, then mv). The autoscaler acts on its next loop."""
         config = yaml.safe_load(self.ssh(f"cat {self.head_yaml}"))
-        text = yaml.safe_dump(livekit.shaped_config(config, shape, self.queries), sort_keys=False)
+        text = yaml.safe_dump(shaped_config(config, shape, self.queries), sort_keys=False)
         subprocess.run([*self.ssh_args(), f"cat > {self.head_yaml}.new && mv {self.head_yaml}.new {self.head_yaml}"],
                        input=text, text=True, capture_output=True, timeout=120, check=True)
         self.shape = dict(shape)
@@ -192,19 +263,19 @@ class LibrariesCluster(Cluster):
         return query
 
     def find(self, env, kind, want, keep, out_dir):
-        """Rent one worker of `kind` next to the shape `keep` until its probe matches `want` (livekit.find_host: at most 3
+        """Rent one worker of `kind` next to the shape `keep` until its probe matches `want` (find_host: at most 3
         rentals; each mismatch is ended and its machine blocked). Leaves the shape keep + {kind: 1}. Returns (facts, tries);
         facts has the full NODE_PROBE row as `probe`."""
         def rent(blocked):
             self.queries[kind] = self.pin_query(kind, blocked)
             self.ensure_shape({**keep, kind: 1})
             row = probe(self, env, out_dir, name=f"probe_{kind}_{len(blocked)}")[kind][0]
-            return dict(livekit.host_facts(row, row["machine_id"]), query=self.queries[kind], probe=row)
+            return dict(host_facts(row, row["machine_id"]), query=self.queries[kind], probe=row)
 
         def end(facts):
             self.ensure_shape(keep)
 
-        facts, tries = livekit.find_host(want, rent, end)
+        facts, tries = find_host(want, rent, end)
         self.matched[kind] = facts
         return facts, tries
 
@@ -226,7 +297,7 @@ class LibrariesCluster(Cluster):
     def end_checks(self, record, done):
         """After the final `down` (`done`; None for a kept cluster): it destroyed the running worker; the S3 test bucket and
         IAM user are deleted (also for a kept cluster: each run makes new ones). Each check goes to `record`; returns the
-        names of the false ones (problems for livekit.end_cluster)."""
+        names of the false ones (problems for liverun.end_cluster)."""
         checks = []
         if done is not None:
             destroyed = re.search(r"destroyed (\d+) vast instance\(s\)", done.stdout)

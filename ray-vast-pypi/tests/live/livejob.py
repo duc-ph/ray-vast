@@ -1,7 +1,7 @@
 """The jobs of the live suite: the only module that submits, waits for, stops and reads a Ray job (unit-tested in
-tests/unit/test_live_job.py). `run()` takes the job's files (or a working dir), the entrypoint, the env vars, the secrets
-to redact, a timeout and the result prefix; it returns a `Job`: the status, the parsed result line, the log, and the
-handle to wait for or stop the job.
+tests/unit/test_live_job.py). `run()` takes the entrypoint, the job's working dir (`workdir(*files)` makes one from
+files), the runtime env (its env vars inside it), the secrets to redact, a timeout and the result prefix; it returns a
+`Job`: the status, the parsed result line, the log, and the handle to wait for or stop the job.
 
 The result line of every job script: `<PREFIX> <id> <word> <json>`, the last one counts. The prefix is `<FAMILY>_RESULT`
 (C9_RESULT, C10_RESULT, LB_RESULT), and the caller names it. A data line (one or more rows): `<PREFIX> <json>`
@@ -16,14 +16,18 @@ import tempfile
 import time
 from pathlib import Path
 
+from liverun import wait_until
+
 BIN = Path(sys.executable).parent
 ENDED = ("SUCCEEDED", "FAILED", "STOPPED")
 NO_RESULT, BAD_RESULT, SUBMIT_FAILED = "NO_RESULT", "BAD_RESULT", "SUBMIT_FAILED"
 
 
 class RayCli:
-    """The `ray job` adapter: the Ray CLI of this venv, against `env["RAY_ADDRESS"]` (a dashboard tunnel)."""
+    """The `ray job` adapter: the Ray CLI of this venv, against `env["RAY_ADDRESS"]` (a dashboard tunnel). A job's status
+    is asked again every `poll_s` s."""
 
+    poll_s = 10
     STATUS = ("import sys; from ray.job_submission import JobSubmissionClient; "
               "print('STATUS', JobSubmissionClient(sys.argv[1]).get_job_status(sys.argv[2]).value)")
 
@@ -61,9 +65,9 @@ class Job:
     """One submitted job, the handle to wait for or stop it. `status`, `word`, `data` and `log` are set by `wait()`.
     Each text that leaves the Job (the log, its file, the result, the stop output) has the secrets as `<redacted>`."""
 
-    def __init__(self, env, ray, sid, out_dir, name, prefix, secrets, deadline, poll_s):
+    def __init__(self, env, ray, sid, out_dir, name, prefix, secrets, deadline):
         self.env, self.ray, self.sid, self.out_dir, self.name, self.prefix = env, ray, sid, out_dir, name, prefix
-        self.secrets, self.deadline, self.poll_s = [s for s in secrets if s], deadline, poll_s
+        self.secrets, self.deadline = [s for s in secrets if s], deadline
         self.status, self.word, self.data, self.log = None, None, {}, ""
 
     def redact(self, text):
@@ -88,12 +92,10 @@ class Job:
         """Wait for the end: until the job's own timeout, or `timeout` s from now. A job that still runs then is stopped, and
         its status is TIMEOUT(<status after the stop>). Then the log goes to `<out_dir>/<name>.log` and the result line is
         parsed. Returns the Job."""
-        deadline = self.deadline if timeout is None else time.time() + timeout
-        status = self.status_now()
-        while status not in ENDED and time.time() < deadline:
-            time.sleep(self.poll_s)
-            status = self.status_now()
-        if status not in ENDED:
+        left = (self.deadline if timeout is None else time.time() + timeout) - time.time()
+        waited = wait_until(self.status_now, left, done=lambda status: status in ENDED, poll_s=self.ray.poll_s)
+        status = waited.seen
+        if not waited:
             self.stop()
             status = f"TIMEOUT({self.status_now()})"
         self.status = status
@@ -120,32 +122,36 @@ class Job:
             self.word, self.data = BAD_RESULT, {"line": found[-1][:300], "error": str(e)[:200]}
 
 
-def run(env, entrypoint, *, out_dir, name="job", files=(), working_dir=None, env_vars=None, runtime_env=None, secrets=(),
-        sink=None, prefix=None, timeout=1800, wait=True, ray=None, poll_s=10):
+def run(env, entrypoint, *, out_dir, name="job", working_dir=None, runtime_env=None, secrets=(), prefix=None, timeout=1800,
+        wait=True, ray=None):
     """Submit one job and (with `wait`) wait for its end; stop it at `timeout` s. Returns the Job.
-    `env`: the env of a dashboard tunnel (Cluster.tunnel). `files` go into a new working dir; or `working_dir` is used as
-    it is; neither: no working dir. `env_vars` join `runtime_env["env_vars"]`. `secrets` (for example an S3 secret key in
-    `env_vars`) go to `sink` (the run's secret scan) and are redacted in every file and text of the job. `prefix`: the
-    result line to parse (`Job.word`, `Job.data`). With wait=False the caller calls `Job.wait()` (or `Job.stop()`)."""
+    `env`: the env of a dashboard tunnel (Cluster.tunnel). `working_dir`: the job's files (`workdir(*files)`), or none.
+    `runtime_env`: the job's runtime env, with its env vars in `env_vars`. It goes to `ray job submit` in a temp file of
+    mode 600 (`--runtime-env`), never on the command line (`ps` shows a command line to every user); the file is deleted
+    after the submit. `secrets` (for example an S3 secret key in the env vars) are redacted in every file and text of the
+    job. `prefix`: the result line to parse (`Job.word`, `Job.data`). With wait=False the caller calls `Job.wait()` (or
+    `Job.stop()`). `ray`: the `ray job` adapter (RayCli)."""
     ray = ray or RayCli()
     out_dir = Path(out_dir)
-    for secret in secrets:
-        if sink and secret:
-            sink(secret)
     sid = f"{name.replace('.', '-').replace('[', '-').replace(']', '').lower()}-{os.urandom(3).hex()}"
-    if files:
-        working_dir = workdir(*files)
-    if env_vars:
-        runtime_env = dict(runtime_env or {}, env_vars={**(runtime_env or {}).get("env_vars", {}), **env_vars})
     command = ["submit", "--address", env["RAY_ADDRESS"], "--submission-id", sid, "--no-wait"]
     if working_dir:
         command += ["--working-dir", str(working_dir)]
+    env_file = None
     if runtime_env:
-        command += ["--runtime-env-json", json.dumps(runtime_env)]
+        fd, env_file = tempfile.mkstemp(prefix="rvjob-env-", suffix=".yaml")  # mode 600; JSON is YAML
+        with os.fdopen(fd, "w") as f:
+            json.dump(runtime_env, f)
+        command += ["--runtime-env", env_file]
     command += ["--", *entrypoint]
-    job = Job(env, ray, sid, out_dir, name, prefix, secrets, time.time() + timeout, poll_s)
-    (out_dir / f"{name}_submit.txt").write_text(job.redact("ray job " + shlex.join(command)) + "\n")
-    done = ray.submit(env, command)
+    job = Job(env, ray, sid, out_dir, name, prefix, secrets, time.time() + timeout)
+    submitted = f"ray job {shlex.join(command)}\n" + (f"runtime env: {json.dumps(runtime_env)}\n" if runtime_env else "")
+    (out_dir / f"{name}_submit.txt").write_text(job.redact(submitted))
+    try:
+        done = ray.submit(env, command)
+    finally:
+        if env_file:
+            os.unlink(env_file)
     if done.returncode != 0:
         job.status = SUBMIT_FAILED
         job._ended(job.redact((done.stdout or "") + (done.stderr or "")))
