@@ -8,14 +8,17 @@ The result line of every job script: `<PREFIX> <id> <word> <json>`, the last one
 (`Job.lines`)."""
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
+import urllib.request
 from pathlib import Path
 
+from liverecords import AWS_KEY_ID
 from liverun import wait_until
 
 BIN = Path(sys.executable).parent
@@ -52,6 +55,64 @@ class RayCli:
         return subprocess.run([str(BIN / "ray"), "job", "stop", "--address", env["RAY_ADDRESS"], sid], env=env, capture_output=True,
                               text=True, timeout=120)
 
+    def progress(self, env, sid):
+        """`task_progress` of the job's tasks (the dashboard's task summary, filtered by the job's Ray job id), or None
+        while the job has no Ray job id yet. The token of the tunnel env goes only into the request header."""
+        token_path = env.get("RAY_AUTH_TOKEN_PATH")
+        headers = {"Authorization": "Bearer " + Path(token_path).read_text().strip()} if token_path else {}
+
+        def get(path):
+            with urllib.request.urlopen(urllib.request.Request(env["RAY_ADDRESS"] + path, headers=headers), timeout=60) as r:
+                return json.loads(r.read())
+        job_id = get(f"/api/jobs/{sid}").get("job_id")
+        if not job_id:
+            return None
+        return task_progress(get(f"/api/v0/tasks/summarize?filter_keys=job_id&filter_predicates=%3D&filter_values={job_id}"))
+
+
+def task_progress(summary):
+    """The progress of a job from the dashboard's task summary (`/api/v0/tasks/summarize`): the sorted (name, state,
+    count) of its ended (FINISHED, FAILED) tasks and actor creations. Actor calls do not count: Serve's health checks are
+    actor calls that end also while the job hangs. None (unknown) when the summary is cut (more tasks than the API gives)."""
+    result = summary["data"]["result"]
+    if result["num_after_truncation"] < result["total"]:
+        return None
+    rows = result["result"]["node_id_to_summary"]["cluster"]["summary"]
+    return tuple(sorted((name, state, count) for name, row in rows.items() if row["type"] != "ACTOR_TASK"
+                        for state, count in row["state_counts"].items() if state in ("FINISHED", "FAILED")))
+
+
+HANG_QUIET_S = 120  # a "many" run with the WARNING and no progress for this long has proven its hang
+
+
+class HangRule:
+    """The early end of a "many" run of the process-limit pairs: its hang is proven when the head's process-limit WARNING for its node has
+    appeared (`warning()` gives the line, or None) AND the job made no progress for `quiet_s` (`progress()` gives a value
+    that changes when the job makes progress: `Job.progress`). A call samples both and gives the proof (the WARNING, the
+    quiet seconds, the last progress), or None. A progress sample that fails or is None (unknown) is no proof: the quiet
+    time starts again. Without the WARNING there is no proof: then the job's own guard (600 s) ends the run."""
+
+    def __init__(self, warning, progress, quiet_s=HANG_QUIET_S, clock=time):
+        self.warning, self.progress, self.quiet_s, self.clock = warning, progress, quiet_s, clock
+        self.last, self.since = None, clock.time()
+
+    def __call__(self):
+        now = self.clock.time()
+        try:
+            value = self.progress()
+        except Exception:  # noqa: BLE001  (one failed sample is no proof)
+            value = None
+        if value is None:  # unknown: the quiet time starts again
+            self.since = now
+            return None
+        if value != self.last:
+            self.last, self.since = value, now
+            return None
+        if now - self.since < self.quiet_s:
+            return None
+        line = self.warning()
+        return {"warning": line, "quiet_s": round(now - self.since, 1), "progress": [list(x) for x in value]} if line else None
+
 
 def workdir(*files):
     """A new temp working directory for `ray job submit` with a copy of these files."""
@@ -71,9 +132,10 @@ class Job:
         self.status, self.word, self.data, self.log = None, None, {}, ""
 
     def redact(self, text):
+        """The text with each secret and each AWS access key ID (also one that the caller did not name) as <redacted>."""
         for secret in self.secrets:
             text = text.replace(secret, "<redacted>")
-        return text
+        return re.sub(AWS_KEY_ID, "<redacted>", text)
 
     def status_now(self):
         """The status now (PENDING, RUNNING, SUCCEEDED, FAILED, STOPPED, or UNKNOWN when the dashboard does not answer)."""
@@ -83,23 +145,38 @@ class Job:
         """The log now (redacted)."""
         return self.redact(self.ray.logs(self.env, self.sid))
 
+    def progress(self):
+        """The job's progress now (`task_progress`), or None (unknown) for a job with no Ray job id yet."""
+        return self.ray.progress(self.env, self.sid)
+
     def stop(self):
         """`ray job stop`. Returns its CompletedProcess (output redacted)."""
         done = self.ray.stop(self.env, self.sid)
         return subprocess.CompletedProcess(done.args, done.returncode, self.redact(done.stdout or ""), self.redact(done.stderr or ""))
 
-    def wait(self, timeout=None):
+    def wait(self, timeout=None, hung=None):
         """Wait for the end: until the job's own timeout, or `timeout` s from now. A job that still runs then is stopped, and
-        its status is TIMEOUT(<status after the stop>). Then the log goes to `<out_dir>/<name>.log` and the result line is
-        parsed. Returns the Job."""
+        its status is TIMEOUT(<status after the stop>). `hung` (a HangRule) is asked at each status poll while the job
+        runs: when it gives a proof, the job is stopped at once, its status is HUNG(<status after the stop>), and its result
+        is HUNG with {"stopped_early": proof}. Then the log goes to `<out_dir>/<name>.log` and the result line is parsed.
+        Returns the Job."""
         left = (self.deadline if timeout is None else time.time() + timeout) - time.time()
-        waited = wait_until(self.status_now, left, done=lambda status: status in ENDED, poll_s=self.ray.poll_s)
-        status = waited.seen
-        if not waited:
+
+        def look():
+            status = self.status_now()
+            return status, (hung() if hung and status not in ENDED else None)
+        waited = wait_until(look, left, done=lambda seen: seen[0] in ENDED or seen[1] is not None, poll_s=self.ray.poll_s)
+        status, proof = waited.seen or (None, None)
+        if proof is not None:
+            self.stop()
+            status = f"HUNG({self.status_now()})"
+        elif not waited:
             self.stop()
             status = f"TIMEOUT({self.status_now()})"
         self.status = status
         self._ended(self.logs())
+        if proof is not None:
+            self.word, self.data = "HUNG", {"stopped_early": proof}
         return self
 
     def lines(self, prefix):

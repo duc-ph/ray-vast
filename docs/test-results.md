@@ -1012,3 +1012,13 @@ Debug cost (DBG2): H1 about 1 h (about $0.65 vast, EC2 about $0.08).
 - Kept from the earlier runs: L03 PASS, LB15 PASS (run 134831-2588952).
 
 Spend of this run: vast credit 8.23 → 6.67, about $1.56. EC2 about $0.3.
+
+### Preparation for the confirmation run (no paid run)
+
+Changes (decisions.md, 2026-10-17): a many run of LB11 ends early when its hang is proven; LB11 runs on H1, H1b, H2 and H2b; the new scenario LB16 (H5: 10 to 63 direct ports); the local Docker scenarios share the xdist group `local_docker`; the jobs redact AWS access key IDs, and the 10 key IDs in `archive/results/2026-10-17/` are `<redacted>`.
+
+Local checks (records in a scratch directory, not kept):
+
+- The progress half of the early end, on a Ray 2.59 head in Docker with 14 worker ports (the WARNING faked): `c10_tune.py many` (60 trials, 10 s evaluations) and `c10_serve.py many` (60 replicas) ended `HUNG(STOPPED)` after 146 s and 145 s (127 s and 127 s without progress), not at the 600 s guard. The ended tasks stayed at 11 (tune: the trial actors that started) and 0 (serve: the health checks do not count). A control on 300 worker ports (30 trials) completed and was not stopped.
+- `test_c10_local_e2e.py::test_pair[c10_tune.py-many-1280-150]` with `C10E_SCALE=1` (60 trials, 60 s hold, 10 s evaluations, the real head and the bootstrap of 34d3d65): PASS, HUNG, the WARNING `worker ports in use 14 of 14`, node alive, `pids.events` max 0.
+- The free group with `-n 14`: 22 of 22 pass in 19 min 37 s (the local Docker scenarios one after the other). F21 passed.

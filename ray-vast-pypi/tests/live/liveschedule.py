@@ -12,6 +12,9 @@ NEEDS = {  # the markers that declare a need of a test; conftest registers them 
                          "(the boundary policy): it runs before every cluster `up` of the run (no cluster fixture)",
     "box_disk": "the test builds or installs the package on the dev box (up to about 1.5 GB of disk): the tests with this "
                 "marker run in one process, one after the other, and share one wheel build",
+    "local_docker": "the test runs Ray clusters as Docker containers on the dev box (local end-to-end, the local C10 runs): "
+                    "they share the memory of the box, so the tests with this marker run in one process, one after the "
+                    "other (with -n 14 at the same time, a local C10 run got OutOfMemoryError at 29.2 of 30.8 GB)",
 }
 
 
@@ -19,14 +22,15 @@ def xdist_group(markers, fixturenames, host=None):
     """The xdist group of one test, for `pytest -n N --dist loadgroup` (conftest forces loadgroup), from its markers and
     fixtures only. xdist runs all tests of a group in one worker process, so a session fixture of that group runs `up` once
     and `down` once. Each cluster fixture is a group; a test with the restricted IAM user joins lifecycle (one user for
-    each run); each libraries host (H1, H2, H3, gpu2, H4) is its own cluster and group. A need of NEEDS is a group of the
-    same name. None: any worker. A test with two groups is a ValueError (an `exclusive_account` test with a cluster
+    each run); each libraries host (H1, H1b, H2, H2b, H3, gpu2, H4, H5) is its own cluster and group. A need of NEEDS is a group of the
+    same name (`box_disk`, `local_docker`: one process, one test after the other). None: any worker. A test with two groups is a ValueError (an `exclusive_account` test with a cluster
     fixture would wait for itself)."""
     wanted = {"exclusive_account": "exclusive_account" in markers,
               "aws_only": "aws_only" in fixturenames,
               "lifecycle": "lifecycle" in fixturenames or "restricted_user" in fixturenames,
               f"libraries-{(host or '').lower()}": "libraries" in fixturenames,
               "box_disk": "box_disk" in markers,
+              "local_docker": "local_docker" in markers,
               "release": "release" in fixturenames}
     groups = [group for group, want in wanted.items() if want]
     if len(groups) > 1:

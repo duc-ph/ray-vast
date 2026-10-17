@@ -46,9 +46,9 @@ pytest -o addopts="" -m local_e2e tests/local_e2e
 The live suite in `tests/live/` proves the claims of the docs on real AWS and vast.ai. The claim matrix (one scenario for each claim) is in `docs/test-plan.md` at the repository root. Some groups cost money.
 
 ```
-pytest tests/live -m free -n 12                     # no cost: unit, Docker, local e2e, the package, the offer search
+pytest tests/live -m free -n 14                     # no cost: unit, Docker, local e2e, the package, the offer search
 pytest tests/live -m aws -n 8                       # AWS only, no vast rental
-pytest tests/live -m "lifecycle or libraries" -n 8  # vast rentals
+pytest tests/live -m "lifecycle or libraries" -n 10 # vast rentals
 python tests/live/summarize.py                      # the results table into docs/test-results.md
 ```
 
@@ -69,6 +69,7 @@ The local end-to-end tests also run in parallel: `pytest -o addopts="" -m local_
 | `free`, `aws`, `lifecycle`, `libraries`, `release`, `failure`, `security`, `limits` | The groups of the live suite (`docs/test-plan.md`). | Skipped (with `live`) |
 | `exclusive_account` | A live test that needs the AWS account with no ray-vast role. It runs before every cluster `up` of the run. | Skipped (with `live`) |
 | `box_disk` | A live test that builds or installs the package on the dev box. These tests run in one process, one after the other. | Skipped (with `live`) |
+| `local_docker` | A live test that runs Ray clusters as Docker containers on the dev box (local end-to-end, the local C10 runs). These tests run in one process, one after the other, so they do not use up the memory of the box together. | Skipped (with `live`) |
 | `local_e2e` | Runs a Ray head and workers in Docker on the dev box. | Skipped |
 
 ### Rules for slow tests

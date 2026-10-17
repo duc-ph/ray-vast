@@ -191,7 +191,7 @@ def _local_e2e_test(scenario):
                                                          f"tests/local_e2e/test_local_e2e.py::{case}"])
         record.data("local_e2e_case", case)
         record.check(f"{case} passed", code == 0 and outcomes.get(case) == "passed", (code, outcomes))
-    return test
+    return pytest.mark.local_docker(test)
 
 
 test_F08_local_e2e_scale_up_battery_scale_down = _local_e2e_test("F08")
@@ -205,6 +205,7 @@ test_F15_local_e2e_rent_loop_breaker = _local_e2e_test("F15")
 
 
 @pytest.mark.limits
+@pytest.mark.local_docker
 def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
     """The C10 local check (tests/manual/c10/test_c10_local_e2e.py): one worker with --pids-limit 1280, 14 ports, B = 10.
     The 5 pair runs run at the same time (xdist; each has its own network namespace)."""
@@ -240,6 +241,7 @@ def c10_small(record, selected, count):
 
 
 @pytest.mark.limits
+@pytest.mark.local_docker
 def test_F21_local_rule_1_the_default_code_on_a_worker_with_cpus_at_most_b(record):
     """Rule 1 of the library pages: with Ray's defaults (one process for each CPU), the default code of core, data, tune,
     serve, train and rllib completes on a worker with 6 Ray CPUs and 18 worker ports (B = 14), with no process-limit
@@ -248,6 +250,7 @@ def test_F21_local_rule_1_the_default_code_on_a_worker_with_cpus_at_most_b(recor
 
 
 @pytest.mark.limits
+@pytest.mark.local_docker
 def test_F22_local_rule_2_threads_reach_the_pids_limit_while_ports_are_free(record):
     """Rule 2 of the library pages: on the same worker, 6 tasks (one for each CPU, 6 of 18 ports) with 200 threads each
     reach pids.max 1536: thread starts are refused (test_c10_local_e2e.py::test_threads)."""

@@ -155,7 +155,9 @@ def timeline_spend(rows):
     return round(total, 4)
 
 
-SECRET_PATTERNS = re.compile(rb'PRIVATE KEY|instance_api_key"?\s*[:=]\s*"?[A-Za-z0-9]|CONTAINER_API_KEY=[A-Za-z0-9]|Bearer [A-Za-z0-9]')
+AWS_KEY_ID = r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"  # an AWS access key ID (AKIA: a user key, ASIA: a session key)
+SECRET_PATTERNS = re.compile(rb'PRIVATE KEY|instance_api_key"?\s*[:=]\s*"?[A-Za-z0-9]|CONTAINER_API_KEY=[A-Za-z0-9]|Bearer [A-Za-z0-9]|'
+                             + AWS_KEY_ID.encode())
 
 
 def scan_secrets(root, secrets):

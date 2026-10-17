@@ -93,9 +93,13 @@ def test_the_secret_scan_names_each_file_with_a_secret_value_or_pattern_and_neve
     (tmp_path / "env.txt").write_text("CONTAINER_API_KEY=deadbeef\n")
     (tmp_path / "api.json").write_text('{"instance_api_key": "zz9"}')
 
+    (tmp_path / "submit.txt").write_text('runtime env: {"env_vars": {"AWS_ACCESS_KEY_ID": "AKIA' + 'EXAMPLEKEYID0001"}}\n')
+    (tmp_path / "session.txt").write_text("key ASIA" + "EXAMPLEKEYID0002 expired\n")
+    (tmp_path / "redacted.txt").write_text('{"AWS_ACCESS_KEY_ID": "<redacted>"} AKIA-not-a-key AKIAshort\n')
+
     found = liverecords.scan_secrets(tmp_path, ["c0ffee" * 8, "", "  "])
     assert sorted(p.relative_to(tmp_path).as_posix() for p in found) == [
-        "api.json", "bearer.txt", "env.txt", "sub/key.pem", "token.log"]
+        "api.json", "bearer.txt", "env.txt", "session.txt", "sub/key.pem", "submit.txt", "token.log"]
 
 
 def test_find_host_rents_again_with_the_tried_machines_blocked_until_one_matches():
@@ -366,6 +370,9 @@ def test_a_second_run_of_a_scenario_keeps_the_earlier_records_as_run1_and_run2(t
     (["release"], ["record", "release"], None, "release"),
     (["box_disk", "free"], ["record", "dist"], None, "box_disk"),
     (["box_disk", "free"], ["record", "tmp_path"], None, "box_disk"),
+    (["free", "local_docker"], ["record"], None, "local_docker"),       # the local Docker clusters share the box memory
+    (["free", "limits", "local_docker"], ["record"], None, "local_docker"),
+    (["libraries"], ["record", "libraries", "env"], "H1b", "libraries-h1b"),
     (["free"], ["record", "dist"], None, None),                          # a fixture alone is no declared need
     (["free"], ["record"], None, None),
     (["aws", "failure"], ["record", "new_cluster", "tmp_path"], None, None),
@@ -377,6 +384,7 @@ def test_each_cluster_and_each_declared_need_gets_one_xdist_group(markers, fixtu
 @pytest.mark.parametrize("markers, fixtures", [
     (["exclusive_account"], ["record", "aws_only"]),   # it would wait for itself: its cluster `up` waits for it
     (["box_disk"], ["record", "lifecycle"]),
+    (["local_docker", "box_disk"], ["record"]),
     ([], ["record", "aws_only", "restricted_user"]),
 ])
 def test_a_test_with_two_groups_is_an_error(markers, fixtures):

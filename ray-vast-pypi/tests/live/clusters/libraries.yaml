@@ -1,16 +1,23 @@
-# Fixture libraries (docs/test-plan.md, claim matrix LB00-LB15). One cluster, 5 worker types, all with min_workers 0.
+# Fixture libraries (docs/test-plan.md, claim matrix LB00-LB16). One cluster for each host, 8 worker types, all with min_workers 0.
 # The tests choose the workers of each scenario: LibrariesCluster.set_shape() writes min_workers = max_workers of every
 # type into the head's copy of this YAML, and the autoscaler reads that file again in each loop. So only the hosts of
 # one scenario run, and the library code (the doc snippets, the C9 and C10 jobs) needs no node pinning.
 #   h1:   H1: CPU 64 (Ray gets the declared CPU; the provider adds cpu_cores_effective >= 64), any pids limit. The worker
 #         has at most 58 worker ports (B = 54), so Ray has more CPUs than B: the process settings of the library pages
-#         are needed (LB11). Named hosts (S6 survey, 2026-10-17): m148655 (61.44 cores, 15616, v1), m45547, m151137 (v1).
-#   h2:   H2: as h1, on a cgroup v2 host. Named: m149678 (v2), m153955, m154115, m154116 (A40, v2).
+#         are needed (LB11). Named hosts (S6 survey, 2026-10-17): m148655 (61.44 cores, 15616, v1), m45547 (v1).
+#   h1b:  H1b: as h1, the second LB11 host of its class (LB11 runs on H1 and H1b at the same time). Named: m151137 (v1),
+#         m77312, m149593 (92.16 cores, v1).
+#   h2:   H2: as h1, on a cgroup v2 host. Named: m149678 (v2), m153955 (A40, v2).
+#   h2b:  H2b: as h2, the second LB11 host of its class. Named: m154115, m154116 (A40, v2), m149416, m152012 (v2).
 #   gpu:  H3, the C9 layout: 2 workers, compute_cap 600-899 (torch 2.7.1). The pinned hosts are left out.
 #   gpu2: one 2-GPU host (Train and RLlib learners on 2 GPUs of one worker).
 #   h4:   H4 (LB15): CPU 16 on a host with 128 or more cores and at most 32 effective cores, so the container sees 4 or more
 #         CPUs for each core of its quota. Named: m45592 (128 CPUs, 15.36 cores, v2), m43571, m45777, m45775, m153046.
-# libraries_setup.LibrariesCluster checks the h1 and h2 pins with an offer search before `up`; a host that does
+#   h5:   H5 (LB16): a host with 10 to 63 direct ports (the provider rents min(64, direct_port_count) identity ports, and
+#         the worker gives Ray at most mapped - 6 worker ports). No named host: the query pins the port count. It asks for
+#         17 or more effective cores, so the pids formula gives 58 worker ports and the port cap (mapped - 6, at most 57)
+#         sets the count.
+# libraries_setup.LibrariesCluster checks the h1, h1b, h2, h2b and h4 pins with an offer search before `up`; a host that does
 # not match its probe is ended and blocked (libraries_setup.find_host). inet_down/inet_up are a test-only speed floor (Mb/s).
 cluster_name: rvtest-lib
 idle_timeout_minutes: 5
@@ -26,26 +33,42 @@ available_node_types:
     resources: {CPU: 64, GPU: 1}
     min_workers: 0
     max_workers: 1
-    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [148655, 45547, 151137]}}}
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [148655, 45547]}}}
+  h1b:
+    resources: {CPU: 64, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [151137, 77312, 149593]}}}
   h2:
     resources: {CPU: 64, GPU: 1}
     min_workers: 0
     max_workers: 1
-    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [149678, 153955, 154115, 154116]}}}
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [149678, 153955]}}}
+  h2b:
+    resources: {CPU: 64, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {machine_id: {in: [154115, 154116, 149416, 152012]}}}
   gpu:
     resources: {CPU: 4, GPU: 1}
     min_workers: 0
     max_workers: 2
     node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
-                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}, machine_id: {notin: [148655, 45547, 151137, 149678, 153955, 154115, 154116, 45592, 43571, 45777, 45775, 153046]}}}
+                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}, machine_id: {notin: [148655, 45547, 151137, 77312, 149593, 149678, 153955, 154115, 154116, 149416, 152012, 45592, 43571, 45777, 45775, 153046]}}}
   gpu2:
     resources: {CPU: 4, GPU: 2}
     min_workers: 0
     max_workers: 1
     node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
-                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}, machine_id: {notin: [148655, 45547, 151137, 149678, 153955, 154115, 154116, 45592, 43571, 45777, 45775, 153046]}}}
+                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}, machine_id: {notin: [148655, 45547, 151137, 77312, 149593, 149678, 153955, 154115, 154116, 149416, 152012, 45592, 43571, 45777, 45775, 153046]}}}
   h4:
     resources: {CPU: 16, GPU: 1}
     min_workers: 0
     max_workers: 1
     node_config: {disk_gb: 60, offer_query: {machine_id: {in: [45592, 43571, 45777, 45775, 153046]}}}
+  h5:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {direct_port_count: {gte: 10, lte: 63}, cpu_cores_effective: {gte: 17}, verified: {eq: true}, datacenter: {eq: true},
+                                             inet_down: {gte: 500}, inet_up: {gte: 500}, machine_id: {notin: [148655, 45547, 151137, 77312, 149593, 149678, 153955, 154115, 154116, 149416, 152012, 45592, 43571, 45777, 45775, 153046]}}}

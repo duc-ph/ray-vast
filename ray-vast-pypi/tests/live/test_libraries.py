@@ -1,24 +1,29 @@
-"""Group `libraries` (docs/test-plan.md, claim matrix LB00-LB11): the Ray libraries on vast, with the snippets of the user
+"""Group `libraries` (docs/test-plan.md, claim matrix LB00-LB16): the Ray libraries on vast, with the snippets of the user
 docs (docs/libraries/*.md) taken from the docs at run time (libraries_setup.doc_snippet), the C9 jobs and the C10 pairs.
 
 One cluster for each host (clusters/libraries.yaml with one worker type, admin profile, us-west-2), so the hosts run in
-parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (64 or more Ray CPUs, so more CPUs than
-B = 54, any pids limit), H2 = 1 `h2` worker (the same on cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker
-(2 GPUs), H4 = 1 `h4` worker (4 or more visible CPUs for each core of its CPU quota: LB15). A test names its host with the
-`where` parameter or the `host` marker. Each test sets the workers that it needs with `libraries.ensure_shape()` (only
-these workers run), so the library code needs no node pinning. H1, H2 and H4 come from `libraries.find()` (probe, at
-most 3 rentals). The tests of one host run one after the other, in the file order (destructive scenarios last), so a "many" run
-of LB11 is alone on its host:
+parallel with `pytest -n` (each host is one xdist group): H1 and H1b = 1 `h1` or `h1b` worker each (64 or more Ray CPUs,
+so more CPUs than B = 54, any pids limit), H2 and H2b = 1 `h2` or `h2b` worker each (the same on cgroup v2), H3 = 2
+`gpu` workers, gpu2 = 1 `gpu2` worker (2 GPUs), H4 = 1 `h4` worker (4 or more visible CPUs for each core of its CPU
+quota: LB15), H5 = 1 `h5` worker (10 to 63 direct ports: LB16). A test names its host with the `where` parameter or the
+`host` marker. Each test sets the workers that it needs with `libraries.ensure_shape()` (only these workers run), so the
+library code needs no node pinning. H1, H1b, H2, H2b and H4 come from `libraries.find()` (probe, at most 3 rentals). The
+tests of one host run one after the other, in the file order (destructive scenarios last), so a "many" run of LB11 is
+alone on its host:
   H3:   LB00, LB01, LB02, LB04, LB05, LB06, LB09, LB10, LB03
   gpu2: LB00, LB10, LB07
-  H1:   LB00, LB03, LB11 (with the diagnostics during serve.many)
-  H2:   LB00, LB11
+  H1:   LB00, LB03, LB11 (data, tune, serve; the diagnostics during serve.many)
+  H1b:  LB11 (core, train, rllib; the refused forks)
+  H2:   LB00, LB11 (data, tune, serve)
+  H2b:  LB11 (core, train, rllib; the refused forks)
   H4:   LB15
+  H5:   LB16
 The teardown of each host's cluster (conftest.group_lifetime) checks the `down` and the S3 cleanup.
 S3: for each host that needs it (H3, gpu2, H1), one bucket `ray-vast-rvtest-<date>-<hex>` and an IAM user
 `ray-vast-livetest-<date>-s3-<host>` that can use only that bucket (`libraries.s3()`). Its keys go to the jobs in
 the runtime env of the job; they are never written (the `*_submit.txt` files are redacted).
-In parallel: about 4.5 h (H1 with LB11 is the longest); vast about $5.5 ($4 to $8), EC2 about $1.6 (5 heads)."""
+In parallel (`-n` of 9 or more: one process for each of the 8 hosts and for lifecycle): about 1.5 h (H3 is the longest);
+vast about $6, EC2 about $1.2 (8 heads)."""
 import itertools
 import json
 import re
@@ -31,6 +36,7 @@ import urllib.request
 from pathlib import Path
 
 import pytest
+from ray_vast.worker.bootstrap import worker_ports_and_soft_limit
 
 import livejob
 from cluster import BIN, JOBS, MANUAL, free_port, wait_port
@@ -108,8 +114,9 @@ def h3(cluster, env, record, name="probe_h3"):
 
 
 def host(cluster, env, record, name):
-    """H1, H2 or H4 alone: reuse the matched host when it still runs, else find one. Returns its NODE_PROBE row."""
-    kind = {"H1": "h1", "H2": "h2", "H4": "h4"}[name]
+    """A pinned host alone (H1, H1b, H2, H2b, H4): reuse the matched host when it still runs, else find one. Returns
+    its NODE_PROBE row."""
+    kind = HOST_TYPE[name]
     if cluster.shape == {kind: 1} and kind in cluster.matched:
         cluster.ensure_shape({kind: 1})
         rows = probe(cluster, env, record.dir, f"probe_{kind}")[kind]
@@ -505,18 +512,26 @@ def diagnose(cluster, env, node, job, out):
     out["grep"] = done.stdout + done.stderr
 
 
+LB11_LIBRARIES = {  # LB11 runs on 2 hosts of each class at the same time: H1 and H1b (any pids limit), H2 and H2b (cgroup v2)
+    "H1": ("data", "tune", "serve"), "H1b": ("core", "train", "rllib"),
+    "H2": ("data", "tune", "serve"), "H2b": ("core", "train", "rllib"),
+}
+
+
 @pytest.mark.limits
-@pytest.mark.parametrize("where", ["H1", "H2"])
+@pytest.mark.parametrize("where", ["H1", "H1b", "H2", "H2b"])
 def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
-    """The pairs of each library; on H1 the diagnostics during serve.many; then, as a measurement only, a task that starts
-    threads until the container refuses one (the refused forks, the head WARNING, and whether the node lives on)."""
+    """The pairs of the libraries of this host (LB11_LIBRARIES); on H1 the diagnostics during serve.many; on H1b and H2b
+    then, as a measurement only, a task that starts threads until the container refuses one (the refused forks, the head
+    WARNING, and whether the node lives on). A many run ends early when its hang is proven (livejob.HangRule: the head's
+    WARNING for the node and no progress for 120 s); else the job's own guard (600 s) ends it."""
     node = host(libraries, env, record, where)
     limit = host_facts(node, node["machine_id"])["pids_max"]
     record.require(f"{where} has a pids limit", limit is not None, node.get("pids.max"))
     record.data("host", {k: node.get(k) for k in ("machine_id", "container_id", "pids.max", "cgroup", "ray_cpus", "ports")})
     wd = livejob.workdir(*C10_JOBS.glob("*.py"), JOBS / "lb_tuned.py")
     outcomes, diag = [], {}
-    for lib, tuned, many, torch, timeout in PAIRS:
+    for lib, tuned, many, torch, timeout in [p for p in PAIRS if p[0] in LB11_LIBRARIES[where]]:
         for kind, (script, arg) in (("tuned", tuned), ("many", many)):
             pair = f"{lib}.{kind}"
             pre = c10_probe(libraries, env, record.dir, wd, f"{pair}_pre")
@@ -529,7 +544,11 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
                                 prefix="C10_RESULT", timeout=timeout, wait=False)
             if where == "H1" and pair == "serve.many":
                 diagnose(libraries, env, node, job, diag)
-            status, log = job.wait().status, job.log
+            hung = None
+            if kind == "many":
+                hung = livejob.HangRule(lambda: next((e.line for e in w.events("process_limit", instances=[node["container_id"]])), None),
+                                        job.progress)
+            status, log = job.wait(hung=hung).status, job.log
             libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name=f"{pair}_cleanup", working_dir=wd, timeout=300)
             time.sleep(30)  # the raylet ends the job's worker processes
             post = c10_probe(libraries, env, record.dir, wd, f"{pair}_post")
@@ -570,8 +589,11 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
                 ("diagnostics step 1: the `grep \"process limit\"` through attach shows the WARNING that names the worker", bool(named),
                  named[-1][:300] if named else diag.get("grep", "")[-300:])):
             record.check(name, ok, detail)
-    # Refused forks, a measurement (data, no check): a task starts threads until EAGAIN; the next heartbeats report the
-    # refused count to the head; then the node lives on, or the bootstrap reports `ray start exited` and destroys it.
+    if where not in ("H1b", "H2b"):
+        return
+    # Refused forks, a measurement (data, no check), on one host of each class: a task starts threads until EAGAIN; the
+    # next heartbeats report the refused count to the head; then the node lives on, or the bootstrap reports
+    # `ray start exited` and destroys it.
     w = libraries.window()
     forks = libraries.job(env, ["python", "lb_forks.py", node["node_id"]], record.dir, name="forks", working_dir=livejob.workdir(JOBS / "lb_forks.py"),
                           prefix="LB_RESULT", timeout=1200)
@@ -618,3 +640,46 @@ def test_LB15_threads_per_process_on_a_host_with_many_visible_cpus(record, libra
                          (job.status, job.word, (job.data.get("workload") or {}) if isinstance(job.data, dict) else job.data))
             if mode == "fixed":
                 record.data(f"{workload}.fixed_over_60", job.data.get("over_60"))
+
+
+# --- LB16: a host with 10 to 63 direct ports ---------------------------------------------------------------------------
+@pytest.mark.limits
+@pytest.mark.host("H5")
+def test_LB16_a_host_with_10_to_63_direct_ports(record, libraries, env):
+    """decisions.md 2026-10-17 ("Identity ports per offer"): on a host whose offer has 10 to 63 direct ports, the provider
+    rents min(64, direct_port_count) identity ports, the worker enrolls (the head port-checks each port that the worker
+    reports: all the ports that vast mapped), the bootstrap gives Ray min(mapped - 6, the pids formula) worker ports
+    (`worker_ports_and_soft_limit`, the product's formula), and a small job runs."""
+    w = libraries.window()
+    record.data("shape_wait_s", libraries.ensure_shape({"h5": 1}))
+    node = probe(libraries, env, record.dir, "probe_h5")["h5"][0]
+    cid = str(node["container_id"])
+    instance = next((i for i in libraries.instances() if str(i["id"]) == cid), {})
+    offered, mapped = instance.get("direct_port_count"), node.get("identity_ports")
+    vast_ports = sorted(int(k.split("/")[0]) for k in (instance.get("ports") or {}) if k.split("/")[0].isdigit()
+                        and 70000 <= int(k.split("/")[0]) < 70064)
+    facts = host_facts(node, node.get("machine_id"))
+    ports, soft_limit = expected_limits(node)
+    record.data("host", {**facts, "direct_port_count": offered, "identity_ports_mapped": mapped, "vast_identity_ports": len(vast_ports),
+                         "ports": node.get("ports"), "expected_ports": ports, "soft_limit": soft_limit})
+    record.check("the offer has 10 to 63 direct ports", offered is not None and 10 <= offered <= 63, offered)
+    # The h5 query asks for 17 or more effective cores, so the pids formula alone gives more ports than mapped - 6.
+    pids_only = worker_ports_and_soft_limit(facts["cpus"], facts["pids_max"], 64)[0]
+    record.check("the port cap sets the count: mapped - 6 is below the pids formula alone", mapped is not None and mapped - 6 < pids_only,
+                 (mapped, pids_only, facts["pids_max"]))
+    record.check("the candidate rents min(64, direct_port_count) identity ports: vast maps that many into the container",
+                 offered is not None and mapped == min(64, offered), (mapped, offered, len(vast_ports)))
+    enrolled = w.events("enrolled", instances=[cid])
+    record.check("the worker enrolled (the head checked each of its mapped ports)", bool(enrolled), enrolled[0].line if enrolled else None)
+    record.data("port_check_endings", [e.line for e in w.events("ending") if "port check failed" in (e.reason or "")])
+    text = libraries.container_log(int(cid))
+    record.evidence(f"container_{cid}.log", text)
+    start = re.search(r"bootstrap: limits: pids\.max \S+ \(cgroup v[12]\), cpus \d+, worker ports (\d+), soft limit (\d+)", text)
+    record.check("the start line: worker ports = min(mapped - 6, the pids formula) (worker_ports_and_soft_limit)",
+                 start is not None and int(start.group(1)) == ports == node.get("ports") and int(start.group(2)) == soft_limit,
+                 (start.group(0) if start else None, ports, node.get("ports"), mapped))
+    job = libraries.job(env, ["python", "lb_tasks.py"], record.dir, name="tasks", working_dir=livejob.workdir(JOBS / "lb_tasks.py"),
+                        prefix="LB_RESULT", timeout=900)
+    record.data("tasks", job.data)
+    record.check("a small job runs (one task for each Ray CPU at the same time)", job.status == "SUCCEEDED" and job.word == "PASS",
+                 (job.status, job.word, job.data))
