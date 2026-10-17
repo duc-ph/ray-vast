@@ -77,7 +77,7 @@ The head writes the line for a worker in these cases:
 The worker log has one line with the values that ray-vast chose:
 
 ```text
-bootstrap: limits: pids.max 1280 (cgroup v1), cpus 48, worker ports 14, soft limit 7, grpc threads 4, startup concurrency 8
+bootstrap: limits: pids.max 1280 (cgroup v1), cpus 5, worker ports 14, soft limit 5, grpc threads 4, startup concurrency 8
 ```
 
 `pids.max none` means that the container has no limit. Then the worker gets all 58 worker ports.

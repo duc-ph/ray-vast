@@ -1,6 +1,7 @@
 """The parallel live suite: the real `tests/live/conftest.py` runs a small suite under pytest-xdist, with fake `cluster`,
 `restricted` and `libraries_setup` modules (no cloud call). Each fake `up`, `down`, test and end-of-run sweep writes one
 line to `events.log` with its process id and time, so the test sees which process did what, and when."""
+import json
 import os
 import shutil
 import subprocess
@@ -28,14 +29,12 @@ class Done:
 
 
 class Cluster:
-    def __init__(self, fixture, config, out_dir, home, profile=None, credentials_file=None):
-        self.name, self.config, self.dir, self.home = config["cluster_name"], config, Path(out_dir), Path(home)
+    def __init__(self, run, fixture, config, out_dir, home, kept=False, profile=None, credentials_file=None):
+        self.name, self.config, self.dir, self.home, self.kept = config["cluster_name"], config, Path(out_dir), Path(home), kept
         self.dir.mkdir(parents=True, exist_ok=True)
-        self.yaml, self.region, self.secrets, self.kept, self.timeline, self.up_output = self.dir / "cluster.yaml", "us-west-2", [], False, [], None
+        self.yaml, self.region, self.secrets, self.timeline, self.up_output = self.dir / "cluster.yaml", "us-west-2", [], [], None
         self.state_file = self.home / ".ray-vast" / f"{self.name}.json"
-        import livekit  # as the real Cluster: every cluster object of a run is noted for the end-of-run check
-        livekit.note_opened(Path(os.environ["RAYVAST_LIVE_RESULTS"]) / "_session" / "runs" / os.environ["RAYVAST_LIVE_RUN"],
-                            {"name": self.name, "region": self.region, "kept": False, "yaml": str(self.yaml), "home": str(self.home)})
+        run.register(self)  # as the real Cluster
 
     @property
     def state(self):
@@ -52,7 +51,13 @@ class Cluster:
     def down(self, *args, **kwargs):
         event("DOWN", self.name)
         self.state_file.unlink(missing_ok=True)
-        return Done()
+        done = Done()
+        if os.environ.get("DOWN_LEAVES") and not self.name.endswith("-keep"):
+            done.stdout = "left: security group sg-1\\n"
+        return done
+
+    def instances(self):
+        return []
 
     def head_runs(self):
         return bool(self.state)
@@ -109,12 +114,19 @@ class RestrictedUser:
 '''
 
 FAKE_LIBRARIES_SETUP = '''
-from cluster import Cluster
+from cluster import Cluster, event
 
 
-def make_libraries_cluster(group_dir, home, host, suffix):
-    config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
-    return Cluster("libraries", config, group_dir, home)
+class LibrariesCluster(Cluster):
+    def __init__(self, run, group_dir, home, host, suffix, kept):
+        config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
+        super().__init__(run, "libraries", config, group_dir, home, kept)
+
+    def keep_one_worker(self, record):
+        event("KEEP_ONE", self.name)
+
+    def end_checks(self, record, done):
+        event("END_CHECKS", self.name, "kept" if done is None else "ended")
 '''
 
 SUITE = '''
@@ -166,8 +178,8 @@ def test_LB01_jobs(record, libraries):
 
 
 @pytest.mark.host("H1")
-def test_LB12_diagnostics(record, libraries):
-    event("RUN", "LB12", libraries.name)
+def test_LB11_pairs(record, libraries):
+    event("RUN", "LB11", libraries.name)
 
 
 @pytest.mark.parametrize("n", range(6))
@@ -191,13 +203,13 @@ def _suite(tmp_path):
     return suite
 
 
-def _run(tmp_path, suite, *args):
+def _run(tmp_path, suite, *args, extra_env=None):
     """One run of the suite. Returns (exit code, output, events: [(kind, [fields], pid, t)])."""
     marks = tmp_path / "marks"
     marks.mkdir(exist_ok=True)
     (marks / "events.log").unlink(missing_ok=True)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("RAYVAST_LIVE_", "PYTEST_XDIST"))}
-    env.update(HOME=str(tmp_path / "home"), MARK_DIR=str(marks), RAYVAST_LIVE_RESULTS=str(tmp_path / "results"))
+    env.update(HOME=str(tmp_path / "home"), MARK_DIR=str(marks), RAYVAST_LIVE_RESULTS=str(tmp_path / "results"), **(extra_env or {}))
     done = subprocess.run([sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-o", "addopts=", "-q", *args, str(suite)],
                           cwd=suite, env=env, capture_output=True, text=True, timeout=300)
     events = []
@@ -230,6 +242,26 @@ def test_each_cluster_is_up_and_down_once_in_the_process_of_its_tests_and_the_gu
     if workers:
         assert guards[0][2] not in {e[2] for e in events if e[0] in ("RUN", "UP")}  # the controller, not a worker
         assert len({e[2] for e in ups.values()}) == 4                          # the 4 clusters ran in parallel
+
+
+@pytest.mark.slow
+def test_each_cluster_group_ends_with_its_teardown_checks_and_a_down_that_leaves_something_fails_the_run(tmp_path):
+    suite = _suite(tmp_path)
+    code, out, events = _run(tmp_path, suite, "-n", "4")
+    assert code == 0, out
+    groups = ("aws_only", "lifecycle", "libraries-h1", "libraries-h3")
+    for group in groups:
+        teardown = json.loads((tmp_path / "results" / "_session" / group / "teardown" / "result.json").read_text())
+        assert teardown["outcome"] == "passed" and [c["name"] for c in teardown["checks"]][:2] == [
+            "down: exit 0, left: nothing", "vast: 0 instances with the cluster label"], (group, teardown)
+    libraries = [e for e in events if e[0] in ("KEEP_ONE", "DOWN", "END_CHECKS") and e[1][0].startswith("rvtest-lib-")]
+    for name in {e[1][0] for e in libraries}:
+        assert [e[0] for e in libraries if e[1][0] == name] == ["KEEP_ONE", "DOWN", "END_CHECKS"]  # one worker runs at the `down`
+
+    code, out, events = _run(tmp_path, suite, "-n", "4", extra_env={"DOWN_LEAVES": "1"})
+    assert code != 0 and "teardown of lifecycle" in out, out
+    teardown = json.loads((tmp_path / "results" / "_session" / "lifecycle" / "teardown" / "result.json").read_text())
+    assert teardown["outcome"] == "failed" and not teardown["checks"][0]["ok"]
 
 
 @pytest.mark.slow

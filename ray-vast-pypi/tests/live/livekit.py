@@ -150,14 +150,16 @@ HOST_RENTALS_MAX = 3
 
 
 def find_host(want, rent, end):
-    """Rent a host until its probe matches `want` (for example {"pids_max": 1280, "cgroup": "v1"}).
+    """Rent a host until its probe matches `want` (for example {"cpus": {"gte": 32}, "cgroup": "v1"}: a value is the exact
+    value of that fact, or {"gte": n} for a number of at least n).
     `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
     ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
     Returns (the matching probe, the list of tries); raises HostNotFound after HOST_RENTALS_MAX rentals."""
     blocked, tries = [], []
     for _ in range(HOST_RENTALS_MAX):
         probe = rent(list(blocked))
-        match = all(probe.get(key) == value for key, value in want.items())
+        match = all(probe.get(key) is not None and probe[key] >= value["gte"] if isinstance(value, dict) else probe.get(key) == value
+                    for key, value in want.items())
         tries.append({**probe, "match": match})
         if match:
             return probe, tries
@@ -193,11 +195,16 @@ ROW = re.compile(r"^\|\s*([A-Z]+\d\d)\s*\|[^|]*\|([^|]*)\|([^|]*)\|")
 
 
 def matrix_rows(text):
-    """The scenarios of the claim matrix (docs/test-plan.md): [{id, markers, fixture}] in the order of the tables."""
-    rows = []
+    """The scenarios of the claim matrix (docs/test-plan.md): [{id, markers, fixture}] in the order of the tables. Only the
+    tables with the matrix header (`| ID | Name | Markers | Fixture |`) count; another table ends at its first non-table line."""
+    rows, in_matrix = [], False
     for line in text.splitlines():
+        if not line.startswith("|"):
+            in_matrix = False
+        elif line.startswith("| ID | Name | Markers | Fixture |"):
+            in_matrix = True
         m = ROW.match(line)
-        if m and m.group(3).strip():
+        if in_matrix and m and m.group(3).strip():
             rows.append({"id": m.group(1), "markers": sorted(x.strip() for x in m.group(2).split(",") if x.strip()),
                          "fixture": m.group(3).strip().split()[0]})
     return rows
@@ -282,12 +289,56 @@ def xdist_group(scenario, fixturenames, host=None):
     return "release" if "release" in fixturenames else None
 
 
-def note_opened(run_dir, cluster):
-    """Write `<run_dir>/opened/<name>.json` ({name, region, kept, yaml, home}) before the cluster's `up`, so the end of the
-    run checks it, also after a failed `up` or in another worker process."""
-    path = Path(run_dir) / "opened" / f"{cluster['name']}.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(cluster))
+class Run:
+    """The context of one live-suite run, passed in explicitly: the `run` fixture gives it to a scenario, and each Cluster
+    takes it as its first argument. It holds the run identity (`dir`: `<results>/_session/runs/<run id>`), the record
+    root (`results`), the secret sink of this process, and the clusters of this process.
+    `register(cluster)` is the only way a cluster joins the run: Cluster.__init__ calls it, before any `up`."""
+
+    def __init__(self, results, run_id):
+        self.results = Path(results)
+        self.dir = self.results / "_session" / "runs" / run_id
+        self._secrets = []
+        self._clusters = []
+
+    @classmethod
+    def of_process(cls, environ, default_results, default_run_id):
+        """The run of this process. The first process (the xdist controller) sets RAYVAST_LIVE_RESULTS and
+        RAYVAST_LIVE_RUN in `environ`; the xdist workers inherit them, so all processes of a run agree."""
+        return cls(environ.setdefault("RAYVAST_LIVE_RESULTS", str(default_results)),
+                   environ.setdefault("RAYVAST_LIVE_RUN", default_run_id))
+
+    @property
+    def live(self):
+        """True when a scenario of this run started (the end-of-run guards run then)."""
+        return self.dir.exists()
+
+    def record(self, scenario, markers, fixture):
+        self.dir.mkdir(parents=True, exist_ok=True)
+        return Recorder(self.results, scenario, markers, fixture)
+
+    def group_dir(self, group):
+        """`<results>/_session/<group>`: the data of one cluster group."""
+        path = self.results / "_session" / group
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def secret(self, value):
+        """A secret value that the scan of this process looks for (for example an IAM test user's secret key)."""
+        self._secrets.append(value)
+
+    def secret_values(self):
+        """The secrets of the run and the secrets of each cluster now (its token and join tokens arrive after `up`)."""
+        return self._secrets + [s for c in self._clusters for s in c.secrets]
+
+    def register(self, cluster):
+        """Write `<dir>/opened/<name>.json` ({name, region, kept, yaml, home}), so the end of the run checks the cluster,
+        also after a failed `up` or in another worker process."""
+        path = self.dir / "opened" / f"{cluster.name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"name": cluster.name, "region": cluster.region, "kept": cluster.kept, "yaml": str(cluster.yaml),
+                                    "home": str(cluster.home)}))
+        self._clusters.append(cluster)
 
 
 def end_of_run(run_dir, test_label, sweep, aws_check, scan):

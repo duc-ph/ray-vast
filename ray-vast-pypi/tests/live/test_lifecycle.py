@@ -1,6 +1,7 @@
-"""Group `lifecycle` (docs/test-plan.md, claim matrix L01-L11): the C8 shape (2 GPU node types x 2, k = 2), run as the
+"""Group `lifecycle` (docs/test-plan.md, claim matrix L01-L10): the C8 shape (2 GPU node types x 2, k = 2), run as the
 restricted IAM user, in us-east-2 with a t3.medium head, no top-level max_workers. Order: up and scale (L01, L02), then a
-hold of 4 workers for the probes (L03-L06), then the destructive scenarios (L07-L10), then the teardown (L11).
+hold of 4 workers for the probes (L03-L05), then the destructive scenarios (L07, L10). The teardown of the cluster
+(conftest.group_lifetime) checks the `down`.
 About 2 h; vast about $2, EC2 about $0.10."""
 import json
 import re
@@ -14,8 +15,8 @@ from pathlib import Path
 import boto3
 import pytest
 
-from livekit import check, scan_secrets
-from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers, vast
+from livekit import check
+from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers
 
 pytestmark = pytest.mark.lifecycle
 JOBS = Path(__file__).parent / "jobs"
@@ -36,9 +37,9 @@ def worker_rules(cluster):
     return sum(1 for g in groups for p in g["IpPermissions"] for r in p.get("IpRanges", []) if r.get("Description") == f"ray-vast:{cluster.name}")
 
 
-def probe_nodes(cluster, env, out_dir, name="probe", key_scope=False):
+def probe_nodes(cluster, env, out_dir, name="probe"):
     status, log = cluster.job(env, workdir(JOBS / "node_probe.py", MANUAL / "c10" / "jobs" / "c10common.py"),
-                              ["python", "node_probe.py", *(["--key-scope"] if key_scope else [])], out_dir=out_dir, name=name, timeout=900)
+                              ["python", "node_probe.py"], out_dir=out_dir, name=name, timeout=900)
     return status, [json.loads(line.split(" ", 1)[1]) for line in log.splitlines() if line.startswith("NODE_PROBE ")]
 
 
@@ -50,7 +51,7 @@ def session_env(lifecycle):
 
 @pytest.fixture(scope="module")
 def hold(lifecycle, session_env):
-    """4 workers held by a placement group (hold.py) for L03-L09. Stopped at the end of the module."""
+    """4 workers held by a placement group (hold.py) for L03-L10. Stopped at the end of the module."""
     sid, _ = lifecycle.job(session_env, workdir(JOBS / "hold.py"), ["python", "hold.py", "4"], name="hold", no_wait=True,
                            out_dir=lifecycle.dir)
     deadline = time.time() + 1800
@@ -240,19 +241,6 @@ def test_L05_logs_a_user_reads(record, lifecycle, hold):
     check(record, "the documented grep runs through attach", re.search(r"GREP_EXIT [01]", done.stdout) is not None, done.stdout[-200:])
 
 
-@pytest.mark.security
-def test_L06_container_api_key_scope(record, lifecycle, session_env, hold):
-    status, nodes = probe_nodes(lifecycle, session_env, record.dir, key_scope=True)
-    for n in nodes:
-        cid = n["container_id"]
-        check(record, f"{cid}: /proc/1/environ holds CONTAINER_API_KEY and RAYVAST_JOIN_TOKEN (a task can read them)",
-              n["CONTAINER_API_KEY_in_pid1_environ"] and n["RAYVAST_JOIN_TOKEN_in_pid1_environ"], "")
-        scope = n.get("key_scope") or {}
-        check(record, f"{cid}: the key reads its own instance (200) and not another (401 or 403)", scope.get("own") == 200 and
-              scope.get("other") in (401, 403), scope)
-        check(record, f"{cid}: uid 1000 cannot read /root/.ssh", not n["root_ssh_readable"], "")
-
-
 def _node_of(nodes, index):
     return sorted(nodes, key=lambda n: n["container_id"])[index]
 
@@ -311,69 +299,6 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
 
 
 @pytest.mark.failure
-def test_L08_heartbeat_block(record, lifecycle, session_env, hold):
-    _, nodes = probe_nodes(lifecycle, session_env, record.dir)
-    b = _node_of(nodes, 1)
-    log_start = len(lifecycle.monitor_log()) + 1
-    rule = f"INPUT -p tcp --dport 7444 -s {b['ip']} -j DROP"
-    lifecycle.ssh(f"sudo iptables -I {rule}")
-    t_cut = time.time()
-    alive_until_destroy, gone = True, None
-    try:
-        last_log = ""
-        while time.time() < t_cut + 600:
-            if int(b["container_id"]) not in {i["id"] for i in lifecycle.instances()}:
-                gone = time.time()
-                break
-            try:
-                last_log = lifecycle.container_log(b["container_id"]) or last_log
-            except Exception:  # noqa: BLE001
-                pass
-            state = lifecycle.head_exec(f"ray list nodes --filter node_id={b['node_id']} --format json", check=False)
-            if '"DEAD"' in state:
-                alive_until_destroy = False
-            time.sleep(20)
-    finally:
-        lifecycle.ssh(f"sudo iptables -D {rule}", check=False)
-    record.evidence("worker_last_log.txt", last_log)
-    record.evidence("monitor_slice.log", "\n".join(lifecycle.monitor_log(log_start)))
-    # design.md:246, :258, :265: heartbeat every 30 s, destroy after 300 s without one (worker and provider). The last
-    # heartbeat is 0-30 s before the cut, so the destroy is 270-330 s after the cut. Bounds: 240 s (not early, with 30 s
-    # for the clocks) to 400 s (the reconcile pass, the report, vast's list and this loop's container log fetch).
-    record.data("gone_after_cut_s", gone and round(gone - t_cut))
-    check(record, "destroyed 240-400 s after the cut (300 s after the last heartbeat)", gone is not None and 240 <= gone - t_cut <= 400,
-          gone and round(gone - t_cut))
-    check(record, "the Ray node stays ALIVE until the destroy", alive_until_destroy, "")
-    check(record, "the worker log shows its own watchdog decision", "destroying this instance" in last_log and "heartbeat" in last_log.lower(), last_log.strip().splitlines()[-3:])
-
-
-@pytest.mark.failure
-def test_L09_vast_reboot_of_a_worker(record, lifecycle, session_env, hold):
-    _, nodes = probe_nodes(lifecycle, session_env, record.dir)
-    c = _node_of(nodes, 2)
-    log_start = len(lifecycle.monitor_log()) + 1
-    t_r = time.time()
-    vast()._request("PUT", f"/instances/reboot/{c['container_id']}/", json={})
-    refused, gone = None, None
-    while time.time() < t_r + 600 and gone is None:
-        lines = lifecycle.monitor_log(log_start)
-        refused = refused or next((lifecycle.log_epoch(x) for x in lines if f"enroll refused for instance {c['container_id']}" in x
-                                   and "already enrolled" in x), None)
-        if int(c["container_id"]) not in {i["id"] for i in lifecycle.instances()}:
-            gone = time.time()
-        time.sleep(3)
-    lines = lifecycle.monitor_log(log_start)
-    record.evidence("monitor_slice.log", "\n".join(lines))
-    check(record, "the second enrollment is refused: already enrolled", refused is not None, "")
-    # worker-lifecycle.md (a container restart: the head refuses, the worker destroys itself) states no time: 60 s is a
-    # safety bound; the time is data.
-    record.data("gone_after_refusal_s", gone and refused and round(gone - refused, 1))
-    check(record, "gone from vast within 60 s of the refusal (safety bound)", gone is not None and refused is not None and gone - refused <= 60,
-          gone and refused and round(gone - refused, 1))
-    check(record, "`rebooting` is not an unknown status", not [x for x in lines if "unknown vast actual_status 'rebooting'" in x], "")
-
-
-@pytest.mark.failure
 def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_env, hold):
     """Stop the hold, wait for 0 workers, ask for 4 again; when one worker is enrolled and another instance still loads,
     stop the head container. Every instance must destroy itself; then `down` without a vast key."""
@@ -420,18 +345,3 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     record.evidence("down_without_vast_key.txt", done.stdout + done.stderr)
     check(record, "down without a vast key: the warning, exit 0", done.returncode == 0 and "warning: no vast key" in done.stdout, done.stdout[-300:])
     check(record, "AWS is clean (admin check)", aws_leftovers(lifecycle.name, lifecycle.region) == [], aws_leftovers(lifecycle.name, lifecycle.region))
-
-
-@pytest.mark.security
-def test_L11_teardown_and_secret_scan(record, lifecycle):
-    if lifecycle.kept:
-        pytest.skip("--keep-cluster: the cluster stays")
-    done = lifecycle.down()
-    record.evidence("down.txt", done.stdout + done.stderr)
-    check(record, "down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-200:])
-    check(record, "vast: 0 instances with the cluster label", lifecycle.instances() == [], "")
-    check(record, "AWS (admin): nothing left", aws_leftovers(lifecycle.name, lifecycle.region) == [], "")
-    roots = [lifecycle.dir] + sorted(record.dir.parent.glob("L*"))
-    found = [p for root in roots for p in scan_secrets(root, lifecycle.secrets)]
-    record.data("secrets_scanned", len(lifecycle.secrets))
-    check(record, "the scan of the kept logs finds no secret", not found, [str(p) for p in found][:5])

@@ -79,17 +79,17 @@ def pids_max(limits):
     return int(value) if value and value.isdigit() else None
 
 
-def verdict(kind, job, pre, post, warnings):
+def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
     """Decide one test. kind: tuned or many. job: {"kind": COMPLETED|HUNG|ERROR|None, ...}. pre and post: the probe of the
     target node before and after (None if it is gone). warnings: the head WARNING lines for the node (None = not checked,
-    for the local check). Returns (status, reasons)."""
+    for the local check). limit_max: a many test on a node with a higher pids.max is INCONCLUSIVE. Returns (status, reasons)."""
     alive = post is not None and "error" not in post and post.get("node_id") == (pre or {}).get("node_id")
     before, after = events_max(pre), events_max(post)
     refused = None if before is None or after is None else after - before
     limit = pids_max(pre)
     if kind == "many":
-        if limit is None or limit > PIDS_LIMIT_MAX:
-            return "INCONCLUSIVE", [f"pids.max of the node is {limit or 'max'}, not <= {PIDS_LIMIT_MAX}"]
+        if limit is None or limit > limit_max:
+            return "INCONCLUSIVE", [f"pids.max of the node is {limit or 'max'}, not <= {limit_max}"]
         reasons = []
         if job.get("kind") not in ("HUNG", "ERROR"):
             reasons.append(f"the job did not fail ({job.get('kind')}): no advice is needed at this size")

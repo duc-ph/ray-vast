@@ -1,4 +1,4 @@
-# Live suite, group libraries (LB13): refused forks. One task on the target node (hard node affinity, num_cpus=0)
+# Live suite, group libraries (LB11, a measurement): refused forks. One task on the target node (hard node affinity, num_cpus=0)
 # starts sleeping threads until the container refuses one (EAGAIN: `can't start new thread`). It holds them for
 # LB_HOLD_S seconds (the worker's heartbeat reports the refused count to the head), then lets them end.
 # Safety: the task starts no thread on a node without a pids limit (pids.max "max" or no file), and it stops at

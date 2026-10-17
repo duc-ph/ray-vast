@@ -103,6 +103,13 @@ def test_find_host_rents_again_with_the_tried_machines_blocked_until_one_matches
     assert [t["match"] for t in tries] == [False, True]
 
 
+def test_find_host_takes_a_lower_bound_for_a_number_of_the_probe():
+    hosts = iter([{"machine_id": 32816, "pids_max": 1280, "cgroup": "v1", "cpus": 5, "limited": True},
+                  {"machine_id": 36376, "pids_max": 9728, "cgroup": "v1", "cpus": 38, "limited": True}])
+    host, tries = livekit.find_host({"cpus": {"gte": 32}, "limited": True}, lambda blocked: next(hosts), lambda probe: None)
+    assert host["machine_id"] == 36376 and [t["match"] for t in tries] == [False, True]
+
+
 def test_find_host_gives_up_after_3_rentals_and_ends_each_mismatch():
     ended = []
     rent = lambda blocked: {"machine_id": 100 + len(blocked), "pids_max": None, "cgroup": "v2", "cpus": 8}
@@ -178,13 +185,17 @@ def test_sigterm_during_a_test_still_runs_down(tmp_path):
     assert (tmp_path / "started").exists() and (tmp_path / "down").exists(), out
 
 
-def test_the_matrix_parser_reads_id_markers_and_fixture_of_each_row():
+def test_the_matrix_parser_reads_id_markers_and_fixture_of_each_row_of_the_matrix_tables_only():
     text = """
 | ID | Name | Markers | Fixture | Claims proved | Pass criterion | Origin | Destructive |
 |---|---|---|---|---|---|---|---|
 | F01 | Shim | free | none | architecture.md:86-97 | 14 tests | C0.1 | no |
 | A07 | Boundary | aws, security | aws_only | iam.md:78 | denied | audit B | yes |
 | not a row | x | y | z |
+
+| ID | Name | Claims | Proof now |
+|---|---|---|---|
+| A04 | Cluster already exists | cli.md:51 | F03 |
 """
     assert livekit.matrix_rows(text) == [{"id": "F01", "markers": ["free"], "fixture": "none"},
                                          {"id": "A07", "markers": ["aws", "security"], "fixture": "aws_only"}]
@@ -309,14 +320,16 @@ def test_each_cluster_and_the_tests_that_share_its_setup_get_one_xdist_group(sce
     assert livekit.xdist_group(scenario, fixtures, host) == group
 
 
-def _opened(run_dir, name, kept, region="us-west-2"):
-    livekit.note_opened(run_dir, {"name": name, "region": region, "kept": kept, "yaml": f"/r/{name}.yaml", "home": f"/h/{name}"})
+def _opened(run, name, kept, region="us-west-2"):
+    from types import SimpleNamespace
+    run.register(SimpleNamespace(name=name, region=region, kept=kept, yaml=f"/r/{name}.yaml", home=f"/h/{name}", secrets=[]))
 
 
 def test_the_end_of_a_run_sweeps_and_checks_only_the_clusters_that_are_not_kept_and_names_the_kept_ones(tmp_path):
-    run_dir = tmp_path / "run"
-    _opened(run_dir, "rvtest-aws-1a2b", kept=False)
-    _opened(run_dir, "rvtest-life-keep", kept=True, region="us-east-2")
+    run = livekit.Run(tmp_path, "run1")
+    run_dir = run.dir
+    _opened(run, "rvtest-aws-1a2b", kept=False)
+    _opened(run, "rvtest-life-keep", kept=True, region="us-east-2")
     (run_dir / "scan_gw1.txt").write_text("L03/probe.log\n")
     swept, checked = [], []
 
@@ -336,8 +349,9 @@ def test_the_end_of_a_run_sweeps_and_checks_only_the_clusters_that_are_not_kept_
 
 
 def test_the_end_of_a_run_with_a_failed_sweep_is_a_problem_and_the_aws_checks_still_run(tmp_path):
-    run_dir = tmp_path / "run"
-    _opened(run_dir, "rvtest-aws-1a2b", kept=False)
+    run = livekit.Run(tmp_path, "run1")
+    run_dir = run.dir
+    _opened(run, "rvtest-aws-1a2b", kept=False)
 
     def sweep(prefixes):
         raise RuntimeError("vast is down")
@@ -358,20 +372,50 @@ def test_the_vast_spend_of_one_cluster_comes_from_its_timeline_and_a_failed_samp
     assert livekit.timeline_spend([]) == 0.0
 
 
-def test_every_cluster_object_of_a_run_is_noted_for_the_end_of_run_check_also_one_without_a_cluster_fixture(tmp_path, monkeypatch):
+def test_the_run_identity_is_set_by_the_first_process_and_every_later_process_of_the_run_inherits_it(tmp_path):
+    environ = {}
+    first = livekit.Run.of_process(environ, tmp_path / "results", "120000-11")
+    worker = livekit.Run.of_process(dict(environ), tmp_path / "other", "120005-12")  # an xdist worker: the controller's env
+    assert first.dir == worker.dir == tmp_path / "results" / "_session" / "runs" / "120000-11"
+    assert first.results == worker.results == tmp_path / "results"
+
+
+def test_a_record_of_the_run_goes_under_its_record_root_and_marks_the_run_as_live(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    assert not run.live
+    record = run.record("A05", markers=["aws"], fixture="aws_only")
+    record.finish("passed", "")
+    assert (tmp_path / "results" / "A05" / "result.json").exists() and run.live
+
+
+def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
     import sys
     from pathlib import Path
     monkeypatch.syspath_prepend(str(Path(livekit.__file__).parent))
-    monkeypatch.setenv("RAYVAST_LIVE_RESULTS", str(tmp_path / "results"))
-    monkeypatch.setenv("RAYVAST_LIVE_RUN", "run1")
     monkeypatch.setenv("VAST_API_KEY", "fake-key")
     sys.modules.pop("cluster", None)
     import cluster
     config = {"cluster_name": "rvtest-a03b-1a2b", "head_node_type": "head",
               "available_node_types": {"head": {"node_config": {"region": "us-west-2"}}}}
-    made = cluster.Cluster("none", config, tmp_path / "out", tmp_path / "home")
-    noted = json.loads((tmp_path / "results" / "_session" / "runs" / "run1" / "opened" / "rvtest-a03b-1a2b.json").read_text())
-    assert noted == {"name": "rvtest-a03b-1a2b", "region": "us-west-2", "kept": False, "yaml": str(made.yaml), "home": str(tmp_path / "home")}
+    return cluster.Cluster(run, "none", config, tmp_path / "out", tmp_path / "home", **kwargs)
+
+
+@pytest.mark.parametrize("kept", [False, True])
+def test_a_cluster_joins_its_run_once_when_it_is_made_with_whether_the_run_keeps_it(tmp_path, monkeypatch, kept):
+    run = livekit.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch, kept=kept)
+    opened = list((run.dir / "opened").glob("*.json"))
+    assert [p.name for p in opened] == ["rvtest-a03b-1a2b.json"] and made.kept is kept
+    assert json.loads(opened[0].read_text()) == {"name": "rvtest-a03b-1a2b", "region": "us-west-2", "kept": kept,
+                                                 "yaml": str(made.yaml), "home": str(tmp_path / "home")}
+
+
+def test_the_secret_sink_of_a_run_holds_its_own_secrets_and_the_later_secrets_of_each_cluster(tmp_path, monkeypatch):
+    run = livekit.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch)
+    run.secret("iam-user-secret")
+    made.secrets.append("cluster-token")  # the token and the join tokens arrive after `up`
+    assert sorted(run.secret_values()) == ["cluster-token", "iam-user-secret"]
 
 
 def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_path):

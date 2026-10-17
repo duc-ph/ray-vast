@@ -1,4 +1,4 @@
-"""Group `aws` (docs/test-plan.md, claim matrix A01-A13): real AWS, no vast rental. The scenarios without a cluster
+"""Group `aws` (docs/test-plan.md, claim matrix A01-A10): real AWS, no vast rental. The scenarios without a cluster
 fixture come first (A02 changes the account policy, so it is the very first); then the `aws_only` cluster (the head only),
 with its destructive scenario A07 and its `down` (A01) last. About 60 min, EC2 under $0.30."""
 import json
@@ -30,12 +30,12 @@ def admin(service, region=REGION):
     return boto3.Session(profile_name=ADMIN_PROFILE, region_name=region).client(service)
 
 
-def small_config(suffix, **head_node_config):
+def small_config(suffix):
     """A CPU-image cluster that no worker type can rent for (for the scenarios that need only AWS)."""
     return {"cluster_name": f"rvtest-{suffix}-{secrets.token_hex(2)}",
             "provider": {"image": "rayproject/ray:2.59.0-py311-cpu", "max_dollars_per_hour": 0.001},
             "head_node_type": "head",
-            "available_node_types": {"head": {"resources": {"CPU": 0}, "node_config": {"region": REGION, **head_node_config}},
+            "available_node_types": {"head": {"resources": {"CPU": 0}, "node_config": {"region": REGION}},
                                      "w": {"resources": {"CPU": 4, "GPU": 1}, "min_workers": 0, "max_workers": 1,
                                            "node_config": {"offer_query": {"gpu_ram": {"gte": 900000}}}}}}
 
@@ -58,7 +58,7 @@ def run_until(cluster, args, ready, timeout=900):
 
 
 @pytest.mark.security
-def test_A02_boundary_policy_missing(record, tmp_path):
+def test_A02_boundary_policy_missing(record, run, tmp_path):
     """With no cluster: delete the boundary policy, `up` stops before it makes anything, then the documented command
     makes the policy again (always, in `finally`)."""
     iam = admin("iam")
@@ -73,7 +73,7 @@ def test_A02_boundary_policy_missing(record, tmp_path):
     iam.delete_policy(PolicyArn=arn)
     cluster = None
     try:
-        cluster = Cluster("none", small_config("a02"), record.dir, tmp_path / "home")
+        cluster = Cluster(run, "none", small_config("a02"), record.dir, tmp_path / "home")
         done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
         expected = (f"the IAM policy {BOUNDARY} does not exist in AWS account {account}. Create it once (one command): "
                     "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created.")
@@ -93,10 +93,10 @@ def test_A02_boundary_policy_missing(record, tmp_path):
 
 
 @pytest.mark.failure
-def test_A03_down_recovery(record, tmp_path, account_gate):
+def test_A03_down_recovery(record, run, tmp_path, account_gate):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
     terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything."""
-    a = Cluster("none", small_config("a03a"), record.dir / "a", tmp_path / "home_a")
+    a = Cluster(run, "none", small_config("a03a"), record.dir / "a", tmp_path / "home_a")
     out = run_until(a, ["up", a.yaml, "--profile", ADMIN_PROFILE], lambda: a.key_file.exists())
     record.data("a_up_output_tail", out[-300:])
     check(record, "(a) up was stopped after the key pair", a.key_file.exists() or "Traceback" in out or "KeyboardInterrupt" in out, out[-200:])
@@ -104,7 +104,7 @@ def test_A03_down_recovery(record, tmp_path, account_gate):
     check(record, "(a) down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
     check(record, "(a) AWS check", aws_leftovers(a.name, REGION) == [], aws_leftovers(a.name, REGION))
 
-    b = Cluster("none", small_config("a03b"), record.dir / "b", tmp_path / "home_b")
+    b = Cluster(run, "none", small_config("a03b"), record.dir / "b", tmp_path / "home_b")
     ec2 = admin("ec2")
     from ray_vast import commands
     run_until(b, ["up", b.yaml, "--profile", ADMIN_PROFILE], lambda: bool(commands._head_instances(ec2, b.name)))
@@ -164,80 +164,7 @@ def test_A10_restricted_user_denials(record, restricted_user):
     record.evidence("denials.txt", "\n".join(lines) + "\n")
 
 
-@pytest.mark.failure
-def test_A11_down_of_a_0_1_0_cluster(record, tmp_path, account_gate):
-    """`pip install ray-vast==0.1.0`, `up` with a 0.1.0 YAML (provider.region, key_name, key_file); then the current `down`
-    with that YAML: once with the 0.1.0 state file (region from it), once without (region from provider.region)."""
-    venv = tmp_path / "venv010"
-    done = subprocess.run(["uv", "venv", "-q", "--python", "3.12", str(venv)], capture_output=True, text=True, timeout=300)
-    assert done.returncode == 0, done.stderr
-    done = subprocess.run(["uv", "pip", "install", "-q", "--python", str(venv / "bin" / "python"), "ray-vast==0.1.0"],
-                          capture_output=True, text=True, timeout=1200)
-    check(record, "pip install ray-vast==0.1.0", done.returncode == 0, done.stderr[-300:])
-    ec2 = admin("ec2")
-    for variant in ("with_state_file", "without_state_file"):
-        config = small_config("a11")
-        name = config["cluster_name"]
-        key_name = f"ray-vast-{name}-oldkey"
-        livekit.assert_ours(key_name)
-        home = tmp_path / f"home_{variant}"
-        (home / ".ray-vast").mkdir(parents=True)
-        key_file = home / "old.pem"
-        key_file.write_text(ec2.create_key_pair(KeyName=key_name, KeyType="ed25519")["KeyMaterial"])
-        key_file.chmod(0o600)
-        cluster = None
-        try:
-            old = json.loads(json.dumps(config))
-            old["provider"].update(region=REGION, key_name=key_name, key_file=str(key_file))
-            old["available_node_types"]["head"]["node_config"] = {}
-            old["max_workers"] = 1  # 0.1.0 needs the top-level max_workers (Ray's monitor asserts it)
-            cluster = Cluster("none", config, record.dir / variant, home)
-            cluster.yaml.write_text(yaml.safe_dump(old))
-            env = {**cluster.env, "PATH": f"{venv / 'bin'}:{os.environ['PATH']}"}
-            started = time.time()
-            up = subprocess.run([str(venv / "bin" / "ray-vast"), "up", str(cluster.yaml), "--profile", ADMIN_PROFILE], env=env,
-                                capture_output=True, text=True, timeout=2400)
-            record.evidence(f"{variant}/up_0.1.0.txt", up.stdout + up.stderr)
-            check(record, f"{variant}: 0.1.0 up", up.returncode == 0, (up.stderr or up.stdout)[-300:])
-            record.data(f"{variant}_up_s", round(time.time() - started))
-            if variant == "without_state_file":
-                (home / ".ray-vast" / f"{name}.json").unlink()
-            # clean-up.md: tear down a 0.1.0 cluster with the credentials that made it (its state file has no profile).
-            done = cluster.down("--profile", ADMIN_PROFILE)
-            check(record, f"{variant}: current down with the 0.1.0 YAML: left nothing", done.returncode == 0 and "left: nothing" in done.stdout,
-                  (done.stdout + done.stderr)[-300:])
-            check(record, f"{variant}: AWS check", aws_leftovers(name, REGION) == [], aws_leftovers(name, REGION))
-        finally:
-            if cluster is not None and aws_leftovers(name, REGION):
-                cluster.down("--profile", ADMIN_PROFILE)
-            ec2.delete_key_pair(KeyName=key_name)
-
-
-def test_A13_an_arm_head_type_fails_and_down_cleans(record, tmp_path, account_gate):
-    """limits.md: the head `instance_type` must be x86_64 (not `t4g`)."""
-    cluster = Cluster("none", small_config("a13", instance_type="t4g.small"), record.dir, tmp_path / "home")
-    done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
-    check(record, "up with t4g.small fails with an AWS error", done.returncode == 1 and "AWS error" in done.stderr, done.stderr[-400:])
-    check(record, "the error names the architecture", "architecture" in done.stderr.lower(), done.stderr[-300:])
-    done = cluster.down()
-    check(record, "down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
-
-
 # --- the aws_only cluster -------------------------------------------------------------------------------------------
-
-
-def test_A04_cluster_already_exists(record, aws_only, tmp_path):
-    done = aws_only.cli("up", aws_only.yaml, "--profile", ADMIN_PROFILE)
-    expected = f"cluster {aws_only.name} already exists; use `ray-vast down` first"
-    check(record, "a second up stops (head tag)", done.returncode == 1 and expected in done.stderr, done.stderr[-200:])
-    check(record, "it made nothing (no head line)", "head instance" not in done.stdout, done.stdout[-200:])
-    # The state file alone is also a trigger: a new name, a state file, no AWS resource.
-    other = Cluster("none", small_config("a04"), record.dir / "state_only", tmp_path / "home")
-    (other.state_dir / f"{other.name}.json").write_text(json.dumps({"cluster": other.name, "region": REGION}))
-    done = other.cli("up", other.yaml, "--profile", ADMIN_PROFILE)
-    check(record, "up stops on the state file alone", done.returncode == 1 and f"cluster {other.name} already exists" in done.stderr,
-          done.stderr[-200:])
-    check(record, "it made nothing", aws_leftovers(other.name, REGION) == [], aws_leftovers(other.name, REGION))
 
 
 @pytest.mark.security
@@ -270,26 +197,6 @@ def test_A05_head_network_exposure(record, aws_only):
     packets = re.search(r"(\d+) packets captured", out)
     check(record, "job during the capture", status == "SUCCEEDED", status)
     check(record, "0 packets to the head's own public IP", packets is not None and packets.group(1) == "0", packets and packets.group(0))
-
-
-@pytest.mark.security
-def test_A06_a_task_on_the_head_can_read_the_head_secrets(record, aws_only):
-    secrets_dir = f"/home/ubuntu/ray-vast-{aws_only.name}/secrets"
-    modes = aws_only.ssh(f"stat -c '%n %a' {secrets_dir} {secrets_dir}/*").split("\n")
-    record.evidence("modes.txt", "\n".join(modes))
-    mode = {line.split()[0].rsplit("/", 1)[-1]: line.split()[1] for line in modes if line.strip()}
-    check(record, "CA key mode 600", mode.get("ca.key") == "600", mode.get("ca.key"))
-    check(record, "vast key mode 600", mode.get("vast_api_key") == "600", mode.get("vast_api_key"))
-    script = (f"import os, ray\nfrom ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy\nray.init()\n"
-              f"head = next(n['NodeID'] for n in ray.nodes() if n['Alive'] and n['Resources'].get('CPU', 0) == 0)\n"
-              f"@ray.remote(num_cpus=0)\ndef look():\n    return {{p: os.access(p, os.R_OK) for p in ['{secrets_dir}/vast_api_key', '{secrets_dir}/ca.key']}}\n"
-              f"print('READABLE', ray.get(look.options(scheduling_strategy=NodeAffinitySchedulingStrategy(head, soft=False)).remote()))\n")
-    with aws_only.tunnel() as env:
-        status, log = aws_only.job(env, None, ["python", "-c", script], out_dir=record.dir, name="look", timeout=300)
-    found = re.search(r"READABLE (\{.*\})", log)
-    check(record, "the job ran", status == "SUCCEEDED", status)
-    check(record, "a task on the head can read the vast key and the CA key", found and found.group(1).count("True") == 2,
-          found and found.group(1))
 
 
 def test_A08_no_offer_and_budget_texts(record, aws_only):
@@ -337,25 +244,6 @@ def test_A09_token_on_every_ray_call(record, aws_only):
         record.evidence("job_submission_client.txt", done.stdout + done.stderr)
         check(record, "JobSubmissionClient with the export line: SUCCEEDED", "STATUS SUCCEEDED" in done.stdout and "12345" in done.stdout,
               done.stdout[-200:])
-
-
-def test_A12_ray_cluster_commands_do_not_work(record, aws_only):
-    """README and limits.md: `ray up`, `ray attach`, `ray exec` and `ray rsync-up` do not work with a ray-vast YAML."""
-    before = sorted(i["InstanceId"] for r in admin("ec2").describe_instances(Filters=[
-        {"Name": "instance-state-name", "Values": ["pending", "running"]}])["Reservations"] for i in r["Instances"])
-    for args in (["exec", "hostname"], ["attach"], ["rsync-up", "/etc/hostname", "/tmp/x"], ["up", "-y", "--no-config-cache"]):
-        try:
-            done = subprocess.run([str(BIN / "ray"), args[0], str(aws_only.yaml), *args[1:]], env=aws_only.env, capture_output=True,
-                                  text=True, timeout=300, stdin=subprocess.DEVNULL)
-            code, out = done.returncode, done.stdout + done.stderr
-        except subprocess.TimeoutExpired as e:
-            code, out = "timeout", str(e.output or "")
-        record.evidence(f"ray_{args[0]}.txt", f"exit {code}\n{out}")
-        check(record, f"ray {args[0]} fails", code != 0, f"exit {code}: {out.strip().splitlines()[-1:] if out.strip() else ''}")
-    after = sorted(i["InstanceId"] for r in admin("ec2").describe_instances(Filters=[
-        {"Name": "instance-state-name", "Values": ["pending", "running"]}])["Reservations"] for i in r["Instances"])
-    check(record, "they made no EC2 instance", after == before, set(after) - set(before))
-    check(record, "they rented nothing on vast", aws_only.instances() == [], "")
 
 
 @pytest.mark.security

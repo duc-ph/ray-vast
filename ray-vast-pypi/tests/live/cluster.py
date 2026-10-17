@@ -62,8 +62,12 @@ def wait_port(port, timeout=60):
 
 
 class Cluster:
-    def __init__(self, fixture, config, out_dir, home, profile=ADMIN_PROFILE, credentials_file=None):
+    """`run` is the livekit.Run of the suite: the cluster joins it here, once. `kept` (--keep-cluster): the run does not
+    end the cluster."""
+
+    def __init__(self, run, fixture, config, out_dir, home, kept=False, profile=ADMIN_PROFILE, credentials_file=None):
         self.fixture = fixture
+        self.kept = kept
         self.name = config["cluster_name"]
         livekit.assert_ours(f"ray-vast-{self.name}")
         self.config = config
@@ -75,9 +79,6 @@ class Cluster:
         self.yaml.write_text(yaml.safe_dump(config, sort_keys=False))
         self.profile = profile
         self.region = config["available_node_types"][config["head_node_type"]]["node_config"]["region"]
-        if os.environ.get("RAYVAST_LIVE_RUN") and os.environ.get("RAYVAST_LIVE_RESULTS"):  # in a run: the end-of-run check finds it
-            livekit.note_opened(Path(os.environ["RAYVAST_LIVE_RESULTS"]) / "_session" / "runs" / os.environ["RAYVAST_LIVE_RUN"],
-                                {"name": self.name, "region": self.region, "kept": False, "yaml": str(self.yaml), "home": str(self.home)})
         aws_dir = Path.home() / ".aws"
         self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "PYTHONUNBUFFERED": "1",
                     "AWS_CONFIG_FILE": os.environ.get("AWS_CONFIG_FILE", str(aws_dir / "config")),
@@ -86,9 +87,9 @@ class Cluster:
         self.env.pop("AWS_PROFILE", None)
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
         self.up_output = None
-        self.kept = False  # --keep-cluster: the run does not end it (conftest.group_lifetime)
         self.timeline = []
         self._poller = None
+        run.register(self)
 
     # --- the CLI ---------------------------------------------------------------------------------------------------
     def cli(self, *args, env=None, timeout=1800, log=True, input=None):

@@ -26,7 +26,7 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 ## The process limit of vast hosts
 
 A vast container has a limit on processes and threads together (the process limit, `pids.max`).
-On many 1-GPU hosts, the limit is 1280. One 2-GPU host had 3328.
+vast sets the limit from the CPU share of the container: 256 for each whole core of its CPU quota. So a container with 5 to 6 cores has 1280 (many 1-GPU hosts), and a container with 38 cores has 9728. A host with many cores and the limit 1280 does not occur.
 At the limit, Ray cannot start a thread. The raylet can stop, and then the worker destroys itself.
 
 ray-vast keeps each worker below its limit:
