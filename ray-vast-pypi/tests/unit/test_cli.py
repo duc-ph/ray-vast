@@ -182,6 +182,22 @@ def test_up_creates_every_resource(aws, cluster_yaml, wheel, tmp_path):
     assert ssh.calls[0][2].startswith("cloud-init status")  # waited for SSH and Docker first
 
 
+@pytest.mark.parametrize("cloud_init_exit, docker_exit, ready", [(0, 0, True), (2, 0, True), (1, 0, True), (0, 1, False), (2, 1, False)])
+def test_up_waits_for_cloud_init_then_needs_only_a_working_docker(aws, cluster_yaml, wheel, tmp_path, cloud_init_exit, docker_exit, ready):
+    """Live 2026-10-17 (the libraries gpu2 head): `cloud-init status --wait` exited 2 ("done, with recoverable errors"),
+    so `up` failed although cloud-init had ended. The head is ready when cloud-init has ended and Docker answers."""
+    ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
+    [wait] = [c[2] for c in ssh.calls if c[2].startswith("cloud-init status")]
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "cloud-init").write_text(f"#!/bin/sh\nexit {cloud_init_exit}\n")
+    (bin_dir / "sudo").write_text(f"#!/bin/sh\n[ \"$1 $2\" = \"docker info\" ] && exit {docker_exit}\nexit 99\n")
+    for tool in bin_dir.iterdir():
+        tool.chmod(0o755)
+    done = subprocess.run(["bash", "-c", wait], env={"PATH": f"{bin_dir}:/usr/bin:/bin"})
+    assert (done.returncode == 0) is ready, (wait, done.returncode)
+
+
 def test_up_starts_the_head_container_and_keeps_secrets_off_command_lines(aws, cluster_yaml, wheel, tmp_path):
     ssh = run_up(aws, cluster_yaml, wheel, tmp_path)
     lines = [c[2] for c in ssh.calls]

@@ -231,10 +231,11 @@ def up(config_path, raw_config, session, ssh, *, profile, wheel=None, vast_key, 
     state.update(head_instance_id=instance_id, head_ip=head_ip, security_group_ids=group_ids, role_name=name, instance_profile_name=name)
     state_file.write_text(json.dumps(state, indent=2))
 
-    # 2. On the head: wait for SSH and Docker.
+    # 2. On the head: wait for SSH and Docker. `cloud-init status --wait` returns when cloud-init has ended. Its exit
+    # code 2 means "done, with recoverable errors", so only `docker info` decides that the head is ready.
     for attempt in range(60):
         try:
-            ssh.run(head_ip, "cloud-init status --wait >/dev/null && sudo docker info >/dev/null", timeout=600)
+            ssh.run(head_ip, "cloud-init status --wait >/dev/null; sudo docker info >/dev/null", timeout=600)
             break
         except SshError:
             if attempt == 59:
