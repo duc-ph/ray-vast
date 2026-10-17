@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+import window
 from livekit import check
 from cluster import BIN, MANUAL, vast
 
@@ -217,10 +218,12 @@ def test_F16_local_c10_pairs_with_the_real_head_and_bootstrap(record):
     text = "".join(p.read_text() for p in sorted((record.dir / "c10e").glob("*")))  # each run's result line, job log and head log
     for line in re.findall(r"C10E_RESULT .*", text):
         record.data(line.split(" ", 4)[1] + " " + line.split(" ", 4)[2] + " " + line.split(" ", 5)[4], line[:400])
-    warning = re.search(r"is at its process limit: \d+ refused forks/threads \(\+\d+\), pids \d+ of 1280, worker ports in use \d+ of \d+\. "
-                        r"Ray work on this worker can queue, hang or fail\. See https://duc-ph\.github\.io/ray-vast/how-to/troubleshoot/"
-                        r"#a-worker-is-at-its-process-limit", text)
-    check(record, "the WARNING line has the documented format", warning is not None, warning.group(0)[:200] if warning else "")
+    # The head of the local check runs in Docker on the dev box: its log times do not count here (zone "UTC").
+    lines = [x for p in sorted((record.dir / "c10e").glob("*")) for x in p.read_text().splitlines()]
+    warning = next((e for e in window.events(lines, "UTC", "process_limit") if e.fields["pids_max"] == 1280 and
+                    e.fields["advice"] == "Ray work on this worker can queue, hang or fail." and
+                    e.fields["docs"] == "https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"), None)
+    check(record, "the WARNING line has the documented format", warning is not None, warning.line[:200] if warning else "")
 
 
 # --- F17-F20: package, Python 3.10, offers, doc snippets -----------------------------------------------------------

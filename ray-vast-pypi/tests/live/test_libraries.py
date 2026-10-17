@@ -17,6 +17,7 @@ S3: for each host that needs it (H3, gpu2, H1), one bucket `ray-vast-rvtest-<dat
 `ray-vast-livetest-<date>-s3-<host>` that can use only that bucket (`libraries.s3()`). Its keys go to the jobs in
 runtime_env env_vars; they are never written (the `*_submit.txt` files are redacted).
 In parallel: about 4.5 h (H1 with LB11 is the longest); vast about $5 ($4 to $7), EC2 about $1.3 (4 heads)."""
+import itertools
 import json
 import re
 import shutil
@@ -34,9 +35,10 @@ import livekit
 from cluster import BIN, JOBS, MANUAL, free_port, wait_port
 from libraries_setup import HOST_TYPE, PINS, alive_workers, b_and_cpus, probe
 from livekit import check
+from window import wait_until
 
 sys.path.insert(0, str(MANUAL / "c10"))
-from run_c10 import REFUSED_PATTERN, TORCH_ENV, WARNING_PATTERN, events_max, node_warnings, verdict  # noqa: E402  (the C10 runner)
+from run_c10 import TORCH_ENV, events_max, verdict  # noqa: E402  (the C10 runner)
 
 pytestmark = [pytest.mark.libraries, pytest.mark.timeout(0)]  # hours-long tests: no pytest-timeout (each job has its own)
 C9_JOBS = MANUAL / "c9" / "jobs"
@@ -97,14 +99,14 @@ def snippet_job(cluster, env, record, lib, code, name, runtime_env=None, timeout
                        env_vars=env_vars, secrets=[s3.secret] if s3 else [], prefix="LB_RESULT", timeout=timeout)
 
 
-def log_mark(cluster):
-    """The line number where the next monitor.log line starts."""
-    return int(cluster.head_exec("wc -l < /tmp/ray/session_latest/logs/monitor.log", timeout=120).strip()) + 1
+def warnings_for(w, rows):
+    """The head process-limit WARNINGs (window events) of these worker nodes (NODE_PROBE rows) since the window `w` opened."""
+    return w.events("process_limit", instances=[r["container_id"] for r in rows])
 
 
-def warnings_for(lines, rows):
-    """The head process-limit WARNING lines of these worker nodes (NODE_PROBE rows)."""
-    return [w for r in rows for w in node_warnings(lines, r["container_id"], r["ip"])]
+def with_refused_forks(warnings):
+    """The WARNING lines with new refused forks or thread starts (`(+N)`, N >= 1)."""
+    return [e.line for e in warnings if e.fields["refused_new"] > 0]
 
 
 def doc_line(doc, start):
@@ -139,7 +141,7 @@ def host(cluster, env, record, name):
 @pytest.mark.limits
 @pytest.mark.parametrize("where", ["H3", "gpu2", "H1", "H2"])
 def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
-    t_start = time.time()
+    w = libraries.window()
     if where in ("H1", "H2"):
         kind = where.lower()
         facts, tries = libraries.find(env, kind, PINS[kind]["want"], {}, record.dir)
@@ -155,20 +157,14 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
               {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
     if where == "H2":
         check(record, "H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
-    lines = libraries.monitor_log()
-    enrolled = {int(m.group(1)): libraries.log_epoch(x) for x in lines for m in [re.search(r"enrolled instance (\d+)", x)] if m}
-    first_running = {}
-    for row in libraries.timeline:
-        for i in row.get("instances", []):
-            if i.get("actual_status") == "running" and row["t"] >= t_start - 5:
-                first_running.setdefault(i["id"], row["t"])
+    enroll = w.enroll_seconds()
     for name, rows in hosts.items():
         for n in rows:
             cid = n["container_id"]
             limit = n.get("pids.max")
             ports = 58 if limit in (None, "max") else max(4, min(58, (int(limit) - 400) // 60))
             env_ray = n.get("ray_env") or {}
-            enroll_s = round(enrolled[int(cid)] - first_running[int(cid)], 1) if int(cid) in enrolled and int(cid) in first_running else None
+            enroll_s = enroll.get(int(cid))
             record.data(f"{name}_{cid}", {**{k: n.get(k) for k in ("machine_id", "pids.max", "cgroup", "cpu_quota", "affinity", "ray_cpus",
                                                                    "ports", "ray_env", "worker_threads", "cpu_count")},
                                           "enroll_s_from_first_running_sample": enroll_s})
@@ -195,9 +191,7 @@ def test_LB01_jobs_workflow(record, libraries, env):
     check(record, "runtime_env pip torch==2.7.1: CUDA on both GPU workers", word == "PASS", data)
     sleeper = libraries.job(env, ["python", "c9_0_4_sleeper.py"], record.dir, name="sleeper", working_dir=C9_JOBS, wait=False)
     sid = sleeper.sid
-    deadline = time.time() + 300
-    while sleeper.status_now() != "RUNNING" and time.time() < deadline:
-        time.sleep(5)
+    wait_until(sleeper.status_now, 300, done=lambda status: status == "RUNNING", poll_s=5)
     ray = str(BIN / "ray")
     listed = subprocess.run([ray, "job", "list", "--address", env["RAY_ADDRESS"]], env=env, capture_output=True, text=True, timeout=120)
     with open(record.dir / "follow.out", "w") as f:  # --follow streams until the job ends: read it for 30 s
@@ -235,14 +229,14 @@ def test_LB02_core_functions_and_the_core_snippet(record, libraries, env):
                                    ("@ray.remote(num_cpus=2.4)          # CPUS / B\nclass Runner",
                                     f"@ray.remote(num_cpus={share})          # CPUS / B\nclass Runner"),
                                    ("range(5)", f"range({b // 2})")], record, "core"))
-    start = log_mark(libraries)
+    w = libraries.window()
     job = snippet_job(libraries, env, record, "core", code, "core_snippet", timeout=1500)
-    lines = libraries.monitor_log(start)
-    record.evidence("monitor_slice.log", "\n".join(lines))
+    record.evidence("monitor_slice.log", "\n".join(w.lines()))
     record.data("core_snippet", job.data)
     check(record, f"the core snippet (num_cpus {share}, pool {b // 2}) completes", job.status == "SUCCEEDED" and job.word == "PASS",
           (job.status, job.data))
-    check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
+    warnings = [e.line for e in warnings_for(w, rows)]
+    check(record, "no process-limit WARNING for the H3 workers", not warnings, warnings[:2])
 
 
 @pytest.mark.limits
@@ -277,17 +271,17 @@ def test_LB06_tune_snippet_with_s3(record, libraries, env, s3):
     share = round(cpus / b, 3)
     code = snippet("tune.md", 0, [('{"cpu": 2.4}', f'{{"cpu": {share}}}'), ("max_concurrent_trials=5", f"max_concurrent_trials={b // 2}"),
                                   ('"s3://my-bucket/experiments"', f'"s3://{s3.bucket}/lb06/experiments"')], record, "tune")
-    start = log_mark(libraries)
+    w = libraries.window()
     job = snippet_job(libraries, env, record, "tune", code, "tune_snippet", timeout=2400, s3=s3)
     word, data = job.word, job.data
-    lines = libraries.monitor_log(start)
     record.data("tune_snippet", data)
     checkpoints = {o["Key"].split("/checkpoint_")[0] for o in s3.objects("lb06/experiments/") if "/checkpoint_" in o["Key"]}
     record.data("s3_trials_with_checkpoints", len(checkpoints))
     check(record, "the tune.md snippet: 60 trials, 0 errors", word == "PASS" and data.get("results") == 60 and data.get("errors") == 0, data)
     check(record, "trials on both workers", len([n for n in data.get("trial_nodes", []) if n]) >= 2, data.get("trial_nodes"))
     check(record, "checkpoints in S3 for every trial", len(checkpoints) == 60, len(checkpoints))
-    check(record, "no refused fork in a WARNING for the H3 workers", not [w for w in warnings_for(lines, rows) if REFUSED_PATTERN.search(w)], "")
+    forks = with_refused_forks(warnings_for(w, rows))
+    check(record, "no refused fork in a WARNING for the H3 workers", not forks, forks[:2])
     for script, claim, torch in (("c9_2_2_tune_asha.py", "ASHA stops trials early", False),
                                  ("c9_2_3_tune_gpu.py", "GPU trials get 1 GPU each, on both workers", False)):
         word, data = c9(libraries, env, record, script, torch=torch, timeout=1500)
@@ -315,7 +309,7 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
     share, replicas = round(cpus / b, 3), b * len(rows)
     code = snippet("serve.md", 0, [("num_replicas=10,", f"num_replicas={replicas},"), ('{"num_cpus": 2.4}', f'{{"num_cpus": {share}}}')],
                    record, "serve")
-    start = log_mark(libraries)
+    w = libraries.window()
     job = snippet_job(libraries, env, record, "serve", code, "serve_snippet", timeout=1500)
     record.data("serve_snippet", job.data)
     per_node = job.data.get("replica_nodes", {})
@@ -354,8 +348,8 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
     head = libraries.ssh("curl -s -o /dev/null -m 15 -w '%{http_code}' http://127.0.0.1:8000/", check=False).strip()
     check(record, "curl on the head, port 8000: 200", head == "200", head)
     libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name="serve_cleanup", working_dir=C10_JOBS, timeout=300)
-    lines = libraries.monitor_log(start)
-    check(record, "no refused fork in a WARNING for the H3 workers", not [w for w in warnings_for(lines, rows) if REFUSED_PATTERN.search(w)], "")
+    forks = with_refused_forks(warnings_for(w, rows))
+    check(record, "no refused fork in a WARNING for the H3 workers", not forks, forks[:2])
     word, data = c9(libraries, env, record, "c9_4_4_serve_gpu.py", torch=True, timeout=2700)
     record.data("serve_gpu", data)
     check(record, "GPU replicas: 1 GPU id each, on both workers", word == "PASS", data)
@@ -374,12 +368,12 @@ def test_LB10_rllib_env_runners_and_learners(record, libraries, env, where):
         rows, b, cpus = h3(libraries, env, record)
         share = round(cpus / b, 3)
         code = snippet("rllib.md", 0, [("num_cpus_per_env_runner=2.4", f"num_cpus_per_env_runner={share}")], record, "rllib_runners")
-        start = log_mark(libraries)
+        w = libraries.window()
         job = snippet_job(libraries, env, record, "rllib_runners", code, "rllib_runners", runtime_env=TORCH_ENV, timeout=2700)
-        lines = libraries.monitor_log(start)
         record.data("rllib_runners", job.data)
         check(record, f"the env runner snippet (2 runners, num_cpus {share}): 2 iterations", job.word == "PASS", job.data)
-        check(record, "no process-limit WARNING for the H3 workers", not warnings_for(lines, rows), warnings_for(lines, rows)[:2])
+        warnings = [e.line for e in warnings_for(w, rows)]
+        check(record, "no process-limit WARNING for the H3 workers", not warnings, warnings[:2])
         return
     record.data("shape_wait_gpu2_s", libraries.ensure_shape({"gpu2": 1}))
     gpu2 = probe(libraries, env, record.dir, "probe_gpu2")["gpu2"]
@@ -403,10 +397,9 @@ def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
     code = snippet("train.md", 0, [('{"CPU": 2.4, "GPU": 1}', f'{{"CPU": {share}, "GPU": 1}}'),
                                    ('"s3://my-bucket/experiments"', f'"s3://{s3.bucket}/lb07/experiments"'),
                                    ("    ...\n", "    train_body(loader)\n")], record, "train")
-    start = log_mark(libraries)
+    w = libraries.window()
     job = snippet_job(libraries, env, record, "train", code, "train_snippet", runtime_env=TORCH_ENV, timeout=3600, s3=s3)
     status, word, data = job.status, job.word, job.data
-    lines = libraries.monitor_log(start)
     ranks = job.lines("LB_RANK")
     last = [r for r in ranks if r["epoch"] == 1]
     record.data("train_ranks", ranks)
@@ -417,7 +410,8 @@ def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
           and len({r["gpu_ids"][0] for r in last}) == 2, last)
     checkpoints = [o["Key"] for o in s3.objects("lb07/experiments/") if "/checkpoint_" in o["Key"]]
     check(record, "checkpoints in S3", len(checkpoints) > 0, len(checkpoints))
-    check(record, "no process-limit WARNING for the gpu2 worker", not warnings_for(lines, gpu2), warnings_for(lines, gpu2)[:2])
+    warnings = [e.line for e in warnings_for(w, gpu2)]
+    check(record, "no process-limit WARNING for the gpu2 worker", not warnings, warnings[:2])
     word, data = c9(libraries, env, record, "c9_3_1_train_1gpu.py", torch=True, timeout=2700)
     record.data("default_storage", data)
     check(record, "1 GPU with the default storage_path: `A local path on the head node is not accessible by worker nodes`",
@@ -442,11 +436,11 @@ def test_LB03_data_snippet_verbatim(record, libraries, env, s3, parquet_in, wher
                                   ("override_num_blocks=5)", f"override_num_blocks={b // 2})"),
                                   ("TaskPoolStrategy(size=2)", f"TaskPoolStrategy(size={b // 4})"),
                                   ('"s3://my-bucket/out"', f'"{out}"')], record, "data")
-    start = log_mark(libraries)
+    w = libraries.window()
     job = snippet_job(libraries, env, record, "data", code, "data_snippet", timeout=3600, s3=s3,
                       extra_env={"LB_OUT": out, "LB_ROWS": str(parquet_in["rows"])})
     status, word, data, log = job.status, job.word, job.data, job.log
-    lines = libraries.monitor_log(start)
+    lines = w.lines()
     record.evidence("monitor_slice.log", "\n".join(lines))
     record.data("data_snippet", data)
     after = probe(libraries, env, record.dir, "probe_after")
@@ -454,7 +448,8 @@ def test_LB03_data_snippet_verbatim(record, libraries, env, s3, parquet_in, wher
     check(record, f"the data.md snippet at B {b} on {where}: SUCCEEDED, all rows counted from the S3 output",
           status == "SUCCEEDED" and word == "PASS", (status, data))
     check(record, "output in S3", len(s3.objects(out.split("/", 3)[3] + "/")) > 0, out)
-    check(record, "no refused fork in a WARNING", not [w for w in warnings_for(lines, rows) if REFUSED_PATTERN.search(w)], "")
+    forks = with_refused_forks(w.events("process_limit", instances=[r["container_id"] for r in rows], lines=lines))
+    check(record, "no refused fork in a WARNING", not forks, forks[:2])
     check(record, "no node crash: the same Ray nodes are alive", {r["node_id"] for r in rows} <= alive, "")
     check(record, "no out-of-memory error", not re.search(r"OutOfMemoryError|out of memory", log), "")
 
@@ -471,14 +466,15 @@ PAIRS = [  # (library, tuned (script, args), many (script, args), torch, job tim
 
 
 def c10_probe(cluster, env, out_dir, wd, name):
-    """c10_probe.py: {node id: read_limits()}; again every 30 s for up to 5 min while a node gives an error."""
-    for attempt in range(10):
-        rows = cluster.job(env, ["python", "c10_probe.py"], out_dir, name=f"{name}_{attempt}", working_dir=wd, timeout=300).lines("C10_PROBE")
-        found = rows[-1] if rows else {}
-        if found and not any("error" in v for v in found.values()):
-            return found
-        time.sleep(30)
-    return found
+    """c10_probe.py: {node id: read_limits()}; again every 30 s for up to 10 min while a node gives an error."""
+    attempts = itertools.count()
+
+    def look():
+        rows = cluster.job(env, ["python", "c10_probe.py"], out_dir, name=f"{name}_{next(attempts)}", working_dir=wd,
+                           timeout=300).lines("C10_PROBE")
+        return rows[-1] if rows else {}
+
+    return wait_until(look, 600, done=lambda found: found and not any("error" in v for v in found.values()), poll_s=30).seen or {}
 
 
 def diagnose(cluster, env, node, job, out):
@@ -523,7 +519,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
             pre = c10_probe(libraries, env, record.dir, wd, f"{pair}_pre")
             target = next(iter(pre)) if len(pre) == 1 else None
             check(record, f"{pair}: one worker node", target is not None, len(pre))
-            start = log_mark(libraries)
+            w = libraries.window()
             job = libraries.job(env, ["python", script, arg], record.dir, name=pair, working_dir=wd, runtime_env=TORCH_ENV if torch else None,
                                 env_vars={"C10_PORTS": str(pre[target]["ports"]), "C10_CPUS": str(pre[target]["CPU"])},
                                 prefix="C10_RESULT", timeout=timeout, wait=False)
@@ -533,9 +529,10 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
             libraries.job(env, ["python", "c10_cleanup.py"], record.dir, name=f"{pair}_cleanup", working_dir=wd, timeout=300)
             time.sleep(30)  # the raylet ends the job's worker processes
             post = c10_probe(libraries, env, record.dir, wd, f"{pair}_post")
-            lines = libraries.monitor_log(start)
+            lines = w.lines()
             record.evidence(f"{pair}_head_slice.log", "\n".join(lines))
-            warnings = node_warnings(lines, node["container_id"], node["ip"])
+            events = w.events("process_limit", instances=[node["container_id"]], lines=lines)
+            warnings = [e.line for e in events]
             job_line = {"kind": job.word, **job.data}
             # run_c10 calls a many run INCONCLUSIVE above 3328 (its phase A rule). The many sizes here are max(ports + 4, ...),
             # above the ports at any limit, so the limit of this host is accepted.
@@ -544,7 +541,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
                                             refused_fails=False)
             refused = (events_max(post.get(target)) or 0) - (events_max(pre.get(target)) or 0)
             if kind == "many":
-                full = [w for w in warnings if re.search(r"worker ports in use (\d+) of \1\b", w)]
+                full = [e.line for e in events if e.fields["ports_in_use"] == e.fields["ports_total"]]
                 if verdict_word == "PASS" and not full:
                     verdict_word, reasons = "FAIL", reasons + ["no `ports in use N of N` WARNING"]
             outcomes.append((pair, verdict_word, reasons))
@@ -558,7 +555,7 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
         record.evidence("job_log_during.txt", diag.get("job_log", ""))
         record.evidence("grep_process_limit.txt", diag.get("grep", ""))
         record.data("err_files", diag.get("err_files"))
-        named = [x for x in diag.get("grep", "").splitlines() if WARNING_PATTERN.search(x) and f"(instance {node['container_id']}, " in x]
+        named = [e.line for e in w.events("process_limit", instances=[node["container_id"]], lines=diag.get("grep", "").splitlines())]
         for name, ok, detail in (
                 ("diagnostics step 3: the dashboard log API opens a worker-*.err with `No available ports`", "no_port_file" in diag,
                  diag.get("no_port_file")),
@@ -571,15 +568,15 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
                 failed.append(name)
     # Refused forks, a measurement (data, no check): a task starts threads until EAGAIN; the next heartbeats report the
     # refused count to the head; then the node lives on, or the bootstrap reports `ray start exited` and destroys it.
-    start = log_mark(libraries)
+    w = libraries.window()
     forks = libraries.job(env, ["python", "lb_forks.py", node["node_id"]], record.dir, name="forks", files=[JOBS / "lb_forks.py"],
                           prefix="LB_RESULT", timeout=1200)
     time.sleep(120)
-    lines = libraries.monitor_log(start)
+    lines = w.lines()
     record.evidence("forks_monitor_slice.log", "\n".join(lines))
-    refused = [w for w in node_warnings(lines, node["container_id"], node["ip"]) if re.search(r"[1-9]\d* refused forks/threads", w)]
+    refused_lines = [e.line for e in w.events("process_limit", instances=[node["container_id"]], lines=lines) if e.fields["refused"] > 0]
+    destroyed = any("ray start exited" in e.reason for e in w.events("destroy_request", instances=[node["container_id"]], lines=lines))
     alive = node["node_id"] in [n for ids in alive_workers(libraries).values() for n in ids]
-    record.data("refused_forks", {"job": forks.data, "warning": refused[-1][:300] if refused else None,
-                                  "outcome": "node alive" if alive else ("destroyed itself" if any("ray start exited" in x for x in lines)
-                                                                         else "gone")})
+    record.data("refused_forks", {"job": forks.data, "warning": refused_lines[-1][:300] if refused_lines else None,
+                                  "outcome": "node alive" if alive else ("destroyed itself" if destroyed else "gone")})
     assert not failed, f"not PASS: {failed}"

@@ -472,14 +472,6 @@ def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_pat
     assert len(rows) == 1 and "KeyboardInterrupt" in rows[0] and rows[0].endswith("`" + tmp_path.name + "/A03/` |")
 
 
-def test_log_epoch_reads_a_monitor_log_time_in_the_time_zone_of_the_head_container():
-    # The rayproject/ray images set TZ=America/Los_Angeles: 17:20:40 PDT (-0700) is 00:20:40 UTC the next day.
-    line = "2026-10-16 17:20:40,978\tINFO node_provider.py:485 -- Launching 1 nodes of type h1."
-    assert livekit.log_epoch(line, "-0700") == 1792196440.978
-    assert livekit.log_epoch(line, "+0000") == 1792171240.978
-    assert livekit.log_epoch("no time here", "-0700") is None
-
-
 class _Report:
     def __init__(self, outcome, longrepr=None):
         self.failed, self.skipped, self.passed = outcome == "failed", outcome == "skipped", outcome == "passed"

@@ -19,6 +19,7 @@ import yaml
 import livekit
 from livekit import check
 from cluster import ADMIN_PROFILE, BIN, aws_leftovers, wait_port
+from window import wait_until
 
 pytestmark = pytest.mark.aws
 REGION = "us-west-2"
@@ -44,9 +45,7 @@ def run_until(cluster, args, ready, timeout=900):
     """Start `ray-vast <args>` and send SIGINT (Ctrl-C) once `ready()` is true. Returns its output."""
     proc = subprocess.Popen([str(BIN / "ray-vast"), *map(str, args)], env=cluster.env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, start_new_session=True)
-    deadline = time.time() + timeout
-    while time.time() < deadline and proc.poll() is None and not ready():
-        time.sleep(1)
+    wait_until(lambda: proc.poll() is not None or ready(), timeout, poll_s=1)
     proc.send_signal(signal.SIGINT)
     out = proc.communicate(timeout=300)[0]
     with open(cluster.dir / "cli.log", "a") as f:
@@ -114,10 +113,9 @@ def test_A03_down_recovery(record, new_cluster, tmp_path):
     check(record, "(c) a head exists", heads, [h["InstanceId"] for h in heads])
     ids = [h["InstanceId"] for h in heads]
     ec2.terminate_instances(InstanceIds=ids)
-    deadline = time.time() + 600  # not the boto3 waiter: it fails at once when it sees the head still `pending`
-    while time.time() < deadline and any(i["State"]["Name"] != "terminated" for r in ec2.describe_instances(InstanceIds=ids)["Reservations"]
-                                         for i in r["Instances"]):
-        time.sleep(10)
+    # Not the boto3 waiter: it fails at once when it sees the head still `pending`.
+    wait_until(lambda: [i["State"]["Name"] for r in ec2.describe_instances(InstanceIds=ids)["Reservations"] for i in r["Instances"]], 600,
+               done=lambda states: all(s == "terminated" for s in states), poll_s=10)
     if b.state_dir.joinpath(f"{b.name}.json").exists():
         done = b.cli("attach", b.yaml)
         check(record, "attach without a running head: one-line error", done.returncode == 1 and f"no running head for cluster {b.name}"
@@ -201,27 +199,24 @@ def test_A05_head_network_exposure(record, aws_only):
 
 
 def test_A08_no_offer_and_budget_texts(record, aws_only):
-    start = len(aws_only.monitor_log()) + 1
+    w = aws_only.window()
     script = ("import ray\nray.init()\n"
               "refs = [ray.remote(lambda: 1).options(resources={'impossible': 1}, num_gpus=1).remote(),\n"
               "        ray.remote(lambda: 1).options(resources={'poor': 1}, num_gpus=1).remote()]\n"
               "ray.wait(refs, timeout=600)\n")
     texts = {"no offer": "no rentable offer matches the node type query",
              "budget": "every matching offer would pass max_dollars_per_hour"}
-    found = {}
+
+    def found():  # {key: the first launch_failed line with its text}
+        failed = w.events("launch_failed")
+        return {key: hits[0].line for key, text in texts.items() for hits in [[e for e in failed if text in e.reason]] if hits}
+
     with aws_only.tunnel() as env:
         demand = aws_only.job(env, ["python", "-c", script], record.dir, name="demand", wait=False)
-        deadline = time.time() + 420
-        while time.time() < deadline and len(found) < 2:
-            time.sleep(15)
-            lines = aws_only.monitor_log(start)
-            for key, text in texts.items():
-                hit = next((line for line in lines if text in line), None)
-                if hit:
-                    found[key] = hit
+        found = w.wait_until(found, 420, done=lambda seen: len(seen) == 2, poll_s=15).seen or {}
         status = aws_only.head_exec("ray status")
         demand.stop()
-    record.evidence("monitor_slice.log", "\n".join(aws_only.monitor_log(start)))
+    record.evidence("monitor_slice.log", "\n".join(w.lines()))
     record.evidence("ray_status.txt", status)
     for key, text in texts.items():
         check(record, f"monitor.log: {text}", key in found, found.get(key, "")[:300])

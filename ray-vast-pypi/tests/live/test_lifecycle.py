@@ -14,6 +14,7 @@ import pytest
 
 from livekit import check
 from cluster import ADMIN_PROFILE, JOBS, MANUAL
+from window import phase, wait_until
 
 pytestmark = pytest.mark.lifecycle
 
@@ -34,9 +35,7 @@ def session_env(lifecycle):
 def hold(lifecycle, session_env):
     """4 workers held by a placement group (hold.py) for L03-L10. Stopped at the end of the module."""
     job = lifecycle.job(session_env, ["python", "hold.py", "4"], name="hold", files=[JOBS / "hold.py"], wait=False)
-    deadline = time.time() + 1800
-    while time.time() < deadline and "HOLD_READY" not in job.logs():
-        time.sleep(20)
+    wait_until(job.logs, 1800, done=lambda log: "HOLD_READY" in log, poll_s=20)
     yield job
     job.stop()
 
@@ -74,7 +73,7 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
             stop.wait(15)
     threading.Thread(target=sample_rules, daemon=True).start()
     t_submit = time.time()
-    log_start = len(lifecycle.monitor_log()) + 1
+    w = lifecycle.window()
     job = lifecycle.job(session_env, ["python", "c8_job.py"], record.dir, name="c8_job", files=[MANUAL / "c8_job.py"], timeout=2400)
     status = job.status
     t_end = time.time()
@@ -85,33 +84,26 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
         check(record, f"bundle {r['bundle']}: 1 GPU, gpu_ids [0]", r["gpu_ids"] == [0] and r["nvidia_smi"].count("GPU ") == 1,
               (r["gpu_ids"], r["nvidia_smi"][:80]))
     # idle scale-down: all instances gone within idle_timeout_minutes (2) + 120 s
-    deadline = t_end + 120 + 420
-    while time.time() < deadline and lifecycle.instances():
-        time.sleep(15)
+    idle = w.wait_until(w.vast_now, t_end + 120 + 420 - time.time(), done=lambda seen: not seen, poll_s=15)
     t_zero = time.time()
     stop.set()
     # control-cost.md:24: Ray removes a worker after `idle_timeout_minutes` (2) idle. 300 s more is a safety bound for the
     # autoscaler loop, the drain and the destroy; the time is data.
     record.data("idle_to_zero_s", round(t_zero - t_end))
-    check(record, "idle scale-down to 0 within idle_timeout + 300 s", not lifecycle.instances() and t_zero - t_end <= 420,
+    check(record, "idle scale-down to 0 within idle_timeout + 300 s", idle.ok and t_zero - t_end <= 420,
           round(t_zero - t_end))
     time.sleep(20)
     rules_after = worker_rules(lifecycle)
     record.data("rules_seen_max", max((n for _, n in rules_seen), default=None))
     check(record, "worker rules were added and are all revoked", max((n for _, n in rules_seen), default=0) >= 1 and rules_after == 0,
           (max((n for _, n in rules_seen), default=0), rules_after))
-    lines = lifecycle.monitor_log(log_start)
+    lines = w.lines()
     record.evidence("monitor_slice.log", "\n".join(lines))
+    events = w.events(lines=lines)
     rows = [r for r in lifecycle.timeline if r["t"] >= t_submit - 5 and "instances" in r]
-    rented = {i["id"] for r in rows for i in r["instances"]}
+    rented = set(w.vast_seen())
     peak = max((sum(i.get("dph_total") or 0 for i in r["instances"]) for r in rows), default=0)
-    enrolled = {int(m.group(1)): lifecycle.log_epoch(line) for line in lines for m in [re.search(r"enrolled instance (\d+)", line)] if m}
-    first_running = {}
-    for r in rows:
-        for i in r["instances"]:
-            if i.get("actual_status") == "running":
-                first_running.setdefault(i["id"], r["t"])
-    enroll_s = {i: round(enrolled[i] - first_running[i], 1) for i in enrolled if i in first_running and enrolled[i]}
+    enroll_s = w.enroll_seconds()
     record.data("rented", len(rented))
     record.data("peak_dph", round(peak, 3))
     record.data("enroll_s_from_first_running_sample", enroll_s)
@@ -121,11 +113,13 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
     # own 10 s samples of vast differ from the provider's by up to 15 s either way: -15 to 75 s.
     check(record, "enroll within 1 min of running (design.md:86; -15 to 75 s on the suite's samples)",
           enroll_s and max(enroll_s.values()) <= 75 and min(enroll_s.values()) >= -15, enroll_s)
-    check(record, "no candidate ended on the pull limit", not [x for x in lines if "ending instance" in x and "pull" in x.lower()], "")
-    check(record, "no `missing from vast` ending", not [x for x in lines if "ending instance" in x and "missing" in x], "")
-    unknown = [x for x in lines if "unknown vast actual_status" in x and "rebooting" not in x]
+    pull = [e.line for e in events if e.kind == "ending" and e.cause == "pull_limit"]
+    check(record, "no candidate ended on the pull limit", not pull, pull[:2])
+    missing = [e.line for e in events if e.kind == "ending" and e.cause == "gone_from_vast"]
+    check(record, "no `missing from vast` ending", not missing, missing[:2])
+    unknown = [e.line for e in events if e.kind == "unknown_status"]
     check(record, "no unknown vast status", not unknown, unknown[:2])
-    check(record, "rent lines", any(re.search(r"create \d+ x gpu-[ab]: rented \d+ candidates", x) for x in lines), "")
+    check(record, "rent lines", any(e.kind == "rented" and e.fields["node_type"] in ("gpu-a", "gpu-b") for e in events), "")
 
 
 @pytest.mark.security
@@ -205,12 +199,13 @@ def test_L04_network_battery_tls_and_token(record, lifecycle, session_env, hold)
 
 
 def test_L05_logs_a_user_reads(record, lifecycle, hold):
-    lines = lifecycle.monitor_log()
+    w = lifecycle.window(from_start=True)
+    lines = w.lines()
     record.evidence("monitor.log", "\n".join(lines))
-    for name, pattern in (("rent", r"create \d+ x \S+: rented \d+ candidates"), ("enrolled", r"enrolled instance \d+ \(machine \d+, ip [\d.]+\) into"),
-                          ("ending", r"ending instance \d+ \(machine")):
-        check(record, f"monitor.log has the {name} line", any(re.search(pattern, x) for x in lines), "")
-    legacy = [x for x in lines if "Dropping the empty legacy field" in x]
+    events = w.events(lines=lines)
+    for name, kind in (("rent", "rented"), ("enrolled", "enrolled"), ("ending", "ending")):
+        check(record, f"monitor.log has the {name} line", any(e.kind == kind for e in events), "")
+    legacy = [e.line for e in events if e.kind == "legacy_field"]
     record.data("legacy_field_lines", len(legacy))
     check(record, "the `Dropping the empty legacy field` lines are not errors", all("ERROR" not in x for x in legacy), legacy[:1])
     done = lifecycle.cli("attach", lifecycle.yaml, input='sudo docker exec ray-vast-head grep "process limit" '
@@ -233,21 +228,18 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     result = json.loads(next(line for line in log.splitlines() if line.startswith('{"orphan_parents"')))
     check(record, "KILL, QUIT, USR1, USR2, CONT: same PID 1 after 120 s", result["pid1_same"], result["kill"])
     check(record, "0 zombies of PID 1", result["zombies_of_pid1_end"] == 0, result["zombies_of_pid1_end"])
-    log_start = len(lifecycle.monitor_log()) + 1
+    w = lifecycle.window()
     log = lifecycle.job(session_env, ["python", "task_probe.py", "sigterm", a["node_id"]], record.dir, name="sigterm",
                         files=[MANUAL / "task_probe.py"], timeout=300).log
     t0 = json.loads(log.splitlines()[[i for i, x in enumerate(log.splitlines()) if '"t0"' in x][0]])["t0"]
     # t0 is before the driver (on the head) schedules the signal task; the task prints the time of the signal (worker clock).
     sent = next((json.loads(x)["utc"] for x in log.splitlines() if x.startswith('{"sigterm": "sent"')), None)
     record.data("signal_after_t0_s", sent and round(sent - t0, 2))
-    gone = None
-    while time.time() < t0 + 120:
-        if int(a["container_id"]) not in {i["id"] for i in lifecycle.instances()}:
-            gone = time.time()
-            break
-        time.sleep(2)
-    lines = lifecycle.monitor_log(log_start)
-    report = next((lifecycle.log_epoch(x) for x in lines if f"worker {a['container_id']} asks to be destroyed" in x and "SIGTERM" in x), None)
+    waited = w.wait_until(w.vast_now, t0 + 120 - time.time(), done=lambda seen: int(a["container_id"]) not in {i["id"] for i in seen},
+                          poll_s=2)
+    gone = time.time() if waited else None
+    lines = w.lines()
+    report = next((e.t for e in w.events("destroy_request", instances=[a["container_id"]], lines=lines) if "SIGTERM" in e.reason), None)
     record.evidence("monitor_slice.log", "\n".join(lines))
     # design.md:262 (a TERM to PID 1: "Report, then destroy") states no time. Pass: the head logs the report, vast lists
     # the instance as gone within 60 s (a safety bound: a live instance costs money), Ray marks the node DEAD (safety
@@ -257,22 +249,14 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     record.data("gone_after_t0_s", gone and round(gone - t0, 1))
     check(record, "TERM: the head logs the report `asks to be destroyed: 'received SIGTERM'`", report is not None, "")
     check(record, "TERM: gone from vast within 60 s (safety bound)", gone is not None and gone - t0 <= 60, gone and round(gone - t0, 1))
-    dead = None
-    while time.time() < t0 + 300:
-        state = lifecycle.head_exec(f"ray list nodes --filter node_id={a['node_id']} --format json", check=False)
-        if '"DEAD"' in state:
-            dead = time.time()
-            break
-        time.sleep(5)
+    waited = wait_until(lambda: lifecycle.head_exec(f"ray list nodes --filter node_id={a['node_id']} --format json", check=False),
+                        t0 + 300 - time.time(), done=lambda state: '"DEAD"' in state, poll_s=5)
+    dead = time.time() if waited else None
     record.data("dead_after_t0_s", dead and round(dead - t0, 1))
     check(record, "Ray marks the node DEAD (safety bound 300 s)", dead is not None, dead and round(dead - t0, 1))
-    deadline = time.time() + 1200
-    while time.time() < deadline:
-        after = lifecycle.probe(session_env, record.dir, name="probe_after", check=False)
-        if len(after) == 4 and a["container_id"] not in {n["container_id"] for n in after}:
-            break
-        time.sleep(30)
-    check(record, "a replacement joins", len(after) == 4 and a["container_id"] not in {n["container_id"] for n in after}, len(after))
+    joined = wait_until(lambda: lifecycle.probe(session_env, record.dir, name="probe_after", check=False), 1200,
+                        done=lambda after: len(after) == 4 and a["container_id"] not in {n["container_id"] for n in after}, poll_s=30)
+    check(record, "a replacement joins", joined.ok, (len(joined.seen or []), joined.error))
 
 
 @pytest.mark.failure
@@ -282,40 +266,34 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     if lifecycle.kept:
         pytest.skip("--keep-cluster: the cluster stays")
     hold.stop()
-    deadline = time.time() + 900
-    while time.time() < deadline and lifecycle.instances():
-        time.sleep(15)
-    log_start = len(lifecycle.monitor_log()) + 1
+    wait_until(lifecycle.instances, 900, done=lambda seen: not seen, poll_s=15)
+    w = lifecycle.window()
     lifecycle.job(session_env, ["python", "hold.py", "4"], record.dir, name="hold_again", files=[JOBS / "hold.py"], wait=False)
-    t_stop, deadline = None, time.time() + 1800
-    while time.time() < deadline:
-        enrolled = {int(m.group(1)) for x in lifecycle.monitor_log(log_start) for m in [re.search(r"enrolled instance (\d+)", x)] if m}
-        instances = lifecycle.instances()
-        loading = [i for i in instances if i["id"] not in enrolled and i.get("actual_status") != "running"]
-        if enrolled and loading:
-            lifecycle.ssh("sudo docker stop ray-vast-head")
-            t_stop = time.time()
-            break
-        time.sleep(5)
-    check(record, "head stopped with a worker enrolled and a candidate loading", t_stop is not None, "")
-    workers = {i["id"] for i in lifecycle.instances()} & enrolled
-    record.data("at_stop", {"workers": sorted(workers), "others": sorted({i["id"] for i in lifecycle.instances()} - enrolled)})
-    gone_at = {}
-    while time.time() < t_stop + 30 * 60:
-        listed = {i["id"]: i for i in lifecycle.instances()}
-        for iid in set(record.result["data"]["at_stop"]["workers"]) | set(record.result["data"]["at_stop"]["others"]):
-            if iid not in listed:
-                gone_at.setdefault(iid, round(time.time() - t_stop))
-        if not listed:
-            break
-        time.sleep(10)
+
+    def enrolled_and_loading():  # (the enrolled instances, the pending candidates that are not enrolled)
+        enrolled = {e.instance for e in w.events("enrolled")}
+        return enrolled, [i for i in w.vast_now() if i["id"] not in enrolled and phase(i.get("actual_status")) == "pending"]
+
+    ready = w.wait_until(enrolled_and_loading, 1800, done=lambda seen: seen[0] and seen[1], poll_s=5)
+    t_stop = None
+    if ready:
+        lifecycle.ssh("sudo docker stop ray-vast-head")
+        t_stop = time.time()
+    check(record, "head stopped with a worker enrolled and a candidate loading", t_stop is not None, ready.error or "")
+    enrolled, listed = ready.seen[0], {i["id"] for i in w.vast_now()}
+    at_stop = {"workers": sorted(listed & enrolled), "others": sorted(listed - enrolled)}
+    record.data("at_stop", at_stop)
+    w.wait_until(w.vast_now, t_stop + 30 * 60 - time.time(), done=lambda seen: not seen, poll_s=10)
+    seen = w.vast_seen()  # the time of each instance's `gone`: the first sample (the poller's or the wait's) without it
+    gone_at = {iid: round(seen[iid][-1][0] - t_stop) for iid in at_stop["workers"] + at_stop["others"]
+               if seen.get(iid) and seen[iid][-1][1] == "gone"}
     record.data("gone_s_after_head_stop", gone_at)
     # Workers: design.md:246, :258 (no heartbeat success for 300 s, one each 30 s) and :261 (Ray exits 60 s after the GCS
     # is lost): at most 330 s, plus 30 s for vast's list and this loop. Candidates: design.md:144, :155, :260 (10 min of
     # failed downloads or no enrollment within 10 min) after a pull that the dead provider no longer limits: 30 min.
-    for iid in record.result["data"]["at_stop"]["workers"]:
+    for iid in at_stop["workers"]:
         check(record, f"worker {iid} destroys itself within 360 s", gone_at.get(iid, 10**6) <= 360, gone_at.get(iid))
-    for iid in record.result["data"]["at_stop"]["others"]:
+    for iid in at_stop["others"]:
         check(record, f"candidate {iid} is gone within 30 min (10 min after its pull)", gone_at.get(iid, 10**6) <= 30 * 60, gone_at.get(iid))
     done = lifecycle.down(env={"VAST_API_KEY": ""})  # the group teardown checks AWS and vast after it (livekit.end_cluster)
     record.evidence("down_without_vast_key.txt", done.stdout + done.stderr)

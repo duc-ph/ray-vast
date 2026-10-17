@@ -24,6 +24,7 @@ from ray_vast.config import build_offer_query
 
 import livekit
 from cluster import ADMIN_PROFILE, Cluster, vast
+from window import wait_until
 
 HERE = Path(__file__).parent
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10, 2026-10-17) and the query to use when none of them is
@@ -72,12 +73,8 @@ class S3Access:
         self.key_id, self.secret = key["AccessKeyId"], key["SecretAccessKey"]
         self.note(f"created user {self.user} with the inline policy {json.dumps(policy)} and one access key (not logged)")
         user_s3 = boto3.Session(aws_access_key_id=self.key_id, aws_secret_access_key=self.secret, region_name="us-west-2").client("s3")
-        for _ in range(30):  # a new access key takes some seconds to work
-            try:
-                user_s3.list_objects_v2(Bucket=self.bucket, MaxKeys=1)
-                break
-            except Exception:  # noqa: BLE001
-                time.sleep(2)
+        # A new access key takes some seconds to work.
+        wait_until(lambda: user_s3.list_objects_v2(Bucket=self.bucket, MaxKeys=1), 60, done=lambda _: True, poll_s=2)
         time.sleep(10)
         return self
 
@@ -161,18 +158,11 @@ class LibrariesCluster(Cluster):
         """Wait until Ray has exactly the workers of `shape` and vast has no other instance of the cluster (the losing
         candidates are destroyed). Returns the seconds it took; raises TimeoutError."""
         want = {k: v for k, v in shape.items() if v}
-        started, seen = time.time(), None
-        while time.time() < started + timeout:
-            try:
-                nodes = {k: len(v) for k, v in alive_workers(self).items()}
-                instances = len(self.instances())
-                seen = (nodes, instances)
-                if nodes == want and instances == sum(want.values()):
-                    return round(time.time() - started, 1)
-            except Exception as e:  # noqa: BLE001 - one failed sample must not end the wait
-                seen = f"{type(e).__name__}: {str(e)[:200]}"
-            time.sleep(15)
-        raise TimeoutError(f"shape {shape} not reached in {timeout} s; last seen {seen}")
+        waited = wait_until(lambda: ({k: len(v) for k, v in alive_workers(self).items()}, len(self.instances())), timeout,
+                            done=lambda seen: seen == (want, sum(want.values())), poll_s=15)
+        if not waited:
+            raise TimeoutError(f"shape {shape} not reached in {timeout} s; last seen {waited.seen}, last error {waited.error}")
+        return waited.elapsed
 
     def ensure_shape(self, shape):
         self.set_shape(shape)

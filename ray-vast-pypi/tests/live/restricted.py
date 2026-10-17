@@ -12,6 +12,7 @@ import boto3
 
 import livekit
 from cluster import ADMIN_PROFILE, BIN
+from window import wait_until
 
 POLICY = "ray-vast-user"
 
@@ -77,12 +78,8 @@ class RestrictedUser:
             f.write(f"[{self.profile}]\naws_access_key_id = {key['AccessKeyId']}\naws_secret_access_key = {key['SecretAccessKey']}\n")
         self.secret = key["SecretAccessKey"]
         self.session = boto3.Session(aws_access_key_id=key["AccessKeyId"], aws_secret_access_key=key["SecretAccessKey"])
-        for _ in range(30):  # a new access key takes some seconds to work
-            try:
-                self.session.client("sts").get_caller_identity()
-                break
-            except Exception:  # noqa: BLE001
-                time.sleep(2)
+        # A new access key takes some seconds to work.
+        wait_until(self.session.client("sts").get_caller_identity, 60, done=lambda _: True, poll_s=2)
         time.sleep(10)
         return self
 

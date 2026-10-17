@@ -20,6 +20,7 @@ from ray_vast.vast_api import VastClient, label
 
 import livejob
 import livekit
+import window
 
 BIN = Path(sys.executable).parent
 RAY_VAST = [str(BIN / "ray-vast")]
@@ -27,6 +28,7 @@ REPO = Path(__file__).resolve().parents[3]
 MANUAL = REPO / "tests" / "manual"
 JOBS = Path(__file__).parent / "jobs"
 ADMIN_PROFILE = os.environ.get("RAYVAST_LIVE_PROFILE", "personal")
+MONITOR_LOG = "/tmp/ray/session_latest/logs/monitor.log"
 
 
 def vast_key():
@@ -165,14 +167,22 @@ class Cluster:
                               text=True, timeout=120, stdin=subprocess.DEVNULL)
         return done.returncode == 0 and done.stdout.strip() == "true"
 
-    def monitor_log(self, start_line=1):
-        return self.head_exec(f"tail -n +{start_line} /tmp/ray/session_latest/logs/monitor.log", timeout=120).splitlines()
+    # --- the head adapter of the observation window (window.py) ------------------------------------------------------
+    def window(self, from_start=False):
+        """An observation window on this cluster (window.Window): the head log events and the vast instances since now
+        (`from_start`: since the first line of the head log)."""
+        return window.Window(self, from_start=from_start)
 
-    def log_epoch(self, line):
-        """The epoch of a monitor.log line, in the time zone of the head container (livekit.log_epoch)."""
-        if getattr(self, "_tz", None) is None:
-            self._tz = self.head_exec("date +%z", timeout=120).strip()
-        return livekit.log_epoch(line, self._tz)
+    def monitor_log(self, start_line=1):
+        return self.head_exec(f"tail -n +{start_line} {MONITOR_LOG}", timeout=120).splitlines()
+
+    def monitor_log_length(self):
+        return int(self.head_exec(f"wc -l < {MONITOR_LOG}", timeout=120).strip())
+
+    def head_time_zone(self):
+        """The IANA time zone of the head container: its TZ (the rayproject/ray images set America/Los_Angeles), else the
+        zone of /etc/localtime; "" for UTC."""
+        return self.head_exec('echo "${TZ:-$(readlink -f /etc/localtime 2>/dev/null | sed -n "s|.*/zoneinfo/||p")}"', timeout=120).strip()
 
     def collect_token(self):
         token = self.ssh(f"cat /home/ubuntu/ray-vast-{self.name}/secrets/token").strip()

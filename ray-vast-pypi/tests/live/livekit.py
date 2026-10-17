@@ -485,17 +485,6 @@ def timeline_spend(rows):
     return round(total, 4)
 
 
-LOG_TIME = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})")
-
-
-def log_epoch(line, tz):
-    """The epoch of a monitor.log line. Python logging writes the local time of the head container, and the rayproject/ray
-    images set TZ=America/Los_Angeles, so `tz` is the container's `date +%z` (for example "-0700"). None without a time."""
-    from datetime import datetime
-    m = LOG_TIME.match(line)
-    return datetime.strptime(f"{m.group(1)}.{m.group(2)} {tz}", "%Y-%m-%d %H:%M:%S.%f %z").timestamp() if m else None
-
-
 def host_of(item):
     """The libraries host of a test item: its `where` parameter or its `host` marker (None for other tests)."""
     params = getattr(item, "callspec", None)
