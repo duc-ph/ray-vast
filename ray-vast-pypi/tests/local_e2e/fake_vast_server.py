@@ -140,6 +140,10 @@ class FakeVast:
                     if inst.get("deleting"):
                         return 404, {"error": "no such instance"}
                     inst["deleting"] = True  # still listed until its container is gone
+                # vast stops the container. dockerd puts the output into the log some time after the container writes
+                # it, and the log is complete only when the container has exited. So stop it first, then read the log.
+                subprocess.run(["docker", "kill", inst["name"]], capture_output=True)
+                subprocess.run(["docker", "wait", inst["name"]], capture_output=True, timeout=60)
                 logs = subprocess.run(["docker", "logs", inst["name"]], capture_output=True, text=True)
                 subprocess.run(["docker", "rm", "-f", inst["name"]], capture_output=True)
                 with self.lock:

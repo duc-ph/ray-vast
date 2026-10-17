@@ -942,3 +942,21 @@ Flakes of the free group with `-n 12`:
 - F18 (the LB11 refused-forks unit test once, the claim matrix test once): both runs were at times when the tree under test was being changed (02:38 in refactor step 2, 04:08 in step 6). F18 copies that tree. F18 kept only the last 3 lines of pytest, so the record had no detail. It now keeps the full output with the failure lines.
 
 Waits: each `wait_until` that the tests ignored is now a failed check or an error (restricted.py, libraries_setup.py, test_aws.py A03, test_libraries.py LB01 and the C10 probe of LB11, test_lifecycle.py L10).
+
+## Live suite run of 2026-10-17, second run (free, aws, lifecycle, libraries)
+
+All groups except release, on the code of 09bcde8 and the fixes below. Records in `archive/results/2026-10-17/` (the records of the stopped first run are the `.run<n>` directories). The table above is from `summarize.py`.
+
+### Step 0: the F14 flake
+
+Symptom: F14 (local e2e: the monitor stops) failed in some free-group runs with `-n 12` and passed alone. The assertion `any(reason in log ...)` failed: the log that the fake vast kept for a destroy had no `bootstrap: destroying this instance` line. The last line of the log was the last line of `ray start` (`Remaining processes will be killed.`).
+
+Cause (test bug, in the fake vast): at a DELETE, `fake_vast_server.py` read `docker logs` at once. The bootstrap writes its reason line, then sends the DELETE. dockerd writes the output of a container to its log some time after the container writes it. Under load, the last lines were not in the log yet. Proof: an instrumented fake vast read the log two times, 3 s apart. In one loaded free run, 2 of 22 destroys had the `destroying this instance` line only in the second read (`head refused enrollment: not a candidate` and `head refused the heartbeat (403)` of other scenarios). A synthetic loop (a container writes a line, then sends the DELETE; up to 45 MB of output first, CPU load, dockerd load) did not reproduce it in 156 tries.
+
+Fix: at a DELETE, the fake vast stops the container (`docker kill`, `docker wait`), then reads the log. dockerd has the full log when the container has exited. Red: `test_the_destroy_log_has_the_last_line_that_the_container_wrote_before_its_delete` (a fake Docker that gives the last line only after `docker kill`): `AssertionError: bootstrap: started ray`. With the fix, the instrumented run had the same log in both reads for 16 of 16 destroys. Then the free group passed 3 times in a row with `-n 12`: 22 of 22 each time (5 min 27 s, 5 min 23 s, 5 min 24 s; records in a scratch directory, not kept).
+
+Other changes of step 0:
+
+- `twine` is in the `test` extras of `pyproject.toml`. The first free run in a new venv failed F17 with `FileNotFoundError: .venv/bin/twine` (environment, not a product bug).
+- Incident: a load test for the repro (6 containers that wrote output with no log size limit) filled the root disk of the dev box for about 1 min. The containers were removed at once, and the free space went back to 76 GB. Other runs on the box at that time could get `ENOSPC`. The next load test used `--log-opt max-size=20m`.
+- F18 failed once in an instrumented run: the temporary debug lines in `fake_vast_server.py` wrote to a path that does not exist in the Python 3.10 container. The debug lines are removed.
