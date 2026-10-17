@@ -1,8 +1,9 @@
 """Step 11 harness and fixtures (not a conftest.py: tests/unit has one and imports it by name): a fake vast (containers on the box), moto as the AWS endpoint, and a Ray head in a container.
 
 Run on the dev box: `pytest -o addopts="" -m local_e2e tests/local_e2e` (add `-n 8` to run the scenarios at the same
-time). Container names start with `st11-<pid>-`, so a run sees only its own containers. Each scenario has its own network
-namespace (`box_ip`), so scenarios in parallel processes do not share ports.
+time). Container names start with `st11-<pid>-`, so a run sees only its own containers. A run also removes the containers
+of dead runs (tests/fakes/containers.py). Each scenario has its own network namespace (`box_ip`), so scenarios in
+parallel processes do not share ports.
 """
 import json
 import os
@@ -10,6 +11,7 @@ import shutil
 import socket
 import ssl
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -22,9 +24,16 @@ from ray_vast import config as ray_vast_config
 from ray_vast import pki
 from fake_vast_server import FakeVast, make_offers
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # tests/: tests/manual/c10 imports this module without the conftest
+from fakes import containers  # noqa: E402
+
+containers.install()  # remove the st11-/c10- containers of dead runs now, and this run's at exit and on SIGTERM
+
 PYPI_DIR = Path(__file__).resolve().parents[2]
 RAY_IMAGE = "rayproject/ray:2.59.0-py311-cpu"
-HEAD_IMAGE = "st11-head"
+# Runs from different checkouts at the same time build the head image from different sources: give each its own tag.
+IMAGE_PREFIX = os.environ.get("RAYVAST_TEST_IMAGE_PREFIX", "")
+HEAD_IMAGE = IMAGE_PREFIX + "st11-head"
 PREFIX = f"st11-{os.getpid()}-"
 HEAD = PREFIX + "head"
 REGION = "us-west-2"

@@ -827,6 +827,22 @@ def test_in_lb11_a_refused_fork_fails_a_tuned_run_and_is_data_in_a_many_run(monk
     assert status == "PASS" and "refused forks 7" in reason
 
 
+def test_a_many_run_that_hangs_with_free_worker_ports_fails_with_the_reason_that_names_it(monkeypatch):
+    # F16 2026-10-17: Ray had 1 CPU (the declared CPU), the Data job waited for CPUs with 3 of 4 ports in use. The head
+    # rightly wrote no WARNING line; the verdict must say that the job did not reach the port limit.
+    c10 = LIVE.parents[2] / "tests" / "manual" / "c10"
+    if not (c10 / "run_c10.py").exists():
+        pytest.skip("the C10 runner is in the repository, not in the package tree (F18 copies the package tree only)")
+    monkeypatch.syspath_prepend(str(c10))
+    from run_c10 import verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "560", "no_port_errors": 0}
+    post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "560", "no_port_errors": 0}
+    assert verdict("many", {"kind": "HUNG"}, pre, post, []) == ("FAIL", [
+        "no head pids/ports WARNING line for the node",
+        "no 'No available ports' line and no refused fork: the job hung for another reason (CPUs?), not at the "
+        "process limit"])
+
+
 def test_a_run_without_a_cluster_calls_no_cloud_guard_but_still_sums_up_the_process_scans(tmp_path):
     run = liverun.Run(tmp_path, "run1")
     run.record("F01", ["free"], "none")

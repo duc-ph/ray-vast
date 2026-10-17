@@ -7,10 +7,12 @@ runs the real provider and head server, the worker runs the real bootloader and 
 verdict of run_c10.py with the real head log: the job hangs (or fails), the head's process-limit WARNING line names the
 worker, and the worker is still alive.
 
-Run on the dev box (containers start with `c10-<pid>-`; they are all removed at the end):
+Run on the dev box (containers start with `c10-<pid>-`; they are removed at the end, also after SIGTERM or Ctrl-C, and
+a later run removes those of a killed run):
   cd ray-vast-pypi && PYTHONPATH=src .venv/bin/python -m pytest -o addopts="" -p no:cacheprovider -s \\
       ../tests/manual/c10/test_c10_local_e2e.py -k core_many
-Env: C10E_IMAGE (c10-local:torch), C10E_SCALE (0.1), C10E_OUT (/tmp/c10e: the logs of each run).
+Env: C10E_IMAGE (c10-local:torch), C10E_SCALE (0.1), C10E_OUT (/tmp/c10e: the logs of each run), RAYVAST_TEST_IMAGE_PREFIX
+(a prefix for the head image tag `c10-head`, for runs from other checkouts at the same time).
 """
 import json
 import os
@@ -29,7 +31,7 @@ import e2e_harness  # noqa: E402
 
 e2e_harness.PREFIX = f"c10-{os.getpid()}-"  # the harness reads these globals at call time
 e2e_harness.HEAD = e2e_harness.PREFIX + "head"
-e2e_harness.HEAD_IMAGE = "c10-head"  # not the st11 tag, which other runs build from other sources
+e2e_harness.HEAD_IMAGE = e2e_harness.IMAGE_PREFIX + "c10-head"  # not the st11 tag, which other runs build from other sources
 # The worker and head image: rayproject/ray:2.59.0-py311-cpu plus torch 2.7.1 (CPU), for Train and RLlib (see the README).
 e2e_harness.RAY_IMAGE = os.environ.get("C10E_IMAGE", "c10-local:torch")
 from e2e_harness import box_ip, docker, head_image, host_ip, make_cluster, moto_url, teardown_removes_every_container  # noqa: E402,F401
@@ -39,6 +41,7 @@ HEAD = e2e_harness.HEAD
 LIVE_JOBS = HERE.parents[2] / "ray-vast-pypi" / "tests" / "live" / "jobs"
 SCALE = os.environ.get("C10E_SCALE", "0.1")
 OUT = Path(os.environ.get("C10E_OUT", "/tmp/c10e"))  # the job log and the head log lines of each run  # Train and RLlib many: max(ports + 4, 40 * scale) torch processes
+CPUS = os.cpu_count()  # the node type's CPU: the worker container has all the box's cores
 TIME_SCALE = 3  # heartbeat every 10 s instead of 30 s, so the warning comes sooner
 
 
@@ -63,7 +66,9 @@ def last(text, prefix):
 def run_pair_mode(make_cluster, script, mode, pids_limit, guard_s):
     """One worker with pids.max = pids_limit, `script` in `mode`, and the run_c10.py verdict. Returns (status, reasons, data)."""
     cluster = make_cluster(docker_args=["--pids-limit", str(pids_limit)], worker_env={"RAYVAST_TIME_SCALE": str(TIME_SCALE)})
-    cluster.write_config(cpu=1, max_workers=1, idle_timeout_minutes=30)
+    # Ray gets the declared CPU (design 5.4). Declare the box's cores, as a vast node type declares its offer's cores: with
+    # CPU 1, Data many waits for CPUs with free ports, and the head rightly writes no WARNING line (F16, 2026-10-17).
+    cluster.write_config(cpu=CPUS, max_workers=1, idle_timeout_minutes=30)
     cluster.start_head()
     docker("cp", str(HERE / "jobs"), f"{HEAD}:/tmp/c10jobs")
     docker("cp", str(LIVE_JOBS / "lb_tuned.py"), f"{HEAD}:/tmp/c10jobs/lb_tuned.py")  # the live suite's LB11 tuned runs
@@ -136,13 +141,14 @@ def start_sampler(container):
     return peak, stop
 
 
-# The box has 4 cores, so the worker has 4 Ray CPUs. With pids.max 1280 the worker gets 14 ports (pids-tuning: 60 threads for
-# each port, reserve 400). Data many makes min(CPUs, 128) = 4 shuffle aggregators: fewer than 14 ports, so at 1280 it is
-# expected to complete here (xfail). A 560 pids limit gives the minimum of 4 worker ports: the 4 aggregators hold all of them.
+# The worker has CPUS Ray CPUs (16 on the dev box). With pids.max 1280 the worker gets 14 ports (pids-tuning: 60 threads for
+# each port, reserve 400). Data many makes min(CPUs, 128) shuffle aggregators: on a box with fewer than 14 cores that is
+# fewer than 14 ports, so at 1280 it can complete (xfail). A 560 pids limit gives the minimum of 4 worker ports: the
+# aggregators hold all of them.
 CASES = [
     ("c10_core.py", "tuned", 1280, 150), ("c10_core.py", "many", 1280, 150),
     ("c10_data.py", "tuned", 1280, 300), pytest.param("c10_data.py", "many", 1280, 150, marks=pytest.mark.xfail(
-        reason="4 Ray CPUs: 4 aggregators < 14 ports", strict=False)), ("c10_data.py", "many", 560, 150),
+        reason="fewer than 14 Ray CPUs: fewer aggregators than ports", strict=False)), ("c10_data.py", "many", 560, 150),
     ("c10_tune.py", "tuned", 1280, 400), ("c10_tune.py", "many", 1280, 150),
     ("c10_serve.py", "tuned", 1280, 150), ("c10_serve.py", "many", 1280, 150),
     ("c10_train.py", "tuned", 1280, 300), ("c10_train.py", "many", 1280, 180),

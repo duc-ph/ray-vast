@@ -6,7 +6,10 @@ import subprocess
 
 import pytest
 
+from fakes import containers
 from fakes.worker_world import CONTAINER_PREFIX
+
+containers.install()  # remove the containers of dead runs now, and this run's at exit and on SIGTERM
 
 # moto loads about 1300 default AMIs on every `mock_aws()` start (1.5 s). No test needs them: the CLI test makes its own image.
 os.environ.setdefault("MOTO_EC2_LOAD_DEFAULT_AMIS", "false")

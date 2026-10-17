@@ -96,9 +96,12 @@ def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
             reasons.append(f"the job did not fail ({job.get('kind')}): no advice is needed at this size")
         if not alive:
             reasons.append("the node crashed or left the cluster")
+        no_port = (post or {}).get("no_port_errors", 0) - (pre or {}).get("no_port_errors", 0)
         if warnings is not None and not any(WARNING_PATTERN.search(w) for w in warnings):
             reasons.append("no head pids/ports WARNING line for the node")
-        no_port = (post or {}).get("no_port_errors", 0) - (pre or {}).get("no_port_errors", 0)
+            if no_port <= 0 and not refused:  # say why: the job waited for something else, for example CPUs
+                reasons.append("no 'No available ports' line and no refused fork: the job hung for another reason "
+                               "(CPUs?), not at the process limit")
         if warnings is None and no_port <= 0:  # local check: no head; Ray's own "No available ports" lines are the evidence
             reasons.append("no 'No available ports' line in the worker-*.err logs of the node")
         return ("FAIL" if reasons else "PASS"), reasons or [

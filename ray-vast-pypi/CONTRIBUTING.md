@@ -78,6 +78,7 @@ The local end-to-end tests also run in parallel: `pytest -o addopts="" -m local_
 - Every test that starts a process starts it in a new session. A finalizer kills the whole process group.
 - A session check fails the run if a test leaves a process or a container behind.
 - Container names start with `<step>-<pid>-`. The session check removes only the containers of its own run. So runs can overlap.
+- A killed run cannot remove its containers. So each run removes the `st10b-`, `st11-` and `c10-` containers of dead pids at its start. It also removes its own containers at exit, after Ctrl-C and on SIGTERM (`tests/fakes/containers.py`). It never removes the containers of a live pid. A new container family must go into `FAMILIES` there.
 - The bootstrap tests set `RAYVAST_DIR` to a temp directory, so runs can overlap.
 
 ## Docs
