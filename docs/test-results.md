@@ -885,7 +885,7 @@ Last state of each scenario (run `002539-287730`, `-n 8`, fresh clusters):
 
 H1. In C9, m32816 gave 48 Ray CPUs. Since the cgroup v1 quota fix it gives 5 (quota 5.76 cores). The probes of 2026-10-17 show that vast sets `pids.max` = 256 × the CPU quota, rounded down (1280 at 5.76, 1536 at 6.72, 1792 at 7.68, 2816 at 11.52, 9728 at 38.4, 11776 at 46.08, 15616 at 61.44). So no host has many Ray CPUs and `pids.max` 1280. The first try (want 36 or more CPUs, query `cpu_cores_effective` ≥ 40) rented m148655 (61 CPUs, 15616, v1), m58013 (46, 11776, v2) and m36376 (38, 9728, v1): no match. H1 is now `pids.max` 1280 and cgroup v1, with m32816 first and `cpu_cores_effective` 5.5 to 6.5 as the fallback.
 
-Hosts (pids.max, cgroup, Ray CPUs, CPU quota, enroll time from the suite's first `running` sample): H2 m51706 (1536, v2, 6, 6.912, about 0 s); H3 m3969 (1280, v1, 5, 5.76) and m29217 (1536, v1, 6, 6.144); gpu2 m3969 (2816, v1, 11, 11.52); lifecycle workers (1792, 2816, 1280, 1536, all v1; enroll −2.6 to 7.0 s). The smoke run had the enroll times wrong by −25190 s: see the test fixes.
+Hosts of the run (pids.max, cgroup, Ray CPUs, CPU quota in cores, enroll time from the suite's first `running` sample): H2 m51706 (1536, v2, 6, 6.912, 4.5 s); H3 m8966 (1280, v1, 5, 5.12, 8.4 s) and m3969 (1280, v1, 5, 5.76, 9.5 s); gpu2 m29278 (3072, v1, 12, 12.288, 2.5 s); the 4 lifecycle workers (1792, 2816, 1280, 1536, all v1; enroll −2.6 to 7.0 s). The smoke run had the enroll times wrong by −25190 s: see the test fixes.
 
 Test-script changes (all in `ray-vast-pypi/tests/live/`):
 
