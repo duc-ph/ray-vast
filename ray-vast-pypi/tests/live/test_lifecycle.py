@@ -13,7 +13,7 @@ import boto3
 import pytest
 
 from cluster import ADMIN_PROFILE, JOBS, MANUAL
-from libraries_setup import expected_limits
+from libraries_setup import expected_limits, host_facts
 from livejob import workdir
 from liverun import wait_until
 from window import phase
@@ -143,7 +143,7 @@ def test_L03_host_and_task_probe_on_each_worker(record, lifecycle, session_env, 
         record.check(f"{cid}: /tmp/rayvast 700, files 600 or 644 for certs", n["rayvast_dir_mode"] == "0o700" and
              all(m == "0o600" for f, m in n["rayvast_file_modes"].items() if f in ("node.key", "token")), n["rayvast_file_modes"])
         record.check(f"{cid}: CapBnd without NET_RAW and NET_ADMIN", not n["cap_net_raw_bnd"] and not n["cap_net_admin_bnd"], "")
-        quota = n["cpu_quota"]
+        quota = host_facts(n, n.get("machine_id"))["quota"]  # cores; the probe gives the raw cgroup files
         record.data(f"host_{cid}", {k: n.get(k) for k in ("pids.max", "cgroup", "cpu_quota", "affinity", "ray_cpus", "ports", "ray_env",
                                                           "worker_threads", "cpu_count")})
         declared = lifecycle.config["available_node_types"][n["node_type"]]["resources"]["CPU"]

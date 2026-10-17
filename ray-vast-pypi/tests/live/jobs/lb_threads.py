@@ -122,7 +122,13 @@ def data():
     def add_key(batch):
         batch["key"] = batch["id"] % 16
         return batch
-    groups = ray.data.read_parquet(path).map_batches(add_key).groupby("key").count().take_all()
+
+    # read_parquet lists the files where it is called. The files are on the target node, not on the head (the driver),
+    # so the pipeline runs in a task there (LB15, 2026-10-17: FileNotFoundError on the driver).
+    @ray.remote(num_cpus=0)
+    def pipeline():
+        return ray.data.read_parquet(path).map_batches(add_key).groupby("key").count().take_all()
+    groups = ray.get(pipeline.options(scheduling_strategy=ON_NODE).remote())
     total = sum(g["count()"] for g in groups)
     return {"rows": rows, "groups": len(groups), "total": total, "ok": total == rows and len(groups) == 16}
 

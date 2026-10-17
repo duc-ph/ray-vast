@@ -70,6 +70,20 @@ elif LIB == "train":
     _x = torch.randn(20_000, 32)
     dataset = torch.utils.data.TensorDataset(_x, _x @ torch.randn(32, 1))
 
+    @ray.remote(num_cpus=0)
+    class Ranks:
+        """Collects one row for each rank and epoch. Ray's log stream of the Train workers lost and repeated lines (LB07,
+        2026-10-17), so the rows come back through this actor, and the driver prints them after fit()."""
+        def __init__(self):
+            self.rows = []
+
+        def add(self, row):
+            self.rows.append(row)
+
+        def get(self):
+            return self.rows
+    ranks = Ranks.options(name="lb_ranks").remote()
+
     def train_body(loader):
         """The body of the snippet's train_func (its `...`): DDP on the GPUs, 2 epochs, a checkpoint at each epoch."""
         import tempfile
@@ -85,9 +99,9 @@ elif LIB == "train":
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            print("LB_RANK " + json.dumps({"rank": rank, "epoch": epoch, "device": str(ray.train.torch.get_device()),
-                                           "gpu_ids": [str(g) for g in ray.get_gpu_ids()],
-                                           "node": ray.get_runtime_context().get_node_id()[:8]}), flush=True)
+            ray.get(ray.get_actor("lb_ranks").add.remote(
+                {"rank": rank, "epoch": epoch, "device": str(ray.train.torch.get_device()),
+                 "gpu_ids": [str(g) for g in ray.get_gpu_ids()], "node": ray.get_runtime_context().get_node_id()[:8]}))
             with tempfile.TemporaryDirectory() as d:
                 if rank == 0:
                     torch.save(model.state_dict(), os.path.join(d, "model.pt"))
@@ -125,6 +139,8 @@ try:
                 "checkpoints": sum(1 for r in grid if r.checkpoint)}
         result("PASS" if grid.num_errors == 0 and data["checkpoints"] == len(grid) else "FAIL", data)
     elif LIB == "train":
+        for row in ray.get(ranks.get.remote()):
+            print("LB_RANK " + json.dumps(row), flush=True)
         result("PASS", {"fit": "returned"})  # trainer.fit() raises when the run fails; the test reads LB_RANK and S3
     elif LIB == "serve":
         result("PASS", {"replica_nodes": actor_nodes("ServeReplica:default:Model")})
