@@ -255,15 +255,18 @@ class VastNodeProvider(NodeProvider):
 
     # ---- ending instances ----
 
-    def _end(self, cand, reason, block_kind=None):
+    def _end(self, cand, reason, block_kind=None, candidate_only=False):
         """End a candidate or worker: block its host when `block_kind` is given, drop it and the slot that it fills
         from state, lower the IP ref count, destroy the instance, and remove the SG rule at 0. The one ending path for
         the provider and the head server (rule 9). The block happens on every call (a check can fail after another
         path ended the candidate); the rest only for the first caller for an instance. It never raises for a failed
         destroy or a failed rule removal: its callers are the reconcile pass and the head server's request threads.
-        A free slot stays; the reconcile pass removes it and counts it for the rent-loop breaker."""
+        A free slot stays; the reconcile pass removes it and counts it for the rent-loop breaker. `candidate_only`: the
+        caller decided on a candidate that was not enrolled; one that the head server enrolled since then stays."""
         instance_id = cand.instance_id
         with self.state.lock:
+            if candidate_only and instance_id in self.state.enrolled:
+                return
             if block_kind:
                 self.state.block(cand.machine_id, reason, block_kind, self._clock())
             if self.state.remove_candidate(instance_id) is None:
@@ -385,7 +388,7 @@ class VastNodeProvider(NodeProvider):
             if not self._creating:  # a create call may hold an instance that is not recorded yet
                 keep = set(self.state.candidates) | ended_ids
         for cand in request_ends:
-            self._end(cand, "its request has no free slot left")
+            self._end(cand, "its request has no free slot left", candidate_only=True)
         if keep is not None:
             sweep(self._vast, instances, self.cluster_name, keep)
         with self._sg_lock:

@@ -284,7 +284,9 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     enrolled, listed = ready.seen[0], {i["id"] for i in w.vast_now()}
     at_stop = {"workers": sorted(listed & enrolled), "others": sorted(listed - enrolled)}
     record.data("at_stop", at_stop)
-    wait_until(w.vast_now, t_stop + 30 * 60 - time.time(), done=lambda seen: not seen, poll_s=10)
+    empty = wait_until(w.vast_now, t_stop + 30 * 60 - time.time(), done=lambda seen: not seen, poll_s=10)
+    record.check("vast lists no instance of the cluster within 30 min of the head stop", empty.ok,
+                 [i["id"] for i in empty.seen or []] or empty.error)
     seen = w.vast_seen()  # the time of each instance's `gone`: the first sample (the poller's or the wait's) without it
     gone_at = {iid: round(seen[iid][-1][0] - t_stop) for iid in at_stop["workers"] + at_stop["others"]
                if seen.get(iid) and seen[iid][-1][1] == "gone"}

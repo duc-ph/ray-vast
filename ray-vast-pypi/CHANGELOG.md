@@ -8,6 +8,7 @@
     - A worker with a process limit gets fewer worker ports. The count comes from `pids.max`.
     - Ray still gets all the cores as `CPU`.
 - The worker sets `RAY_num_workers_soft_limit` to at most half its worker ports. Then idle worker processes cannot hold all ports, and a job that needs a new kind of worker process (for example, another runtime env) finds a free port. The `/enroll` answer no longer has `num_workers_soft_limit`.
+- Fix: the provider no longer destroys a worker that enrolled while the reconcile pass ended the other candidates of its request. Ray then asked for a new node.
 - The worker logs one start line. It shows the process limit, the cgroup version, the CPUs, the worker ports, the soft limit, the gRPC threads and the startup concurrency.
 - The heartbeat carries `pids_current`, `pids_max`, `pids_refused`, `ports_in_use` and `ports_total`.
 - The head logs a WARNING in `monitor.log` when a worker is at its process limit. Read [A worker is at its process limit](https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit).

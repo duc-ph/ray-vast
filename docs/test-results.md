@@ -877,9 +877,9 @@ Last state of each scenario (run `002539-287730`, `-n 8`, fresh clusters):
 - L08 FAIL (follow-on of L07): L07 stopped before its replacement joined. The probe of L08 hit the dead node (`TaskUnschedulableError`), so it had no nodes (IndexError).
 - L09 FAIL (product bug, fixed with a red test): the provider logged `unknown vast actual_status 'rebooting'`. `rebooting` is now a pending status. The refusal and the destroy passed (gone 2.9 s after the refusal).
 - L11 FAIL (test bug, fixed, not re-run): after L10 the state file is gone, and `down` needs `--profile` (cli.md). `Cluster.down` now adds it.
-- LB00[H1], LB03[H1] FAIL (host spec, fixed, not re-run): see "H1". LB03[H1] then failed in its fixture: the parquet input job (`lb_make_parquet.py`) made no progress for 1800 s on the 38-CPU host 36376 that `find` left (cause not analysed).
+- LB00[H1], LB03[H1] FAIL (host spec, fixed, not re-run): see "H1". LB03[H1] then failed in its fixture: the parquet input job (`lb_make_parquet.py`) made no progress for 1800 s (test bug: the cluster had no worker; see the analysis below).
 - LB06 FAIL (test bug, fixed, not re-run): the 60-trial snippet, ASHA and GPU trials passed. The default-storage check read the result line, which cuts each error to 300 characters. The job log has the documented error. The check reads the log now.
-- LB10[gpu2] FAIL (not analysed): the learner snippet gave 1 error and no iterations after 1913 s.
+- LB10[gpu2] FAIL: the learner snippet gave 1 error and no iterations after 1913 s (an NCCL hang; see the analysis below).
 - LB07, LB08, LB11[H1], LB11[H2]: interrupted by the stop (records say "interrupted").
 - Not run: LB03[H3], LB09, LB10[H3], LB12, LB13, LB14.
 
@@ -915,3 +915,30 @@ worker-lifecycle.md now says that the 2026-10-14 times are one measured run, not
 Workarounds: the 4 libraries clusters survived the stop (SIGINT ended the xdist workers before their teardown). They were ended by hand with `ray-vast down` (`_session/libraries-*/down_by_hand.log`, each `left: nothing`). The smoke run's restricted IAM user `ray-vast-livetest-20261016` (kept by `--keep-cluster`) was deleted by hand.
 
 Spend: smoke run vast $0.52, EC2 about $0.20 (5 heads, 0.6 h). Run `002539-287730`: vast $2.12 (credit diff corrected for one $10 top-up), EC2 about $0.40 (4 × t3.large and 1 × t3.medium, about 1 h). Cleanup at 01:26Z: vast label sweep 0 left; AWS check empty for every cluster of both runs in us-west-2 and us-east-2; no ray-vast role, test user, key pair, test group or bucket left; the secret scan of `archive/results/2026-10-16` and `2026-10-17` found no file.
+
+### Analysis of the stopped run and of the parallel free-group flakes (2026-10-17)
+
+No live run. The evidence is the records of `archive/results/2026-10-16/` and `2026-10-17/`, a local Ray 2.59 container, and runs of the free group with `-n 12`.
+
+Fixes of the run, checked again against the records:
+
+- L04: a local Ray 2.59 head gives the agent HTTP port only to `dashboard/agent.py --listen-port`. The old `node_probe.py` gives `InvalidURL` there (as in `L04/probe.log`). The new one finds the port.
+- L07: the archived `L07/monitor_slice.log` has the report line 0.05 s after the signal. The window events find it (`test_live_window.py`).
+- L08: removed from the matrix (F12). Nothing to do.
+- L11: a red test now covers `Cluster.down` without a state file (`--profile`).
+- LB06: the archived job log has both documented texts 4 times. The check reads the log.
+
+Not analysed before:
+
+- LB03[H1] (test bug, fixed): the input job did not run on host 36376. LB00[H1] found no host, so its last `find` ended the last host (`shapes.log`: shape `{}` at 1792197694). The `parquet_in` fixture of LB03 ran before the test asked for its host. The job then waited 1800 s on a cluster with no worker (`No available node types can fulfill resource requests {'CPU': 1.0}`). The test now writes the input after it has its host. Red: `test_lb03_writes_its_parquet_input_on_the_host_of_the_test_also_when_the_cluster_has_no_worker_yet` (the input job ran with 0 workers).
+- LB10[gpu2] (probably a host problem, not confirmed): the 2 learners ran on the 2 GPUs of m29278 (2x RTX A5000). The first NCCL collective (an `ALLGATHER` in the DDP set-up) did not end in 1800 s (`Watchdog caught collective operation timeout ... SeqNum=1`). Then DDP gave `Rank 1 has 12 params, while rank 0 has inconsistent 0 params`. The same snippet passed on m55704 (C10.rllib.R2). A first collective that hangs between 2 GPUs of one host is typical of a host without working GPU peer-to-peer. A re-run with `NCCL_DEBUG=INFO` (and a control with `NCCL_P2P_DISABLE=1`) on that host confirms it. That costs money, and the docs answer is a user decision.
+- LB07, LB11[H1]: stopped before a result (LB07 in its train job, LB11[H1] in its `find`). Nothing points to a bug.
+- LB11[H2]: core, data and tune.tuned completed; core.many hung with the WARNING. data.many completed (verdict FAIL: "the job did not fail"). On a host with 6 Ray CPUs and 18 worker ports, Ray Data makes 6 shuffle aggregators, fewer than the ports. With the CPU quota rule, every host has fewer Ray CPUs than worker ports, so data.many cannot use all the ports. This is a user decision (the Ray CPU count and the CPU quota), not a test fix.
+
+Flakes of the free group with `-n 12`:
+
+- F05 `Address already in use` (also F07 `test_net_raw_cap_and_host_network...`, and the bootstrap failure of the step 5 report): `tests/unit/test_head_server.py` (F06) started its head server on random ports in 20000-20999. Those ports are in the port blocks of the fake worker world, which a bootstrap test (F05) or a host-network container test (F07) in another process held. The bootstrap then could not bind its worker ports. The head server of the test now takes its ports from a reserved block (`reserve_ports`). Red: `test_the_head_server_of_a_test_never_takes_a_port_of_a_port_block_that_a_world_holds`.
+- F08 8 rentals instead of 6 (product bug, fixed): the reconcile pass chose the candidates of a finished request, then ended them one by one. Between the two steps the head server enrolled one of them (1003) into the free slot of another request. The pass then destroyed that worker and its slot, and Ray asked for a new node. `_end` now keeps a candidate that enrolled since the decision. Red: `test_a_candidate_that_enrolls_while_the_pass_ends_its_finished_request_keeps_its_slot`. The fake vast server also raised `KeyError` when the worker and the provider sent DELETE at the same time. It now answers 404, as vast does. Red: `test_two_deletes_of_one_instance_at_the_same_time_give_one_destroy_and_one_404`.
+- F18 (the LB11 refused-forks unit test once, the claim matrix test once): both runs were at times when the tree under test was being changed (02:38 in refactor step 2, 04:08 in step 6). F18 copies that tree. F18 kept only the last 3 lines of pytest, so the record had no detail. It now keeps the full output with the failure lines.
+
+Waits: each `wait_until` that the tests ignored is now a failed check or an error (restricted.py, libraries_setup.py, test_aws.py A03, test_libraries.py LB01 and the C10 probe of LB11, test_lifecycle.py L10).

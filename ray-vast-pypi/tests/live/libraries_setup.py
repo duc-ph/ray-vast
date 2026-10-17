@@ -74,7 +74,9 @@ class S3Access:
         self.note(f"created user {self.user} with the inline policy {json.dumps(policy)} and one access key (not logged)")
         user_s3 = boto3.Session(aws_access_key_id=self.key_id, aws_secret_access_key=self.secret, region_name="us-west-2").client("s3")
         # A new access key takes some seconds to work.
-        wait_until(lambda: user_s3.list_objects_v2(Bucket=self.bucket, MaxKeys=1), 60, done=lambda _: True, poll_s=2)
+        works = wait_until(lambda: user_s3.list_objects_v2(Bucket=self.bucket, MaxKeys=1), 60, done=lambda _: True, poll_s=2)
+        if not works:
+            raise RuntimeError(f"the new access key of {self.user} did not work in 60 s ({works.error})")
         time.sleep(10)
         return self
 

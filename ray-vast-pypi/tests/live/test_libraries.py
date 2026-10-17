@@ -60,20 +60,6 @@ def s3(libraries):
     return libraries.s3()
 
 
-@pytest.fixture
-def parquet_in(libraries, env, s3):
-    """The LB03 input of the host (LB03 runs once on each host): about 3 GB of parquet in s3://<bucket>/lb03/in, written
-    by a job (lb_make_parquet.py)."""
-    path = f"s3://{s3.bucket}/lb03/in"
-    job = libraries.job(env, ["python", "lb_make_parquet.py", path, str(PARQUET_ROWS)], name="make_parquet",
-                        files=[JOBS / "lb_make_parquet.py"], env_vars=s3.env_vars, secrets=[s3.secret], prefix="LB_RESULT", timeout=3600)
-    size = sum(o["Size"] for o in s3.objects("lb03/in/"))
-    (libraries.dir / "parquet_in.json").write_text(json.dumps({"status": job.status, "result": [job.word, job.data], "bytes": size,
-                                                               "rows": PARQUET_ROWS}))
-    assert job.word == "PASS", f"the LB03 input was not written: {job.status} {job.word} {job.data}"
-    return {"path": path, "bytes": size, "rows": PARQUET_ROWS}
-
-
 # --- helpers ------------------------------------------------------------------------------------------------------------
 def c9(cluster, env, record, script, torch=False, timeout=1800, env_vars=None):
     """One C9 job (working dir tests/manual/c9/jobs, as run_c9.py). Returns (word, data) of its C9_RESULT line."""
@@ -185,7 +171,8 @@ def test_LB01_jobs_workflow(record, libraries, env):
     check(record, "runtime_env pip torch==2.7.1: CUDA on both GPU workers", word == "PASS", data)
     sleeper = libraries.job(env, ["python", "c9_0_4_sleeper.py"], record.dir, name="sleeper", working_dir=C9_JOBS, wait=False)
     sid = sleeper.sid
-    wait_until(sleeper.status_now, 300, done=lambda status: status == "RUNNING", poll_s=5)
+    running = wait_until(sleeper.status_now, 300, done=lambda status: status == "RUNNING", poll_s=5)
+    check(record, "the sleeper job is RUNNING (within 300 s)", running.ok, running.seen or running.error)
     ray = str(BIN / "ray")
     listed = subprocess.run([ray, "job", "list", "--address", env["RAY_ADDRESS"]], env=env, capture_output=True, text=True, timeout=120)
     with open(record.dir / "follow.out", "w") as f:  # --follow streams until the job ends: read it for 30 s
@@ -416,13 +403,21 @@ def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
 
 @pytest.mark.limits
 @pytest.mark.parametrize("where", ["H3", "H1"])
-def test_LB03_data_snippet_verbatim(record, libraries, env, s3, parquet_in, where):
-    record.data("input", parquet_in)
+def test_LB03_data_snippet_verbatim(record, libraries, env, s3, where):
     if where == "H3":
         rows, b, cpus = h3(libraries, env, record)
     else:
         rows = [host(libraries, env, record, "H1")]
         b, cpus = b_and_cpus(rows)
+    # The input: about 3 GB of parquet in s3://<bucket>/lb03/in (LB03 runs once on each host), written by a job on the
+    # host of the test. So it runs after the host is in place: the cluster can have no worker before (2026-10-17: after
+    # LB00[H1] found no host, the input job made no progress for 1800 s).
+    parquet_in = {"path": f"s3://{s3.bucket}/lb03/in", "rows": PARQUET_ROWS}
+    job = libraries.job(env, ["python", "lb_make_parquet.py", parquet_in["path"], str(PARQUET_ROWS)], record.dir, name="make_parquet",
+                        files=[JOBS / "lb_make_parquet.py"], env_vars=s3.env_vars, secrets=[s3.secret], prefix="LB_RESULT", timeout=3600)
+    parquet_in["bytes"] = sum(o["Size"] for o in s3.objects("lb03/in/"))
+    record.data("input", {**parquet_in, "status": job.status, "result": [job.word, job.data]})
+    check(record, "the LB03 input is written (lb_make_parquet.py)", job.word == "PASS", (job.status, job.word, job.data))
     out = f"s3://{s3.bucket}/lb03/out-{where}"
     code = snippet("data.md", 0, [("max_hash_shuffle_aggregators = 2", f"max_hash_shuffle_aggregators = {b // 4}"),
                                   ("ExecutionResources(cpu=2)", f"ExecutionResources(cpu={b // 4})"),
@@ -461,7 +456,8 @@ PAIRS = [  # (library, tuned (script, args), many (script, args), torch, job tim
 
 
 def c10_probe(cluster, env, out_dir, wd, name):
-    """c10_probe.py: {node id: read_limits()}; again every 30 s for up to 10 min while a node gives an error."""
+    """c10_probe.py: {node id: read_limits()}; again every 30 s for up to 10 min while a node gives an error (or no row).
+    Still an error after 10 min: a RuntimeError (the pair cannot be judged)."""
     attempts = itertools.count()
 
     def look():
@@ -469,7 +465,10 @@ def c10_probe(cluster, env, out_dir, wd, name):
                            timeout=300).lines("C10_PROBE")
         return rows[-1] if rows else {}
 
-    return wait_until(look, 600, done=lambda found: found and not any("error" in v for v in found.values()), poll_s=30).seen or {}
+    waited = wait_until(look, 600, done=lambda found: found and not any("error" in v for v in found.values()), poll_s=30)
+    if not waited:
+        raise RuntimeError(f"c10 probe {name}: no answer without an error in 600 s (last {waited.seen}, {waited.error})")
+    return waited.seen
 
 
 def diagnose(cluster, env, node, job, out):

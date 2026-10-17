@@ -213,6 +213,30 @@ def test_filled_slot_destroys_the_other_candidates_of_its_request(env):
     assert sorted(env.rules()) == ["198.51.100.101/32", "198.51.100.102/32", "198.51.100.103/32"]
 
 
+def test_a_candidate_that_enrolls_while_the_pass_ends_its_finished_request_keeps_its_slot(env):
+    """F08 (2026-10-17, local e2e under load): the pass picks the candidates of a finished request under the lock, then
+    ends them one by one. The head server can enroll one of them into a free slot of another request in between. That
+    worker must stay: it is no longer a candidate of a finished request."""
+    env.vast.offers = [offer(i, 10 + i) for i in range(1, 7)]
+    p = env.make()
+    slot_1, slot_2, slot_3 = (next(iter(create(p))) for _ in range(3))  # requests 1, 2, 3: candidates 101-102, 103-104, 105-106
+    for iid in range(101, 107):
+        env.vast.run(iid, f"198.51.100.{iid}")
+    p.reconcile_once()
+    enroll(p, 101, slot_1)
+    enroll(p, 102, slot_2)  # request 2 has no free slot now; 103 and 104 are its candidates
+    end = p._end
+
+    def head_enrolls_103_first(cand, reason, *args, **kwargs):
+        if cand.instance_id == 103 and 103 not in p.state.enrolled:
+            enroll(p, 103, slot_3)  # the head server's request thread wins the race for the free slot of request 3
+        return end(cand, reason, *args, **kwargs)
+    p._end = head_enrolls_103_first
+    p.reconcile_once()
+    assert 103 in instance_ids(env) and p.state.slots[slot_3].instance_id == 103
+    assert 104 not in instance_ids(env)
+
+
 def test_free_slot_stays_while_a_pending_candidate_of_its_type_remains(env):
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)

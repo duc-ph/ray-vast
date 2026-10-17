@@ -136,6 +136,10 @@ class FakeVast:
             if method == "GET":
                 return 200, {"instances": self._record(instance_id)}
             if method == "DELETE":
+                with self.lock:  # one DELETE destroys the instance; a DELETE at the same time gets 404, as from vast
+                    if inst.get("deleting"):
+                        return 404, {"error": "no such instance"}
+                    inst["deleting"] = True  # still listed until its container is gone
                 logs = subprocess.run(["docker", "logs", inst["name"]], capture_output=True, text=True)
                 subprocess.run(["docker", "rm", "-f", inst["name"]], capture_output=True)
                 with self.lock:

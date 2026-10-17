@@ -1,5 +1,4 @@
 import logging
-import random
 import socket
 import subprocess
 
@@ -49,25 +48,41 @@ def env(tmp_path, listeners):
     (tmp_path / "head.key").write_bytes(head_key)
     state = ClusterState()
     end = StubEnd()
-    for _ in range(20):  # parallel test runs on the same box share the range 20000-20999
-        port_a, port_b = random.sample(range(20000, 21000), 2)
-        server = HeadServer(
-            state, end, ca_cert, ca_key, tmp_path / "head.pem", tmp_path / "head.key", TOKEN, b"SHIM", b"print('boot')", "127.0.0.1",
-            port_a, port_b, "c1",
-        )
-        try:
-            server.start()
-            break
-        except OSError:
-            server.stop()
-    else:
-        raise RuntimeError("no free port pair")
+    # The ports A and B: the first two of a port block of the fake worker world (tests/fakes/worker_world.py), held until
+    # the end of the test. So a bootstrap test in another process never gets them (the parallel live suite runs both).
+    from fakes.worker_world import reserve_ports
+    block, port_lock = reserve_ports(67)
+    port_a, port_b = block, block + 1
+    server = HeadServer(
+        state, end, ca_cert, ca_key, tmp_path / "head.pem", tmp_path / "head.key", TOKEN, b"SHIM", b"print('boot')", "127.0.0.1",
+        port_a, port_b, "c1",
+    )
+    server.start()
     (tmp_path / "ca.pem").write_bytes(ca_cert)
     yield type("Env", (), dict(
         state=state, end=end, server=server, ca_cert=ca_cert, ca_key=ca_key, ca_file=str(tmp_path / "ca.pem"),
         port_a=port_a, port_b=port_b, ports=listeners, tmp=tmp_path,
     ))
     server.stop()
+    port_lock.close()
+
+
+@pytest.fixture
+def worlds(tmp_path):
+    """15 fake worker worlds (tests/fakes/worker_world.py), made before `env` when a test names them first: their port
+    blocks cover 20000-21004. Each world holds its block before its bootstrap binds the 64 worker ports."""
+    from fakes.worker_world import World
+    made = [World(tmp_path / f"world{n}") for n in range(15)]
+    yield made
+    for w in made:
+        w.stop()
+
+
+def test_the_head_server_of_a_test_never_takes_a_port_of_a_port_block_that_a_world_holds(worlds, env):
+    """F05 and F07 (the parallel live suite): this file's head server bound random ports in 20000-20999 while a bootstrap
+    test in another process held that block and was about to bind its worker ports there (`Address already in use`)."""
+    held = {port for w in worlds for port in range(w.port_base, w.port_base + 67)}
+    assert {env.port_a, env.port_b}.isdisjoint(held), (env.port_a, env.port_b)
 
 
 def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN_TOKEN, node_type="gpu", machine_id=7,

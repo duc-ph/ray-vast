@@ -42,14 +42,17 @@ def small_config(suffix):
 
 
 def run_until(cluster, args, ready, timeout=900):
-    """Start `ray-vast <args>` and send SIGINT (Ctrl-C) once `ready()` is true. Returns its output."""
+    """Start `ray-vast <args>` and send SIGINT (Ctrl-C) once `ready()` is true (or the command ended). Returns its output.
+    Not ready in `timeout` s: the Ctrl-C still goes out, then a TimeoutError."""
     proc = subprocess.Popen([str(BIN / "ray-vast"), *map(str, args)], env=cluster.env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, start_new_session=True)
-    wait_until(lambda: proc.poll() is not None or ready(), timeout, poll_s=1)
+    waited = wait_until(lambda: proc.poll() is not None or ready(), timeout, poll_s=1)
     proc.send_signal(signal.SIGINT)
     out = proc.communicate(timeout=300)[0]
     with open(cluster.dir / "cli.log", "a") as f:
         f.write(f"\n=== ray-vast {' '.join(map(str, args))} (Ctrl-C when ready; exit {proc.returncode})\n{out}")
+    if not waited:
+        raise TimeoutError(f"ray-vast {args[0]}: not ready in {timeout} s ({waited.error or 'no error'}): {out[-300:]}")
     return out
 
 
@@ -114,8 +117,9 @@ def test_A03_down_recovery(record, new_cluster, tmp_path):
     ids = [h["InstanceId"] for h in heads]
     ec2.terminate_instances(InstanceIds=ids)
     # Not the boto3 waiter: it fails at once when it sees the head still `pending`.
-    wait_until(lambda: [i["State"]["Name"] for r in ec2.describe_instances(InstanceIds=ids)["Reservations"] for i in r["Instances"]], 600,
-               done=lambda states: all(s == "terminated" for s in states), poll_s=10)
+    terminated = wait_until(lambda: [i["State"]["Name"] for r in ec2.describe_instances(InstanceIds=ids)["Reservations"]
+                                     for i in r["Instances"]], 600, done=lambda states: all(s == "terminated" for s in states), poll_s=10)
+    check(record, "(c) the head is terminated by hand (within 600 s)", terminated.ok, terminated.seen or terminated.error)
     if b.state_dir.joinpath(f"{b.name}.json").exists():
         done = b.cli("attach", b.yaml)
         check(record, "attach without a running head: one-line error", done.returncode == 1 and f"no running head for cluster {b.name}"

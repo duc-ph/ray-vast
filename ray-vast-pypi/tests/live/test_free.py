@@ -280,7 +280,7 @@ python -V
 ray-vast --help | head -3
 mkdir -p /tmp/repo/docs /tmp/repo/tests && cp /plan/test-plan.md /tmp/repo/docs/ && cp -r /manual /tmp/repo/tests/manual && cp -r /pkg /tmp/repo/ray-vast-pypi && cd /tmp/repo/ray-vast-pypi && rm -rf .venv
 pip install -q -e '.[test]' > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
-python -m pytest -q -p no:cacheprovider tests/unit 2>&1 | tail -3
+python -m pytest -q -rfE -p no:cacheprovider tests/unit 2>&1
 """
     done = docker("run", "--rm", "-v", f"{dist}:/dist:ro", "-v", f"{PKG}:/pkg:ro", "-v", f"{PKG.parent / 'docs'}:/plan:ro",
                   "-v", f"{PKG.parent / 'tests' / 'manual'}:/manual:ro", "python:3.10",
@@ -289,8 +289,9 @@ python -m pytest -q -p no:cacheprovider tests/unit 2>&1 | tail -3
     check(record, "Python 3.10", "Python 3.10" in done.stdout, re.findall(r"Python 3\.\S+", done.stdout))
     check(record, "ray-vast --help works", "usage: ray-vast" in done.stdout, "")
     passed = re.search(r"(\d+) passed", done.stdout)
-    check(record, "fast unit run passes on 3.10", done.returncode == 0 and passed and "failed" not in done.stdout.splitlines()[-1],
-          done.stdout.strip().splitlines()[-1:])
+    lines = done.stdout.strip().splitlines()
+    check(record, "fast unit run passes on 3.10", done.returncode == 0 and passed and "failed" not in lines[-1],
+          [x for x in lines if x.startswith(("FAILED", "ERROR"))][:5] + lines[-1:])
 
 
 def _doc_queries():

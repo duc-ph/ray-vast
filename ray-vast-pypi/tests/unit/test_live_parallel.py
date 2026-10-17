@@ -456,3 +456,128 @@ def test_a_wait_of_the_lifecycle_group_that_times_out_fails_its_test_and_never_p
         assert "1 error" in out and "the hold job printed no HOLD_READY in 1800 s" in out, out
         assert not record.exists()  # the module fixture runs before the record: the summary says NOT RUN, never PASS
         assert [e[0] for e in events if e[0] in ("JOB", "JOB_STOP")] == ["JOB", "JOB_STOP"]
+
+
+LIBRARIES_CLUSTER = '''
+import sys
+
+BIN = Path(sys.executable).parent
+LIVE = Path(os.environ["REAL_LIVE"])
+JOBS, MANUAL = LIVE / "jobs", LIVE.parents[2] / "tests" / "manual"
+
+
+def free_port():
+    return 18000
+
+
+def wait_port(port, timeout=60):
+    return True
+'''
+
+FAKE_LIBRARIES_FOR_LB03 = '''
+from contextlib import contextmanager
+from types import SimpleNamespace
+
+from cluster import Cluster, event
+
+HOST_TYPE = {"H1": "h1", "H2": "h2", "H3": "gpu", "gpu2": "gpu2"}
+PINS = {"h1": {"want": {"cpus": {"gte": 32}}}, "h2": {"want": {"cgroup": "v2"}}}
+
+
+def row(kind):
+    return {"container_id": "41", "machine_id": 9, "node_id": f"node-{kind}", "ports": 18, "ray_cpus": 40, "pids.max": "9728",
+            "node_type": kind}
+
+
+def probe(cluster, env, out_dir, name="probe"):
+    return {kind: [row(kind)] for kind, n in cluster.shape.items() if n}
+
+
+def alive_workers(cluster):
+    return {kind: [f"node-{kind}"] for kind, n in cluster.shape.items() if n}
+
+
+def b_and_cpus(rows):
+    return min(r["ports"] for r in rows) - 4, max(r["ray_cpus"] for r in rows)
+
+
+class Job(SimpleNamespace):
+    def lines(self, prefix):
+        return []
+
+
+class S3:
+    bucket, env_vars, secret = "ray-vast-rvtest-20261017-abcd", {"AWS_ACCESS_KEY_ID": "id"}, "s3-secret"
+
+    def objects(self, prefix):
+        return [{"Key": prefix + "part-0.parquet", "Size": 1}]
+
+
+class Window:
+    def lines(self):
+        return []
+
+    def events(self, kind=None, instances=None, lines=None):
+        return []
+
+
+class LibrariesCluster(Cluster):
+    """A cluster with no worker at its start (LB00[H1] found no host: its last mismatch was ended). A job runs only
+    when a worker runs (else it makes no progress, as in the 2026-10-17 run)."""
+    def __init__(self, run, group_dir, home, host, suffix, kept):
+        config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
+        super().__init__(run, config, group_dir, home, kept)
+        self.shape, self.matched = {}, {}
+
+    @contextmanager
+    def tunnel(self):
+        yield {"RAY_ADDRESS": "http://127.0.0.1:1", "RAY_AUTH_TOKEN_PATH": "/dev/null"}
+
+    def s3(self):
+        return S3()
+
+    def window(self, from_start=False):
+        return Window()
+
+    def ensure_shape(self, shape):
+        event("SHAPE", *[f"{k}={v}" for k, v in shape.items()])
+        self.shape = dict(shape)
+        return 0.0
+
+    def find(self, env, kind, want, keep, out_dir):
+        self.ensure_shape({**keep, kind: 1})
+        facts = {"machine_id": 9, "probe": dict(row(kind), machine_id=9)}
+        self.matched[kind] = facts
+        return facts, [dict(facts, match=True)]
+
+    def job(self, env, entrypoint, out_dir=None, name="job", **options):
+        workers = sum(self.shape.values())
+        event("JOB", name, f"workers={workers}")
+        if not workers:
+            return Job(status="FAILED", word="FAIL", data={"error_class": "ExecutionTimeoutError"}, log="")
+        return Job(status="SUCCEEDED", word="PASS", data={}, log="")
+
+    def keep_one_worker(self, record):
+        pass
+
+    def end_checks(self, record, done):
+        return []
+'''
+
+
+@pytest.mark.slow
+def test_lb03_writes_its_parquet_input_on_the_host_of_the_test_also_when_the_cluster_has_no_worker_yet(tmp_path):
+    """LB03[H1] (2026-10-17): the input job ran before the test asked for its host, on a cluster with no worker (LB00[H1]
+    had found no host), and made no progress for 1800 s. The real test_libraries.py with a fake libraries cluster."""
+    suite = _suite(tmp_path / "pkg" / "tests")  # test_libraries.py reads the docs at parents[2] / "docs"
+    (tmp_path / "pkg" / "docs").symlink_to(LIVE.parents[1] / "docs")
+    for name in ("test_libraries.py", "livejob.py"):
+        shutil.copy(LIVE / name, suite / name)
+    (suite / "window.py").write_text(FAKE_WINDOW)
+    (suite / "cluster.py").write_text(FAKE_CLUSTER + LIBRARIES_CLUSTER)
+    (suite / "libraries_setup.py").write_text(FAKE_LIBRARIES_FOR_LB03)
+    code, out, events = _run(tmp_path, suite, "-k", "LB03 and H1", extra_env={"REAL_LIVE": str(LIVE)})
+    jobs = [e[1] for e in events if e[0] in ("JOB", "SHAPE")]
+    assert ["make_parquet", "workers=0"] not in jobs, jobs
+    assert jobs[:2] == [["h1=1"], ["make_parquet", "workers=1"]], jobs
+    assert code == 0, out

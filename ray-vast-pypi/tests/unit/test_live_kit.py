@@ -481,6 +481,21 @@ def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
     return _cluster_module(monkeypatch).Cluster(run, config, tmp_path / "out", tmp_path / "home", **kwargs)
 
 
+def test_a_down_after_an_earlier_down_deleted_the_state_file_names_the_profile_of_the_cluster(tmp_path, monkeypatch):
+    """L11 (2026-10-17): L10's `down` deleted the state file; the teardown's `down` had no AWS profile then (cli.md: without
+    a state file `down` needs `--profile`), so it failed with `no AWS credentials`."""
+    run = livekit.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch, profile="ray-vast-livetest")
+    calls = []
+    monkeypatch.setattr(made, "cli", lambda *args, env=None: calls.append(args) or "done")
+    state = made.state_dir / f"{made.name}.json"
+    state.write_text('{"head_ip": "192.0.2.1"}')
+    made.down()
+    state.unlink()
+    made.down()
+    assert calls == [("down", made.yaml), ("down", made.yaml, "--profile", "ray-vast-livetest")]
+
+
 class _FakeVast:
     """The vast account at the seam of cluster.vast(): its instances; a destroy removes one."""
 

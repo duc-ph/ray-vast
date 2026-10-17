@@ -79,7 +79,9 @@ class RestrictedUser:
         self.secret = key["SecretAccessKey"]
         self.session = boto3.Session(aws_access_key_id=key["AccessKeyId"], aws_secret_access_key=key["SecretAccessKey"])
         # A new access key takes some seconds to work.
-        wait_until(self.session.client("sts").get_caller_identity, 60, done=lambda _: True, poll_s=2)
+        works = wait_until(self.session.client("sts").get_caller_identity, 60, done=lambda _: True, poll_s=2)
+        if not works:
+            raise RuntimeError(f"the new access key of {self.name} did not work in 60 s ({works.error})")
         time.sleep(10)
         return self
 
