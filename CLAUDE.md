@@ -2,8 +2,6 @@
 
 A Ray autoscaler NodeProvider for vast.ai workers with an AWS EC2 head. PyPI name `ray-vast`, import `ray_vast`. Package source in `ray-vast-pypi/`.
 
-To continue the work: read `docs/handoff.md` first.
-
 Read first: `CONTEXT.md` (terms), `docs/design.md` (the spec, with the Ray facts F1–F12 and the worker ↔ head protocol), `docs/implementation-plan.md` (steps and status), `docs/decisions.md` (reasons, D1–D9).
 
 Docs layout: one topic in one file. `docs/` holds the project docs (design, decisions, plan, spikes, shim, tests, future work, agent instructions in `docs/agents/`). `ray-vast-pypi/` holds the user docs (README, CHANGELOG, CONTRIBUTING, the MkDocs site in `docs/` with `mkdocs.yml`). `archive/` holds raw test data.
