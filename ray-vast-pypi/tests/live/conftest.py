@@ -14,7 +14,8 @@
   (for libraries also the destroyed worker and the S3 cleanup); a problem fails the run.
 - Declared needs: a test states a need with a marker of `livekit.NEEDS`, never the kit with a scenario ID.
   `exclusive_account`: the test runs first (in one process before every other test; in an xdist run its group is the
-  first work unit), and every cluster `up` of the run waits until each such test ended (`after_exclusive_account`).
+  first work unit), and every cluster `up` of the run and the restricted IAM user wait until each such test ended
+  (`after_exclusive_account`).
   `box_disk`: the tests share one process (one after the other).
 - Parallel runs: `pytest tests/live -n 12` (pytest-xdist; this file makes it `--dist loadgroup`, in the collection order).
   Each cluster and the tests that share its setup are one xdist group, and so is each need (`livekit.xdist_group`), so
@@ -23,7 +24,7 @@
   while its head runs, and no `down` runs at the end (the scenarios that end the cluster skip). A run without the option
   ends a kept cluster of its groups first, then makes a fresh one.
 - At the end of the run, once, after every worker ended, only the run-wide guards (`livekit.end_of_run`): a label sweep
-  of `ray-vast-test-<date>` (and of a cluster that did not end), the account-wide AWS check of the suite names, and the
+  of `ray-vast-test-<date>` (and of a suite cluster that did not end), the account-wide AWS check of the suite names, and the
   summary. Each process first scans the records that no cluster owns (`Run.scan_unowned`).
 Environment: RAYVAST_LIVE_PROFILE (admin AWS profile, default `personal`), RAYVAST_LIVE_RESULTS (default
 <repo>/archive/results/<UTC date>). The vast key comes from VAST_API_KEY or ~/.config/vastai/vast_api_key.
@@ -125,9 +126,9 @@ def pytest_runtest_protocol(item, nextitem):
 
 
 def after_exclusive_account(config):
-    """Every cluster `up` (of a group, or a scenario's own) waits here until each selected `exclusive_account` test ended,
-    in any process of the run (at most EXCLUSIVE_WAIT_S, then a TimeoutError). In one process they ran first, so it
-    returns at once."""
+    """Every cluster `up` (of a group, or a scenario's own) and the restricted IAM user wait here until each selected
+    `exclusive_account` test ended, in any process of the run (at most EXCLUSIVE_WAIT_S, then a TimeoutError). In one
+    process they ran first, so it returns at once."""
     config.stash[RUN].wait_ended(config.stash.get(EXCLUSIVE, []), EXCLUSIVE_WAIT_S)
 
 
@@ -180,7 +181,7 @@ def new_cluster(request, run, record):
     def make(config, out_dir, home):
         if not exclusive_account(request.node):
             after_exclusive_account(request.config)
-        made.append(Cluster(run, "none", config, out_dir, home))
+        made.append(Cluster(run, config, out_dir, home))
         return made[-1]
     yield make
     problems = [f"{c.name}: {p}" for c in made for p in end(run, c)]
@@ -257,7 +258,7 @@ def group_lifetime(run, group, make, request, tmp_path_factory, before_down=None
 
 @pytest.fixture(scope="session")
 def aws_only(request, tmp_path_factory, run):
-    yield from group_lifetime(run, "aws_only", lambda d, home, sfx, kept: Cluster(run, "aws_only", _load("aws_only", sfx), d, home, kept),
+    yield from group_lifetime(run, "aws_only", lambda d, home, sfx, kept: Cluster(run, _load("aws_only", sfx), d, home, kept),
                               request, tmp_path_factory)
 
 
@@ -265,12 +266,14 @@ def aws_only(request, tmp_path_factory, run):
 def restricted_user(request, tmp_path_factory, run):
     """The IAM user `ray-vast-livetest-<date>` with only the policy `ray-vast-user`, made with the getting-started
     commands (as the admin), and a credentials file with its profile. Deleted at the end of the session (kept and reused
-    with --keep-cluster)."""
+    with --keep-cluster). It waits for the `exclusive_account` tests, as every cluster `up` does: they change the
+    account policies that the user's tests check."""
     from restricted import RestrictedUser
     keep = request.config.getoption("--keep-cluster")
     user = RestrictedUser(run.group_dir("restricted_user"), KEEP_HOME / "restricted_user" if keep else tmp_path_factory.mktemp("iam"), DATE)
 
     def create():
+        after_exclusive_account(request.config)
         if not (keep and user.reuse()):
             user.create()
         run.secret(user.secret)
@@ -281,7 +284,7 @@ def restricted_user(request, tmp_path_factory, run):
 @pytest.fixture(scope="session")
 def lifecycle(request, tmp_path_factory, run, restricted_user):
     def make(d, home, sfx, kept):
-        return Cluster(run, "lifecycle", _load("lifecycle", sfx), d, home, kept, profile=restricted_user.profile,
+        return Cluster(run, _load("lifecycle", sfx), d, home, kept, profile=restricted_user.profile,
                        credentials_file=restricted_user.credentials_file)
     yield from group_lifetime(run, "lifecycle", make, request, tmp_path_factory)
 

@@ -405,8 +405,8 @@ def test_the_end_of_a_run_does_only_the_run_wide_guards_and_sums_up_the_problems
     (run.dir / "scan_gw1.txt").write_text("A10/denials.txt\n")  # a record that no cluster owns
     swept, checked = [], []
 
-    def sweep(prefixes):
-        swept.append(prefixes)
+    def sweep(labels, prefixes=()):
+        swept.append((labels, prefixes))
         return ["0 left"]
 
     def account_check(regions, skip):
@@ -414,7 +414,7 @@ def test_the_end_of_a_run_does_only_the_run_wide_guards_and_sums_up_the_problems
         return ["security group sg-9 (ray-vast-rvtest-old-0000-head)"]
 
     problems, kept = livekit.end_of_run(run.dir, "ray-vast-test-20261016", sweep, account_check)
-    assert swept == [["ray-vast-test-20261016"]]                       # each ended cluster had its own sweep
+    assert swept == [([], ["ray-vast-test-20261016"])]                 # each ended cluster had its own sweep
     assert checked == [(["us-east-2", "us-west-2"], ["rvtest-life-keep"])]
     assert problems == ["rvtest-aws-1a2b: AWS left: volume vol-1",
                         "AWS account check: security group sg-9 (ray-vast-rvtest-old-0000-head)",
@@ -425,13 +425,15 @@ def test_the_end_of_a_run_does_only_the_run_wide_guards_and_sums_up_the_problems
 def test_a_cluster_that_joined_the_run_but_never_ended_is_a_problem_and_the_final_sweep_takes_its_label(tmp_path):
     run = livekit.Run(tmp_path, "run1")
     _opened(run, "rvtest-lib-h1-1a2b", kept=False)  # its worker process died before the teardown
+    _opened(run, "gpu-24gb", kept=False)  # not a suite name: a user's cluster can have this label, so never a label sweep
 
-    def sweep(prefixes):
-        assert prefixes == ["ray-vast-test-20261016", "ray-vast:rvtest-lib-h1-1a2b"]
+    def sweep(labels, prefixes=()):
+        assert (labels, prefixes) == (["ray-vast:rvtest-lib-h1-1a2b"], ["ray-vast-test-20261016"])
         raise RuntimeError("vast is down")
 
     problems, kept = livekit.end_of_run(run.dir, "ray-vast-test-20261016", sweep, lambda regions, skip: [])
     assert problems == ["vast sweep failed: RuntimeError: vast is down",
+                        "gpu-24gb joined the run but did not end: run HOME=/h/gpu-24gb ray-vast down /r/gpu-24gb.yaml",
                         "rvtest-lib-h1-1a2b joined the run but did not end: run HOME=/h/rvtest-lib-h1-1a2b ray-vast down "
                         "/r/rvtest-lib-h1-1a2b.yaml"]
     assert kept == []
@@ -462,16 +464,91 @@ def test_a_record_of_the_run_goes_under_its_record_root_and_marks_the_run_as_liv
     assert (tmp_path / "results" / "A05" / "result.json").exists() and run.live
 
 
-def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
+def _cluster_module(monkeypatch):
+    """tests/live/cluster.py, imported fresh, with a fake vast key."""
     import sys
     from pathlib import Path
     monkeypatch.syspath_prepend(str(Path(livekit.__file__).parent))
     monkeypatch.setenv("VAST_API_KEY", "fake-key")
     sys.modules.pop("cluster", None)
     import cluster
+    return cluster
+
+
+def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
     config = {"cluster_name": "rvtest-a03b-1a2b", "head_node_type": "head",
               "available_node_types": {"head": {"node_config": {"region": "us-west-2"}}}}
-    return cluster.Cluster(run, "none", config, tmp_path / "out", tmp_path / "home", **kwargs)
+    return _cluster_module(monkeypatch).Cluster(run, config, tmp_path / "out", tmp_path / "home", **kwargs)
+
+
+class _FakeVast:
+    """The vast account at the seam of cluster.vast(): its instances; a destroy removes one."""
+
+    def __init__(self, labels):
+        self.instances = [{"id": n, "label": text} for n, text in enumerate(labels, 1)]
+        self.destroyed = []
+
+    def list_instances(self):
+        return list(self.instances)
+
+    def destroy_instance(self, instance_id):
+        self.destroyed.append(instance_id)
+        self.instances = [i for i in self.instances if i["id"] != instance_id]
+
+
+def _vast_account(monkeypatch, labels):
+    cluster = _cluster_module(monkeypatch)
+    account = _FakeVast(labels)
+    monkeypatch.setattr(cluster, "vast", lambda: account)
+    monkeypatch.setattr(cluster.time, "sleep", lambda s: None)
+    return cluster, account
+
+
+def test_the_label_sweep_of_a_cluster_destroys_only_the_instances_with_exactly_its_label(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast:rvtest-life-1a2b", "ray-vast:rvtest-life-1a2b-old", "ray-vast:gpu-24gb",
+                                                   "ray-vast:gpu-24gb-mine", None])
+    lines = cluster.sweep_label(["ray-vast:rvtest-life-1a2b"])
+    assert account.destroyed == [1] and "destroyed 1 (ray-vast:rvtest-life-1a2b)" in lines and lines[-1].endswith(" 0 left")
+
+
+def test_the_sweep_takes_a_prefix_only_for_the_suite_test_label_and_refuses_any_other_prefix(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast-test-20261017", "ray-vast-test-20261017-b", "my-ray-vast-test-20261017",
+                                                   "ray-vast:rvtest-life-1a2b", "ray-vast:gpu-24gb"])
+    cluster.sweep_label(["ray-vast:rvtest-life-1a2b"], prefixes=["ray-vast-test-20261017"])
+    assert account.destroyed == [1, 2, 4]
+    for prefix in ("ray-vast:", "ray-vast:gpu-24gb", "ray-vast-test-", ""):
+        with pytest.raises(ValueError, match="test label"):
+            cluster.sweep_label([], prefixes=[prefix])
+    assert account.destroyed == [1, 2, 4]
+
+
+def test_a_sweep_with_instance_ids_destroys_only_those_instances_of_the_label(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast:gpu-24gb", "ray-vast:gpu-24gb", "ray-vast:gpu-24gb"])
+    cluster.sweep_label(["ray-vast:gpu-24gb"], ids=[2])
+    assert account.destroyed == [2]
+    cluster.sweep_label(["ray-vast:gpu-24gb"], ids=[])
+    assert account.destroyed == [2]
+
+
+@pytest.mark.parametrize("vast_labels, aws_left", [
+    (["ray-vast:gpu-24gb"], []),                           # the user's own vast instance of a cluster gpu-24gb
+    ([], ["key pair ray-vast-gpu-24gb"]),                  # the user's own AWS cluster ray-vast-gpu-24gb
+    (["ray-vast:gpu-24gb-mine", "ray-vast-test-20261017"], None),  # other labels: the release cluster can start
+])
+def test_the_release_cluster_refuses_to_start_when_a_cluster_of_its_name_already_exists_and_destroys_nothing(
+        tmp_path, monkeypatch, vast_labels, aws_left):
+    cluster, account = _vast_account(monkeypatch, vast_labels)
+    checked = []
+    monkeypatch.setattr(cluster, "_aws_leftovers", lambda name, region, profile: checked.append((name, region)) or aws_left or [])
+    run = livekit.Run(tmp_path / "results", "run1")
+    if aws_left is None:
+        made = cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+        assert made.name == "gpu-24gb" and [p.name for p in (run.dir / "opened").glob("*.json")] == ["gpu-24gb.json"]
+    else:
+        with pytest.raises(RuntimeError, match="gpu-24gb already exists"):
+            cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+        assert not (run.dir / "opened").exists()   # it never joined the run: no `down`, no sweep, no end
+    assert checked == [("gpu-24gb", "us-east-2")] and account.destroyed == []
 
 
 @pytest.mark.parametrize("kept", [False, True])
@@ -573,8 +650,8 @@ class _Done:
 class _FakeCluster:
     """A cluster at the seam of `livekit.end_cluster`: its `down` outputs come from `downs`, one for each call."""
 
-    def __init__(self, run, tmp_path, name="rvtest-life-1a2b", kept=False, downs=None, last_down=None):
-        self.name, self.region, self.kept, self.last_down = name, "us-east-2", kept, last_down
+    def __init__(self, run, tmp_path, name="rvtest-life-1a2b", kept=False, downs=None, last_down=None, timeline=()):
+        self.name, self.region, self.kept, self.last_down, self.timeline = name, "us-east-2", kept, last_down, list(timeline)
         self.yaml, self.home, self.secrets = tmp_path / f"{name}.yaml", tmp_path / "home", []
         self.records = [tmp_path / "results" / "_session" / name]
         self.records[0].mkdir(parents=True)
@@ -589,10 +666,11 @@ class _FakeCluster:
 
 def _guards():
     """A fake vast sweep and AWS check that log their calls. `left` sets what each one finds."""
-    calls = {"sweep": [], "aws": [], "destroyed": [], "left": []}
+    calls = {"sweep": [], "ids": [], "aws": [], "destroyed": [], "left": []}
 
-    def sweep(prefixes):
-        calls["sweep"].append(prefixes)
+    def sweep(labels, ids=None):
+        calls["sweep"].append(labels)
+        calls["ids"].append(ids)
         return ["0 left"] if not calls["destroyed"] else ["1 left", *calls["destroyed"], "0 left"]
 
     def aws_check(name, region):
@@ -657,12 +735,25 @@ def test_a_kept_cluster_gets_no_down_no_sweep_and_no_aws_check_but_its_records_a
 
 def test_a_cluster_that_a_scenario_already_ended_cleanly_gets_no_second_down_but_still_its_sweep_and_aws_check(tmp_path):
     run = livekit.Run(tmp_path / "results", "run1")
-    cluster = _FakeCluster(run, tmp_path, name="gpu-24gb", last_down=_Done())  # R02 ran the tutorial's `down`
+    cluster = _FakeCluster(run, tmp_path, name="gpu-24gb", last_down=_Done(),  # R02 ran the tutorial's `down`
+                           timeline=[{"t": 1.0, "instances": [{"id": 41}]}, {"t": 2.0, "error": "ConnectionError"},
+                                     {"t": 3.0, "instances": [{"id": 41}, {"id": 42}]}, {"t": 4.0, "instances": []}])
     calls, sweep, aws_check = _guards()
     seen = []
     assert livekit.end_cluster(run, cluster, sweep, aws_check, after_down=lambda done: seen.append(done) or []) == []
     assert cluster.down_calls == 0 and seen == [cluster.last_down]
     assert calls["sweep"] == [["ray-vast:gpu-24gb"]] and calls["aws"] == [("gpu-24gb", "us-east-2")]
+    # gpu-24gb is not a suite name: a user can have a cluster of that name on the same account. The sweep may destroy
+    # only the instances that this run saw for the cluster (its timeline), never every instance with the label.
+    assert calls["ids"] == [[41, 42]]
+
+
+def test_the_sweep_of_a_suite_cluster_takes_its_label_with_no_instance_id_filter(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, timeline=[{"t": 1.0, "instances": [{"id": 41}]}])
+    calls, sweep, aws_check = _guards()
+    livekit.end_cluster(run, cluster, sweep, aws_check)
+    assert calls["sweep"] == [["ray-vast:rvtest-life-1a2b"]] and calls["ids"] == [None]
 
 
 def test_a_cluster_whose_up_failed_half_way_still_gets_the_sweep_and_the_aws_check_when_down_or_vast_fails(tmp_path):
@@ -694,6 +785,19 @@ def test_the_process_scan_reads_each_record_of_the_process_that_no_cluster_owns(
     cluster.records.append(owned.dir)
     run.record("F01", ["free"], "none").evidence("ok.txt", "nothing secret")
     assert run.scan_unowned() == ["A10/denials.txt", "_session/restricted_user/user.log"]
+
+
+def test_a_secret_in_the_record_of_a_scenario_s_own_cluster_is_reported_once_by_that_cluster_s_end_not_by_the_process_scan(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    run.secret("iam-user-secret")
+    record = run.record("A03", ["aws"], "none")
+    record.evidence("a/cli.log", "iam-user-secret")    # the scenario's own cluster records <record>/a
+    record.evidence("check.txt", "iam-user-secret")    # the scenario's own file: no cluster owns it
+    own = _FakeCluster(run, tmp_path, name="rvtest-own-1a2b")
+    own.records = [record.dir / "a"]
+    calls, sweep, aws_check = _guards()
+    assert livekit.end_cluster(run, own, sweep, aws_check) == [f"the secret scan found 1 file(s): {record.dir / 'a' / 'cli.log'}"]
+    assert run.scan_unowned() == ["A03/check.txt"]
 
 
 def test_in_lb11_refused_forks_are_data_so_a_tuned_run_with_refused_forks_still_passes(monkeypatch):

@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -29,7 +30,7 @@ class Done:
 
 
 class Cluster:
-    def __init__(self, run, fixture, config, out_dir, home, kept=False, profile=None, credentials_file=None):
+    def __init__(self, run, config, out_dir, home, kept=False, profile=None, credentials_file=None):
         self.name, self.config, self.dir, self.home, self.kept = config["cluster_name"], config, Path(out_dir), Path(home), kept
         self.dir.mkdir(parents=True, exist_ok=True)
         self.yaml, self.region, self.secrets, self.timeline, self.up_output = self.dir / "cluster.yaml", "us-west-2", [], [], None
@@ -92,8 +93,8 @@ def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
     return []
 
 
-def sweep_label(prefixes):
-    event("SWEEP", *prefixes)
+def sweep_label(labels, prefixes=(), ids=None):
+    event("SWEEP", *labels, *[f"prefix={p}" for p in prefixes], *([] if ids is None else [f"ids={','.join(map(str, ids))}"]))
     return ["0 left"]
 
 
@@ -104,7 +105,8 @@ def vast_key():
 class ReleaseCluster(Cluster):
     """The release cluster: the user's YAML verbatim, so its name is not a suite name."""
     def __init__(self, run, out_dir, home, region, version):
-        super().__init__(run, "release", {"cluster_name": "gpu-24gb"}, out_dir, home)
+        super().__init__(run, {"cluster_name": "gpu-24gb"}, out_dir, home)
+        self.timeline = [{"t": 1.0, "instances": [{"id": 7}]}]  # its poller saw instance 7
 '''
 
 FAKE_RESTRICTED = '''
@@ -133,7 +135,7 @@ from cluster import Cluster, event
 class LibrariesCluster(Cluster):
     def __init__(self, run, group_dir, home, host, suffix, kept):
         config = {"cluster_name": f"rvtest-lib-{host.lower()}-{suffix}", "available_node_types": {"head": {"node_config": {}}}}
-        super().__init__(run, "libraries", config, group_dir, home, kept)
+        super().__init__(run, config, group_dir, home, kept)
 
     def keep_one_worker(self, record):
         event("KEEP_ONE", self.name)
@@ -258,6 +260,7 @@ def _run(tmp_path, suite, *args, extra_env=None):
 
 
 CLUSTERS = ("rvtest-aws", "rvtest-life", "rvtest-lib-h1", "rvtest-lib-h3")
+TEST_LABEL = "ray-vast-test-" + time.strftime("%Y%m%d", time.gmtime())
 
 
 @pytest.mark.slow
@@ -273,6 +276,8 @@ def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_r
         assert pid == ups[name][2], (scenario, name)                            # the tests of a cluster run in its process
     exclusive_end = next(e[3] for e in events if e[0] == "X01_END")
     assert all(e[3] >= exclusive_end for e in ups.values())                    # every `up` (also a scenario's own) after `exclusive_account`
+    a10 = next(e for e in events if e[0] == "RUN" and e[1][0] == "A10")
+    assert a10[3] >= exclusive_end                                              # the restricted user too (A02 deletes the boundary policy)
     box = [e for e in events if e[0] == "RUN" and e[1][0] in ("F17", "F20")]
     assert len(box) == 2 and len({e[2] for e in box}) == 1                      # `box_disk`: one process, one after the other
     assert [e[0] for e in events].count("USER_CREATE") == 1 and [e[0] for e in events].count("USER_DELETE") == 1
@@ -280,7 +285,7 @@ def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_r
         assert [(e[0], e[1]) for e in events if e[2] == pid and name in " ".join(e[1]) and e[0] in ("DOWN", "SWEEP", "AWSCHECK")] == [
             ("DOWN", [name]), ("SWEEP", [f"ray-vast:{name}"]), ("AWSCHECK", [name])], name
     final = [e for e in events if e[0] in ("SWEEP", "ACCOUNTCHECK") and not any(f.startswith("ray-vast:") for f in e[1])]
-    assert [(e[0], e[1][0][:14]) for e in final] == [("SWEEP", "ray-vast-test-"), ("ACCOUNTCHECK", "us-west-2")]  # once, the test label only
+    assert [(e[0], e[1][0][:21]) for e in final] == [("SWEEP", "prefix=ray-vast-test-"), ("ACCOUNTCHECK", "us-west-2")]  # once, the test label only
     assert min(e[3] for e in final) >= max(e[3] for e in events if e[0] == "AWSCHECK")  # after every cluster ended
     if workers:
         assert {e[2] for e in final}.isdisjoint({e[2] for e in events if e[0] in ("RUN", "UP")})  # the controller, not a worker
@@ -315,7 +320,7 @@ def test_a_kept_cluster_is_reused_never_ended_or_swept_and_a_run_without_the_opt
     assert code == 0, out
     assert sorted(e[1][0] for e in events if e[0] == "UP") == sorted(f"{c}-keep" for c in CLUSTERS)
     assert not [e for e in events if e[0] in ("DOWN", "AWSCHECK")]
-    assert [e[1][0][:14] for e in events if e[0] == "SWEEP"] == ["ray-vast-test-"]  # the final sweep, the test label only
+    assert [e[1] for e in events if e[0] == "SWEEP"] == [[f"prefix={TEST_LABEL}"]]  # the final sweep, the test label only
     assert all(f"KEPT CLUSTER {c}-keep still runs" in out for c in CLUSTERS), out
 
     code, out, events = _run(tmp_path, suite, "-n", "4", "--keep-cluster")
@@ -353,6 +358,8 @@ def test_a_release_cluster_with_a_foreign_name_joins_the_run_and_is_ended_once_b
     assert code == 0, out
     of_release = [e[0] for e in events if "gpu-24gb" in e[1] or "ray-vast:gpu-24gb" in e[1]]
     assert of_release == ["UP", "RUN", "RUN", "DOWN", "SWEEP", "AWSCHECK"], out  # R02's `down` is the only one
+    # gpu-24gb is not a suite name: its sweep takes only the instances that its poller saw, never the whole label
+    assert [e[1] for e in events if e[0] == "SWEEP"] == [["ray-vast:gpu-24gb", "ids=7"], [f"prefix={TEST_LABEL}"]]
     opened = tmp_path / "results" / "_session" / "runs"
     assert [p.name for p in opened.glob("*/opened/*.json")] == ["gpu-24gb.json"]
     assert [p.name for p in opened.glob("*/ended/*.json")] == ["gpu-24gb.json"]
@@ -370,3 +377,82 @@ def test_a_secret_in_a_record_is_found_once_by_the_end_of_the_cluster_that_owns_
     problems = (next((tmp_path / "results" / "_session" / "runs").glob("*/problems.txt"))).read_text().splitlines()
     assert [p for p in problems if "secret scan" in p and "A10" in p] == ["the secret scan found 1 file(s): A10/leak.txt"]
     assert sum("L02/leak.txt" in p for p in problems) == 1 and sum("LB01/leak.txt" in p for p in problems) == 1  # no second scan
+
+
+FAKE_WINDOW = '''
+from dataclasses import dataclass
+
+
+@dataclass
+class Wait:
+    ok: bool
+    elapsed: float
+    seen: object
+    error: str = None
+
+    def __bool__(self):
+        return self.ok
+
+
+def wait_until(look, timeout, done=bool, poll_s=10, clock=None):
+    """The wait at once: one look, and the time is up."""
+    seen = look()
+    return Wait(bool(done(seen)), float(timeout), seen)
+
+
+def phase(status):
+    return "running"
+'''
+
+LIFECYCLE_CLUSTER = '''
+from contextlib import contextmanager
+
+JOBS = MANUAL = Path(__file__).parent
+
+
+class Job:
+    status = "RUNNING"
+
+    def logs(self):
+        return "" if os.environ.get("HOLD_NEVER_READY") else "HOLD_READY"
+
+    def stop(self):
+        event("JOB_STOP")
+
+
+class LifecycleCluster(Cluster):
+    @contextmanager
+    def tunnel(self):
+        yield {}
+
+    def job(self, env, entrypoint, out_dir=None, **options):
+        event("JOB", entrypoint[1])
+        return Job()
+
+    def instances(self):
+        return [{"id": 41, "actual_status": "running"}]  # a worker that never goes
+
+
+Cluster = LifecycleCluster
+'''
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("hold_ready", [False, True], ids=["the hold never ready", "the workers never gone"])
+def test_a_wait_of_the_lifecycle_group_that_times_out_fails_its_test_and_never_passes_silently(tmp_path, hold_ready):
+    suite = _suite(tmp_path)
+    shutil.copy(LIVE / "test_lifecycle.py", suite / "test_lifecycle.py")
+    (suite / "window.py").write_text(FAKE_WINDOW)
+    (suite / "cluster.py").write_text(FAKE_CLUSTER + LIFECYCLE_CLUSTER)
+    code, out, events = _run(tmp_path, suite, "-k", "L10_head_loss", extra_env={} if hold_ready else {"HOLD_NEVER_READY": "1"})
+    assert code != 0, out
+    record = tmp_path / "results" / "L10" / "result.json"
+    if hold_ready:  # L10 waits for 0 workers before it asks for 4 again
+        result = json.loads(record.read_text())
+        assert result["outcome"] == "failed" and [c for c in result["checks"] if not c["ok"]] == [
+            {"name": "0 workers before the second hold (within 900 s)", "ok": False, "detail": "[41]"}], result
+        assert [e[1] for e in events if e[0] == "JOB"] == [["hold.py"]]  # no second hold after the failed wait
+    else:  # the hold fixture of L03-L10: no HOLD_READY in 1800 s is an error of each test that uses it
+        assert "1 error" in out and "the hold job printed no HOLD_READY in 1800 s" in out, out
+        assert not record.exists()  # the module fixture runs before the record: the summary says NOT RUN, never PASS
+        assert [e[0] for e in events if e[0] in ("JOB", "JOB_STOP")] == ["JOB", "JOB_STOP"]

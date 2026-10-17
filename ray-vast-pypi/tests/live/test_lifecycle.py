@@ -33,9 +33,13 @@ def session_env(lifecycle):
 
 @pytest.fixture(scope="module")
 def hold(lifecycle, session_env):
-    """4 workers held by a placement group (hold.py) for L03-L10. Stopped at the end of the module."""
+    """4 workers held by a placement group (hold.py) for L03-L10. Stopped at the end of the module. No HOLD_READY in
+    1800 s is an error of each test that uses it."""
     job = lifecycle.job(session_env, ["python", "hold.py", "4"], name="hold", files=[JOBS / "hold.py"], wait=False)
-    wait_until(job.logs, 1800, done=lambda log: "HOLD_READY" in log, poll_s=20)
+    ready = wait_until(job.logs, 1800, done=lambda log: "HOLD_READY" in log, poll_s=20)
+    if not ready:
+        job.stop()
+        raise RuntimeError(f"the hold job printed no HOLD_READY in 1800 s ({ready.error or 'no error'})")
     yield job
     job.stop()
 
@@ -84,7 +88,7 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
         check(record, f"bundle {r['bundle']}: 1 GPU, gpu_ids [0]", r["gpu_ids"] == [0] and r["nvidia_smi"].count("GPU ") == 1,
               (r["gpu_ids"], r["nvidia_smi"][:80]))
     # idle scale-down: all instances gone within idle_timeout_minutes (2) + 120 s
-    idle = w.wait_until(w.vast_now, t_end + 120 + 420 - time.time(), done=lambda seen: not seen, poll_s=15)
+    idle = wait_until(w.vast_now, t_end + 120 + 420 - time.time(), done=lambda seen: not seen, poll_s=15)
     t_zero = time.time()
     stop.set()
     # control-cost.md:24: Ray removes a worker after `idle_timeout_minutes` (2) idle. 300 s more is a safety bound for the
@@ -214,15 +218,11 @@ def test_L05_logs_a_user_reads(record, lifecycle, hold):
     check(record, "the documented grep runs through attach", re.search(r"GREP_EXIT [01]", done.stdout) is not None, done.stdout[-200:])
 
 
-def _node_of(nodes, index):
-    return sorted(nodes, key=lambda n: n["container_id"])[index]
-
-
 @pytest.mark.failure
 @pytest.mark.security
 def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     nodes = lifecycle.probe(session_env, record.dir)
-    a = _node_of(nodes, 0)
+    a = min(nodes, key=lambda n: n["container_id"])
     log = lifecycle.job(session_env, ["python", "task_probe.py", "signals", a["node_id"], "120"], record.dir, name="signals",
                         files=[MANUAL / "task_probe.py"], timeout=900).log
     result = json.loads(next(line for line in log.splitlines() if line.startswith('{"orphan_parents"')))
@@ -235,8 +235,8 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     # t0 is before the driver (on the head) schedules the signal task; the task prints the time of the signal (worker clock).
     sent = next((json.loads(x)["utc"] for x in log.splitlines() if x.startswith('{"sigterm": "sent"')), None)
     record.data("signal_after_t0_s", sent and round(sent - t0, 2))
-    waited = w.wait_until(w.vast_now, t0 + 120 - time.time(), done=lambda seen: int(a["container_id"]) not in {i["id"] for i in seen},
-                          poll_s=2)
+    waited = wait_until(w.vast_now, t0 + 120 - time.time(), done=lambda seen: int(a["container_id"]) not in {i["id"] for i in seen},
+                        poll_s=2)
     gone = time.time() if waited else None
     lines = w.lines()
     report = next((e.t for e in w.events("destroy_request", instances=[a["container_id"]], lines=lines) if "SIGTERM" in e.reason), None)
@@ -266,7 +266,8 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     if lifecycle.kept:
         pytest.skip("--keep-cluster: the cluster stays")
     hold.stop()
-    wait_until(lifecycle.instances, 900, done=lambda seen: not seen, poll_s=15)
+    idle = wait_until(lifecycle.instances, 900, done=lambda seen: not seen, poll_s=15)
+    check(record, "0 workers before the second hold (within 900 s)", idle.ok, [i["id"] for i in idle.seen or []] or idle.error)
     w = lifecycle.window()
     lifecycle.job(session_env, ["python", "hold.py", "4"], record.dir, name="hold_again", files=[JOBS / "hold.py"], wait=False)
 
@@ -274,7 +275,7 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
         enrolled = {e.instance for e in w.events("enrolled")}
         return enrolled, [i for i in w.vast_now() if i["id"] not in enrolled and phase(i.get("actual_status")) == "pending"]
 
-    ready = w.wait_until(enrolled_and_loading, 1800, done=lambda seen: seen[0] and seen[1], poll_s=5)
+    ready = wait_until(enrolled_and_loading, 1800, done=lambda seen: seen[0] and seen[1], poll_s=5)
     t_stop = None
     if ready:
         lifecycle.ssh("sudo docker stop ray-vast-head")
@@ -283,7 +284,7 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     enrolled, listed = ready.seen[0], {i["id"] for i in w.vast_now()}
     at_stop = {"workers": sorted(listed & enrolled), "others": sorted(listed - enrolled)}
     record.data("at_stop", at_stop)
-    w.wait_until(w.vast_now, t_stop + 30 * 60 - time.time(), done=lambda seen: not seen, poll_s=10)
+    wait_until(w.vast_now, t_stop + 30 * 60 - time.time(), done=lambda seen: not seen, poll_s=10)
     seen = w.vast_seen()  # the time of each instance's `gone`: the first sample (the poller's or the wait's) without it
     gone_at = {iid: round(seen[iid][-1][0] - t_stop) for iid in at_stop["workers"] + at_stop["others"]
                if seen.get(iid) and seen[iid][-1][1] == "gone"}

@@ -109,11 +109,6 @@ def with_refused_forks(warnings):
     return [e.line for e in warnings if e.fields["refused_new"] > 0]
 
 
-def doc_line(doc, start):
-    """The first line of a user doc that starts with `start` (a command to run as written)."""
-    return next(x for x in (DOCS / doc).read_text().splitlines() if x.startswith(start))
-
-
 def h3(cluster, env, record, name="probe_h3"):
     """The H3 shape (2 `gpu` workers): (rows, B, CPUS)."""
     record.data("shape_wait_s", cluster.ensure_shape({"gpu": 2}))
@@ -319,7 +314,8 @@ def test_LB09_serve_snippet_http_and_autoscaling(record, libraries, env):
     # HTTP through the tunnel of serve.md, as written. Changed: the cluster name, the head IP, `~` (ssh expands `~` in
     # UserKnownHostsFile from the passwd home, not $HOME, and the suite keeps its state in a private HOME), and the local
     # port if 18000 is in use.
-    line = doc_line("libraries/serve.md", "ssh -i ~/.ray-vast/<cluster_name>/ssh_key.pem")
+    line = next(x for x in (DOCS / "libraries" / "serve.md").read_text().splitlines()
+                if x.startswith("ssh -i ~/.ray-vast/<cluster_name>/ssh_key.pem"))
     port = 18000
     with socket.socket() as s:
         if s.connect_ex(("127.0.0.1", 18000)) == 0:

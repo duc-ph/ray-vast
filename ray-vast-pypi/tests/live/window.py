@@ -141,10 +141,6 @@ class Window:
         enrolled = {e.instance: e.t for e in self.events("enrolled")}
         return {iid: round(t - running[iid], 1) for iid, t in enrolled.items() if iid in running}
 
-    def wait_until(self, look, timeout, done=bool, poll_s=10):
-        """`wait_until` on the clock of the window."""
-        return wait_until(look, timeout, done, poll_s, self.clock)
-
 
 @dataclass
 class Wait:

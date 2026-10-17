@@ -213,7 +213,7 @@ def test_A08_no_offer_and_budget_texts(record, aws_only):
 
     with aws_only.tunnel() as env:
         demand = aws_only.job(env, ["python", "-c", script], record.dir, name="demand", wait=False)
-        found = w.wait_until(found, 420, done=lambda seen: len(seen) == 2, poll_s=15).seen or {}
+        found = wait_until(found, 420, done=lambda seen: len(seen) == 2, poll_s=15).seen or {}
         status = aws_only.head_exec("ray status")
         demand.stop()
     record.evidence("monitor_slice.log", "\n".join(w.lines()))

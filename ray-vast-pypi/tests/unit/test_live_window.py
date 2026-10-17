@@ -206,14 +206,15 @@ def test_wait_until_an_event_arrives_gives_success_the_elapsed_time_and_what_it_
     head = FakeHead(log[:3])
     clock = FakeClock(1792197900.0, on_sleep=lambda t: head.log.append(log[len(head.log)]))
     w = window.Window(head, clock=clock)
-    waited = w.wait_until(lambda: w.events("destroy_request"), timeout=60, poll_s=2)
+    waited = window.wait_until(lambda: w.events("destroy_request"), timeout=60, poll_s=2, clock=clock)
     assert waited and waited.ok and waited.elapsed == 2 and waited.seen[0].reason == "received SIGTERM"
 
 
 def test_wait_until_with_a_done_test_on_the_vast_listing():
     listings = [[{"id": 1, "actual_status": "running"}]] * 3 + [[]]
-    w = window.Window(FakeHead(listings=listings), clock=FakeClock())
-    waited = w.wait_until(w.vast_now, timeout=600, done=lambda seen: not seen, poll_s=15)
+    clock = FakeClock()
+    w = window.Window(FakeHead(listings=listings), clock=clock)
+    waited = window.wait_until(w.vast_now, timeout=600, done=lambda seen: not seen, poll_s=15, clock=clock)
     assert (waited.ok, waited.elapsed, waited.seen) == (True, 45, [])
     assert w.vast_seen()[1][-1][1] == "gone"
 
@@ -221,7 +222,7 @@ def test_wait_until_with_a_done_test_on_the_vast_listing():
 def test_a_wait_that_times_out_gives_the_elapsed_time_and_the_last_thing_seen_and_never_sleeps_past_its_timeout():
     clock = FakeClock()
     w = window.Window(FakeHead(listings=[[{"id": 7, "actual_status": "loading"}]]), clock=clock)
-    waited = w.wait_until(w.vast_now, timeout=25, done=lambda seen: not seen, poll_s=10)
+    waited = window.wait_until(w.vast_now, timeout=25, done=lambda seen: not seen, poll_s=10, clock=clock)
     assert not waited and (waited.ok, waited.elapsed, waited.seen) == (False, 25, [{"id": 7, "actual_status": "loading"}])
     assert clock.slept == [10, 10, 5]
 

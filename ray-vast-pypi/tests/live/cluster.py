@@ -2,6 +2,7 @@
 checks. Every command output goes to `<dir>/cli.log`. Secrets (the cluster token, join tokens) stay in memory."""
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -68,8 +69,7 @@ class Cluster:
     """`run` is the livekit.Run of the suite: the cluster joins it here, once. `kept` (--keep-cluster): the run does not
     end the cluster."""
 
-    def __init__(self, run, fixture, config, out_dir, home, kept=False, profile=ADMIN_PROFILE, credentials_file=None):
-        self.fixture = fixture
+    def __init__(self, run, config, out_dir, home, kept=False, profile=ADMIN_PROFILE, credentials_file=None):
         self.kept = kept
         self.name = config["cluster_name"]
         livekit.assert_ours(f"ray-vast-{self.name}")
@@ -286,10 +286,19 @@ class ReleaseCluster:
     (`gpu-24gb`, from the packaged YAML) is not a suite name, it runs the plain `ray-vast` CLI of a clean venv with
     ray-vast from PyPI, and its YAML is the packaged one (only `region` changes). Like every cluster it joins the run when it
     is made, and livekit.end_cluster ends it. `up()` is the tutorial up to `ray-vast up`; `shell(script)` runs a script in
-    the tutorial's directory (`work`) with the tutorial's env (`env`)."""
+    the tutorial's directory (`work`) with the tutorial's env (`env`).
+    `gpu-24gb` is not a suite name, so a user can have a cluster of that name on the same account. The release cluster
+    therefore refuses to start when a vast instance with its label or an AWS resource of `ray-vast-gpu-24gb` already
+    exists: it raises before it joins the run, and nothing ends or destroys anything. Its end sweeps only the vast
+    instances that its own poller saw (livekit.end_cluster)."""
 
     def __init__(self, run, out_dir, home, region, version):
-        self.fixture, self.name, self.region, self.version, self.kept = "release", "gpu-24gb", region, version, False
+        self.name, self.region, self.version, self.kept = "gpu-24gb", region, version, False
+        found = [i["id"] for i in vast().list_instances() if i.get("label") == label(self.name)]
+        left = _aws_leftovers(self.name, region, ADMIN_PROFILE)
+        if found or left:
+            raise RuntimeError(f"a cluster {self.name} already exists on this account (vast instances {found}, AWS {left}): "
+                               "the release test would end it, so it does not start")
         self.dir, self.home = Path(out_dir), Path(home)
         self.work = self.home / "work"
         self.work.mkdir(parents=True, exist_ok=True)
@@ -393,16 +402,13 @@ def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
     for region in regions:
         ec2 = session.client("ec2", region_name=region)
         tag = [{"Name": "tag-key", "Values": [commands.TAG_KEY]}]
-        for r in ec2.describe_instances(Filters=tag + [{"Name": "instance-state-name", "Values": ["pending", "running", "stopping", "stopped",
-                                                                                                    "shutting-down"]}])["Reservations"]:
-            for i in r["Instances"]:
-                cluster = next((t["Value"] for t in i.get("Tags", []) if t["Key"] == commands.TAG_KEY), "")
-                if ours(f"ray-vast-{cluster}"):
-                    left.append(f"EC2 instance {i['InstanceId']} ({cluster}, {region})")
-        for v in ec2.describe_volumes(Filters=tag)["Volumes"]:
-            cluster = next((t["Value"] for t in v.get("Tags", []) if t["Key"] == commands.TAG_KEY), "")
+        reservations = ec2.describe_instances(Filters=tag + [{"Name": "instance-state-name", "Values": commands.LIVE_STATES}])["Reservations"]
+        tagged = [(f"EC2 instance {i['InstanceId']}", i) for r in reservations for i in r["Instances"]]
+        tagged += [(f"volume {v['VolumeId']}", v) for v in ec2.describe_volumes(Filters=tag)["Volumes"]]
+        for what, resource in tagged:
+            cluster = next((t["Value"] for t in resource.get("Tags", []) if t["Key"] == commands.TAG_KEY), "")
             if ours(f"ray-vast-{cluster}"):
-                left.append(f"volume {v['VolumeId']} ({cluster}, {region})")
+                left.append(f"{what} ({cluster}, {region})")
         name_filter = [{"Name": "group-name", "Values": ["ray-vast-rvtest-*"]}]
         left += [f"security group {g['GroupId']} ({g['GroupName']}, {region})" for g in ec2.describe_security_groups(Filters=name_filter)["SecurityGroups"]
                  if ours(g["GroupName"])]
@@ -415,11 +421,18 @@ def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
     return left
 
 
-def sweep_label(prefixes):
-    """Destroy every vast instance whose label starts with one of `prefixes`; list again until 0. Returns the log lines."""
+def sweep_label(labels, prefixes=(), ids=None):
+    """Destroy every vast instance whose label is one of `labels` (exactly), or starts with one of `prefixes`; list again
+    until 0. Returns the log lines. A prefix must be the suite's test label `ray-vast-test-<yyyymmdd>`, which only the
+    suite uses: a cluster label is never a prefix, so a user's cluster with a longer name is never destroyed. `ids`: only
+    the instances with these IDs (for a cluster whose name is not a suite name: the IDs that the run saw)."""
+    bad = [p for p in prefixes if not re.fullmatch(r"ray-vast-test-\d{8}", p)]
+    if bad:
+        raise ValueError(f"a sweep prefix must be the suite's test label ray-vast-test-<yyyymmdd>, not {bad}")
     client, lines = vast(), []
     for _ in range(60):
-        found = [i for i in client.list_instances() if isinstance(i.get("label"), str) and i["label"].startswith(tuple(prefixes))]
+        found = [i for i in client.list_instances() if isinstance(i.get("label"), str) and
+                 (i["label"] in labels or i["label"].startswith(tuple(prefixes))) and (ids is None or i["id"] in ids)]
         lines.append(f"{time.strftime('%FT%TZ', time.gmtime())} {len(found)} left")
         if not found:
             return lines

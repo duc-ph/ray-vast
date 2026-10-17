@@ -135,7 +135,7 @@ class LibrariesCluster(Cluster):
                                               "dph_total", "geolocation", "compute_cap")} for o in found]
             Path(group_dir).mkdir(parents=True, exist_ok=True)
             (Path(group_dir) / "host_offers.json").write_text(json.dumps({kind: offers}, indent=1))
-        super().__init__(run, "libraries", config, group_dir, home, kept)
+        super().__init__(run, config, group_dir, home, kept)
         self.host, self.kind = host, kind
         self.shape, self.queries, self.matched = {}, {}, {}
         self._s3 = None

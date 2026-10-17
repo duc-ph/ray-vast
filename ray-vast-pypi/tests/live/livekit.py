@@ -149,6 +149,11 @@ def assert_ours(name):
         raise NotOurs(f"refusing to touch {name!r}: not made by the live suite")
 
 
+def is_suite_cluster(name):
+    """True for a cluster name that only the suite makes (`rvtest-*`). The release cluster `gpu-24gb` is not one."""
+    return name.startswith("rvtest-") and OUR_NAME.match(f"ray-vast-{name}") is not None
+
+
 SECRET_PATTERNS = re.compile(rb'PRIVATE KEY|instance_api_key"?\s*[:=]\s*"?[A-Za-z0-9]|CONTAINER_API_KEY=[A-Za-z0-9]|Bearer [A-Za-z0-9]')
 
 
@@ -392,11 +397,16 @@ class Run:
 
     def scan_unowned(self):
         """The secret scan of the records and group directories of this process that no cluster of the process owns
-        (`end_cluster` scans those). Returns the paths that hold a secret, relative to `results`."""
+        (`end_cluster` scans those). A file in a directory that a cluster owns is not reported here, also when the
+        directory is inside an unowned record (a scenario's own cluster records `<record>/a`). Returns the paths that hold
+        a secret, relative to `results`."""
         owned = [Path(d) for c in self._clusters for d in c.records]
-        dirs = [d for d in dict.fromkeys(self._dirs) if not any(d == o or o in d.parents for o in owned)]
+
+        def unowned(path):
+            return not any(path == o or o in path.parents for o in owned)
         values = self.secret_values()
-        return sorted({str(p.relative_to(self.results)) for d in dirs if d.exists() for p in scan_secrets(d, values)})
+        return sorted({str(p.relative_to(self.results)) for d in dict.fromkeys(self._dirs) if unowned(d) and d.exists()
+                       for p in scan_secrets(d, values) if unowned(p)})
 
     def register(self, cluster):
         """Write `<dir>/opened/<name>.json` ({name, region, kept, yaml, home}), so the end of the run checks the cluster,
@@ -437,12 +447,14 @@ def end_cluster(run, cluster, sweep, aws_check, after_down=None):
        `left: nothing`. A `down` that leaves something is a problem, and it runs once more.
     2. `after_down(done)` (the checks of the group; `done` is the last `down`, None for a kept cluster) gives more problems.
     3. Not kept: the vast label sweep of this cluster (an instance that it still finds is a problem) and the AWS check of
-       this cluster in its region.
+       this cluster in its region. The sweep of a suite cluster (`is_suite_cluster`) takes every instance with its exact
+       label. The sweep of another cluster (the release cluster `gpu-24gb`) takes only the instances that the run saw for
+       it (`cluster.timeline`), because a user can have a cluster of that name on the same account.
     4. The secret scan of this cluster's records only (`cluster.records`: its own directories, not a name glob), with the
        secret values of the run.
-    The cluster: `name`, `region`, `kept`, `last_down`, `records`, `down()` (returns returncode, stdout, stderr).
-    `sweep(prefixes)` gives log lines (`destroyed <id> (<label>)` for each destroyed instance); `aws_check(name, region)`
-    gives the resources left. Writes `<run.dir>/ended/<name>.json`. Returns the problems (empty: the cluster ended clean)."""
+    The cluster: `name`, `region`, `kept`, `last_down`, `records`, `timeline`, `down()` (returns returncode, stdout,
+    stderr). `sweep(labels, ids=None)` (cluster.sweep_label) gives log lines (`destroyed <id> (<label>)` for each
+    destroyed instance); `aws_check(name, region)` gives the resources left. Writes `<run.dir>/ended/<name>.json`. Returns the problems (empty: the cluster ended clean)."""
     problems = []
     done = cluster.last_down
     if not cluster.kept and (done is None or not _clean(done)):
@@ -460,7 +472,12 @@ def end_cluster(run, cluster, sweep, aws_check, after_down=None):
             problems.append(f"the checks after down failed: {type(e).__name__}: {e}")
     if not cluster.kept:
         try:
-            destroyed = [line for line in sweep([f"ray-vast:{cluster.name}"]) if line.startswith("destroyed ")]
+            labels = [f"ray-vast:{cluster.name}"]
+            if is_suite_cluster(cluster.name):
+                swept = sweep(labels)
+            else:  # a user can have a cluster of this name on the same account: only the instances that this run saw
+                swept = sweep(labels, ids=sorted({i["id"] for row in cluster.timeline for i in row.get("instances", [])}))
+            destroyed = [line for line in swept if line.startswith("destroyed ")]
             if destroyed:
                 problems.append(f"vast: {len(destroyed)} instance(s) with the cluster label after down: {', '.join(destroyed)}")
         except Exception as e:  # noqa: BLE001
@@ -484,7 +501,9 @@ def end_cluster(run, cluster, sweep, aws_check, after_down=None):
 def end_of_run(run_dir, test_label, sweep, account_check):
     """The run-wide guards, once, after every worker process ended (so no worker still uses a cluster). Each cluster was
     already ended by `end_cluster` (its own `down`, sweep, AWS check and secret scan); this does not repeat that work:
-    - a final vast label sweep of the test label and of each cluster that joined the run but did not end (its worker died);
+    - a final vast label sweep, `sweep(labels, prefixes=[test_label])`: the test label as a prefix, and the exact label of
+      each suite cluster that joined the run but did not end (its worker died). A cluster that is not a suite cluster
+      (`is_suite_cluster`) gets no label sweep here: the run reports it as not ended;
     - the account-wide AWS check `account_check(regions, skip)`: resources with a suite name in each region of the run,
       except the kept clusters (`skip`);
     - the summary: the problems of each ended cluster, each cluster that did not end, and the files that each process
@@ -498,7 +517,8 @@ def end_of_run(run_dir, test_label, sweep, account_check):
     problems, left = [], []
     if opened:  # a run without a cluster (the free group) calls no cloud API
         try:
-            lines = sweep([test_label] + [f"ray-vast:{c['name']}" for c in not_ended if not c["kept"]])
+            lines = sweep([f"ray-vast:{c['name']}" for c in not_ended if not c["kept"] and is_suite_cluster(c["name"])],
+                          prefixes=[test_label])
             (run_dir / "sweep.log").write_text("\n".join(lines) + "\n")
         except Exception as e:  # noqa: BLE001 - the report must name it
             problems.append(f"vast sweep failed: {type(e).__name__}: {e}")
