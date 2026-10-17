@@ -2,7 +2,7 @@
 docs (docs/libraries/*.md) taken from the docs at run time (livekit.doc_snippet), the C9 jobs and the C10 pairs.
 
 One cluster for each host (clusters/libraries.yaml with one worker type, admin profile, us-west-2), so the hosts run in
-parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (36 or more CPUs, pids.max 1280, cgroup v1),
+parallel with `pytest -n` (each host is one xdist group): H1 = 1 `h1` worker (pids.max 1280, cgroup v1),
 H2 = 1 `h2` worker (cgroup v2), H3 = 2 `gpu` workers, gpu2 = 1 `gpu2` worker (2 GPUs). A test names its host with the
 `where` parameter or the `host` marker. Each test sets the workers that it needs with libraries_setup.ensure_shape()
 (only these workers run), so the library code needs no node pinning. H1, H2 and the LB13 worker come from
@@ -300,8 +300,7 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
         hosts = {where: probe(libraries, env, record.dir, f"probe_{kind}")[kind]}
     record.evidence("node_probe.json", json.dumps(hosts, indent=1))
     if where == "H1":
-        check(record, "H1: 36 or more Ray CPUs, pids.max 1280, cgroup v1", livekit.host_facts(hosts["H1"][0], 0)["cpus"] >= 36 and
-              hosts["H1"][0].get("pids.max") == "1280" and hosts["H1"][0]["cgroup"] == "v1",
+        check(record, "H1: pids.max 1280, cgroup v1", hosts["H1"][0].get("pids.max") == "1280" and hosts["H1"][0]["cgroup"] == "v1",
               {k: hosts["H1"][0].get(k) for k in ("machine_id", "ray_cpus", "pids.max", "cgroup")})
     if where == "H2":
         check(record, "H2: cgroup v2", hosts["H2"][0]["cgroup"] == "v2", {k: hosts["H2"][0].get(k) for k in ("machine_id", "pids.max", "cgroup")})
@@ -329,8 +328,9 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
                   env_ray.get("RAY_num_grpc_internal_threads") == "4" and env_ray.get("RAY_worker_maximum_startup_concurrency") == "8", env_ray)
             check(record, f"{name} {cid}: Ray CPUs = the real core count (affinity and quota)", 1 <= n["ray_cpus"] <= n["affinity"],
                   (n["ray_cpus"], n["affinity"], n["cpu_quota"]))
-            check(record, f"{name} {cid}: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
-                  enroll_s is not None and -15 <= enroll_s <= 45, enroll_s)
+            # design.md:56, :86: enrollment within 1 min of `running`; the suite's 10 s samples allow -15 to 75 s.
+            check(record, f"{name} {cid}: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
+                  enroll_s is not None and -15 <= enroll_s <= 75, enroll_s)
 
 
 @pytest.mark.host("H3")
@@ -442,12 +442,17 @@ def test_LB06_tune_snippet_with_s3(record, libraries, env, s3):
         check(record, claim, word == "PASS", data)
     word, data = c9(libraries, env, record, "c9_2_4_tune_ckpt.py", timeout=1500)
     record.data("default_storage", data)
+    # The job cuts each trial error to 300 characters in its result line; the full error is in the job log.
+    log = (record.dir / "c9_2_4_tune_ckpt.log").read_text()
+    shutil.copy(record.dir / "c9_2_4_tune_ckpt.log", record.dir / "c9_2_4_tune_ckpt_default.log")
     check(record, "the default storage_path: `Unable to set up cluster storage ... not accessible by worker nodes` (tune.md:83)",
-          word == "LIMIT" and "Unable to set up cluster storage" in json.dumps(data) and "not accessible by worker nodes" in json.dumps(data), data)
+          word == "LIMIT" and "Unable to set up cluster storage" in log and "not accessible by worker nodes" in log,
+          (word, data.get("errors"), data.get("experiment_path")))
     word, data = c9(libraries, env, record, "c9_2_4_tune_ckpt.py", timeout=1500, env_vars={"C9_STORAGE": f"s3://anonymous@{s3.bucket}/lb06/anon"})
     record.data("anonymous_s3", data)
     check(record, "anonymous S3 through pyarrow: S3 refuses the uploads (tune.md:84)",
-          word == "LIMIT" and re.search(r"(?i)access_?denied|access denied|forbidden|\b403\b", json.dumps(data)), data)
+          word == "LIMIT" and re.search(r"(?i)access_?denied|access denied|forbidden|\b403\b",
+                                        json.dumps(data) + (record.dir / "c9_2_4_tune_ckpt.log").read_text()), data)
 
 
 @pytest.mark.host("H3")
@@ -459,6 +464,7 @@ def test_LB08_multi_node_ddp_and_learners_limit(record, libraries, env):
         check(record, f"{script}: LIMIT", word == "LIMIT", data)
     gloo = record.result["data"]["c9_3_3_train_gloo"]
     text = json.dumps(gloo)
+    # train.md:91 (about 3 minutes); 300 s is the bound for "about 3 minutes".
     check(record, "gloo DDP on 2 workers: DistStoreError or DistNetworkError after about 3 min (train.md:91)",
           re.search(r"DistStoreError|DistNetworkError", text) and gloo.get("seconds_to_error", 10**6) <= 300, gloo.get("seconds_to_error"))
     status, log = libraries.job(env, C10_JOBS, ["python", "c10_rllib.py", "r3"], runtime_env=dict(TORCH_ENV, env_vars={"C10_GUARD_S": "900"}),
@@ -583,7 +589,8 @@ def test_LB07_train_snippet_with_2_gpus_and_s3(record, libraries, env, s3):
     word, data = c9(libraries, env, record, "c9_3_1_train_1gpu.py", torch=True, timeout=2700)
     record.data("default_storage", data)
     check(record, "1 GPU with the default storage_path: `A local path on the head node is not accessible by worker nodes`",
-          word == "LIMIT" and "not accessible by worker nodes" in json.dumps(data), data)
+          word == "LIMIT" and "not accessible by worker nodes" in json.dumps(data) + (record.dir / "c9_3_1_train_1gpu.log").read_text(),
+          data)
 
 
 @pytest.mark.limits

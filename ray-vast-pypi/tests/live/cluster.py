@@ -112,6 +112,10 @@ class Cluster:
         return self
 
     def down(self, *extra, env=None):
+        """`down`; without a state file (an earlier `down` deleted it) `down` needs `--profile` (cli.md), so it gets the
+        cluster's profile."""
+        if not self.state and "--profile" not in extra:
+            extra = (*extra, "--profile", self.profile)
         return self.cli("down", self.yaml, *extra, env=env)
 
     # --- state and SSH ---------------------------------------------------------------------------------------------

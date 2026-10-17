@@ -103,14 +103,6 @@ def test_find_host_rents_again_with_the_tried_machines_blocked_until_one_matches
     assert [t["match"] for t in tries] == [False, True]
 
 
-def test_find_host_takes_a_lower_bound_for_a_number():
-    hosts = iter([{"machine_id": 32816, "pids_max": 1280, "cgroup": "v1", "cpus": 5},
-                  {"machine_id": 152047, "pids_max": 1280, "cgroup": "v1", "cpus": 46}])
-    host, tries = livekit.find_host({"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 40}}, lambda blocked: next(hosts), lambda h: None)
-    assert host["machine_id"] == 152047
-    assert [t["match"] for t in tries] == [False, True]
-
-
 def test_find_host_gives_up_after_3_rentals_and_ends_each_mismatch():
     ended = []
     rent = lambda blocked: {"machine_id": 100 + len(blocked), "pids_max": None, "cgroup": "v2", "cpus": 8}

@@ -372,6 +372,18 @@ def test_unknown_vast_status_is_treated_as_pending_and_logged_once(env, caplog):
     assert sum("unknown vast actual_status" in r.message for r in caplog.records) == 1
 
 
+def test_a_vast_reboot_status_is_a_known_pending_status(env, caplog):
+    # `ray-vast` sees `rebooting` after a vast reboot of a worker (live suite L09, 2026-10-17); the head then refuses the
+    # second enrollment and the worker destroys itself. It is not an unknown status.
+    env.vast.offers = [offer(1, 11)]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.instances[101]["actual_status"] = "rebooting"
+    p.reconcile_once()
+    assert instance_ids(env) == [101]
+    assert not [r for r in caplog.records if "unknown vast actual_status" in r.message]
+
+
 def test_worker_ip_change_exited_and_heartbeat_loss_destroy_the_worker(env):
     env.vast.offers = [offer(i, 10 + i) for i in range(1, 4)]
     p = env.make(candidate_factor=1)

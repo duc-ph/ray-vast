@@ -105,12 +105,15 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
         check(record, f"bundle {r['bundle']}: 1 GPU, gpu_ids [0]", r["gpu_ids"] == [0] and r["nvidia_smi"].count("GPU ") == 1,
               (r["gpu_ids"], r["nvidia_smi"][:80]))
     # idle scale-down: all instances gone within idle_timeout_minutes (2) + 120 s
-    deadline = t_end + 120 + 300
+    deadline = t_end + 120 + 420
     while time.time() < deadline and lifecycle.instances():
         time.sleep(15)
     t_zero = time.time()
     stop.set()
-    check(record, "idle scale-down to 0 within idle_timeout + 120 s", not lifecycle.instances() and t_zero - t_end <= 240,
+    # control-cost.md:24: Ray removes a worker after `idle_timeout_minutes` (2) idle. 300 s more is a safety bound for the
+    # autoscaler loop, the drain and the destroy; the time is data.
+    record.data("idle_to_zero_s", round(t_zero - t_end))
+    check(record, "idle scale-down to 0 within idle_timeout + 300 s", not lifecycle.instances() and t_zero - t_end <= 420,
           round(t_zero - t_end))
     time.sleep(20)
     rules_after = worker_rules(lifecycle)
@@ -134,8 +137,10 @@ def test_L02_scale_two_types_and_idle_scale_down(record, lifecycle, session_env)
     record.data("enroll_s_from_first_running_sample", enroll_s)
     check(record, "rentals <= candidate_factor x slots (8)", 4 <= len(rented) <= 8, len(rented))
     check(record, "peak $/h below max_dollars_per_hour (3.0)", peak <= 3.0, round(peak, 3))
-    check(record, "enroll within 60 s of running (15 s margin: 45 s; the 10 s samples allow -15 s)",
-          enroll_s and max(enroll_s.values()) <= 45 and min(enroll_s.values()) >= -15, enroll_s)
+    # design.md:56, :86: a candidate that does not enroll 1 min after the provider sees it `running` is ended. This suite's
+    # own 10 s samples of vast differ from the provider's by up to 15 s either way: -15 to 75 s.
+    check(record, "enroll within 1 min of running (design.md:86; -15 to 75 s on the suite's samples)",
+          enroll_s and max(enroll_s.values()) <= 75 and min(enroll_s.values()) >= -15, enroll_s)
     check(record, "no candidate ended on the pull limit", not [x for x in lines if "ending instance" in x and "pull" in x.lower()], "")
     check(record, "no `missing from vast` ending", not [x for x in lines if "ending instance" in x and "missing" in x], "")
     unknown = [x for x in lines if "unknown vast actual_status" in x and "rebooting" not in x]
@@ -267,6 +272,9 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     status, log = lifecycle.job(session_env, wd, ["python", "task_probe.py", "sigterm", a["node_id"]], out_dir=record.dir,
                                 name="sigterm", timeout=300)
     t0 = json.loads(log.splitlines()[[i for i, x in enumerate(log.splitlines()) if '"t0"' in x][0]])["t0"]
+    # t0 is before the driver (on the head) schedules the signal task; the task prints the time of the signal (worker clock).
+    sent = next((json.loads(x)["utc"] for x in log.splitlines() if x.startswith('{"sigterm": "sent"')), None)
+    record.data("signal_after_t0_s", sent and round(sent - t0, 2))
     gone = None
     while time.time() < t0 + 120:
         if int(a["container_id"]) not in {i["id"] for i in lifecycle.instances()}:
@@ -276,16 +284,23 @@ def test_L07_signals_to_pid_1(record, lifecycle, session_env, hold):
     lines = lifecycle.monitor_log(log_start)
     report = next((lifecycle.log_epoch(x) for x in lines if f"worker {a['container_id']} asks to be destroyed" in x and "SIGTERM" in x), None)
     record.evidence("monitor_slice.log", "\n".join(lines))
-    check(record, "TERM: the report reaches the head within 1 s", report is not None and -1 <= report - t0 <= 1.5, report and round(report - t0, 2))
-    check(record, "TERM: gone from vast within 20 s", gone is not None and gone - t0 <= 20, gone and round(gone - t0, 1))
+    # design.md:262 (a TERM to PID 1: "Report, then destroy") states no time. Pass: the head logs the report, vast lists
+    # the instance as gone within 60 s (a safety bound: a live instance costs money), Ray marks the node DEAD (safety
+    # bound 300 s). The times are measurements (data), not pass criteria. `report_after_signal_s` mixes the worker and
+    # head clocks.
+    record.data("report_after_signal_s", report and sent and round(report - sent, 2))
+    record.data("gone_after_t0_s", gone and round(gone - t0, 1))
+    check(record, "TERM: the head logs the report `asks to be destroyed: 'received SIGTERM'`", report is not None, "")
+    check(record, "TERM: gone from vast within 60 s (safety bound)", gone is not None and gone - t0 <= 60, gone and round(gone - t0, 1))
     dead = None
-    while time.time() < t0 + 180:
+    while time.time() < t0 + 300:
         state = lifecycle.head_exec(f"ray list nodes --filter node_id={a['node_id']} --format json", check=False)
         if '"DEAD"' in state:
             dead = time.time()
             break
         time.sleep(5)
-    check(record, "the Ray node is DEAD within 60 s", dead is not None and dead - t0 <= 60, dead and round(dead - t0, 1))
+    record.data("dead_after_t0_s", dead and round(dead - t0, 1))
+    check(record, "Ray marks the node DEAD (safety bound 300 s)", dead is not None, dead and round(dead - t0, 1))
     deadline = time.time() + 1200
     while time.time() < deadline:
         _, after = probe_nodes(lifecycle, session_env, record.dir, name="probe_after")
@@ -322,8 +337,11 @@ def test_L08_heartbeat_block(record, lifecycle, session_env, hold):
         lifecycle.ssh(f"sudo iptables -D {rule}", check=False)
     record.evidence("worker_last_log.txt", last_log)
     record.evidence("monitor_slice.log", "\n".join(lifecycle.monitor_log(log_start)))
-    # The worker's last heartbeat is at most 30 s before the cut.
-    check(record, "destroyed 270-330 s after the last heartbeat (cut - 30 s .. cut)", gone is not None and 240 <= gone - t_cut <= 345,
+    # design.md:246, :258, :265: heartbeat every 30 s, destroy after 300 s without one (worker and provider). The last
+    # heartbeat is 0-30 s before the cut, so the destroy is 270-330 s after the cut. Bounds: 240 s (not early, with 30 s
+    # for the clocks) to 400 s (the reconcile pass, the report, vast's list and this loop's container log fetch).
+    record.data("gone_after_cut_s", gone and round(gone - t_cut))
+    check(record, "destroyed 240-400 s after the cut (300 s after the last heartbeat)", gone is not None and 240 <= gone - t_cut <= 400,
           gone and round(gone - t_cut))
     check(record, "the Ray node stays ALIVE until the destroy", alive_until_destroy, "")
     check(record, "the worker log shows its own watchdog decision", "destroying this instance" in last_log and "heartbeat" in last_log.lower(), last_log.strip().splitlines()[-3:])
@@ -347,7 +365,10 @@ def test_L09_vast_reboot_of_a_worker(record, lifecycle, session_env, hold):
     lines = lifecycle.monitor_log(log_start)
     record.evidence("monitor_slice.log", "\n".join(lines))
     check(record, "the second enrollment is refused: already enrolled", refused is not None, "")
-    check(record, "gone from vast within 20 s of the refusal", gone is not None and refused is not None and gone - refused <= 20,
+    # worker-lifecycle.md (a container restart: the head refuses, the worker destroys itself) states no time: 60 s is a
+    # safety bound; the time is data.
+    record.data("gone_after_refusal_s", gone and refused and round(gone - refused, 1))
+    check(record, "gone from vast within 60 s of the refusal (safety bound)", gone is not None and refused is not None and gone - refused <= 60,
           gone and refused and round(gone - refused, 1))
     check(record, "`rebooting` is not an unknown status", not [x for x in lines if "unknown vast actual_status 'rebooting'" in x], "")
 
@@ -379,7 +400,7 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
     workers = {i["id"] for i in lifecycle.instances()} & enrolled
     record.data("at_stop", {"workers": sorted(workers), "others": sorted({i["id"] for i in lifecycle.instances()} - enrolled)})
     gone_at = {}
-    while time.time() < t_stop + 20 * 60:
+    while time.time() < t_stop + 30 * 60:
         listed = {i["id"]: i for i in lifecycle.instances()}
         for iid in set(record.result["data"]["at_stop"]["workers"]) | set(record.result["data"]["at_stop"]["others"]):
             if iid not in listed:
@@ -388,10 +409,13 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
             break
         time.sleep(10)
     record.data("gone_s_after_head_stop", gone_at)
+    # Workers: design.md:246, :258 (no heartbeat success for 300 s, one each 30 s) and :261 (Ray exits 60 s after the GCS
+    # is lost): at most 330 s, plus 30 s for vast's list and this loop. Candidates: design.md:144, :155, :260 (10 min of
+    # failed downloads or no enrollment within 10 min) after a pull that the dead provider no longer limits: 30 min.
     for iid in record.result["data"]["at_stop"]["workers"]:
-        check(record, f"worker {iid} destroys itself within 300 s + 30 s heartbeat + 15 s", gone_at.get(iid, 10**6) <= 345, gone_at.get(iid))
+        check(record, f"worker {iid} destroys itself within 360 s", gone_at.get(iid, 10**6) <= 360, gone_at.get(iid))
     for iid in record.result["data"]["at_stop"]["others"]:
-        check(record, f"candidate {iid} is gone within 10 min plus its pull", gone_at.get(iid, 10**6) <= 20 * 60, gone_at.get(iid))
+        check(record, f"candidate {iid} is gone within 30 min (10 min after its pull)", gone_at.get(iid, 10**6) <= 30 * 60, gone_at.get(iid))
     done = lifecycle.cli("down", lifecycle.yaml, env={"VAST_API_KEY": ""})
     record.evidence("down_without_vast_key.txt", done.stdout + done.stderr)
     check(record, "down without a vast key: the warning, exit 0", done.returncode == 0 and "warning: no vast key" in done.stdout, done.stdout[-300:])

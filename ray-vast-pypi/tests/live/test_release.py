@@ -106,4 +106,5 @@ def test_R02_the_getting_started_tutorial_verbatim(record, release):
     check(record, "AWS check", aws_leftovers("gpu-24gb", REGION) == [], "")
     minutes = (time.time() - release["started"]) / 60
     record.data("tutorial_minutes", round(minutes, 1))
+    # getting-started.md:4 ("It takes about 20 minutes"); 30 min is the bound for "about 20 minutes".
     check(record, "the tutorial takes about 20 minutes (at most 30)", minutes <= 30, round(minutes, 1))

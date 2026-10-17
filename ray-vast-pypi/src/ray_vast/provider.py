@@ -61,7 +61,7 @@ MISSING_GRACE_S = 60  # vast may list a new instance late; a missing instance co
 # vast `actual_status` values that mean the instance is dead or unusable. Unproven until C5 (live test): the only
 # value seen in real data is "exited". Other values seen in the wild: "running", "loading", "created" (all pending).
 FAILED_STATUSES = {"exited", "error", "failed", "offline"}
-PENDING_STATUSES = {None, "", "created", "loading", "running", "scheduling"}
+PENDING_STATUSES = {None, "", "created", "loading", "rebooting", "running", "scheduling"}
 
 
 class VastNodeProvider(NodeProvider):

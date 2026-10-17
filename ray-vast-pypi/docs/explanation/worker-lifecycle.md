@@ -73,7 +73,7 @@ The bootloader also never exits. After a hash mismatch, or after 10 minutes of d
 
 ## Measured in a live test
 
-A live test on 2026-10-14 tested the self-destroy paths on real vast hosts:
+One live run on 2026-10-14 tested the self-destroy paths on real vast hosts. The times in the table are the measurements of that run. They are not limits. The limits are in the table above (for example, 300 seconds without a heartbeat).
 
 | Test | Result |
 |---|---|

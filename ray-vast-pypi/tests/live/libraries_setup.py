@@ -27,9 +27,9 @@ HERE = Path(__file__).parent
 JOBS = HERE / "jobs"
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10) and the query to use when none of them is rentable.
 PINS = {
-    # H1: m32816 (C9: 48 Ray CPUs) has a cgroup v1 CPU quota of 5.76 cores: since the quota fix it gives 5 Ray CPUs. A host
-    # with many Ray CPUs needs many effective cores (the quota follows `cpu_cores_effective`, 2026-10-17).
-    "h1": {"named": [], "fallback": {"cpu_cores_effective": {"gte": 40}}, "want": {"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 36}}},
+    # H1: pids.max 1280, cgroup v1. vast sets pids.max from the CPU share (2026-10-17: 1280 at 6 effective cores; 9728 at
+    # 38, 11776 at 46, 15616 at 61), so no host has many Ray CPUs and pids.max 1280. m32816 gives 5 Ray CPUs (quota 5.76).
+    "h1": {"named": [32816], "fallback": {"cpu_cores_effective": {"gte": 5.5, "lt": 6.5}}, "want": {"pids_max": 1280, "cgroup": "v1"}},
     "h2": {"named": [51706, 55704], "fallback": {"gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
 }
 SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate is replaced

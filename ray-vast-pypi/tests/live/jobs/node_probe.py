@@ -60,6 +60,10 @@ def probe(all_ids):
     raylet = next((open(f"/proc/{p}/cmdline", "rb").read().replace(b"\0", b" ").decode() for p in os.listdir("/proc") if p.isdigit()
                    and b"raylet/raylet" in open(f"/proc/{p}/cmdline", "rb").read()), "")
     ports = {k: int(v) for k, v in re.findall(r"--(dashboard_agent_listen_port|runtime_env_agent_port|metrics_export_port)=(\d+)", raylet)}
+    # Ray 2.59 gives the agent HTTP port to the dashboard agent process (`--listen-port`), not to the raylet.
+    agent = next((open(f"/proc/{p}/cmdline", "rb").read().replace(b"\0", b" ").decode() for p in os.listdir("/proc") if p.isdigit()
+                  and b"dashboard/agent.py" in open(f"/proc/{p}/cmdline", "rb").read()), "")
+    ports.update({"dashboard_agent_listen_port": int(v) for v in re.findall(r"--listen-port=(\d+)", agent)[:1]})
     worker_threads = []
     for p in filter(str.isdigit, os.listdir("/proc")):
         try:

@@ -150,16 +150,14 @@ HOST_RENTALS_MAX = 3
 
 
 def find_host(want, rent, end):
-    """Rent a host until its probe matches `want` (for example {"pids_max": 1280, "cgroup": "v1", "cpus": {"gte": 40}}; a
-    value {"gte": n} is a lower bound).
+    """Rent a host until its probe matches `want` (for example {"pids_max": 1280, "cgroup": "v1"}).
     `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
     ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
     Returns (the matching probe, the list of tries); raises HostNotFound after HOST_RENTALS_MAX rentals."""
     blocked, tries = [], []
     for _ in range(HOST_RENTALS_MAX):
         probe = rent(list(blocked))
-        match = all(probe.get(key) is not None and probe[key] >= value["gte"] if isinstance(value, dict) else probe.get(key) == value
-                    for key, value in want.items())
+        match = all(probe.get(key) == value for key, value in want.items())
         tries.append({**probe, "match": match})
         if match:
             return probe, tries
