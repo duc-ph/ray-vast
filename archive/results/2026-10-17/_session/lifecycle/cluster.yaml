@@ -1,4 +1,4 @@
-cluster_name: rvtest-life-f9e2
+cluster_name: rvtest-life-324d
 idle_timeout_minutes: 2
 provider:
   image: rayproject/ray:2.59.0-py311-gpu
@@ -21,6 +21,10 @@ available_node_types:
     node_config:
       disk_gb: 40
       offer_query:
+        verified:
+          eq: true
+        datacenter:
+          eq: true
         gpu_ram:
           gte: 8000
           lt: 24570
@@ -37,6 +41,10 @@ available_node_types:
     node_config:
       disk_gb: 40
       offer_query:
+        verified:
+          eq: true
+        datacenter:
+          eq: true
         gpu_ram:
           gte: 24570
           lt: 70000

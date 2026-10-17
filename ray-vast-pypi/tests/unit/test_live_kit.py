@@ -867,6 +867,23 @@ def test_a_many_run_that_hangs_with_free_worker_ports_fails_with_the_reason_that
         "process limit"])
 
 
+def test_a_many_run_that_goes_on_with_fewer_processes_than_it_asked_for_is_a_documented_failure(monkeypatch):
+    # LB11 2026-10-17: on 58 worker ports, rllib.many asked for 62 env runners. 58 started, and RLlib trained with them
+    # after about 6 min (job COMPLETED). The library page documents this result, so the many run shows the limit.
+    c10 = LIVE.parents[2] / "tests" / "manual" / "c10"
+    if not (c10 / "run_c10.py").exists():
+        pytest.skip("the C10 runner is in the repository, not in the package tree (F18 copies the package tree only)")
+    monkeypatch.syspath_prepend(str(c10))
+    from run_c10 import verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "15616", "no_port_errors": 0}
+    post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "15616", "no_port_errors": 4}
+    full = ["WARNING worker 41 is at its process limit: 0 refused forks/threads (+0), pids 1700 of 15616, worker ports in use 58 of 58"]
+    status, [reason] = verdict("many", {"kind": "DEGRADED"}, pre, post, full, limit_max=15616)
+    assert status == "PASS" and reason.startswith("DEGRADED, warning seen")
+    # A tuned run that loses processes is not a completed run.
+    assert verdict("tuned", {"kind": "DEGRADED"}, pre, pre, [])[0] == "FAIL"
+
+
 def test_a_default_run_passes_only_when_it_completes_with_no_process_limit_warning_at_all(monkeypatch):
     # Rule 1 of the library pages (F21): with Ray's defaults on a worker with CPUs <= B, the head writes no WARNING.
     c10 = LIVE.parents[2] / "tests" / "manual" / "c10"

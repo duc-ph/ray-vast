@@ -1,0 +1,194 @@
+{
+ "id": "LB11[H2]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792197340.792685,
+ "checks": [
+  {
+   "name": "H2 has a pids limit",
+   "ok": true,
+   "detail": "1536"
+  },
+  {
+   "name": "core.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "core.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "data.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.tuned: one worker node",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "tune.many: one worker node",
+   "ok": true,
+   "detail": "1"
+  }
+ ],
+ "data": {
+  "host": {
+   "machine_id": 51706,
+   "container_id": "56320907",
+   "pids.max": "1536",
+   "cgroup": "v2",
+   "ray_cpus": 6.0,
+   "ports": 18
+  },
+  "core.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "actor_cpus": 0.429,
+    "actors": 7,
+    "alive_nodes": [
+     "2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"
+    ],
+    "child_cpus": 0.429,
+    "done": 200,
+    "elapsed_s": 23.3,
+    "items": 200,
+    "mode": "tuned",
+    "seconds": 23.0
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'actors': 7, 'actor_cpus': 0.429, 'child_cpus': 0.429}"
+  },
+  "core.many": {
+   "verdict": "PASS",
+   "reasons": [
+    "HUNG, warning seen, node alive, refused forks 0, 'No available ports' lines 88"
+   ],
+   "job_status": "FAILED",
+   "job": {
+    "kind": "HUNG",
+    "alive_nodes": [
+     "2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"
+    ],
+    "elapsed_s": 600.0,
+    "guard_s": 600.0,
+    "mode": "many",
+    "progress": {
+     "actor_cpus": 0.015,
+     "actors": 200,
+     "child_cpus": 0.015,
+     "done": 0,
+     "items": 200
+    }
+   },
+   "refused_forks": 0,
+   "warnings": [
+    "2026-10-16 17:39:24,830\tWARNING head_server.py:288 -- worker slot-1-a37a29 (instance 56320907, ip 81.183.231.113) is at its process limit: 0 refused forks/threads (+0), pids 589 of 1536, worker ports in use 18 of 18. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit",
+    "2026-10-16 17:44:31,355\tWARNING head_server.py:288 -- worker slot-1-a37a29 (instance 56320907, ip 81.183.231.113) is at its process limit: 0 refused forks/threads (+0), pids 589 of 1536, worker ports in use 18 of 18. Ray work on this worker can queue, hang or fail. See https://duc-ph.github.io/ray-vast/how-to/troubleshoot/#a-worker-is-at-its-process-limit"
+   ],
+   "params": "C10_PARAMS {'actors': 200, 'actor_cpus': 0.015, 'child_cpus': 0.015}"
+  },
+  "data.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"
+    ],
+    "blocks": 7,
+    "elapsed_s": 33.8,
+    "groups": 16,
+    "map_concurrency": 3,
+    "map_num_cpus": 0.05,
+    "max_hash_shuffle_aggregators": 3,
+    "mode": "tuned2",
+    "read_concurrency": 3,
+    "resource_limits_cpu": 3,
+    "rows": 400000,
+    "seconds": 33.5,
+    "total": 400000
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'blocks': 7, 'rows': 400000, 'map_num_cpus': 0.05, 'max_hash_shuffle_aggregators': 3, 'resource_limits_cpu': 3, 'read_concurrency': 3, 'map_concurrency': 3}"
+  },
+  "data.many": {
+   "verdict": "FAIL",
+   "reasons": [
+    "the job did not fail (COMPLETED): no advice is needed at this size",
+    "no head pids/ports WARNING line for the node"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"
+    ],
+    "blocks": 400,
+    "elapsed_s": 560.2,
+    "groups": 16,
+    "map_num_cpus": 0.05,
+    "mode": "many",
+    "rows": 400000,
+    "seconds": 560.1,
+    "total": 400000
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'blocks': 400, 'rows': 400000, 'map_num_cpus': 0.05}"
+  },
+  "tune.tuned": {
+   "verdict": "PASS",
+   "reasons": [
+    "completed, node alive, no refused fork"
+   ],
+   "job_status": "SUCCEEDED",
+   "job": {
+    "kind": "COMPLETED",
+    "alive_nodes": [
+     "2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"
+    ],
+    "bundles": [
+     0.4286,
+     0.4286
+    ],
+    "elapsed_s": 347.9,
+    "errors": 0,
+    "max_concurrent_trials": 7,
+    "mode": "tuned",
+    "results": 60,
+    "seconds": 347.8,
+    "task_cpu": 0.4286,
+    "trials": 60
+   },
+   "refused_forks": 0,
+   "warnings": [],
+   "params": "C10_PARAMS {'trials': 60, 'bundles': [0.4286, 0.4286], 'task_cpu': 0.4286, 'max_concurrent_trials': 7}"
+  }
+ },
+ "outcome": "failed",
+ "message": "interrupted: the test did not end (no call report)",
+ "ended": 1792199789.790602,
+ "wall_s": 2449.0
+}

@@ -1,0 +1,1392 @@
+2026-10-17 13:13:32,236	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:44399[22m
+2026-10-17 13:13:32,258	INFO cli.py:569 -- 2026-10-17 05:58:24,217	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job data-many-f2c1b0: python c10_data.py many
+C10_START C10.data many 1792241907.1 guard_s=900.0
+2026-10-17 05:58:27,134	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.93.34.77:6379...
+2026-10-17 05:58:27,170	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'blocks': 400, 'rows': 400000, 'map_num_cpus': 0.05}
+2026-10-17 05:58:27,628	INFO streaming_executor.py:214 -- Starting execution of Dataset dataset_034hUgaZB2GdlV9RcmDRpW_0. Full logs are in /tmp/ray/session_2026-10-17_05-42-19_182023_7/logs/ray-data
+2026-10-17 05:58:27,628	INFO streaming_executor.py:215 -- Execution plan of Dataset dataset_034hUgaZB2GdlV9RcmDRpW_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadRange] -> TaskPoolMapOperator[MapBatches(add_key)] -> HashAggregateOperator[HashAggregate(key_columns=('key',), num_partitions=400)]
+2026-10-17 05:58:28,549	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-17 05:58:28,724	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:58:28,725	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:58:28,727	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-17 05:58:28,727	INFO logging_progress.py:181 -- 
+2026-10-17 05:58:28,728	INFO logging_progress.py:231 -- ReadRange: 0/1
+2026-10-17 05:58:28,728	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 399 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-10-17 05:58:28,728	INFO logging_progress.py:231 -- MapBatches(add_key): 0/1
+2026-10-17 05:58:28,728	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 05:58:28,728	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:58:28,728	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-17 05:58:28,728	INFO logging_progress.py:231 --     - Shuffle: 0/1
+2026-10-17 05:58:28,728	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:58:28,728	INFO logging_progress.py:192 -- =================================================================
+2026-10-17 05:58:36,816	INFO hash_aggregate.py:161 -- Estimated memory requirement for aggregating aggregator (partitions=400, aggregators=64, dataset (estimate)=0.0GiB): shuffle=0.1MiB, output=0.0MiB, total=0.1MiB, 
+2026-10-17 05:58:38,725	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:58:38,725	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:58:38,725	INFO logging_progress.py:227 -- Active & requested resources: 50.25/64 CPU, 64.0GiB/364.8GiB memory, 1.1MiB/59.4GiB object store
+2026-10-17 05:58:38,725	INFO logging_progress.py:181 -- 
+2026-10-17 05:58:38,725	INFO logging_progress.py:231 -- ReadRange: 66000/400000
+2026-10-17 05:58:38,725	INFO logging_progress.py:233 --   Tasks: 12 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 322 (0.0B); Resources: 12.0 CPU, 78.1KiB memory, 148.4KiB object store
+2026-10-17 05:58:38,725	INFO logging_progress.py:231 -- MapBatches(add_key): 60000/400000
+2026-10-17 05:58:38,725	INFO logging_progress.py:233 --   Tasks: 7; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 109.4KiB memory, 1.0MiB object store
+2026-10-17 05:58:38,725	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:58:38,726	INFO logging_progress.py:233 --   Tasks: 25 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 35 (546.9KiB); Resources: 41.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:58:38,726	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:58:38,726	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:58:38,726	INFO logging_progress.py:192 -- =================================================================
+[36m(pid=18692, ip=38.247.78.28)[0m [2026-10-17 05:58:47,889 E 18692 18692] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=93ccc0347144a20055dfc20b94426bb34bd4d3f5ac1eabed278fedf9
+2026-10-17 05:58:48,742	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:58:48,742	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:58:48,742	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:58:48,742	INFO logging_progress.py:181 -- 
+2026-10-17 05:58:48,742	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:58:48,742	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:58:48,742	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:58:48,742	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:58:48,742	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:58:48,743	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:58:48,743	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:58:48,743	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:58:48,743	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +25s)[0m Tip: use `ray status` to view detailed cluster status. To disable these messages, set RAY_SCHEDULER_EVENTS=0.
+[36m(autoscaler +25s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +30s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:58:58,805	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:58:58,805	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:58:58,805	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:58:58,805	INFO logging_progress.py:181 -- 
+2026-10-17 05:58:58,805	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:58:58,806	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:58:58,806	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:58:58,806	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:58:58,806	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:58:58,806	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:58:58,806	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:58:58,806	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:58:58,806	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +35s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +40s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:08,869	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:08,869	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:08,870	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:08,870	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:08,870	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:08,870	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:08,870	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:08,870	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:08,870	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:08,870	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:08,870	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:08,870	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:08,870	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +45s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +50s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:18,922	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:18,922	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:18,922	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:18,922	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:18,922	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:18,922	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:18,922	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:18,923	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:18,923	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:18,923	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:18,923	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:18,923	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:18,923	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +55s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m0s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:28,950	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:28,950	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:28,951	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:28,951	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:28,951	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:28,951	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:28,951	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:28,951	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:28,951	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:28,951	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:28,951	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:28,951	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:28,951	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m5s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m10s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:39,012	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:39,012	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:39,012	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:39,012	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:39,012	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:39,012	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:39,012	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:39,012	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:39,012	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:39,012	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:39,012	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:39,012	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:39,012	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m15s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 05:59:45,910 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(18692) have not registered within the timeout. The process is dead, probably it crashed during start.
+[36m(pid=19028, ip=38.247.78.28)[0m [2026-10-17 05:58:50,489 E 19028 19028] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=e4c6cd99d3671ff0bae124554f20aad7279cf6bbc10e1cafedad3728[32m [repeated 7x across cluster] (Ray deduplicates logs by default. Set RAY_DEDUP_LOGS=0 to disable log deduplication, or see https://docs.ray.io/en/master/ray-observability/user-guides/configure-logging.html#log-deduplication for more options.)[0m
+[36m(autoscaler +1m20s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:49,075	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:49,075	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:49,075	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:49,075	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:49,076	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:49,076	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:49,076	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:49,076	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:49,076	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:49,076	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:49,076	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:49,076	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:49,076	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet)[0m WARNING: 56 PYTHON worker processes have been started on node: 706cbc0594c07bfc5cae8342745a4f29e0ed2c457783866b27e1474e with address: 38.247.78.28, which is 7x the maximum expected startup concurrency (8). This could be a result of using a large number of actors, tasks blocked in ray.get() calls, or tasks with fractional CPU requests (e.g., num_cpus=0.1) allowing high concurrency. See https://github.com/ray-project/ray/issues/3644 for some discussion of workarounds.
+[36m(autoscaler +1m25s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 05:59:48,596 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(19028) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 7x across cluster][0m
+[36m(pid=20490, ip=38.247.78.28)[0m [2026-10-17 05:59:53,171 E 20490 20490] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=71eb1e20933ca92b6e6508a6d751b7f585d9ba71b7334dc733b47108
+[36m(pid=20483, ip=38.247.78.28)[0m [2026-10-17 05:59:53,183 E 20483 20483] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=881d997372d90f7ff9d6097fe357c590cdbbe357369aea2aa72a9c83
+[36m(autoscaler +1m30s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 05:59:59,152	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 05:59:59,152	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 05:59:59,153	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 05:59:59,153	INFO logging_progress.py:181 -- 
+2026-10-17 05:59:59,153	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 05:59:59,153	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 05:59:59,153	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 05:59:59,153	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 05:59:59,153	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 05:59:59,153	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 05:59:59,153	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 05:59:59,153	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 05:59:59,153	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m35s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m40s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:09,237	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:09,237	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:09,237	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:09,237	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:09,237	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:09,237	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:09,237	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:09,237	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:09,237	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:09,237	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:09,237	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:09,237	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:09,237	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m45s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +1m50s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:19,285	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:19,285	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:19,286	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:19,286	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:19,286	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:19,286	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:19,286	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:19,286	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:19,286	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:19,286	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:19,286	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:19,286	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:19,286	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +1m55s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m0s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:29,316	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:29,317	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:29,317	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:29,317	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:29,317	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:29,317	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:29,317	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:29,317	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:29,317	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:29,317	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:29,317	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:29,317	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:29,317	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m5s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m10s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:39,387	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:39,388	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:39,388	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:39,388	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:39,388	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:39,388	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:39,388	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:39,388	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:39,388	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:39,388	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:39,388	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:39,388	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:39,388	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m15s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m20s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:49,467	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:49,468	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:49,468	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:49,468	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:49,468	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:49,468	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:49,468	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:49,468	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:49,469	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:49,469	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:49,469	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:49,469	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:49,469	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:00:51,322 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(20501) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 5x across cluster][0m
+[36m(pid=20529, ip=38.247.78.28)[0m [2026-10-17 05:59:53,747 E 20529 20529] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=7a5eec6b3fa506ea43d46a045b20ca4baf41e0a5f76da8b2e63d8919[32m [repeated 6x across cluster][0m
+[36m(autoscaler +2m25s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m30s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:00:59,546	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:00:59,546	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:00:59,546	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:00:59,546	INFO logging_progress.py:181 -- 
+2026-10-17 06:00:59,546	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:00:59,547	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:00:59,547	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:00:59,547	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:00:59,547	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:00:59,547	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:00:59,547	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:00:59,547	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:00:59,547	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m35s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m40s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:09,649	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:09,649	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:09,649	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:09,649	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:09,649	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:09,649	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:09,650	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:09,650	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:09,650	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:09,650	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:09,650	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:09,650	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:09,650	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m45s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +2m51s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:19,680	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:19,680	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:19,681	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:19,681	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:19,681	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:19,681	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:19,681	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:19,681	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:19,681	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:19,681	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:19,681	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:19,681	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:19,681	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +2m56s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m1s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:29,755	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:29,755	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:29,755	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:29,755	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:29,755	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:29,755	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:29,755	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:29,755	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:29,755	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:29,756	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:29,756	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:29,756	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:29,756	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +3m6s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m11s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:39,803	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:39,803	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:39,803	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:39,803	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:39,803	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:39,803	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:39,803	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:39,803	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:39,803	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:39,804	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:39,804	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:39,804	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:39,804	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +3m16s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m21s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:49,893	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:49,893	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:49,893	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:49,893	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:49,893	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:49,893	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:49,893	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:49,893	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:49,893	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:49,893	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:49,893	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:49,893	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:49,893	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:01:51,263 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(21758) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 6x across cluster][0m
+[36m(pid=21769, ip=38.247.78.28)[0m [2026-10-17 06:00:53,514 E 21769 21769] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=e6a6114841db042643d3918fd835d4cef46d229241f90c555d55f80a[32m [repeated 8x across cluster][0m
+[36m(autoscaler +3m26s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m31s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:01:59,962	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:01:59,963	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:01:59,963	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:01:59,963	INFO logging_progress.py:181 -- 
+2026-10-17 06:01:59,963	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:01:59,963	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:01:59,963	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:01:59,963	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:01:59,963	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:01:59,963	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:01:59,963	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:01:59,963	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:01:59,963	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +3m36s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m41s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:02:10,024	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:02:10,024	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:02:10,024	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:02:10,024	INFO logging_progress.py:181 -- 
+2026-10-17 06:02:10,024	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:02:10,024	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:02:10,025	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:02:10,025	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:02:10,025	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:02:10,025	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:02:10,025	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:02:10,025	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:02:10,025	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +3m46s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +3m51s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:02:20,064	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:02:20,065	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:02:20,065	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:02:20,065	INFO logging_progress.py:181 -- 
+2026-10-17 06:02:20,065	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:02:20,065	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:02:20,065	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:02:20,066	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:02:20,066	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:02:20,066	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:02:20,066	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:02:20,066	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:02:20,066	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +3m56s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m1s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:02:30,167	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:02:30,167	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:02:30,167	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:02:30,167	INFO logging_progress.py:181 -- 
+2026-10-17 06:02:30,167	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:02:30,167	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:02:30,167	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:02:30,167	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:02:30,168	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:02:30,168	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:02:30,168	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:02:30,168	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:02:30,168	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +4m6s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m11s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:02:40,234	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:02:40,234	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:02:40,234	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:02:40,235	INFO logging_progress.py:181 -- 
+2026-10-17 06:02:40,235	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:02:40,235	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:02:40,235	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:02:40,235	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:02:40,235	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:02:40,235	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:02:40,235	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:02:40,235	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:02:40,235	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +4m16s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m21s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:02:50,319	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:02:50,319	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:02:50,319	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:02:50,319	INFO logging_progress.py:181 -- 
+2026-10-17 06:02:50,319	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:02:50,319	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:02:50,319	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:02:50,319	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:02:50,319	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:02:50,319	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:02:50,319	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:02:50,319	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:02:50,320	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:02:51,331 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(22913) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 10x across cluster][0m
+[36m(pid=22920, ip=38.247.78.28)[0m [2026-10-17 06:01:53,548 E 22920 22920] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=30f15a640795d4ca6f58b3b4f7a55db1245b4752a956d3ae3772c33e[32m [repeated 8x across cluster][0m
+[36m(autoscaler +4m26s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m31s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:00,354	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:00,354	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:00,354	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:00,354	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:00,354	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:00,354	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:00,354	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:00,354	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:00,354	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:00,354	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:00,355	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:00,355	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:00,355	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +4m36s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m41s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:10,408	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:10,408	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:10,408	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:10,408	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:10,408	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:10,409	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:10,409	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:10,409	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:10,409	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:10,409	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:10,409	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:10,409	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:10,409	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +4m46s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +4m51s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:20,426	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:20,427	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:20,427	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:20,427	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:20,427	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:20,427	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:20,427	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:20,427	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:20,427	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:20,427	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:20,427	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:20,427	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:20,428	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +4m56s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m1s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:30,475	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:30,475	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:30,475	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:30,475	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:30,475	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:30,475	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:30,475	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:30,475	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:30,475	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:30,475	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:30,475	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:30,475	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:30,476	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +5m6s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m11s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:40,510	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:40,510	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:40,510	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:40,511	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:40,511	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:40,511	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:40,511	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:40,511	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:40,511	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:40,511	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:40,511	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:40,511	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:40,511	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +5m16s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m21s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:03:50,580	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:03:50,581	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:03:50,581	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:03:50,581	INFO logging_progress.py:181 -- 
+2026-10-17 06:03:50,581	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:03:50,581	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:03:50,581	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:03:50,581	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:03:50,581	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:03:50,581	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:03:50,581	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:03:50,581	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:03:50,581	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:03:51,283 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(24072) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 6x across cluster][0m
+[36m(pid=24083, ip=38.247.78.28)[0m [2026-10-17 06:02:53,528 E 24083 24083] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=e35206bac1b589dacf452922ce3e9c27e4962de40254428f5595ecfc[32m [repeated 8x across cluster][0m
+[36m(autoscaler +5m26s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m31s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:00,643	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:00,646	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:00,647	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:00,647	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:00,647	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:00,647	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:00,647	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:00,647	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:00,647	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:00,647	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:00,647	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:00,647	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:00,647	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +5m36s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m41s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:10,719	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:10,720	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:10,720	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:10,720	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:10,720	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:10,720	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:10,720	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:10,720	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:10,720	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:10,720	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:10,720	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:10,720	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:10,720	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +5m46s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +5m51s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:20,768	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:20,769	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:20,769	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:20,769	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:20,769	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:20,769	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:20,769	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:20,769	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:20,769	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:20,769	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:20,769	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:20,769	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:20,770	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +5m56s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:30,863	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:30,864	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:30,864	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:30,864	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:30,865	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:30,865	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:30,865	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:30,865	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:30,865	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:30,866	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:30,866	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:30,866	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:30,866	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +6m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:40,908	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:40,908	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:40,908	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:40,909	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:40,909	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:40,909	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:40,909	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:40,909	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:40,909	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:40,909	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:40,909	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:40,909	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:40,909	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +6m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:04:50,944	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:04:50,944	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:04:50,944	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:04:50,944	INFO logging_progress.py:181 -- 
+2026-10-17 06:04:50,944	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:04:50,944	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:04:50,944	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:04:50,944	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:04:50,944	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:04:50,945	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:04:50,945	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:04:50,945	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:04:50,945	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:04:51,290 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(25237) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 8x across cluster][0m
+[36m(pid=25248, ip=38.247.78.28)[0m [2026-10-17 06:03:53,760 E 25248 25248] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=e994eed382a4c98066ed3ed0d8cd7f3dc1ca38f7b5fab1753f80ce17[32m [repeated 8x across cluster][0m
+[36m(autoscaler +6m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m32s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:00,976	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:00,976	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:00,976	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:00,976	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:00,976	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:00,976	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:00,976	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:00,976	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:00,976	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:00,976	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:00,976	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:00,977	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:00,977	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +6m37s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m42s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:11,022	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:11,022	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:11,022	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:11,023	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:11,023	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:11,023	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:11,023	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:11,023	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:11,023	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:11,023	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:11,023	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:11,023	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:11,023	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +6m47s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +6m52s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:21,078	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:21,078	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:21,078	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:21,078	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:21,078	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:21,078	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:21,078	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:21,078	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:21,078	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:21,078	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:21,078	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:21,078	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:21,078	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +6m57s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:31,170	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:31,170	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:31,170	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:31,171	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:31,171	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:31,171	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:31,171	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:31,171	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:31,171	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:31,171	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:31,171	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:31,171	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:31,172	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +7m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:41,232	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:41,233	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:41,233	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:41,233	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:41,233	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:41,233	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:41,233	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:41,233	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:41,233	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:41,233	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:41,233	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:41,234	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:41,234	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +7m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:05:51,289	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:05:51,289	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:05:51,289	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:05:51,289	INFO logging_progress.py:181 -- 
+2026-10-17 06:05:51,289	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:05:51,289	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:05:51,289	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:05:51,289	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:05:51,289	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:05:51,289	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:05:51,289	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:05:51,290	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:05:51,290	INFO logging_progress.py:192 -- =================================================================
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:05:51,295 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(26378) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 8x across cluster][0m
+[36m(pid=26381, ip=38.247.78.28)[0m [2026-10-17 06:04:55,119 E 26381 26381] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=81a5bfd7cd0df5d8dff24f378c555a0156663b824f03e9b4e32b4ca9[32m [repeated 8x across cluster][0m
+[36m(autoscaler +7m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m32s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:06:01,331	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:01,331	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:01,331	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:01,331	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:01,332	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:01,332	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:01,332	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:01,332	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:01,332	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:01,332	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:01,332	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:01,332	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:01,332	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +7m37s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m42s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:06:11,350	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:11,351	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:11,351	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:11,351	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:11,351	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:11,351	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:11,351	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:11,351	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:11,351	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:11,351	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:11,351	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:11,351	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:11,351	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +7m47s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +7m52s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:06:21,433	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:21,433	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:21,433	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:21,433	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:21,433	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:21,433	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:21,433	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:21,434	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:21,434	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:21,434	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:21,434	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:21,434	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:21,434	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +7m57s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:06:31,515	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:31,516	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:31,516	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:31,516	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:31,516	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:31,516	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:31,516	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:31,516	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:31,516	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:31,516	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:31,516	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:31,516	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:31,517	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:06:41,602	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:41,602	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:41,602	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:41,602	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:41,602	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:41,602	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:41,602	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:41,602	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:41,602	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:41,603	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:41,603	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:41,603	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:41,603	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:06:51,355 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(27533) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 10x across cluster][0m
+[36m(pid=27540, ip=38.247.78.28)[0m [2026-10-17 06:05:53,538 E 27540 27540] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=cb9a83838cd5bb0bba3482bb4d072eba5b78f3a216cd242a80c6f000[32m [repeated 8x across cluster][0m
+2026-10-17 06:06:51,685	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:06:51,686	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:06:51,686	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:06:51,686	INFO logging_progress.py:181 -- 
+2026-10-17 06:06:51,686	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:06:51,686	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:06:51,686	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:06:51,686	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:06:51,686	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:06:51,686	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:06:51,686	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:06:51,686	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:06:51,686	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m32s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:07:01,738	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:01,738	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:01,738	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:01,738	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:01,738	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:01,738	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:01,738	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:01,738	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:01,738	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:01,738	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:01,738	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:01,738	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:01,739	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m37s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m42s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:07:11,776	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:11,776	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:11,776	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:11,776	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:11,776	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:11,776	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:11,776	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:11,776	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:11,777	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:11,777	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:11,777	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:11,777	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:11,777	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m47s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +8m52s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:07:21,787	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:21,787	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:21,787	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:21,787	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:21,787	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:21,787	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:21,787	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:21,787	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:21,787	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:21,787	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:21,787	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:21,787	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:21,787	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +8m57s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m2s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:07:31,847	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:31,847	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:31,847	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:31,847	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:31,847	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:31,847	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:31,847	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:31,847	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:31,847	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:31,848	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:31,848	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:31,848	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:31,848	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m7s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m12s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:07:41,857	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:41,857	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:41,858	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:41,858	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:41,858	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:41,858	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:41,858	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:41,858	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:41,858	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:41,858	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:41,858	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:41,858	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:41,858	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m17s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m22s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:07:51,314 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(28676) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 6x across cluster][0m
+[36m(pid=28694, ip=38.247.78.28)[0m [2026-10-17 06:06:53,640 E 28694 28694] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=9e8cf79dc1dffb20bf2067681d96ab7f1d36077e55dd9d0767fcc373[32m [repeated 8x across cluster][0m
+2026-10-17 06:07:51,923	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:07:51,923	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:07:51,923	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:07:51,923	INFO logging_progress.py:181 -- 
+2026-10-17 06:07:51,923	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:07:51,923	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:07:51,924	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:07:51,924	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:07:51,924	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:07:51,924	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:07:51,924	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:07:51,924	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:07:51,924	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m27s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m33s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:08:01,978	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:01,978	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:01,978	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:01,979	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:01,979	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:01,979	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:01,979	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:01,979	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:01,979	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:01,979	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:01,979	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:01,979	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:01,979	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m38s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m43s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:08:12,056	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:12,056	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:12,056	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:12,056	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:12,056	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:12,056	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:12,056	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:12,056	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:12,056	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:12,056	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:12,056	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:12,056	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:12,056	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m48s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +9m53s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:08:22,128	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:22,129	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:22,129	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:22,129	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:22,129	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:22,130	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:22,130	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:22,130	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:22,130	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:22,130	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:22,130	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:22,130	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:22,130	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +9m58s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m3s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:08:32,132	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:32,132	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:32,132	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:32,132	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:32,132	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:32,132	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:32,132	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:32,132	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:32,132	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:32,133	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:32,133	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:32,133	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:32,133	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m8s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m13s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:08:42,183	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:42,184	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:42,184	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:42,184	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:42,184	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:42,184	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:42,184	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:42,184	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:42,184	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:42,184	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:42,184	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:42,184	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:42,184	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m18s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m23s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:08:51,368 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(29805) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 10x across cluster][0m
+[36m(pid=29819, ip=38.247.78.28)[0m [2026-10-17 06:07:53,569 E 29819 29819] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=55c0cf36b8aef40284888de4125fd0164f5f4e8d69aa8c4b0b1a32fd[32m [repeated 8x across cluster][0m
+2026-10-17 06:08:52,277	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:08:52,278	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:08:52,278	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:08:52,278	INFO logging_progress.py:181 -- 
+2026-10-17 06:08:52,278	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:08:52,278	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:08:52,278	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:08:52,278	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:08:52,278	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:08:52,278	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:08:52,278	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:08:52,278	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:08:52,278	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m28s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m33s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:09:02,335	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:02,335	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:02,335	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:02,335	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:02,335	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:02,335	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:02,335	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:02,336	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:02,336	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:02,336	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:02,336	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:02,336	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:02,336	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m38s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m43s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:09:12,433	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:12,433	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:12,433	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:12,433	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:12,433	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:12,434	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:12,434	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:12,434	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:12,434	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:12,434	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:12,434	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:12,434	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:12,434	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m48s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +10m53s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:09:22,497	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:22,497	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:22,498	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:22,498	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:22,498	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:22,498	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:22,498	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:22,498	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:22,498	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:22,498	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:22,498	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:22,498	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:22,498	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +10m58s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m3s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:09:32,573	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:32,573	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:32,573	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:32,573	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:32,573	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:32,573	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:32,573	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:32,573	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:32,573	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:32,573	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:32,574	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:32,574	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:32,574	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m8s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m13s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:09:42,585	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:42,586	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:42,586	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:42,586	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:42,586	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:42,586	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:42,586	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:42,586	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:42,586	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:42,586	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:42,586	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:42,586	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:42,586	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m18s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m23s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:09:51,367 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(30953) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 7x across cluster][0m
+[36m(pid=30961, ip=38.247.78.28)[0m [2026-10-17 06:08:53,625 E 30961 30961] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=b7c87cd623655f1232da0bb7d6a92ce118ce0dbec1c2f49051a47c3f[32m [repeated 8x across cluster][0m
+2026-10-17 06:09:52,607	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:09:52,607	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:09:52,607	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:09:52,607	INFO logging_progress.py:181 -- 
+2026-10-17 06:09:52,607	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:09:52,607	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:09:52,607	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:09:52,607	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:09:52,607	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:09:52,607	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:09:52,607	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:09:52,607	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:09:52,607	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m28s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m33s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:10:02,695	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:02,695	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:02,695	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:02,695	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:02,695	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:02,695	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:02,695	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:02,695	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:02,695	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:02,695	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:02,695	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:02,695	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:02,695	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m38s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m43s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:10:12,746	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:12,746	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:12,746	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:12,746	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:12,746	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:12,746	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:12,748	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:12,748	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:12,748	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:12,749	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:12,749	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:12,749	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:12,749	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m48s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +11m53s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:10:22,750	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:22,750	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:22,750	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:22,750	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:22,750	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:22,750	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:22,750	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:22,750	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:22,751	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:22,751	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:22,751	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:22,751	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:22,751	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +11m58s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m3s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:10:32,832	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:32,832	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:32,832	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:32,833	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:32,833	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:32,833	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:32,833	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:32,833	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:32,833	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:32,833	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:32,833	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:32,833	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:32,833	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m8s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m13s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:10:42,888	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:42,888	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:42,888	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:42,888	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:42,888	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:42,888	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:42,888	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:42,888	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:42,888	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:42,888	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:42,888	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:42,888	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:42,888	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m18s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m23s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:10:51,339 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(32103) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 7x across cluster][0m
+[36m(pid=32113, ip=38.247.78.28)[0m [2026-10-17 06:09:53,657 E 32113 32113] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=2a5bce0e38b70a5c98b6b15b0ce0a0ccc0c9afdf5eecb7d31b5d91ed[32m [repeated 8x across cluster][0m
+2026-10-17 06:10:52,991	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:10:52,991	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:10:52,991	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:10:52,991	INFO logging_progress.py:181 -- 
+2026-10-17 06:10:52,991	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:10:52,991	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:10:52,991	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:10:52,992	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:10:52,992	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:10:52,992	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:10:52,992	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:10:52,992	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:10:52,995	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m28s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m33s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:11:03,009	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:03,010	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:03,010	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:03,010	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:03,010	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:03,010	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:03,010	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:03,010	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:03,010	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:03,010	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:03,010	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:03,010	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:03,010	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m38s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m43s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:11:13,045	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:13,046	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:13,046	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:13,046	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:13,046	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:13,046	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:13,046	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:13,046	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:13,046	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:13,046	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:13,047	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:13,047	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:13,047	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m48s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +12m53s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:11:23,058	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:23,058	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:23,058	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:23,058	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:23,058	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:23,058	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:23,059	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:23,059	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:23,059	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:23,059	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:23,059	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:23,059	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:23,059	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +12m58s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m3s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:11:33,059	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:33,059	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:33,059	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:33,060	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:33,060	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:33,060	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:33,060	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:33,060	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:33,060	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:33,060	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:33,060	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:33,060	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:33,060	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m8s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m13s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:11:43,076	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:43,077	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:43,080	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:43,080	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:43,080	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:43,082	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:43,084	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:43,084	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:43,084	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:43,084	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:43,084	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:43,084	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:43,085	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m18s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m24s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:11:51,387 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(33227) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 10x across cluster][0m
+[36m(pid=33240, ip=38.247.78.28)[0m [2026-10-17 06:10:53,649 E 33240 33240] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=c7cdafdf3ea485b6c372ca537faeaf8f6d5361dea2d057809c1f4d60[32m [repeated 8x across cluster][0m
+2026-10-17 06:11:53,167	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:11:53,167	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:11:53,167	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:11:53,168	INFO logging_progress.py:181 -- 
+2026-10-17 06:11:53,168	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:11:53,168	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:11:53,168	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:11:53,168	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:11:53,168	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:11:53,168	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:11:53,168	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:11:53,168	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:11:53,168	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m28s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m34s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:12:03,256	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:03,257	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:03,257	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:03,257	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:03,257	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:03,257	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:03,257	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:03,257	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:03,257	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:03,257	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:03,257	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:03,257	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:03,257	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m39s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m44s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:12:13,323	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:13,323	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:13,323	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:13,323	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:13,323	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:13,323	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:13,323	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:13,325	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:13,325	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:13,325	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:13,325	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:13,325	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:13,325	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m49s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +13m54s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:12:23,346	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:23,346	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:23,346	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:23,346	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:23,347	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:23,347	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:23,347	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:23,347	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:23,347	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:23,347	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:23,347	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:23,347	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:23,347	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +13m59s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m4s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:12:33,433	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:33,433	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:33,433	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:33,434	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:33,434	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:33,434	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:33,434	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:33,434	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:33,434	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:33,434	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:33,434	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:33,434	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:33,434	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m9s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m14s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:12:43,520	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:43,520	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:43,520	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:43,520	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:43,520	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:43,520	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:43,520	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:43,520	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:43,520	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:43,520	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:43,520	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:43,521	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:43,521	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m19s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m24s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[33m(raylet, ip=38.247.78.28)[0m [2026-10-17 06:12:51,396 E 368 368] (raylet) worker_pool.cc:627: Some workers of the worker process(34358) have not registered within the timeout. The process is dead, probably it crashed during start.[32m [repeated 8x across cluster][0m
+[36m(pid=34365, ip=38.247.78.28)[0m [2026-10-17 06:11:53,713 E 34365 34365] core_worker_process.cc:247: Failed to register worker to Raylet: Invalid: Invalid: No available ports. Please specify a wider port range using --min-worker-port and --max-worker-port. worker_id=6144d1cf86af4c9ce133b9ab30cef6164af2cb019a1ed8bfb32750f5[32m [repeated 8x across cluster][0m
+2026-10-17 06:12:53,574	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:12:53,575	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:12:53,575	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:12:53,575	INFO logging_progress.py:181 -- 
+2026-10-17 06:12:53,575	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:12:53,575	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:12:53,575	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:12:53,575	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:12:53,575	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:12:53,575	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:12:53,575	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:12:53,575	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:12:53,575	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m29s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m34s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:13:03,631	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:13:03,631	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:13:03,632	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:13:03,632	INFO logging_progress.py:181 -- 
+2026-10-17 06:13:03,632	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:13:03,632	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:13:03,632	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:13:03,632	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:13:03,632	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:13:03,632	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:13:03,632	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:13:03,632	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:13:03,632	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m39s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m44s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:13:13,677	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:13:13,677	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:13:13,677	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:13:13,677	INFO logging_progress.py:181 -- 
+2026-10-17 06:13:13,677	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:13:13,677	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:13:13,677	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:13:13,677	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:13:13,677	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:13:13,677	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:13:13,677	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:13:13,677	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:13:13,678	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m49s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+[36m(autoscaler +14m54s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+2026-10-17 06:13:23,715	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_034hUgaZB2GdlV9RcmDRpW_0 =======
+2026-10-17 06:13:23,715	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-17 06:13:23,715	INFO logging_progress.py:227 -- Active & requested resources: 52.3/64 CPU, 64.0GiB/364.8GiB memory, 1.4MiB/59.4GiB object store
+2026-10-17 06:13:23,715	INFO logging_progress.py:181 -- 
+2026-10-17 06:13:23,715	INFO logging_progress.py:231 -- ReadRange: 83000/400000
+2026-10-17 06:13:23,715	INFO logging_progress.py:233 --   Tasks: 10 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 307 (0.0B); Resources: 10.0 CPU, 78.1KiB memory, 125.0KiB object store
+2026-10-17 06:13:23,715	INFO logging_progress.py:231 -- MapBatches(add_key): 77000/400000
+2026-10-17 06:13:23,715	INFO logging_progress.py:233 --   Tasks: 6; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.3 CPU, 93.8KiB memory, 1.3MiB object store
+2026-10-17 06:13:23,715	INFO logging_progress.py:231 -- HashAggregate(key_columns=('key',), num_partitions=400): 0/1
+2026-10-17 06:13:23,715	INFO logging_progress.py:233 --   Tasks: 26 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 51 (796.9KiB); Resources: 42.0 CPU, 64.0GiB memory, 0.0B object store
+2026-10-17 06:13:23,716	INFO logging_progress.py:231 --     - Shuffle: 0/?
+2026-10-17 06:13:23,716	INFO logging_progress.py:231 --     - Aggregation: 0/1
+2026-10-17 06:13:23,716	INFO logging_progress.py:192 -- =================================================================
+[36m(autoscaler +14m59s)[0m No available node types can fulfill cluster constraint: {'CPU': 64.0, 'memory': 391701017395.0, 'GPU': 1.0}*2. Add suitable node types to this cluster to resolve this issue.
+C10_RESULT C10.data HUNG {"alive_nodes": ["706cbc0594c07bfc5cae8342745a4f29e0ed2c457783866b27e1474e"], "elapsed_s": 900.0, "guard_s": 900.0, "mode": "many", "progress": {"blocks": 400, "map_num_cpus": 0.05, "rows": 400000, "stage": "groupby"}}

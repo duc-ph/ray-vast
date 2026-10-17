@@ -1,10 +1,10 @@
 import ray
 
-@ray.remote(num_cpus=0.5)          # CPUS / B
+@ray.remote(num_cpus=0.4)          # CPUS / B
 def child(i):
     ...
 
-@ray.remote(num_cpus=0.5)          # CPUS / B
+@ray.remote(num_cpus=0.4)          # CPUS / B
 class Runner:
     def work(self, i):
         return ray.get(child.remote(i))   # the actor waits for a task: 2 processes

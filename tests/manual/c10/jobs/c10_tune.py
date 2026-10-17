@@ -2,6 +2,7 @@
 # Each trial has a placement group of 2 bundles of min(0.1, cpus / (2 * trials)) CPU: one for the trial, one for its task.
 #   many:  max(ports + 4, 60) trials, all at once (Tune's default: as many as the CPUs allow). Each trial actor holds one
 #          worker process; the trials take all worker ports, and their evaluation tasks never get a process: the job hangs.
+#          Each trial waits HOLD_S before its first evaluation, so the trials are alive at the same time.
 #   tuned: TuneConfig(max_concurrent_trials=budget // 2) (budget = ports - 4): one process for each trial plus one for its
 #          task. The same trials run in waves and complete.
 #   default: Tune's defaults: the same trials, each with the default 1 CPU, and a trainable that starts no task. At most
@@ -19,6 +20,7 @@ mode = start(ID, 600)
 cpus, ports, budget = target()
 TRIALS = max(ports + 4, int(60 * SCALE))  # 2 processes for each trial: more than the ports at any size
 STEPS = 3
+HOLD_S = 60 * SCALE  # each trial waits this long before its first evaluation task
 
 
 @ray.remote(num_cpus=0)  # it runs in the trial's placement group (its second bundle)
@@ -28,6 +30,9 @@ def evaluate(x, step):
 
 
 def trainable(config):
+    # The trial holds its process first, so all trials are alive at the same time on any host size. Without it, on
+    # 58 worker ports (LB11 2026-10-17) the 1.5 s trials of `many` ended faster than new ones started, and all completed.
+    time.sleep(HOLD_S)
     for step in range(STEPS):
         tune.report({"score": ray.get(evaluate.remote(config["x"], step)), "step": step})
 

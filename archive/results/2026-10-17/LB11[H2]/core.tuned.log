@@ -1,9 +1,10 @@
-2026-10-17 00:37:06,160	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:37197[22m
-2026-10-17 00:37:06,172	INFO cli.py:569 -- 2026-10-16 17:36:33,312	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job core-tuned-18efe2: python c10_core.py tuned
-C10_START C10.core tuned 1792197395.2 guard_s=600.0
-2026-10-16 17:36:35,169	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 34.213.80.79:6379...
-2026-10-16 17:36:35,201	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-C10_TARGET cpus=6.0 ports=18 budget=14
-C10_PARAMS {'actors': 7, 'actor_cpus': 0.429, 'child_cpus': 0.429}
-C10_JOB C10.core COMPLETED {"actor_cpus": 0.429, "actors": 7, "alive_nodes": ["2158026e47a05e125df9ebb27296af525c9e3ba926506544ec3c1f9e"], "child_cpus": 0.429, "done": 200, "elapsed_s": 23.3, "items": 200, "mode": "tuned", "seconds": 23.0}
+2026-10-17 11:10:19,770	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:52219[22m
+2026-10-17 11:10:19,791	INFO cli.py:569 -- 2026-10-17 04:09:46,910	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job core-tuned-3e0084: python c10_core.py tuned
+C10_START C10.core tuned 1792235389.8 guard_s=600.0
+2026-10-17 04:09:49,816	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 54.189.161.40:6379...
+2026-10-17 04:09:49,858	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+C10_TARGET cpus=64.0 ports=58 budget=54
+C10_PARAMS {'actors': 27, 'actor_cpus': 1.185, 'child_cpus': 1.185}
+[33m(raylet)[0m WARNING: 32 PYTHON worker processes have been started on node: f092a5acc5ce2c7cfea384bf28a7fc5c0f41f0560cce552258dcebd2 with address: 154.42.3.235, which is 4x the maximum expected startup concurrency (8). This could be a result of using a large number of actors, tasks blocked in ray.get() calls, or tasks with fractional CPU requests (e.g., num_cpus=0.1) allowing high concurrency. See https://github.com/ray-project/ray/issues/3644 for some discussion of workarounds.
+C10_RESULT C10.core COMPLETED {"actor_cpus": 1.185, "actors": 27, "alive_nodes": ["f092a5acc5ce2c7cfea384bf28a7fc5c0f41f0560cce552258dcebd2"], "child_cpus": 1.185, "done": 200, "elapsed_s": 28.5, "items": 200, "mode": "tuned", "seconds": 28.1}

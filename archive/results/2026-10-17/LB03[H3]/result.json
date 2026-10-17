@@ -1,0 +1,125 @@
+{
+ "id": "LB03[H3]",
+ "markers": [
+  "libraries",
+  "limits"
+ ],
+ "fixture": "libraries",
+ "started": 1792237250.6870644,
+ "checks": [
+  {
+   "name": "the LB03 input is written (lb_make_parquet.py)",
+   "ok": true,
+   "detail": "('SUCCEEDED', 'PASS', {'rows': 3000000, 'blocks': 60, 'seconds': 60.5})"
+  },
+  {
+   "name": "the data.md snippet at B 10 on H3: SUCCEEDED, all rows counted from the S3 output",
+   "ok": true,
+   "detail": "('SUCCEEDED', {'elapsed_s': 569.5, 'groups': 1000, 'rows_counted': 3000000, 'rows_expected': 3000000})"
+  },
+  {
+   "name": "output in S3",
+   "ok": true,
+   "detail": "s3://ray-vast-rvtest-20261017-089e/lb03/out-H3"
+  },
+  {
+   "name": "no refused fork in a WARNING",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "no node crash: the same Ray nodes are alive",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "no out-of-memory error",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "data": {
+  "shape_wait_s": 3.1,
+  "H3": {
+   "B": 10,
+   "CPUS": 4.0,
+   "hosts": [
+    {
+     "container_id": "56385063",
+     "machine_id": 3969,
+     "ports": 14,
+     "ray_cpus": 4.0,
+     "pids.max": "1280"
+    },
+    {
+     "container_id": "56385075",
+     "machine_id": 32816,
+     "ports": 14,
+     "ray_cpus": 4.0,
+     "pids.max": "1280"
+    }
+   ]
+  },
+  "input": {
+   "path": "s3://ray-vast-rvtest-20261017-089e/lb03/in",
+   "rows": 3000000,
+   "bytes": 3016796698,
+   "status": "SUCCEEDED",
+   "result": [
+    "PASS",
+    {
+     "rows": 3000000,
+     "blocks": 60,
+     "seconds": 60.5
+    }
+   ]
+  },
+  "data_substitutions": [
+   {
+    "doc": "libraries/data.md",
+    "old": "max_hash_shuffle_aggregators = 2",
+    "new": "max_hash_shuffle_aggregators = 2"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "ExecutionResources(cpu=2)",
+    "new": "ExecutionResources(cpu=2)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "\"s3://my-bucket/in\"",
+    "new": "\"s3://ray-vast-rvtest-20261017-089e/lb03/in\""
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "concurrency=2,",
+    "new": "concurrency=2,"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "override_num_blocks=5)",
+    "new": "override_num_blocks=5)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "TaskPoolStrategy(size=2)",
+    "new": "TaskPoolStrategy(size=2)"
+   },
+   {
+    "doc": "libraries/data.md",
+    "old": "\"s3://my-bucket/out\"",
+    "new": "\"s3://ray-vast-rvtest-20261017-089e/lb03/out-H3\""
+   }
+  ],
+  "data_snippet": {
+   "elapsed_s": 569.5,
+   "groups": 1000,
+   "rows_counted": 3000000,
+   "rows_expected": 3000000
+  }
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792237950.9811041,
+ "wall_s": 700.3
+}

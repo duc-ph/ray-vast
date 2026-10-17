@@ -46,7 +46,7 @@ def start(test_id, guard_s, on_hang=None):
 
 
 def finish(test_id, mode, kind, data):
-    """Print the C10_RESULT line (word COMPLETED, HUNG or ERROR) with the alive worker nodes, and end the process at once (no hang in a Ray shutdown)."""
+    """Print the C10_RESULT line (word COMPLETED, HUNG, ERROR or DEGRADED) with the alive worker nodes, and end the process at once (no hang in a Ray shutdown)."""
     global _done
     with _lock:
         if _done:

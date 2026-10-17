@@ -112,7 +112,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 
 | What | Do this instead |
 |---|---|
-| Many trials at the same time (the default). In a test, 60 trials on one worker with 14 ports hung. | Set `max_concurrent_trials` = B // 2. |
+| Many trials at the same time (the default). In a test, 60 trials on one worker with 14 ports hung. On a worker with 58 ports, 62 trials that wait 60 s hung. 62 short trials (1.5 s each) completed there, because each trial ended before the last trials started. | Set `max_concurrent_trials` = B // 2. |
 | A task that a trial starts, with no free bundle in the trial for it. The task does not start: `No trial resources are available`. | Give the trial a bundle for each task (`tune.PlacementGroupFactory`). |
 | The default `storage_path`. The error is `Unable to set up cluster storage ... A local path on the head node is not accessible by worker nodes`. | Set `storage_path` to a cloud bucket, and give the workers credentials. |
 | Anonymous S3 access through pyarrow (`s3://anonymous@...`). S3 refuses its uploads. | Use credentials that can write to the bucket prefix. |

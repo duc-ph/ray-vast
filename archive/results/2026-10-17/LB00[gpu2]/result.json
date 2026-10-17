@@ -5,59 +5,59 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792196740.5038073,
+ "started": 1792235155.0816312,
  "checks": [
   {
-   "name": "gpu2 56321071: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 3072)",
+   "name": "gpu2 56385395: worker ports of the bootstrap formula (pids.max 7680)",
    "ok": true,
-   "detail": "(44, 44)"
+   "detail": "(58, 58)"
   },
   {
-   "name": "gpu2 56321071: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
+   "name": "gpu2 56385395: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
    "ok": true,
-   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '12', 'RAY_worker_maximum_startup_concurrency': '8'}"
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '4', 'RAY_worker_maximum_startup_concurrency': '8'}"
   },
   {
-   "name": "gpu2 56321071: Ray CPUs = the real core count (affinity and quota)",
+   "name": "gpu2 56385395: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
    "ok": true,
-   "detail": "(12.0, 32, {'cpu.cfs_period_us': '100000', 'cpu.cfs_quota_us': '1228800'})"
+   "detail": "(4.0, 4, 128, 30.72)"
   },
   {
-   "name": "gpu2 56321071: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
+   "name": "gpu2 56385395: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
    "ok": true,
-   "detail": "2.5"
+   "detail": "1.8"
   }
  ],
  "data": {
-  "gpu2_56321071": {
-   "machine_id": 29278,
-   "pids.max": "3072",
+  "gpu2_56385395": {
+   "machine_id": 31435,
+   "pids.max": "7680",
    "cgroup": "v1",
    "cpu_quota": {
     "cpu.cfs_period_us": "100000",
-    "cpu.cfs_quota_us": "1228800"
+    "cpu.cfs_quota_us": "3071999"
    },
-   "affinity": 32,
-   "ray_cpus": 12.0,
-   "ports": 44,
+   "affinity": 128,
+   "ray_cpus": 4.0,
+   "ports": 58,
    "ray_env": {
     "RAY_num_grpc_internal_threads": "4",
-    "RAY_num_workers_soft_limit": "12",
+    "RAY_num_workers_soft_limit": "4",
     "RAY_worker_maximum_startup_concurrency": "8"
    },
    "worker_threads": [
     17,
-    24,
-    27,
-    36,
+    23,
+    26,
+    37,
     42
    ],
-   "cpu_count": 32,
-   "enroll_s_from_first_running_sample": 2.5
+   "cpu_count": 128,
+   "enroll_s_from_first_running_sample": 1.8
   }
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792197457.281743,
- "wall_s": 716.8
+ "ended": 1792235326.5717251,
+ "wall_s": 171.5
 }

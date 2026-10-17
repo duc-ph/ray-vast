@@ -1,23 +1,23 @@
-2026-10-17 00:46:06,076	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:33603[22m
-2026-10-17 00:46:06,087	INFO cli.py:569 -- 2026-10-16 17:45:43,746	INFO job_manager.py:583 -- Runtime env is setting up.
-Running entrypoint for job core_snippet-072e1c: python lb_snippet.py core
-2026-10-16 17:45:45,519	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 35.94.33.168:6379...
-2026-10-16 17:45:45,553	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
-LB_START core 1792197945.5
+2026-10-17 11:15:26,185	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:41365[22m
+2026-10-17 11:15:26,195	INFO cli.py:569 -- 2026-10-17 04:14:53,385	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job core_snippet-207436: python lb_snippet.py core
+2026-10-17 04:14:55,174	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 18.236.153.229:6379...
+2026-10-17 04:14:55,203	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START core 1792235695.2
 --- snippet.py ---
 CPUS = max(n["Resources"]["CPU"] for n in ray.nodes()
            if n["Alive"] and n["Resources"].get("CPU", 0) > 0)
 import ray
 
-@ray.remote(num_cpus=0.5)          # CPUS / B
+@ray.remote(num_cpus=0.4)          # CPUS / B
 def child(i):
     ...
 
-@ray.remote(num_cpus=0.5)          # CPUS / B
+@ray.remote(num_cpus=0.4)          # CPUS / B
 class Runner:
     def work(self, i):
         return ray.get(child.remote(i))   # the actor waits for a task: 2 processes
 
 pool = [Runner.remote() for _ in range(5)]   # B // 2, because each call also needs a task
 --- end ---
-LB_RESULT core PASS {"CPUS": 5.0, "answers": 100, "elapsed_s": 19.2, "items": 100, "pool": 5, "runner_nodes": {"e4cf6aaa": 5}, "seconds": 18.8}
+LB_RESULT core PASS {"CPUS": 4.0, "answers": 100, "elapsed_s": 20.3, "items": 100, "pool": 5, "runner_nodes": {"c714ed11": 5}, "seconds": 19.8}

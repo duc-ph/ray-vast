@@ -1,0 +1,736 @@
+2026-10-17 01:11:45,124	INFO cli.py:42 -- [37mJob submission server address[39m: [1mhttp://127.0.0.1:36221[22m
+2026-10-17 01:11:45,138	INFO cli.py:569 -- 2026-10-16 17:38:05,904	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job rllib_learners-6c6197: python lb_snippet.py rllib_learners
+2026-10-16 17:39:47,324	INFO worker.py:1836 -- Connecting to existing Ray cluster at address: 44.247.219.21:6379...
+2026-10-16 17:39:47,354	INFO worker.py:2024 -- Connected to Ray cluster. View the dashboard at [1m[32mhttp://127.0.0.1:8265 [39m[22m
+LB_START rllib_learners 1792197587.3
+--- snippet.py ---
+from ray import tune
+
+config = (PPOConfig().environment("CartPole-v1")
+          .env_runners(num_env_runners=0)
+          .learners(num_learners=2, num_gpus_per_learner=1, num_cpus_per_learner=0.3)   # CPUS / B
+          .resources(placement_strategy="STRICT_PACK"))   # all learners on one worker
+grid = tune.Tuner(config.algo_class, param_space=config,
+           run_config=tune.RunConfig(
+               stop={"training_iteration": 2},
+               checkpoint_config=tune.CheckpointConfig(checkpoint_at_end=False))).fit()
+--- end ---
+╭────────────────────────────────────────────────────────────╮
+│ Configuration for experiment     PPO_2026-10-16_17-39-52   │
+├────────────────────────────────────────────────────────────┤
+│ Search algorithm                 BasicVariantGenerator     │
+│ Scheduler                        FIFOScheduler             │
+│ Number of trials                 1                         │
+╰────────────────────────────────────────────────────────────╯
+
+View detailed results here: /home/ray/ray_results/PPO_2026-10-16_17-39-52
+To visualize your results with TensorBoard, run: `tensorboard --logdir /tmp/ray/session_2026-10-16_17-35-47_363849_7/artifacts/2026-10-16_17-39-52/PPO_2026-10-16_17-39-52/driver_artifacts`
+2026-10-16 17:39:52,650	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:39:52. Total running time: 0s
+Logical resource usage: 0/12 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:40:22. Total running time: 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:40:52. Total running time: 1min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+[36m(PPO pid=3603, ip=5.2.174.20)[0m 2026-10-16 17:41:21,646	WARNING algorithm_config.py:5160 -- You are running PPO on the new API stack! This is the new default behavior for this algorithm. If you don't want to use the new API stack, set `config.api_stack(enable_rl_module_and_learner=False,enable_env_runner_and_connector_v2=False)`. For a detailed migration guide, see here: https://docs.ray.io/en/master/rllib/new-api-stack-migration-guide.html
+[36m(PPO pid=3603, ip=5.2.174.20)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:41:22. Total running time: 1min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m Setting up process group for: env:// [rank=0, world_size=2]
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:41:53. Total running time: 2min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:42:23. Total running time: 2min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:42:53. Total running time: 3min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:43:23. Total running time: 3min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:43:53. Total running time: 4min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:44:23. Total running time: 4min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:44:53. Total running time: 5min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:45:23. Total running time: 5min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:45:53. Total running time: 6min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:46:23. Total running time: 6min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:46:53. Total running time: 7min 0s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:47:23. Total running time: 7min 30s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:47:53. Total running time: 8min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:48:23. Total running time: 8min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:48:53. Total running time: 9min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:49:23. Total running time: 9min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:49:53. Total running time: 10min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:50:23. Total running time: 10min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:50:53. Total running time: 11min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:51:23. Total running time: 11min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:51:54. Total running time: 12min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:52:24. Total running time: 12min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:52:54. Total running time: 13min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:53:24. Total running time: 13min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:53:54. Total running time: 14min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:54:24. Total running time: 14min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:54:54. Total running time: 15min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:55:24. Total running time: 15min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:55:54. Total running time: 16min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:56:24. Total running time: 16min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:56:54. Total running time: 17min 1s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:57:24. Total running time: 17min 31s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:57:54. Total running time: 18min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:58:24. Total running time: 18min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:58:54. Total running time: 19min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:59:24. Total running time: 19min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 17:59:54. Total running time: 20min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:00:24. Total running time: 20min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:00:54. Total running time: 21min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:01:25. Total running time: 21min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:01:55. Total running time: 22min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:02:25. Total running time: 22min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:02:55. Total running time: 23min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:03:25. Total running time: 23min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:03:55. Total running time: 24min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:04:25. Total running time: 24min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:04:55. Total running time: 25min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:05:25. Total running time: 25min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:05:55. Total running time: 26min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:06:25. Total running time: 26min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:06:55. Total running time: 27min 2s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:07:25. Total running time: 27min 32s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:07:55. Total running time: 28min 3s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:08:25. Total running time: 28min 33s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:08:55. Total running time: 29min 3s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:09:25. Total running time: 29min 33s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:09:55. Total running time: 30min 3s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:10:25. Total running time: 30min 33s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:10:55. Total running time: 31min 3s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+Trial status: 1 PENDING
+Current time: 2026-10-16 18:11:26. Total running time: 31min 33s
+Logical resource usage: 1.6/12 CPUs, 2.0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   PENDING  │
+╰────────────────────────────────────────╯
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.524387456 ProcessGroupNCCL.cpp:632] [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=1, OpType=ALLGATHER, NumelIn=1, NumelOut=2, Timeout(ms)=1800000) ran for 1800069 milliseconds before timing out.
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.524617911 ProcessGroupNCCL.cpp:2271] [PG ID 0 PG GUID 0(default_pg) Rank 0]  failure detected by watchdog at work sequence id: 1 PG status: last enqueued work: 1, last completed work: -1
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.524636012 ProcessGroupNCCL.cpp:670] Stack trace of the failed collective not found, potentially because FlightRecorder is disabled. You can enable it by setting TORCH_NCCL_TRACE_BUFFER_SIZE to a non-zero value.
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.524686243 ProcessGroupNCCL.cpp:2106] [PG ID 0 PG GUID 0(default_pg) Rank 0] First PG on this rank to signal dumping.
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m DeprecationWarning: `RLModule(config=[RLModuleConfig object])` has been deprecated. Use `RLModule(observation_space=.., action_space=.., inference_only=.., model_config=.., catalog_class=..)` instead. This will raise an error in the future!
+[36m(PPO pid=3603, ip=5.2.174.20)[0m Exception raised in creation task: The actor died because of an error raised in its creation task, [36mray::PPO.__init__()[39m (pid=3603, ip=5.2.174.20, actor_id=a5e128fb1e0682456c38fe9704000000, repr=PPO(env=CartPole-v1; env-runners=0; learners=2; multi-agent=False))
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm.py", line 541, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     super().__init__(
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 151, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     self.setup(copy.deepcopy(self.config))
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm.py", line 968, in setup
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     self.learner_group = self.config.build_learner_group(
+[36m(PPO pid=3603, ip=5.2.174.20)[0m                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm_config.py", line 1366, in build_learner_group
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     learner_group = LearnerGroup(
+[36m(PPO pid=3603, ip=5.2.174.20)[0m                     ^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/learner_group.py", line 217, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     ray.get([w.build.remote() for w in self._workers])
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m                                   ^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m ray.exceptions.RayTaskError(RuntimeError): [36mray::_WrappedExecutable.build()[39m (pid=3798, ip=5.2.174.20, actor_id=398ac7eaa197a8368707936704000000, repr=<ray.train._internal.worker_group._WrappedExecutable object at 0x79b04e35aed0>)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/ppo/ppo_learner.py", line 31, in build
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     super().build()
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 515, in build
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     self._make_modules_ddp_if_necessary()
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 559, in _make_modules_ddp_if_necessary
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     TorchDDPRLModule(
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/rl_module/torch/torch_rl_module.py", line 228, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     nn.parallel.DistributedDataParallel.__init__(self, *args, **kwargs)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/nn/parallel/distributed.py", line 835, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     _verify_param_shape_across_processes(self.process_group, parameters)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/utils.py", line 282, in _verify_param_shape_across_processes
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     return dist._verify_params_across_processes(process_group, tensors, logger)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m RuntimeError: DDP expects same model across all ranks, but Rank 1 has 12 params, while rank 0 has inconsistent 0 params.
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.429607803 ProcessGroupNCCL.cpp:1746] [PG ID 0 PG GUID 0(default_pg) Rank 0] Received a dump signal due to a collective timeout from this local rank and we will try our best to dump the debug info. Last enqueued NCCL work: 1, last completed NCCL work: -1.This is most likely caused by incorrect usages of collectives, e.g., wrong sizes used across ranks, the order of collectives is not same for all ranks or the scheduled collective, for some reason, didn't run. Additionally, this can be caused by GIL deadlock or other reasons such as network errors or bugs in the communications library (e.g. NCCL), etc. 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [rank0]:[E1016 18:11:38.429713085 ProcessGroupNCCL.cpp:1536] [PG ID 0 PG GUID 0(default_pg) Rank 0] ProcessGroupNCCL preparing to dump debug info. Include stack trace: 1
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m [rank1]:[E1016 18:11:39.790956385 ProcessGroupNCCL.cpp:684] [Rank 1] Some NCCL operations have failed or timed out. Due to the asynchronous nature of CUDA kernels, subsequent GPU operations might run on corrupted/incomplete data.
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m [rank1]:[E1016 18:11:39.791018376 ProcessGroupNCCL.cpp:698] [Rank 1] To avoid data inconsistency, we are taking the entire process down.
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m [rank1]:[E1016 18:11:39.793199306 ProcessGroupNCCL.cpp:1899] [PG ID 0 PG GUID 0(default_pg) Rank 1] Process group watchdog thread terminated with exception: [Rank 1] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=1, OpType=ALLGATHER, NumelIn=1, NumelOut=2, Timeout(ms)=1800000) ran for 1800069 milliseconds before timing out.
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m Exception raised from checkTimeout at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:635 (most recent call first):
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0x98 (0x79c8043785e8 in /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libc10.so)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #1: c10d::ProcessGroupNCCL::WorkNCCL::checkTimeout(std::optional<std::chrono::duration<long, std::ratio<1l, 1000l> > >) + 0x23d (0x79b1129cba6d in /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #2: c10d::ProcessGroupNCCL::watchdogHandler() + 0xc80 (0x79b1129cd7f0 in /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #3: c10d::ProcessGroupNCCL::ncclCommWatchdog() + 0x14d (0x79b1129ceefd in /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #4: <unknown function> + 0xf5b86 (0x79c85d588b86 in /home/ray/anaconda3/bin/../lib/libstdc++.so.6)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #5: <unknown function> + 0x94a83 (0x79c85fbf9a83 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m frame #6: clone + 0x44 (0x79c85fc8aa94 in /usr/lib/x86_64-linux-gnu/libc.so.6)
+[36m(_WrappedExecutable pid=3798, ip=5.2.174.20)[0m 
+[33m(raylet)[0m A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. Lease ID: 06000000837f3a8ea453c79c1959b05da0f89c024086d6b5be6d4afb878c25f9 Worker ID: 4cdd765be09998196becdbab47aa2e886d42e9488a29187619599ec1 Node ID: e34f33f449311f45862b1451d00a54cf2b1ee25618d89091f2c09aec Worker IP address: 5.2.174.20 Worker port: 24405 Worker PID: 3798 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker unexpectedly exits with a connection error code 2. End of file. Some common causes include: (1) the process was killed by the OOM killer due to high memory usage, (2) ray stop --force was called, or (3) the worker crashed unexpectedly due to SIGSEGV or another unexpected error. If the process was killed by the kernel OOM killer (verifiable by checking for OOM in dmesg of the OOMing node), consider enabling resource isolation via --enable-resource-isolation to prevent node deaths by resource contention and significant loss of progress by uninformed kernel OOM killing.
+[36m(PPO pid=3603, ip=5.2.174.20)[0m Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): [36mray::_WrappedExecutable.build()[39m (pid=3799, ip=5.2.174.20, actor_id=13d17fac27de309e723e4d0504000000, repr=<ray.train._internal.worker_group._WrappedExecutable object at 0x7335d0b87b50>)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/ppo/ppo_learner.py", line 31, in build
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     super().build()
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 515, in build
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     self._make_modules_ddp_if_necessary()
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 559, in _make_modules_ddp_if_necessary
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     TorchDDPRLModule(
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/rl_module/torch/torch_rl_module.py", line 228, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     nn.parallel.DistributedDataParallel.__init__(self, *args, **kwargs)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/nn/parallel/distributed.py", line 835, in __init__
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     _verify_param_shape_across_processes(self.process_group, parameters)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m   File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/utils.py", line 282, in _verify_param_shape_across_processes
+[36m(PPO pid=3603, ip=5.2.174.20)[0m     return dist._verify_params_across_processes(process_group, tensors, logger)
+[36m(PPO pid=3603, ip=5.2.174.20)[0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[36m(PPO pid=3603, ip=5.2.174.20)[0m RuntimeError: DDP expects same model across all ranks, but Rank 0 has 12 params, while rank 1 has inconsistent 0 params.
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [2026-10-16 18:11:39,592 E 3799 4003] logging.cc:118: Unhandled exception: N3c1016DistBackendErrorE. what(): [PG ID 0 PG GUID 0(default_pg) Rank 0] Process group watchdog thread terminated with exception: [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=1, OpType=ALLGATHER, NumelIn=1, NumelOut=2, Timeout(ms)=1800000) ran for 1800069 milliseconds before timing out.
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m Exception raised from ncclCommWatchdog at /pytorch/torch/csrc/distributed/c10d/ProcessGroupNCCL.cpp:1905 (most recent call first):
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m  /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1806a8a) [0x734de174aa8a] ray::operator<<()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x180753c) [0x734de174b53c] ray::RayLog::operator<< <>()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x8f7943) [0x734de083b943] ray::TerminateHandler()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x734ddfd4aa1a] __cxxabiv1::__terminate()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(_ZSt10unexpectedv+0) [0x734ddfd3784d] std::unexpected()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc59cd) [0x734ddfd4a9cd]
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so(+0xe07c7b) [0x7336951f0c7b] c10d::ProcessGroupNCCL::ncclCommWatchdog()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xf5b86) [0x734ddfd7ab86] execute_native_thread_routine
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x94a83) [0x734de23eba83]
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(clone+0x44) [0x734de247ca94] __clone
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [2026-10-16 18:11:39,598 E 3799 4003] logging.cc:125: Stack trace: 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m  /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1806a8a) [0x734de174aa8a] ray::operator<<()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x180753c) [0x734de174b53c] ray::RayLog::operator<< <>()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/lib/python3.11/site-packages/ray/_raylet.so(+0x1809af8) [0x734de174daf8] ray::TerminateHandler()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc5a1a) [0x734ddfd4aa1a] __cxxabiv1::__terminate()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(_ZSt10unexpectedv+0) [0x734ddfd3784d] std::unexpected()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xc59cd) [0x734ddfd4a9cd]
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/lib/libtorch_cuda.so(+0xe07c7b) [0x7336951f0c7b] c10d::ProcessGroupNCCL::ncclCommWatchdog()
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /home/ray/anaconda3/bin/../lib/libstdc++.so.6(+0xf5b86) [0x734ddfd7ab86] execute_native_thread_routine
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(+0x94a83) [0x734de23eba83]
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m /usr/lib/x86_64-linux-gnu/libc.so.6(clone+0x44) [0x734de247ca94] __clone
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m *** SIGABRT received at time=1792199499 on cpu 3 ***
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m PC: @     0x734de23ed9bc  (unknown)  pthread_kill
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m     @     0x734de2399520  (unknown)  (unknown)
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [2026-10-16 18:11:39,598 E 3799 4003] logging.cc:474: *** SIGABRT received at time=1792199499 on cpu 3 ***
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [2026-10-16 18:11:39,598 E 3799 4003] logging.cc:474: PC: @     0x734de23ed9bc  (unknown)  pthread_kill
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m [2026-10-16 18:11:39,598 E 3799 4003] logging.cc:474:     @     0x734de2399520  (unknown)  (unknown)
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m Fatal Python error: Aborted
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m 
+[36m(_WrappedExecutable pid=3799, ip=5.2.174.20)[0m Extension modules: msgpack._cmsgpack, google._upb._message, psutil._psutil_linux, _brotli, charset_normalizer.md, charset_normalizer.cd, requests.packages.charset_normalizer.md, requests.packages.chardet.md, requests.packages.charset_normalizer.cd, requests.packages.chardet.cd, yaml._yaml, uvloop.loop, ray._raylet, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._mt19937, numpy.random.mtrand, numpy.random._philox, numpy.random._pcg64, numpy.random._sfc64, numpy.random._generator, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, lz4._version, lz4.frame._frame, zstandard.backend_c, pyarrow.lib, pandas._libs.tslibs.ccalendar, pandas._libs.tslibs.np_datetime, pandas._libs.tslibs.dtypes, pandas._libs.tslibs.base, pandas._libs.tslibs.nattype, pandas._libs.tslibs.timezones, pandas._libs.tslibs.fields, pandas._libs.tslibs.timedeltas, pandas._libs.tslibs.tzconversion, pandas._libs.tslibs.timestamps, pandas._libs.properties, pandas._libs.tslibs.offsets, pandas._libs.tslibs.strptime, pandas._libs.tslibs.parsing, pandas._libs.tslibs.conversion, pandas._libs.tslibs.period, pandas._libs.tslibs.vectorized, pandas._libs.ops_dispatch, pandas._libs.missing, pandas._libs.hashtable, pandas._libs.algos, pandas._libs.interval, pandas._libs.lib, pyarrow._compute, pandas._libs.ops, pandas._libs.hashing, pandas._libs.arrays, pandas._libs.tslib, pandas._libs.sparse, pandas._libs.internals, pandas._libs.indexing, pandas._libs.index, pandas._libs.writers, pandas._libs.join, pandas._libs.window.aggregations, pandas._libs.window.indexers, pandas._libs.reshape, pandas._libs.groupby, pandas._libs.json, pandas._libs.parsers, pandas._libs.testing, pyarrow._fs, pyarrow._azurefs, pyarrow._hdfs, pyarrow._gcsfs, pyarrow._s3fs, pyarrow._parquet, multidict._multidict, yarl._quoting_c, propcache._helpers_c, backports.zstd._zstd, aiohttp._http_writer, aiohttp._http_parser, aiohttp._websocket.mask, aiohttp._websocket.reader_c, frozenlist._frozenlist, _cffi_backend, grpc._cython.cygrpc, _cyutility, scipy._cyutility, scipy._lib._ccallback_c, pyarrow._json (total: 101)
+2026-10-16 18:11:40,007	ERROR tune_controller.py:1336 -- Trial task failed for trial PPO_CartPole-v1_443fd_00000
+Traceback (most recent call last):
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/air/execution/_internal/event_manager.py", line 110, in resolve_future
+    result = ray.get(future)
+             ^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/client_mode_hook.py", line 134, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 3004, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/_private/worker.py", line 1055, in get_objects
+    raise value
+ray.exceptions.ActorDiedError: The actor died because of an error raised in its creation task, [36mray::PPO.__init__()[39m (pid=3603, ip=5.2.174.20, actor_id=a5e128fb1e0682456c38fe9704000000, repr=PPO(env=CartPole-v1; env-runners=0; learners=2; multi-agent=False))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm.py", line 541, in __init__
+    super().__init__(
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/tune/trainable/trainable.py", line 151, in __init__
+    self.setup(copy.deepcopy(self.config))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm.py", line 968, in setup
+    self.learner_group = self.config.build_learner_group(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/algorithm_config.py", line 1366, in build_learner_group
+    learner_group = LearnerGroup(
+                    ^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/learner_group.py", line 217, in __init__
+    ray.get([w.build.remote() for w in self._workers])
+           ^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^
+                                  ^^^^^^^^^^^^^^^^^^^
+ray.exceptions.RayTaskError(RuntimeError): [36mray::_WrappedExecutable.build()[39m (pid=3798, ip=5.2.174.20, actor_id=398ac7eaa197a8368707936704000000, repr=<ray.train._internal.worker_group._WrappedExecutable object at 0x79b04e35aed0>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/algorithms/ppo/ppo_learner.py", line 31, in build
+    super().build()
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 515, in build
+    self._make_modules_ddp_if_necessary()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/learner/torch/torch_learner.py", line 559, in _make_modules_ddp_if_necessary
+    TorchDDPRLModule(
+  File "/home/ray/anaconda3/lib/python3.11/site-packages/ray/rllib/core/rl_module/torch/torch_rl_module.py", line 228, in __init__
+    nn.parallel.DistributedDataParallel.__init__(self, *args, **kwargs)
+  File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/nn/parallel/distributed.py", line 835, in __init__
+    _verify_param_shape_across_processes(self.process_group, parameters)
+  File "/tmp/ray/session_2026-10-16_17-35-47_363849_7/runtime_resources/pip/81fcf028c4728ff6483d9e9e8ae4c5c9eb6e76e5/virtualenv/lib/python3.11/site-packages/torch/distributed/utils.py", line 282, in _verify_param_shape_across_processes
+    return dist._verify_params_across_processes(process_group, tensors, logger)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: DDP expects same model across all ranks, but Rank 1 has 12 params, while rank 0 has inconsistent 0 params.
+
+Trial PPO_CartPole-v1_443fd_00000 errored after 0 iterations at 2026-10-16 18:11:40. Total running time: 31min 47s
+Error file: /tmp/ray/session_2026-10-16_17-35-47_363849_7/artifacts/2026-10-16_17-39-52/PPO_2026-10-16_17-39-52/driver_artifacts/PPO_CartPole-v1_443fd_00000_0_2026-10-16_17-39-52/error.txt
+2026-10-16 18:11:40,019	INFO tune.py:1007 -- Wrote the latest version of all result files and experiment state to '/home/ray/ray_results/PPO_2026-10-16_17-39-52' in 0.0053s.
+
+Trial status: 1 ERROR
+Current time: 2026-10-16 18:11:40. Total running time: 31min 47s
+Logical resource usage: 0/12 CPUs, 0/2 GPUs (0.0/1.0 accelerator_type:RTX-A5000)
+╭────────────────────────────────────────╮
+│ Trial name                    status   │
+├────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000   ERROR    │
+╰────────────────────────────────────────╯
+
+Number of errored trials: 1
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Trial name                      # failures   error file                                                                                                                                                                       │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ PPO_CartPole-v1_443fd_00000              1   /tmp/ray/session_2026-10-16_17-35-47_363849_7/artifacts/2026-10-16_17-39-52/PPO_2026-10-16_17-39-52/driver_artifacts/PPO_CartPole-v1_443fd_00000_0_2026-10-16_17-39-52/error.txt │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+2026-10-16 18:11:40,020	ERROR tune.py:1035 -- Trials did not complete: [PPO_CartPole-v1_443fd_00000]
+2026-10-16 18:11:40,024	WARNING experiment_analysis.py:186 -- Failed to fetch metrics for 1 trial(s):
+- PPO_CartPole-v1_443fd_00000: FileNotFoundError('Could not fetch metrics for PPO_CartPole-v1_443fd_00000: both result.json and progress.csv were not found at /home/ray/ray_results/PPO_2026-10-16_17-39-52/PPO_CartPole-v1_443fd_00000_0_2026-10-16_17-39-52')
+LB_RESULT rllib_learners FAIL {"elapsed_s": 1912.7, "errors": 1, "iterations": null}

@@ -102,6 +102,7 @@ We tested this code with `num_cpus_per_learner=1`. For checkpoints, add `storage
 ray-vast gives each worker as many worker ports as its process limit (`pids.max`) allows: 4 to 58. About half of the hosts give 58.
 Each Ray actor, task or replica needs a port.
 Too many at the same time make the work hang, or fail after 5 worker-start retries, but they do not crash the worker.
+RLlib can also go on with fewer env runners than you asked for.
 More environments in each env runner give the same samples with fewer processes.
 Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 
@@ -109,7 +110,7 @@ Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
 
 | What | Do this instead |
 |---|---|
-| Many env runners with 1 environment each. In a test, 40 env runners on one worker with 14 ports hung in the build. | Use B // 2 env runners or fewer, and raise `num_envs_per_env_runner`. |
+| Many env runners with 1 environment each. In a test, 40 env runners on one worker with 14 ports hung in the build. In a test on a worker with 58 ports, the job asked for 62 env runners. Only 58 started, and RLlib trained with them after about 6 minutes. | Use B // 2 env runners or fewer, and raise `num_envs_per_env_runner`. |
 | Learners on 2 or more workers. The build stage hangs (`[c10d] The server socket ... has timed out`). Read [Limits](../reference/limits.md#no-multi-node-ray-train). | Put all learners on one worker with many GPUs (`STRICT_PACK`). |
 | Tune checkpoints with the default `storage_path` (`Unable to set up cluster storage`). | Set `storage_path` to a cloud bucket, and give the workers credentials. Read [Ray Jobs](jobs.md#pass-credentials-to-the-job). |
 

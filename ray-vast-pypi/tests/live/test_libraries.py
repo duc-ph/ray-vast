@@ -481,6 +481,7 @@ def c10_probe(cluster, env, out_dir, wd, name):
 
 def diagnose(cluster, env, node, job, out):
     """During serve.many on H1: the 3 "If it fails" steps of the library pages, as a user does them."""
+    out["started"] = time.time()  # the serve.many job started just now
     time.sleep(240)  # the replicas that get no port fail to register
     token = Path(env["RAY_AUTH_TOKEN_PATH"]).read_text().strip()
     headers = {"Authorization": "Bearer " + token}  # never written
@@ -556,7 +557,10 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
         record.evidence("job_log_during.txt", diag.get("job_log", ""))
         record.evidence("grep_process_limit.txt", diag.get("grep", ""))
         record.data("err_files", diag.get("err_files"))
-        named = [e.line for e in w.events("process_limit", instances=[node["container_id"]], lines=diag.get("grep", "").splitlines())]
+        # Only a WARNING of the serve.many hang counts: the grep also shows the WARNINGs of the runs before (LB11[H1]
+        # 2026-10-17 passed this step on a core.many WARNING).
+        named = [e.line for e in w.events("process_limit", instances=[node["container_id"]], lines=diag.get("grep", "").splitlines())
+                 if e.t >= diag.get("started", float("inf"))]
         for name, ok, detail in (
                 ("diagnostics step 3: the dashboard log API opens a worker-*.err with `No available ports`", "no_port_file" in diag,
                  diag.get("no_port_file")),

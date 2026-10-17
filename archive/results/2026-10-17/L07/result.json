@@ -6,7 +6,7 @@
   "security"
  ],
  "fixture": "lifecycle",
- "started": 1792197822.4705725,
+ "started": 1792235676.0179825,
  "checks": [
   {
    "name": "KILL, QUIT, USR1, USR2, CONT: same PID 1 after 120 s",
@@ -19,14 +19,34 @@
    "detail": "0"
   },
   {
-   "name": "TERM: the report reaches the head within 1 s",
-   "ok": false,
-   "detail": "1.77"
+   "name": "TERM: the head logs the report `asks to be destroyed: 'received SIGTERM'`",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "TERM: gone from vast within 60 s (safety bound)",
+   "ok": true,
+   "detail": "11.7"
+  },
+  {
+   "name": "Ray marks the node DEAD (safety bound 300 s)",
+   "ok": true,
+   "detail": "47.7"
+  },
+  {
+   "name": "a replacement joins",
+   "ok": true,
+   "detail": "(4, None)"
   }
  ],
- "data": {},
- "outcome": "failed",
- "message": "AssertionError: TERM: the report reaches the head within 1 s: 1.77",
- "ended": 1792197988.7200356,
- "wall_s": 166.2
+ "data": {
+  "signal_after_t0_s": 2.85,
+  "report_after_signal_s": 0.09,
+  "gone_after_t0_s": 11.7,
+  "dead_after_t0_s": 47.7
+ },
+ "outcome": "passed",
+ "message": "",
+ "ended": 1792235949.3275604,
+ "wall_s": 273.3
 }

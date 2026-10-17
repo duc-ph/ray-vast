@@ -42,3 +42,25 @@ $ aws iam create-access-key --user-name ray-vast-livetest-20261017 --profile per
 exit 0
 (output holds the secret access key: not logged)
 # deleted the user ray-vast-livetest-20261017 and its access keys
+# deleted the user ray-vast-livetest-20261017 and its access keys
+$ aws sts get-caller-identity --query Account --output text --profile personal
+exit 0
+491085427508
+# the policy ray-vast-user exists: create-policy skipped
+$ aws iam create-user --user-name ray-vast-livetest-20261017 --profile personal
+exit 0
+{
+    "User": {
+        "Path": "/",
+        "UserName": "ray-vast-livetest-20261017",
+        "UserId": "AIDAXEVXY6M2EKQBINQGQ",
+        "Arn": "arn:aws:iam::491085427508:user/ray-vast-livetest-20261017",
+        "CreateDate": "2026-10-17T10:56:15Z"
+    }
+}
+$ aws iam attach-user-policy --user-name ray-vast-livetest-20261017 --policy-arn arn:aws:iam::491085427508:policy/ray-vast-user --profile personal
+exit 0
+$ aws iam create-access-key --user-name ray-vast-livetest-20261017 --profile personal
+exit 0
+(output holds the secret access key: not logged)
+# deleted the user ray-vast-livetest-20261017 and its access keys

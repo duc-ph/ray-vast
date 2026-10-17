@@ -960,3 +960,29 @@ Other changes of step 0:
 - `twine` and `awscli` are in the `test` extras of `pyproject.toml`. The first free run in a new venv failed F17 with `FileNotFoundError: .venv/bin/twine`. The first `free or aws` run did not start: the suite runs the documented `aws` commands from the venv (`restricted.py`, A02), and the venv had no `aws` (environment, not a product bug).
 - Incident: a load test for the repro (6 containers that wrote output with no log size limit) filled the root disk of the dev box for about 1 min. The containers were removed at once, and the free space went back to 76 GB. Other runs on the box at that time could get `ENOSPC`. The next load test used `--log-opt max-size=20m`.
 - F18 failed once in an instrumented run: the temporary debug lines in `fake_vast_server.py` wrote to a path that does not exist in the Python 3.10 container. The debug lines are removed.
+
+### Step 1: free and aws (run 104003-2460938)
+
+`-m "free or aws" -n 16`: 30 of 30 pass in 15 min 27 s. vast $0. EC2: aws_only head 0.22 h (about $0.02), A02 and A03 own clusters under $0.10. Sweep 0 left, AWS check `left: nothing`, secret scan clean.
+
+### Step 1: lifecycle and libraries, first fresh run (run 105612-2540038)
+
+`-m "lifecycle or libraries" -n 8`: 20 pass, 5 fail, in 1 h 32 min. vast $3.61 (credit 14.83 → 11.22, no top-up). EC2 about $0.41 (6 heads). Sweep 0 left, AWS check `left: nothing` (us-west-2 and us-east-2), secret scan clean, every group teardown passed.
+
+Failures and their causes:
+
+- L03 (test bug): `TypeError: '<' not supported between instances of 'dict' and 'int'`. L03 compared the raw cgroup quota files of the probe (a dict) with a number. LB00 had the same bug and already used `host_facts`. Fix: L03 takes the quota in cores from `host_facts`. Check against the archived probe: quotas 5.76 to 7.68 cores for the 4 workers.
+- LB07 (test bug): the train.md snippet passed (fit returned, checkpoints in S3, no WARNING), but the check of the ranks had no rows. The `LB_RANK` lines came through Ray's log stream with the actor prefix `(RayTrainWorker pid=..., ip=...)`, and the stream lost rank 0 and repeated a line of rank 1. Fix: `train_body` sends its rows to a named actor, and the driver prints the `LB_RANK` lines after `fit()`. A local run (CPU, 2 workers) gave all 4 rows.
+- LB15 (test bug): the data workload failed with `FileNotFoundError: /tmp/lb15/in`. `read_parquet` lists the files where it is called: on the driver (the head). The files are on the H4 worker. Fix: the pipeline runs in a task with `num_cpus=0` on the target node. A local run passed. The other 3 workloads passed (numbers below).
+- LB11[H1]: core, train: PASS; data.many, serve.many: FAIL "no head pids/ports WARNING line for the node"; tune.many, rllib.many: FAIL "the job did not fail (COMPLETED)".
+- LB11[H2]: every pair passed except tune.many and rllib.many (COMPLETED, as on H1).
+
+Analysis of LB11 (a debug run on a kept H1 cluster, m148655, with an outside poll of the worker ports every 5 s; record `_debug/DBG1-lb11-h1-ports`):
+
+- data.many and serve.many on H1: in the debug run both hung with the WARNING `worker ports in use 58 of 58` (serve 2 lines, data 3 lines). From outside, 56 of the 58 worker ports answered during both hangs. So the gap of the first run did not come back (2 of 2). In the first run these pairs ran after other pairs on the same worker. No data shows the bootstrap's port count during that run. Not explained; the final run tests it again.
+- Diagnostics step 1 (test weakness): it passed on a WARNING of core.many (04:18), 28 min before serve.many. Fix: only a WARNING from the start of serve.many counts.
+- tune.many (test bug): the 62 trials of 1.5 s did not live at the same time. They ended faster than new trials started, so all completed on 58 ports (H1 and H2). The job's design is "all at once". Fix: each trial waits 60 s (`HOLD_S`, × `C10_SCALE`) before its first evaluation task. In the debug run, tune.many then hung at its guard (600 s) with the WARNING.
+- rllib.many (doc gap): the job asked for 62 env runners. 58 started, and RLlib trained with them after about 6 min (H1 and H2, and again in the debug run: 58 of 62, 440 s). rllib.md said that the work hangs or fails. Fix: rllib.md ("Why" and "What does not work") gives this result. `c10_rllib.py` reports the kind `DEGRADED` when fewer env runners started than it asked for, and `run_c10.verdict` accepts `DEGRADED` for a many run (a tuned run must still complete). Red: `test_a_many_run_that_goes_on_with_fewer_processes_than_it_asked_for_is_a_documented_failure` (`assert ('FAIL' == 'PASS')`).
+- tune.md "What does not work" gives the two Tune results on 58 ports (62 short trials completed; 62 trials that wait 60 s hung).
+
+Debug cost: H1 kept for about 1.1 h (about $0.75 vast, EC2 t3.large about $0.10).

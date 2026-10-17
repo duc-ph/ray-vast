@@ -5,77 +5,51 @@
   "limits"
  ],
  "fixture": "libraries",
- "started": 1792196740.5034556,
+ "started": 1792235048.5953057,
  "checks": [
   {
-   "name": "H3 56320908: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1280)",
+   "name": "H3 56385063: worker ports of the bootstrap formula (pids.max 1280)",
    "ok": true,
    "detail": "(14, 14)"
   },
   {
-   "name": "H3 56320908: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
+   "name": "H3 56385063: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
    "ok": true,
-   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '5', 'RAY_worker_maximum_startup_concurrency': '8'}"
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '4', 'RAY_worker_maximum_startup_concurrency': '8'}"
   },
   {
-   "name": "H3 56320908: Ray CPUs = the real core count (affinity and quota)",
+   "name": "H3 56385063: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
    "ok": true,
-   "detail": "(5.0, 32, {'cpu.cfs_period_us': '100000', 'cpu.cfs_quota_us': '512000'})"
+   "detail": "(4.0, 4, 24, 5.76)"
   },
   {
-   "name": "H3 56320908: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
+   "name": "H3 56385063: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
    "ok": true,
-   "detail": "8.4"
+   "detail": "10.2"
   },
   {
-   "name": "H3 56320897: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max 1280)",
+   "name": "H3 56385075: worker ports of the bootstrap formula (pids.max 1280)",
    "ok": true,
    "detail": "(14, 14)"
   },
   {
-   "name": "H3 56320897: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
+   "name": "H3 56385075: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
    "ok": true,
-   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '5', 'RAY_worker_maximum_startup_concurrency': '8'}"
+   "detail": "{'RAY_num_grpc_internal_threads': '4', 'RAY_num_workers_soft_limit': '4', 'RAY_worker_maximum_startup_concurrency': '8'}"
   },
   {
-   "name": "H3 56320897: Ray CPUs = the real core count (affinity and quota)",
+   "name": "H3 56385075: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
    "ok": true,
-   "detail": "(5.0, 24, {'cpu.cfs_period_us': '100000', 'cpu.cfs_quota_us': '576000'})"
+   "detail": "(4.0, 4, 48, 5.76)"
   },
   {
-   "name": "H3 56320897: enrolled within 45 s of the first `running` sample (the 10 s samples allow -15 s)",
+   "name": "H3 56385075: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
    "ok": true,
-   "detail": "9.5"
+   "detail": "3.0"
   }
  ],
  "data": {
-  "H3_56320908": {
-   "machine_id": 8966,
-   "pids.max": "1280",
-   "cgroup": "v1",
-   "cpu_quota": {
-    "cpu.cfs_period_us": "100000",
-    "cpu.cfs_quota_us": "512000"
-   },
-   "affinity": 32,
-   "ray_cpus": 5.0,
-   "ports": 14,
-   "ray_env": {
-    "RAY_num_grpc_internal_threads": "4",
-    "RAY_num_workers_soft_limit": "5",
-    "RAY_worker_maximum_startup_concurrency": "8"
-   },
-   "worker_threads": [
-    17,
-    25,
-    26,
-    31,
-    42
-   ],
-   "cpu_count": 32,
-   "enroll_s_from_first_running_sample": 8.4
-  },
-  "H3_56320897": {
+  "H3_56385063": {
    "machine_id": 3969,
    "pids.max": "1280",
    "cgroup": "v1",
@@ -84,26 +58,52 @@
     "cpu.cfs_quota_us": "576000"
    },
    "affinity": 24,
-   "ray_cpus": 5.0,
+   "ray_cpus": 4.0,
    "ports": 14,
    "ray_env": {
     "RAY_num_grpc_internal_threads": "4",
-    "RAY_num_workers_soft_limit": "5",
+    "RAY_num_workers_soft_limit": "4",
     "RAY_worker_maximum_startup_concurrency": "8"
    },
    "worker_threads": [
     17,
-    25,
+    24,
     26,
     31,
     41
    ],
    "cpu_count": 24,
-   "enroll_s_from_first_running_sample": 9.5
+   "enroll_s_from_first_running_sample": 10.2
+  },
+  "H3_56385075": {
+   "machine_id": 32816,
+   "pids.max": "1280",
+   "cgroup": "v1",
+   "cpu_quota": {
+    "cpu.cfs_period_us": "100000",
+    "cpu.cfs_quota_us": "576000"
+   },
+   "affinity": 48,
+   "ray_cpus": 4.0,
+   "ports": 14,
+   "ray_env": {
+    "RAY_num_grpc_internal_threads": "4",
+    "RAY_num_workers_soft_limit": "4",
+    "RAY_worker_maximum_startup_concurrency": "8"
+   },
+   "worker_threads": [
+    17,
+    24,
+    26,
+    31,
+    42
+   ],
+   "cpu_count": 48,
+   "enroll_s_from_first_running_sample": 3.0
   }
  },
  "outcome": "passed",
  "message": "",
- "ended": 1792197319.1522155,
- "wall_s": 578.6
+ "ended": 1792235185.3831544,
+ "wall_s": 136.8
 }

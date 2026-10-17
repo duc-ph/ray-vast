@@ -82,7 +82,7 @@ def pids_max(limits):
 
 def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
     """Decide one test. kind: tuned, default or many. A default run (Ray's defaults on a worker with CPUs <= B) is a
-    tuned run that must also have no process-limit WARNING line at all. job: {"kind": COMPLETED|HUNG|ERROR|None, ...}. pre and post: the probe of the
+    tuned run that must also have no process-limit WARNING line at all. job: {"kind": COMPLETED|HUNG|ERROR|DEGRADED|None, ...}. pre and post: the probe of the
     target node before and after (None if it is gone). warnings: the head WARNING lines for the node (None = not checked,
     for the local check). limit_max: a many test on a node with a higher pids.max is INCONCLUSIVE. A refused fork fails a
     tuned test (the advice is wrong); in a many test it is data. Returns (status, reasons)."""
@@ -94,7 +94,7 @@ def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
         if limit is None or limit > limit_max:
             return "INCONCLUSIVE", [f"pids.max of the node is {limit or 'max'}, not <= {limit_max}"]
         reasons = []
-        if job.get("kind") not in ("HUNG", "ERROR"):
+        if job.get("kind") not in ("HUNG", "ERROR", "DEGRADED"):  # DEGRADED: it went on with fewer processes than it asked for
             reasons.append(f"the job did not fail ({job.get('kind')}): no advice is needed at this size")
         if not alive:
             reasons.append("the node crashed or left the cluster")

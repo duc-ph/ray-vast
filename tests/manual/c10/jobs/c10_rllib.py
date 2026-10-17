@@ -2,7 +2,8 @@
 # Modes:
 #   many:  one node: num_env_runners = max(ports + 4, 40 * C10_SCALE), 1 env per runner, CPU per runner
 #          min(1, (cpus - 1) / runners), so they fit the CPUs of any host. Each env runner
-#          is one worker process: more than the worker ports. Some runners never start; build or train hangs or fails.
+#          is one worker process: more than the worker ports. Some runners never start; build or train hangs or fails,
+#          or RLlib trains with the runners that started (kind DEGRADED).
 #   tuned: one node: the same number of environments on 2 env runners (num_envs_per_env_runner = that number / 2).
 #   default: one node: num_env_runners = cpus with the default num_cpus_per_env_runner (1) and 1 env per runner.
 #   r1:    functional, PASS expected: 4 env runners on 2 nodes (num_cpus_per_env_runner = half of the smallest node's
@@ -133,7 +134,10 @@ except Exception as e:
 data = dict(params, returns=returns, seconds=round(seconds, 1), learner_nodes=learner_nodes, runner_nodes=runner_nodes,
             worker_nodes=len(worker_nodes()))
 if mode in ("many", "tuned", "default"):
-    finish(ID, mode, "COMPLETED" if returns[-1] is not None else "ERROR", data)
+    # DEGRADED: RLlib trained with fewer env runners than it asked for (LB11 2026-10-17: 58 of 62 on 58 worker ports).
+    started = sum(runner_nodes.values())
+    kind = "ERROR" if returns[-1] is None else ("DEGRADED" if started < params["num_env_runners"] else "COMPLETED")
+    finish(ID, mode, kind, dict(data, env_runners_started=started))
 ok = returns[-1] is not None
 if mode == "r1":
     ok = ok and len(runner_nodes) >= MIN_NODES
