@@ -1099,7 +1099,7 @@ us-west-2: no instance except `ray-vast-dev` and an instance of another project 
 
 ray-vast 0.2.0 is on PyPI: https://pypi.org/project/ray-vast/0.2.0/ (uploaded 2026-10-17, about 20:55 UTC, from commit 81bbaa4). A clean venv installed it with `pip install ray-vast==0.2.0` (plain PyPI, no index option). `ray-vast --help` worked, and `ray_vast.__version__` was `0.2.0`.
 
-Before the upload: the full run passed (664 tests), `mkdocs build --strict` passed, and `twine check --strict` passed for the sdist and the wheel. F17 and F18 passed on 0.2.0 (records in `archive/results/2026-10-17/F17/` and `F18/`; the confirmation-run records are `F17.run5/` and `F18.run5/`).
+Before the upload: the full run passed (664 tests), `mkdocs build --strict` passed, and `twine check --strict` passed for the sdist and the wheel. F17 and F18 passed on 0.2.0 (records in `archive/results/2026-10-17/F17.run6/` and `F18.run6/`; the release run below has `F17/` and `F18/`; the confirmation run has `F17.run5/` and `F18.run5/`).
 
 ### Run 205840-2921048
 
