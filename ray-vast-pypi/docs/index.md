@@ -79,15 +79,15 @@ Each library page shows how to run your work. It also gives the settings that ke
 
 | Library | One worker | Many workers | Notes |
 |---|---|---|---|
-| [Ray Core](libraries/core.md) | ✅ | ✅ |  |
-| [Ray Jobs](libraries/jobs.md) | ✅ | ✅ |  |
-| [Ray Data](libraries/data.md) | 🟨 | 🟨 | `groupby` and other shuffles also need `override_num_blocks`. A local output path stays on each worker. |
-| [Ray Train](libraries/train.md) | 🟨 | ❌ | Checkpoints need S3. DDP over 2 or more workers fails behind the NAT of vast. |
-| [Ray Tune](libraries/tune.md) | 🟨 | 🟨 | Checkpoints need S3. |
-| [Ray Serve](libraries/serve.md) | ✅ | ✅ |  |
-| [RLlib](libraries/rllib.md) | ✅ | 🟨 | Env runners on many workers work. Learners on 2 or more workers fail behind the NAT of vast. |
+| [Ray Core](libraries/core.md) | [✅](libraries/core.md#status) | [✅](libraries/core.md#status) |  |
+| [Ray Jobs](libraries/jobs.md) | [✅](libraries/jobs.md#status) | [✅](libraries/jobs.md#status) |  |
+| [Ray Data](libraries/data.md) | [🟨](libraries/data.md#status) | [🟨](libraries/data.md#status) | Write the output to S3. A local output path stays on each worker. |
+| [Ray Train](libraries/train.md) | [🟨](libraries/train.md#status) | [❌](libraries/train.md#status) | Use S3 storage for checkpoints. DDP across workers fails behind the NAT of vast: use one worker with many GPUs. |
+| [Ray Tune](libraries/tune.md) | [🟨](libraries/tune.md#status) | [🟨](libraries/tune.md#status) | Use S3 storage for checkpoints. |
+| [Ray Serve](libraries/serve.md) | [✅](libraries/serve.md#status) | [✅](libraries/serve.md#status) |  |
+| [RLlib](libraries/rllib.md) | [✅](libraries/rllib.md#status) | [🟨](libraries/rllib.md#status) | Put all learners on one worker. Learners across workers fail behind the NAT of vast. |
 
-✅ works (with the settings on its page). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
+✅ works (the process settings on its page do not lower the mark). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
 
 ## Links
 

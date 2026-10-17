@@ -1,8 +1,38 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-10-17)
 
-- Breaking: ray-vast no longer adds `verified = true` and `datacenter = true` to the offer query. The provider field `allow_non_datacenter` is removed: `up` stops with an error that says what to do. `down`, `attach` and `dashboard` accept it. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type (highly recommended). The example YAMLs have them. Read [Keep verified and datacenter in the offer query](https://duc-ph.github.io/ray-vast/how-to/node-types/#keep-verified-and-datacenter-in-the-offer-query).
+### Breaking changes
+
+A 0.1.0 cluster YAML does not work with `up` of 0.2.0. `up` stops with an error that tells what to do for each changed field.
+
+- The head settings move to the head node type: `node_config.region` (required) and `node_config.instance_type` (default `t3.large`). They replace `provider.region` and `provider.head_instance_type`.
+- `up` makes an EC2 key pair for each cluster (`ray-vast-<cluster_name>`). It saves the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem` (mode 600). `down` deletes both, also after a failed `up`. The fields `provider.key_name` and `provider.key_file` and the options `--key-name` and `--key-file` are removed.
+- These provider fields are removed:
+    - `port_a` and `port_b`. The head server ports are always 7443 and 7444.
+    - `cert_max_age_days`. The certificates are always valid for 365 days.
+    - `image_size_gb`. `up` always measures the image size.
+    - `order_by`. The provider always rents the cheapest offers first (`dph_total`).
+    - `allow_non_datacenter`. Read the next item.
+- ray-vast no longer adds `verified = true` and `datacenter = true` to the offer query. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type (highly recommended). The example YAMLs have them. Read [Keep verified and datacenter in the offer query](https://duc-ph.github.io/ray-vast/how-to/node-types/#keep-verified-and-datacenter-in-the-offer-query).
+- The `up` option `--index-url` is removed. To test a release on TestPyPI, download the wheel with `pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`. Then run `ray-vast up --wheel <file>`.
+- The IAM policy `ray-vast-head-boundary` is a required setup step (one time in each AWS account). The head role gets it as its permissions boundary. Without the policy, `up` stops before it makes anything. Read [Getting started, Set up AWS](https://duc-ph.github.io/ray-vast/getting-started/#aws-setup).
+- A worker and a head of different versions do not work together (protocol changes below).
+
+### Migrate from 0.1.0
+
+1. Tear down each 0.1.0 cluster with the AWS credentials that made it: `ray-vast down <0.1.0 yaml> --profile <profile>`. `down` of 0.2.0 accepts the 0.1.0 YAML. A restricted `ray-vast-user` cannot delete a 0.1.0 head role, because that role has no permissions boundary.
+2. Create the IAM policy `ray-vast-head-boundary` once in your AWS account (getting started, "Set up AWS").
+3. Change your cluster YAML:
+    - `provider.region`: move it to `node_config.region` of the head node type.
+    - `provider.head_instance_type`: move it to `node_config.instance_type` of the head node type.
+    - `provider.key_name`, `provider.key_file`: remove them. `up` makes the key pair. Remove `--key-name` and `--key-file` from your commands.
+    - `provider.port_a`, `port_b`, `cert_max_age_days`, `image_size_gb`, `order_by`: remove them.
+    - `provider.allow_non_datacenter`: remove it. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type. Leave them out only if you accept hosts that are not verified or not in a datacenter.
+4. `--index-url`: use `pip download` and `--wheel` (above).
+
+### Other changes
+
 - The added core filter is `cpu_cores_effective >= max(CPU, 4)`. A host with fewer cores has a process limit below 640, and its 4 worker ports had no room for threads.
 - The added port filter is `direct_port_count >= 10`, not 64. Each rental asks for the smaller of 64 and the offer's `direct_port_count` identity ports. The worker gets the mapped identity ports minus 6 as worker ports, or fewer with a process limit. Before, the filter left out about 20 % of the verified machines.
     - Protocol: the `/enroll` body has 10 to 64 identity ports, from 70000 up.
@@ -25,17 +55,10 @@
     - When the refused forks of the worker go up: at most once a minute.
     - When all its worker ports are in use, or its pids are above 90 % of the limit: at most once in 5 minutes.
 - A Ray Data CPU limit is no longer necessary to keep a worker alive. A hash shuffle (`groupby`) on a worker with few ports can still hang. To prevent this, set the CPU limit and `max_hash_shuffle_aggregators`.
-
-- Breaking: AWS setup and cluster YAML changes.
-    - `up` makes an EC2 key pair for each cluster (`ray-vast-<cluster_name>`) and saves the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem` (mode 600). `down` deletes both, also after a failed `up`. The options `--key-name` and `--key-file` and the fields `provider.key_name` and `provider.key_file` are removed.
-    - The head settings move to the head node type: `node_config.region` (required) and `node_config.instance_type` (default `t3.large`). They replace `provider.region` and `provider.head_instance_type`.
-    - The provider fields `port_a`, `port_b` (now always 7443 and 7444), `cert_max_age_days` (now always 365) and `image_size_gb` (always measured by `up`) are removed.
-    - A YAML with a removed or moved `provider` field gets an error that tells what to do.
-    - The top-level `max_workers` is optional. The default is the sum of `max_workers` of the worker types.
-    - The head role gets the permissions boundary `ray-vast-head-boundary`. Create this IAM policy once in your account (getting started, "Set up AWS"). Without it, `up` stops before it makes anything. The package has the policy files `ray_vast/iam/ray-vast-head-boundary.json` and `ray_vast/iam/ray-vast-user.json` (a least-privilege policy for a restricted IAM user).
-    - `up` saves the AWS profile. `down`, `attach` and `dashboard` use it when you give no `--profile` and no `AWS_PROFILE`.
-    - The provider field `order_by` is removed. The provider always rents the cheapest offers first (`dph_total`).
-    - The `up` option `--index-url` is removed. To test a release on TestPyPI, download the wheel with `pip download --no-deps --index-url https://test.pypi.org/simple/ ray-vast==<version>`, then run `ray-vast up --wheel <file>`.
+- A YAML with a removed or moved `provider` field gets an error that tells what to do.
+- The top-level `max_workers` is optional. The default is the sum of `max_workers` of the worker types.
+- The package has the policy files `ray_vast/iam/ray-vast-head-boundary.json` and `ray_vast/iam/ray-vast-user.json` (a least-privilege policy for a restricted IAM user).
+- `up` saves the AWS profile. `down`, `attach` and `dashboard` use it when you give no `--profile` and no `AWS_PROFILE`.
 - The example YAMLs list all fields, each with a short comment.
 - The example offer queries match more vast offers: `gpu-24gb.yaml` takes GPUs of 24 GB to 32 GB (also the RTX 5090), `cpu-heavy.yaml` takes any GPU of 8 GB or more, and `gpu-80gb.yaml` has no location filter. On 2026-10-16, the old queries matched 1 offer each.
 - The Ray Tune page shows how a trial that starts Ray tasks holds their CPUs (`tune.PlacementGroupFactory`). Without it, the tasks do not start.

@@ -67,15 +67,15 @@ Each library page shows how to run your work. It also gives the settings that ke
 
 | Library | One worker | Many workers | Notes |
 |---|---|---|---|
-| [Ray Core](https://duc-ph.github.io/ray-vast/libraries/core/) | ✅ | ✅ |  |
-| [Ray Jobs](https://duc-ph.github.io/ray-vast/libraries/jobs/) | ✅ | ✅ |  |
-| [Ray Data](https://duc-ph.github.io/ray-vast/libraries/data/) | 🟨 | 🟨 | `groupby` and other shuffles also need `override_num_blocks`. A local output path stays on each worker. |
-| [Ray Train](https://duc-ph.github.io/ray-vast/libraries/train/) | 🟨 | ❌ | Checkpoints need S3. DDP over 2 or more workers fails behind the NAT of vast. |
-| [Ray Tune](https://duc-ph.github.io/ray-vast/libraries/tune/) | 🟨 | 🟨 | Checkpoints need S3. |
-| [Ray Serve](https://duc-ph.github.io/ray-vast/libraries/serve/) | ✅ | ✅ |  |
-| [RLlib](https://duc-ph.github.io/ray-vast/libraries/rllib/) | ✅ | 🟨 | Env runners on many workers work. Learners on 2 or more workers fail behind the NAT of vast. |
+| [Ray Core](https://duc-ph.github.io/ray-vast/libraries/core/) | [✅](https://duc-ph.github.io/ray-vast/libraries/core/#status) | [✅](https://duc-ph.github.io/ray-vast/libraries/core/#status) |  |
+| [Ray Jobs](https://duc-ph.github.io/ray-vast/libraries/jobs/) | [✅](https://duc-ph.github.io/ray-vast/libraries/jobs/#status) | [✅](https://duc-ph.github.io/ray-vast/libraries/jobs/#status) |  |
+| [Ray Data](https://duc-ph.github.io/ray-vast/libraries/data/) | [🟨](https://duc-ph.github.io/ray-vast/libraries/data/#status) | [🟨](https://duc-ph.github.io/ray-vast/libraries/data/#status) | Write the output to S3. A local output path stays on each worker. |
+| [Ray Train](https://duc-ph.github.io/ray-vast/libraries/train/) | [🟨](https://duc-ph.github.io/ray-vast/libraries/train/#status) | [❌](https://duc-ph.github.io/ray-vast/libraries/train/#status) | Use S3 storage for checkpoints. DDP across workers fails behind the NAT of vast: use one worker with many GPUs. |
+| [Ray Tune](https://duc-ph.github.io/ray-vast/libraries/tune/) | [🟨](https://duc-ph.github.io/ray-vast/libraries/tune/#status) | [🟨](https://duc-ph.github.io/ray-vast/libraries/tune/#status) | Use S3 storage for checkpoints. |
+| [Ray Serve](https://duc-ph.github.io/ray-vast/libraries/serve/) | [✅](https://duc-ph.github.io/ray-vast/libraries/serve/#status) | [✅](https://duc-ph.github.io/ray-vast/libraries/serve/#status) |  |
+| [RLlib](https://duc-ph.github.io/ray-vast/libraries/rllib/) | [✅](https://duc-ph.github.io/ray-vast/libraries/rllib/#status) | [🟨](https://duc-ph.github.io/ray-vast/libraries/rllib/#status) | Put all learners on one worker. Learners across workers fail behind the NAT of vast. |
 
-✅ works (with the settings on its page). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
+✅ works (the process settings on its page do not lower the mark). 🟨 works with an extra change, or a part fails. ❌ the main use fails.
 
 ## Documentation
 
@@ -88,7 +88,7 @@ Each library page shows how to run your work. It also gives the settings that ke
 
 ## Status
 
-Version 0.1.0. Tested with Ray 2.59.
+Version 0.2.0. Tested with Ray 2.59.
 
 ## Contributing
 

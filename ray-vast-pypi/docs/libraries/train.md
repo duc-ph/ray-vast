@@ -4,8 +4,8 @@ Distributed training with PyTorch.
 
 ## Status
 
-- **One worker 🟨:** Training on one worker works with 1 GPU and with 2 GPUs (NCCL), but checkpoints need a cloud bucket.
-- **Many workers ❌:** PyTorch DDP over 2 or more workers fails, because its connections need ports that the NAT of vast does not open.
+- **One worker 🟨:** Training on one worker works with 1 GPU and with 2 GPUs (NCCL) (C9.3.1, C9.3.4, LB07). Checkpoints need a cloud bucket (`storage_path`). The default storage fails (C9.3.1, LB07).
+- **Many workers ❌:** PyTorch DDP over 2 or more workers fails, because its connections need ports that the NAT of vast does not open (C9.3.2, C9.3.3, C9.3.5). Use one worker with many GPUs.
 
 ## Run it
 

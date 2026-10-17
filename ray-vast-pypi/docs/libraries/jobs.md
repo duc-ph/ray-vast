@@ -5,8 +5,8 @@ This page also has the rules that are true for all libraries.
 
 ## Status
 
-- **One worker ✅:** `ray job submit`, `list`, `logs --follow` and `stop` work through the `dashboard` tunnel.
-- **Many workers ✅:** The job's driver runs on the head, and its tasks run on all workers.
+- **One worker ✅:** `ray job submit`, `list`, `logs --follow` and `stop` work through the `dashboard` tunnel (LB01).
+- **Many workers ✅:** The job's driver runs on the head, and its tasks run on all workers (LB01).
 
 ## Run it
 

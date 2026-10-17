@@ -4,8 +4,8 @@ Hyperparameter search with trials.
 
 ## Status
 
-- **One worker 🟨:** Trials, ASHA and GPU trials work, but checkpoints need a cloud bucket.
-- **Many workers 🟨:** Trials run on many workers, but checkpoints need a cloud bucket.
+- **One worker 🟨:** Trials, ASHA and GPU trials work (C9.2.2, LB06, LB11). Checkpoints need a cloud bucket (`storage_path`). The default storage fails (C9.2.4, LB06).
+- **Many workers 🟨:** Trials and GPU trials run on many workers (C9.2.1, C9.2.3, LB06). Checkpoints need a cloud bucket (`storage_path`).
 
 ## Run it
 

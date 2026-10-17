@@ -4,8 +4,8 @@ Tasks, actors, placement groups and objects.
 
 ## Status
 
-- **One worker ✅:** Tasks, actors, actor restarts and placement groups work on one worker.
-- **Many workers ✅:** Placement groups (`PACK`, `STRICT_SPREAD`) and 2 GB objects between hosts work over the public internet.
+- **One worker ✅:** Tasks, actors, actor restarts and placement groups work on one worker (LB02, LB11).
+- **Many workers ✅:** Placement groups (`PACK`, `STRICT_SPREAD`) and 2 GB objects between hosts work over the public internet (LB02).
 
 ## Run it
 

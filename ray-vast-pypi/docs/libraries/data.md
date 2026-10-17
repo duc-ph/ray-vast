@@ -4,8 +4,9 @@ Datasets, maps, shuffles, `groupby`, batch inference, reads and writes.
 
 ## Status
 
-- **One worker 🟨:** Maps and reads work with the defaults, but `groupby` and other hash shuffles need the settings below and `override_num_blocks`.
-- **Many workers 🟨:** Tasks and GPU inference actors run on many workers, but a local output path stays on each worker.
+- **One worker 🟨:** Reads, maps, `groupby` and GPU batch inference work (LB03, LB04, LB05). Write the output to a cloud bucket. A local output path stays on the worker (C9.1.5).
+- **Many workers 🟨:** Tasks and GPU inference actors run on many workers (LB03, LB05). Write the output to a cloud bucket. A local output path stays on each worker (C9.1.5).
+- A hash shuffle (`groupby`, `random_shuffle`) needs the [settings](#settings) when rule 1 applies (LB04, LB11). These settings do not lower the mark.
 
 ## Run it
 

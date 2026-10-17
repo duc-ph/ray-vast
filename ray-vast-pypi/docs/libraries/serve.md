@@ -4,8 +4,8 @@ Model serving with replicas, handles and HTTP.
 
 ## Status
 
-- **One worker ✅:** Replicas, GPU replicas and `DeploymentHandle` calls work on one worker.
-- **Many workers ✅:** Replicas run on many workers, and HTTP works on port 8000 of the head through an SSH tunnel.
+- **One worker ✅:** Replicas, GPU replicas and `DeploymentHandle` calls work on one worker (LB09, LB11).
+- **Many workers ✅:** Replicas run on many workers, and HTTP works on port 8000 of the head through an SSH tunnel (LB09).
 
 ## Run it
 

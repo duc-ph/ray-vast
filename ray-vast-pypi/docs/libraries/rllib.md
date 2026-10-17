@@ -4,8 +4,8 @@ Reinforcement learning with env runners and learners.
 
 ## Status
 
-- **One worker ✅:** PPO with env runners and with 2 GPU learners on one worker works.
-- **Many workers 🟨:** Env runners on many workers work, but learners on 2 or more workers fail behind the NAT of vast.
+- **One worker ✅:** PPO with env runners and with 2 GPU learners on one worker works (LB10, C10.rllib.R2, LB11).
+- **Many workers 🟨:** Env runners on many workers work (C10.rllib.R1). Learners on 2 or more workers fail behind the NAT of vast (C10.rllib.R3). Put all learners on one worker.
 
 ## Run it
 
