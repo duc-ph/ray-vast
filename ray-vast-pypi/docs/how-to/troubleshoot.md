@@ -113,6 +113,17 @@ Failed to startup worker after retrying 5 times
 
 The real cause can be that the worker has no free port (`No available ports`). The cause is only in the worker's Ray log. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker).
 
+## A multi-GPU job hangs at the first NCCL call
+
+A job with 2 or more GPUs on one worker can hang at its first NCCL call (for example the first all-gather in PyTorch DDP).
+In one test, this happened on one host only. The same code passed on another 2-GPU host.
+The cause is probably the GPU-to-GPU link of that host.
+
+What to do:
+
+1. Set `NCCL_P2P_DISABLE=1` in the job's `runtime_env` `env_vars`, and run the job again. NCCL then sends the data through host memory. This is slower, but it does not use the GPU-to-GPU link.
+2. Or run the job on another host. End the worker, and the autoscaler rents a new one.
+
 ## `ray job submit` fails with an authentication error
 
 Run the `export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...` line that `ray-vast dashboard` printed. Do it in the terminal where you run `ray job submit`.
