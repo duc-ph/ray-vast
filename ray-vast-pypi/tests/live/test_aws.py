@@ -18,7 +18,7 @@ import yaml
 
 import livekit
 from livekit import check
-from cluster import ADMIN_PROFILE, BIN, Cluster, aws_leftovers, wait_port
+from cluster import ADMIN_PROFILE, BIN, aws_leftovers, wait_port
 
 pytestmark = pytest.mark.aws
 REGION = "us-west-2"
@@ -58,7 +58,7 @@ def run_until(cluster, args, ready, timeout=900):
 
 
 @pytest.mark.security
-def test_A02_boundary_policy_missing(record, run, tmp_path):
+def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
     """With no cluster: delete the boundary policy, `up` stops before it makes anything, then the documented command
     makes the policy again (always, in `finally`)."""
     iam = admin("iam")
@@ -73,12 +73,13 @@ def test_A02_boundary_policy_missing(record, run, tmp_path):
     iam.delete_policy(PolicyArn=arn)
     cluster = None
     try:
-        cluster = Cluster(run, "none", small_config("a02"), record.dir, tmp_path / "home")
+        cluster = new_cluster(small_config("a02"), record.dir, tmp_path / "home")
         done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
         expected = (f"the IAM policy {BOUNDARY} does not exist in AWS account {account}. Create it once (one command): "
                     "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created.")
         check(record, "up exits 1 with the message and the link", done.returncode == 1 and expected in done.stderr, done.stderr[-400:])
-        check(record, "nothing was made", aws_leftovers(cluster.name, REGION) == [], aws_leftovers(cluster.name, REGION))
+        left = aws_leftovers(cluster.name, REGION)  # before any `down`: the claim is that `up` made nothing
+        check(record, "nothing was made", left == [], left)
         check(record, "no state file", not (cluster.state_dir / f"{cluster.name}.json").exists(), "")
     finally:
         # The getting-started command, verbatim except the profile name.
@@ -93,18 +94,18 @@ def test_A02_boundary_policy_missing(record, run, tmp_path):
 
 
 @pytest.mark.failure
-def test_A03_down_recovery(record, run, tmp_path, account_gate):
+def test_A03_down_recovery(record, new_cluster, tmp_path, account_gate):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
-    terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything."""
-    a = Cluster(run, "none", small_config("a03a"), record.dir / "a", tmp_path / "home_a")
+    terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything. The end of
+    the test checks AWS and vast after each `down` (the `new_cluster` factory: livekit.end_cluster)."""
+    a = new_cluster(small_config("a03a"), record.dir / "a", tmp_path / "home_a")
     out = run_until(a, ["up", a.yaml, "--profile", ADMIN_PROFILE], lambda: a.key_file.exists())
     record.data("a_up_output_tail", out[-300:])
     check(record, "(a) up was stopped after the key pair", a.key_file.exists() or "Traceback" in out or "KeyboardInterrupt" in out, out[-200:])
     done = a.down()
     check(record, "(a) down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
-    check(record, "(a) AWS check", aws_leftovers(a.name, REGION) == [], aws_leftovers(a.name, REGION))
 
-    b = Cluster(run, "none", small_config("a03b"), record.dir / "b", tmp_path / "home_b")
+    b = new_cluster(small_config("a03b"), record.dir / "b", tmp_path / "home_b")
     ec2 = admin("ec2")
     from ray_vast import commands
     run_until(b, ["up", b.yaml, "--profile", ADMIN_PROFILE], lambda: bool(commands._head_instances(ec2, b.name)))
@@ -123,10 +124,9 @@ def test_A03_down_recovery(record, run, tmp_path, account_gate):
     (b.state_dir / f"{b.name}.json").unlink(missing_ok=True)
     import shutil
     shutil.rmtree(b.state_dir / b.name, ignore_errors=True)  # the SSH key: `down` needs none
-    done = b.cli("down", b.yaml, "--profile", ADMIN_PROFILE)
+    done = b.down()  # no state file: `down --profile`
     check(record, "(b, c, d) down without state file, key or head: left nothing", done.returncode == 0 and "left: nothing" in done.stdout,
           done.stdout[-300:])
-    check(record, "(b) AWS check", aws_leftovers(b.name, REGION) == [], aws_leftovers(b.name, REGION))
 
 
 @pytest.mark.security
@@ -386,6 +386,5 @@ def test_A01_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     check(record, "down: 5 groups, key pair, instance profile, role", sum(line.startswith("deleted security group sg-") for line in out) == 5
           and f"deleted key pair {name}" in out and f"deleted instance profile {name}" in out and f"deleted role {name}" in out, out)
     check(record, "down: left nothing, exit 0", done.returncode == 0 and out[-1] == "left: nothing", out[-1:])
-    check(record, "AWS check: nothing left", aws_leftovers(aws_only.name, REGION) == [], aws_leftovers(aws_only.name, REGION))
     check(record, "state files and the key are gone", not (aws_only.state_dir / f"{aws_only.name}.json").exists() and
           not aws_only.key_file.parent.exists(), "")

@@ -33,7 +33,7 @@ JOBS = HERE / "jobs"
 # 46.08, 15616 at 61.44), so no host has many Ray CPUs and pids.max 1280. H1 is the large-host case: 32 or more Ray CPUs,
 # any pids limit (m36376: 38 Ray CPUs, 9728, v1; m58013: 46, 11776, v2; m148655: 61, 15616, v1).
 PINS = {
-    "h1": {"named": [36376, 58013, 148655], "fallback": {"cpu_cores_effective": {"gte": 36}},
+    "h1": {"named": [36376, 58013, 148655], "fallback": {"cpu_cores_effective": {"gte": 32}},
            "want": {"cpus": {"gte": 32}, "limited": True}},
     "h2": {"named": [51706, 55704], "fallback": {"gpu_ram": {"gte": 8000}}, "want": {"cgroup": "v2"}},
 }
@@ -234,28 +234,29 @@ class LibrariesCluster(Cluster):
 
     def end_checks(self, record, done):
         """After the final `down` (`done`; None for a kept cluster): it destroyed the running worker; the S3 test bucket and
-        IAM user are deleted (also for a kept cluster: each run makes new ones)."""
+        IAM user are deleted (also for a kept cluster: each run makes new ones). Each check goes to `record`; returns the
+        names of the false ones (problems for livekit.end_cluster)."""
+        checks = []
         if done is not None:
             destroyed = re.search(r"destroyed (\d+) vast instance\(s\)", done.stdout)
-            record.check("down while a worker runs: `destroyed N vast instance(s)` with N >= 1 (cli.md:125)",
-                         destroyed is not None and int(destroyed.group(1)) >= 1, destroyed.group(0) if destroyed else None)
-        if self._s3 is None:
-            return
-        s3 = self._s3
-        s3.delete()
-        shutil.copy(s3.log, record.dir / "s3_iam.log")
-        try:
-            s3.s3.head_bucket(Bucket=s3.bucket)
-            bucket_gone = False
-        except s3.s3.exceptions.ClientError:
-            bucket_gone = True
-        try:
-            s3.iam.get_user(UserName=s3.user)
-            user_gone = False
-        except s3.iam.exceptions.NoSuchEntityException:
-            user_gone = True
-        record.check("the S3 test bucket is deleted", bucket_gone, s3.bucket)
-        record.check("the IAM test user is deleted", user_gone, s3.user)
+            checks.append(("down while a worker runs: `destroyed N vast instance(s)` with N >= 1 (cli.md:125)",
+                           destroyed is not None and int(destroyed.group(1)) >= 1, destroyed.group(0) if destroyed else None))
+        if self._s3 is not None:
+            s3 = self._s3
+            s3.delete()
+            shutil.copy(s3.log, record.dir / "s3_iam.log")
+            try:
+                s3.s3.head_bucket(Bucket=s3.bucket)
+                bucket_gone = False
+            except s3.s3.exceptions.ClientError:
+                bucket_gone = True
+            try:
+                s3.iam.get_user(UserName=s3.user)
+                user_gone = False
+            except s3.iam.exceptions.NoSuchEntityException:
+                user_gone = True
+            checks += [("the S3 test bucket is deleted", bucket_gone, s3.bucket), ("the IAM test user is deleted", user_gone, s3.user)]
+        return [name for name, ok, detail in checks if not record.check(name, ok, detail)]
 
 
 def alive_workers(cluster):

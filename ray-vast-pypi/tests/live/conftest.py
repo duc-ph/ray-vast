@@ -5,19 +5,22 @@
   without a record. `python tests/live/summarize.py` writes the table into docs/test-results.md.
 - The run context (`livekit.Run`, the `run` fixture) is passed in explicitly: the run identity, the record root, the
   secret sink and the clusters of this process. Each Cluster joins it when it is made.
-- The cluster fixtures (`aws_only`, `lifecycle`, `libraries`) run `up` once and `down` at the end of the session, also
-  after a failure, Ctrl-C or SIGTERM. `libraries` is one cluster for each host (H1, H2, H3, gpu2). The teardown checks of
-  a group (the first `down` leaves nothing, no vast instance has the label; for libraries also the destroyed workers and
-  the S3 cleanup) go to `_session/<group>/teardown/result.json`; a false check fails the run.
+- The cluster fixtures (`aws_only`, `lifecycle`, `libraries`, `release`) run `up` once and end the cluster at the end of
+  the session, also after a failure, Ctrl-C or SIGTERM (`group_lifetime`). `libraries` is one cluster for each host (H1,
+  H2, H3, gpu2). `release` is the tutorial's cluster (cluster.ReleaseCluster: a foreign name, the plain CLI). A scenario
+  makes its own clusters with the `new_cluster` factory (A02, A03); they end at the end of the test.
+- One module ends every cluster: `livekit.end_cluster` (its `down` unless kept or already clean, its vast label sweep, its
+  AWS check, the secret scan of its own records). The result of a group goes to `_session/<group>/teardown/result.json`
+  (for libraries also the destroyed worker and the S3 cleanup); a problem fails the run.
 - Parallel runs: `pytest tests/live -n 12` (pytest-xdist; this file makes it `--dist loadgroup`). Each cluster and the
   tests that share its setup are one xdist group (`livekit.xdist_group`), so one worker process owns the cluster: one `up`,
   one `down`. Other tests go to any worker. The clusters wait for A02 (it deletes the account boundary) when it runs.
 - `--keep-cluster`: a cluster is named `<name>-keep`, its HOME is ~/.cache/ray-vast-live/<group>; a later run reuses it
   while its head runs, and no `down` runs at the end (the scenarios that end the cluster skip). A run without the option
   ends a kept cluster of its groups first, then makes a fresh one.
-- At the end of the run, once, after every worker ended: a vast label sweep to 0 (the clusters of the run that are not
-  kept, and `ray-vast-test-<date>`), the AWS leftover check of each of them, and a secret scan of the results directory
-  (`livekit.end_of_run`; each worker scans for its own secret values first).
+- At the end of the run, once, after every worker ended, only the run-wide guards (`livekit.end_of_run`): a label sweep
+  of `ray-vast-test-<date>` (and of a cluster that did not end), the account-wide AWS check of the suite names, and the
+  summary. Each process first scans the records that no cluster owns (`Run.scan_unowned`).
 Environment: RAYVAST_LIVE_PROFILE (admin AWS profile, default `personal`), RAYVAST_LIVE_RESULTS (default
 <repo>/archive/results/<UTC date>). The vast key comes from VAST_API_KEY or ~/.config/vastai/vast_api_key.
 """
@@ -33,7 +36,8 @@ import pytest
 import yaml
 
 import livekit
-from cluster import ADMIN_PROFILE, REPO, Cluster, aws_leftovers, credit_sample, invoices, sweep_label, vast_key
+from cluster import (ADMIN_PROFILE, REPO, Cluster, aws_account_leftovers, aws_leftovers, credit_sample, invoices, sweep_label,
+                     vast_key)
 
 livekit.sigterm_as_interrupt()
 
@@ -115,8 +119,15 @@ def scenario_id(node):
 
 @pytest.fixture(scope="session")
 def run(request):
-    """The run context (livekit.Run) of this process."""
-    return request.config.stash[RUN]
+    """The run context (livekit.Run) of this process. The vast key is one of its secrets (the scans look for it)."""
+    run = request.config.stash[RUN]
+    run.secret(vast_key_or_empty())
+    return run
+
+
+def end(run, cluster, after_down=None):
+    """livekit.end_cluster with the real guards: the vast label sweep and the AWS check as the admin."""
+    return livekit.end_cluster(run, cluster, sweep_label, lambda name, region: aws_leftovers(name, region, ADMIN_PROFILE), after_down)
 
 
 @pytest.fixture(autouse=True)
@@ -126,6 +137,9 @@ def record(request, run):
     fixture = next((f for f in CLUSTER_FIXTURES if f in request.fixturenames), "none")
     rec = run.record(scenario_id(node), markers, fixture)
     yield rec
+    for name in CLUSTER_FIXTURES:  # the record belongs to the cluster of the test: the end of that cluster scans it
+        if node.funcargs.get(name) is not None:
+            node.funcargs[name].records.append(rec.dir)
     rec.finish(*livekit.outcome_of(node.stash.get(REPORTS, {})))
     if scenario_id(node) == "A02":
         (run.dir / "A02.done").touch()
@@ -147,10 +161,19 @@ def account_gate(request):
     wait_for_a02(request.config)
 
 
-@pytest.fixture(scope="session")
-def results_dir(run):
-    run.results.mkdir(parents=True, exist_ok=True)
-    return run.results
+@pytest.fixture
+def new_cluster(run, record):
+    """The factory of a scenario's own clusters (A02, A03): `new_cluster(config, out_dir, home)` gives a Cluster of the
+    run. At the end of the test, `end` ends each one (also after a failure); a problem is a failed check of the scenario."""
+    made = []
+
+    def make(config, out_dir, home):
+        made.append(Cluster(run, "none", config, out_dir, home))
+        return made[-1]
+    yield make
+    problems = [f"{c.name}: {p}" for c in made for p in end(run, c)]
+    record.check("each cluster of the scenario ended cleanly (livekit.end_cluster)", not problems, "; ".join(problems))
+    assert not problems, problems
 
 
 def _load(fixture, suffix):
@@ -160,35 +183,35 @@ def _load(fixture, suffix):
 
 
 def group_lifetime(run, group, make, request, tmp_path_factory, before_down=None, end_checks=None):
-    """`up` the cluster of one group (`make(group_dir, home, suffix, kept)` gives the Cluster), and `down` it at the end,
-    with the vast spend of its instances (from its timeline) and the teardown checks of the group in
-    `<group_dir>/teardown/result.json`: the first `down` exits 0 with `left: nothing`, and vast lists no instance with the
-    cluster label (the end of the run also sweeps, checks AWS and scans for secrets). `before_down(cluster, record)` runs
-    before the `down`; `end_checks(cluster, record, done)` adds checks (`done` is None for a kept cluster). A false check fails
-    the run (an error at the teardown). With --keep-cluster: the suffix is `keep`, HOME is KEEP_HOME/<group>, a running
-    cluster is reused, and there is no `down`."""
+    """`up` the cluster of one group (`make(group_dir, home, suffix, kept)` gives the cluster: a Cluster or a
+    ReleaseCluster), and end it with `end` when the group ends. The teardown record `<group_dir>/teardown/result.json` has
+    one check: the problems of the end (none: the cluster ended clean). It also writes the vast spend of the instances
+    (from the timeline) to `<group_dir>/spend.json`. `before_down(cluster, record)` runs before the end (not for a kept
+    cluster); `end_checks(cluster, record, done)` gives more problems after the `down` (`done` is None for a kept
+    cluster). A problem fails the run (an error at the teardown). With --keep-cluster: the suffix is `keep`, HOME is
+    KEEP_HOME/<group>, a running cluster is reused, and there is no `down`."""
     keep = request.config.getoption("--keep-cluster")
     group_dir = run.group_dir(group)
     kept_home = KEEP_HOME / group
     started = time.time()
-    holder = {}
+    holder = {"problems": []}
 
     def up():
         wait_for_a02(request.config)
         if not keep and (kept_home / ".ray-vast").exists():  # end the kept cluster of an earlier run first
-            old = make(group_dir / "ended_kept", kept_home, "keep", False)  # not kept now: the end of the run checks it
-            old.down()
+            old = make(group_dir / "ended_kept", kept_home, "keep", False)  # not kept now
+            holder["problems"] += [f"the kept cluster {old.name} of an earlier run: {p}" for p in end(run, old)]
             shutil.rmtree(kept_home)
         home = kept_home if keep else tmp_path_factory.mktemp(f"home-{group}")
         cluster = make(group_dir, home, "keep" if keep else secrets.token_hex(2), keep)
         holder["cluster"] = cluster
         cluster.start_poller()
-        if keep and cluster.head_runs():
+        if cluster.kept and cluster.head_runs():
             cluster.collect_token()
             with open(group_dir / "cli.log", "a") as f:
                 f.write(f"\n=== {time.strftime('%FT%TZ', time.gmtime())} --keep-cluster: reused the running cluster {cluster.name}\n")
             return cluster
-        if keep and cluster.state:  # a kept cluster whose head is gone: clean it, then a new `up`
+        if cluster.kept and cluster.state:  # a kept cluster whose head is gone: clean it, then a new `up`
             cluster.down()
         return cluster.up()
 
@@ -197,29 +220,25 @@ def group_lifetime(run, group, make, request, tmp_path_factory, before_down=None
         if cluster is None:
             return
         record = livekit.Recorder(group_dir, "teardown", [], group)
+        problems = list(holder["problems"])
         try:
-            done = None
-            if not keep:
-                if before_down:
+            if before_down and not cluster.kept:
+                try:
                     before_down(cluster, record)
-                done = cluster.down()
-                record.evidence("down.txt", done.stdout + done.stderr)
-                record.check("down: exit 0, left: nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-200:])
-                if "left: nothing" not in done.stdout:  # once more, as the test plan says
-                    cluster.down()
-                record.check("vast: 0 instances with the cluster label", cluster.instances() == [], "")
-            if end_checks:
-                end_checks(cluster, record, done)
+                except Exception as e:  # noqa: BLE001 - the cluster still ends
+                    problems.append(f"before the down: {type(e).__name__}: {e}")
+            problems += end(run, cluster, (lambda done: end_checks(cluster, record, done)) if end_checks else None)
         finally:
             cluster.stop_poller()
-            instance_type = cluster.config["available_node_types"]["head"]["node_config"].get("instance_type", "t3.large")
+            head = (cluster.config.get("available_node_types") or {}).get("head", {})
+            instance_type = head.get("node_config", {}).get("instance_type", "t3.large")
             hours = (time.time() - started) / 3600
             (group_dir / "spend.json").write_text(json.dumps({
-                "group": group, "cluster": cluster.name, "kept": keep, "vast_estimate": livekit.timeline_spend(cluster.timeline),
+                "group": group, "cluster": cluster.name, "kept": cluster.kept, "vast_estimate": livekit.timeline_spend(cluster.timeline),
                 "hours": round(hours, 2), "ec2_estimate": round(hours * EC2_PRICE.get(instance_type, 0.1), 3)}, indent=1))
-        failed = [c["name"] for c in record.result["checks"] if not c["ok"]]
-        record.finish("failed" if failed else "passed", "; ".join(failed))
-        assert not failed, f"teardown of {group}: {failed}"
+        record.check("the cluster ended cleanly (livekit.end_cluster)", not problems, "; ".join(problems))
+        record.finish("failed" if problems else "passed", "; ".join(problems))
+        assert not problems, f"teardown of {group}: {problems}"
 
     yield from livekit.lifetime(up, down)
 
@@ -279,6 +298,22 @@ def library_clusters(request, tmp_path_factory, run):
         yield get
 
 
+@pytest.fixture(scope="session")
+def release(request, tmp_path_factory, run):
+    """The release cluster (cluster.ReleaseCluster, R01-R02): the getting-started tutorial from a clean venv with
+    ray-vast from PyPI. Only with RAYVAST_LIVE_RELEASE=<version> (after the publish) and without --keep-cluster (the
+    tutorial ends its cluster). RAYVAST_LIVE_RELEASE_REGION changes the region (default us-west-2)."""
+    version = os.environ.get("RAYVAST_LIVE_RELEASE")
+    if not version:
+        pytest.skip("set RAYVAST_LIVE_RELEASE=<version> after the release is on PyPI")
+    if request.config.getoption("--keep-cluster"):
+        pytest.skip("the release tutorial ends its cluster: run it without --keep-cluster")
+    from cluster import ReleaseCluster
+    region = os.environ.get("RAYVAST_LIVE_RELEASE_REGION", "us-west-2")
+    yield from group_lifetime(run, "release", lambda d, home, sfx, kept: ReleaseCluster(run, d, home, region, version), request,
+                              tmp_path_factory)
+
+
 @pytest.fixture
 def libraries(request, library_clusters):
     """The libraries cluster of the test's host (`livekit.host_of`)."""
@@ -294,22 +329,18 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Each process: a scan of the results for its own secret values. The controller (the only process without xdist),
+    """Each process: the secret scan of its records that no cluster owns (Run.scan_unowned). The controller (the only process without xdist),
     after every worker ended: the end-of-run guards (livekit.end_of_run) and the vast spend of the run."""
     config = session.config
     run = config.stash[RUN]
     if not run.live:
         return  # no live test ran
-    values = run.secret_values()
-    if values:
-        found = livekit.scan_secrets(run.results, values)
-        worker = config.workerinput["workerid"] if is_worker(config) else "main"
-        (run.dir / f"scan_{worker}.txt").write_text("".join(f"{p.relative_to(run.results)}\n" for p in found))
+    worker = config.workerinput["workerid"] if is_worker(config) else "main"
+    (run.dir / f"scan_{worker}.txt").write_text("".join(f"{p}\n" for p in run.scan_unowned()))
     if is_worker(config):
         return
-    key = os.environ.get("VAST_API_KEY") or vast_key_or_empty()
-    problems, kept = livekit.end_of_run(run.dir, TEST_LABEL, sweep_label, lambda name, region: aws_leftovers(name, region, ADMIN_PROFILE),
-                                        lambda: [p.relative_to(run.results) for p in livekit.scan_secrets(run.results, [key])])
+    problems, kept = livekit.end_of_run(run.dir, TEST_LABEL, sweep_label,
+                                        lambda regions, skip: aws_account_leftovers(regions, skip, ADMIN_PROFILE))
     before = config.stash.get(CREDIT_BEFORE, None)
     if before is not None and (run.dir / "opened").exists():  # a run without a cluster rents nothing
         time.sleep(30)  # vast bills the last minutes late; the credit settles

@@ -300,6 +300,7 @@ class Run:
         self.dir = self.results / "_session" / "runs" / run_id
         self._secrets = []
         self._clusters = []
+        self._dirs = []  # every record and group directory that this process made
 
     @classmethod
     def of_process(cls, environ, default_results, default_run_id):
@@ -315,12 +316,15 @@ class Run:
 
     def record(self, scenario, markers, fixture):
         self.dir.mkdir(parents=True, exist_ok=True)
-        return Recorder(self.results, scenario, markers, fixture)
+        record = Recorder(self.results, scenario, markers, fixture)
+        self._dirs.append(record.dir)
+        return record
 
     def group_dir(self, group):
         """`<results>/_session/<group>`: the data of one cluster group."""
         path = self.results / "_session" / group
         path.mkdir(parents=True, exist_ok=True)
+        self._dirs.append(path)
         return path
 
     def secret(self, value):
@@ -330,6 +334,14 @@ class Run:
     def secret_values(self):
         """The secrets of the run and the secrets of each cluster now (its token and join tokens arrive after `up`)."""
         return self._secrets + [s for c in self._clusters for s in c.secrets]
+
+    def scan_unowned(self):
+        """The secret scan of the records and group directories of this process that no cluster of the process owns
+        (`end_cluster` scans those). Returns the paths that hold a secret, relative to `results`."""
+        owned = [Path(d) for c in self._clusters for d in c.records]
+        dirs = [d for d in dict.fromkeys(self._dirs) if not any(d == o or o in d.parents for o in owned)]
+        values = self.secret_values()
+        return sorted({str(p.relative_to(self.results)) for d in dirs if d.exists() for p in scan_secrets(d, values)})
 
     def register(self, cluster):
         """Write `<dir>/opened/<name>.json` ({name, region, kept, yaml, home}), so the end of the run checks the cluster,
@@ -341,26 +353,92 @@ class Run:
         self._clusters.append(cluster)
 
 
-def end_of_run(run_dir, test_label, sweep, aws_check, scan):
-    """The guards of a run, once, after every worker process ended (so no worker still uses a cluster): a vast label sweep
-    to 0, the AWS check of each cluster, and the secret scan (`scan()` gives the files with a secret pattern; each worker
-    wrote the files with its own secret values to `scan_<worker>.txt`). A kept cluster (--keep-cluster) is not swept or
-    checked. Returns (problems, one KEPT line for each kept cluster). The logs go to `run_dir`."""
+def _clean(done):
+    return done.returncode == 0 and "left: nothing" in done.stdout
+
+
+def end_cluster(run, cluster, sweep, aws_check, after_down=None):
+    """End one cluster cleanly: the only place in the suite that does. Every cluster of the run comes here once (a group
+    cluster at the end of its group, a scenario's own cluster at the end of its test, the release cluster).
+    1. `down`, unless the cluster is kept, or its last `down` (a scenario's, for example A01, L10, R02) exited 0 with
+       `left: nothing`. A `down` that leaves something is a problem, and it runs once more.
+    2. `after_down(done)` (the checks of the group; `done` is the last `down`, None for a kept cluster) gives more problems.
+    3. Not kept: the vast label sweep of this cluster (an instance that it still finds is a problem) and the AWS check of
+       this cluster in its region.
+    4. The secret scan of this cluster's records only (`cluster.records`: its own directories, not a name glob), with the
+       secret values of the run.
+    The cluster: `name`, `region`, `kept`, `last_down`, `records`, `down()` (returns returncode, stdout, stderr).
+    `sweep(prefixes)` gives log lines (`destroyed <id> (<label>)` for each destroyed instance); `aws_check(name, region)`
+    gives the resources left. Writes `<run.dir>/ended/<name>.json`. Returns the problems (empty: the cluster ended clean)."""
+    problems = []
+    done = cluster.last_down
+    if not cluster.kept and (done is None or not _clean(done)):
+        try:
+            done = cluster.down()
+            if not _clean(done):
+                problems.append(f"down left something (exit {done.returncode}): {' '.join(done.stdout.split()[-12:])}")
+                done = cluster.down()
+        except Exception as e:  # noqa: BLE001 - the sweep and the AWS check still run
+            problems.append(f"down failed: {type(e).__name__}: {e}")
+    if after_down:
+        try:
+            problems += after_down(None if cluster.kept else done)
+        except Exception as e:  # noqa: BLE001 - the sweep and the AWS check still run
+            problems.append(f"the checks after down failed: {type(e).__name__}: {e}")
+    if not cluster.kept:
+        try:
+            destroyed = [line for line in sweep([f"ray-vast:{cluster.name}"]) if line.startswith("destroyed ")]
+            if destroyed:
+                problems.append(f"vast: {len(destroyed)} instance(s) with the cluster label after down: {', '.join(destroyed)}")
+        except Exception as e:  # noqa: BLE001
+            problems.append(f"vast sweep failed: {type(e).__name__}: {e}")
+        try:
+            left = aws_check(cluster.name, cluster.region)
+            if left:
+                problems.append(f"AWS left: {', '.join(left)}")
+        except Exception as e:  # noqa: BLE001
+            problems.append(f"AWS check failed: {type(e).__name__}: {e}")
+    values = run.secret_values()
+    found = sorted({str(p) for d in cluster.records if Path(d).exists() for p in scan_secrets(d, values)})
+    if found:
+        problems.append(f"the secret scan found {len(found)} file(s): {', '.join(found)}")
+    path = run.dir / "ended" / f"{cluster.name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"name": cluster.name, "kept": cluster.kept, "problems": problems}, indent=1))
+    return problems
+
+
+def end_of_run(run_dir, test_label, sweep, account_check):
+    """The run-wide guards, once, after every worker process ended (so no worker still uses a cluster). Each cluster was
+    already ended by `end_cluster` (its own `down`, sweep, AWS check and secret scan); this does not repeat that work:
+    - a final vast label sweep of the test label and of each cluster that joined the run but did not end (its worker died);
+    - the account-wide AWS check `account_check(regions, skip)`: resources with a suite name in each region of the run,
+      except the kept clusters (`skip`);
+    - the summary: the problems of each ended cluster, each cluster that did not end, and the files that each process
+      scan found (`scan_<worker>.txt`: the records of that process that no cluster owns).
+    A run without a cluster calls neither cloud guard. Returns (problems, one KEPT line for each kept cluster). The logs go
+    to `run_dir`."""
     run_dir = Path(run_dir)
     opened = [json.loads(p.read_text()) for p in sorted((run_dir / "opened").glob("*.json"))]
-    ended = [c for c in opened if not c["kept"]]
-    problems = []
-    try:
-        lines = sweep([test_label] + [f"ray-vast:{c['name']}" for c in ended])
-        (run_dir / "sweep.log").write_text("\n".join(lines) + "\n")
-    except Exception as e:  # noqa: BLE001 - the report must name it
-        problems.append(f"vast sweep failed: {type(e).__name__}: {e}")
-    for c in ended:
-        left = aws_check(c["name"], c["region"])
-        (run_dir / f"aws_check_{c['name']}.log").write_text(("\n".join(left) or "aws left: nothing") + "\n")
-        if left:
-            problems.append(f"AWS left for {c['name']}: {left}")
-    found = sorted({*map(str, scan()), *(line for p in run_dir.glob("scan_*.txt") for line in p.read_text().split())})
+    ended = {c["name"]: c for c in (json.loads(p.read_text()) for p in sorted((run_dir / "ended").glob("*.json")))}
+    not_ended = [c for c in opened if c["name"] not in ended]
+    problems, left = [], []
+    if opened:  # a run without a cluster (the free group) calls no cloud API
+        try:
+            lines = sweep([test_label] + [f"ray-vast:{c['name']}" for c in not_ended if not c["kept"]])
+            (run_dir / "sweep.log").write_text("\n".join(lines) + "\n")
+        except Exception as e:  # noqa: BLE001 - the report must name it
+            problems.append(f"vast sweep failed: {type(e).__name__}: {e}")
+        try:
+            left = account_check(sorted({c["region"] for c in opened} | {"us-west-2"}), [c["name"] for c in opened if c["kept"]])
+        except Exception as e:  # noqa: BLE001
+            left = [f"failed: {type(e).__name__}: {e}"]
+        (run_dir / "aws_account_check.log").write_text(("\n".join(left) or "aws left: nothing") + "\n")
+    for c in opened:
+        problems += [f"{c['name']}: {p}" for p in ended.get(c["name"], {}).get("problems", [])]
+    problems += [f"AWS account check: {x}" for x in left]
+    problems += [f"{c['name']} joined the run but did not end: run HOME={c['home']} ray-vast down {c['yaml']}" for c in not_ended]
+    found = sorted({line for p in run_dir.glob("scan_*.txt") for line in p.read_text().split()})
     (run_dir / "secret_scan.txt").write_text("".join(f"{p}\n" for p in found) or "no file holds a secret\n")
     if found:
         problems.append(f"the secret scan found {len(found)} file(s): {', '.join(found)}")

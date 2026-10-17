@@ -16,7 +16,7 @@ import boto3
 import pytest
 
 from livekit import check
-from cluster import ADMIN_PROFILE, BIN, MANUAL, aws_leftovers
+from cluster import ADMIN_PROFILE, BIN, MANUAL
 
 pytestmark = pytest.mark.lifecycle
 JOBS = Path(__file__).parent / "jobs"
@@ -341,7 +341,6 @@ def test_L10_head_loss_then_down_without_a_vast_key(record, lifecycle, session_e
         check(record, f"worker {iid} destroys itself within 360 s", gone_at.get(iid, 10**6) <= 360, gone_at.get(iid))
     for iid in record.result["data"]["at_stop"]["others"]:
         check(record, f"candidate {iid} is gone within 30 min (10 min after its pull)", gone_at.get(iid, 10**6) <= 30 * 60, gone_at.get(iid))
-    done = lifecycle.cli("down", lifecycle.yaml, env={"VAST_API_KEY": ""})
+    done = lifecycle.down(env={"VAST_API_KEY": ""})  # the group teardown checks AWS and vast after it (livekit.end_cluster)
     record.evidence("down_without_vast_key.txt", done.stdout + done.stderr)
     check(record, "down without a vast key: the warning, exit 0", done.returncode == 0 and "warning: no vast key" in done.stdout, done.stdout[-300:])
-    check(record, "AWS is clean (admin check)", aws_leftovers(lifecycle.name, lifecycle.region) == [], aws_leftovers(lifecycle.name, lifecycle.region))

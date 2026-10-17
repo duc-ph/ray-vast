@@ -325,42 +325,52 @@ def _opened(run, name, kept, region="us-west-2"):
     run.register(SimpleNamespace(name=name, region=region, kept=kept, yaml=f"/r/{name}.yaml", home=f"/h/{name}", secrets=[]))
 
 
-def test_the_end_of_a_run_sweeps_and_checks_only_the_clusters_that_are_not_kept_and_names_the_kept_ones(tmp_path):
+def _ended(run, name, problems, kept=False):
+    (run.dir / "ended").mkdir(parents=True, exist_ok=True)
+    (run.dir / "ended" / f"{name}.json").write_text(json.dumps({"name": name, "kept": kept, "problems": problems}))
+
+
+def test_the_end_of_a_run_does_only_the_run_wide_guards_and_sums_up_the_problems_of_each_ended_cluster(tmp_path):
     run = livekit.Run(tmp_path, "run1")
-    run_dir = run.dir
     _opened(run, "rvtest-aws-1a2b", kept=False)
+    _opened(run, "gpu-24gb", kept=False)
     _opened(run, "rvtest-life-keep", kept=True, region="us-east-2")
-    (run_dir / "scan_gw1.txt").write_text("L03/probe.log\n")
+    _ended(run, "rvtest-aws-1a2b", ["AWS left: volume vol-1"])
+    _ended(run, "gpu-24gb", [])
+    _ended(run, "rvtest-life-keep", [], kept=True)
+    (run.dir / "scan_gw1.txt").write_text("A10/denials.txt\n")  # a record that no cluster owns
     swept, checked = [], []
 
     def sweep(prefixes):
         swept.append(prefixes)
         return ["0 left"]
 
-    def aws_check(name, region):
-        checked.append((name, region))
-        return ["volume vol-1"] if name == "rvtest-aws-1a2b" else []
+    def account_check(regions, skip):
+        checked.append((regions, skip))
+        return ["security group sg-9 (ray-vast-rvtest-old-0000-head)"]
 
-    problems, kept = livekit.end_of_run(run_dir, "ray-vast-test-20261016", sweep, aws_check, lambda: [])
-    assert swept == [["ray-vast-test-20261016", "ray-vast:rvtest-aws-1a2b"]]
-    assert checked == [("rvtest-aws-1a2b", "us-west-2")]
-    assert problems == ["AWS left for rvtest-aws-1a2b: ['volume vol-1']", "the secret scan found 1 file(s): L03/probe.log"]
+    problems, kept = livekit.end_of_run(run.dir, "ray-vast-test-20261016", sweep, account_check)
+    assert swept == [["ray-vast-test-20261016"]]                       # each ended cluster had its own sweep
+    assert checked == [(["us-east-2", "us-west-2"], ["rvtest-life-keep"])]
+    assert problems == ["rvtest-aws-1a2b: AWS left: volume vol-1",
+                        "AWS account check: security group sg-9 (ray-vast-rvtest-old-0000-head)",
+                        "the secret scan found 1 file(s): A10/denials.txt"]
     assert len(kept) == 1 and "KEPT CLUSTER rvtest-life-keep" in kept[0] and "ray-vast down /r/rvtest-life-keep.yaml" in kept[0]
 
 
-def test_the_end_of_a_run_with_a_failed_sweep_is_a_problem_and_the_aws_checks_still_run(tmp_path):
+def test_a_cluster_that_joined_the_run_but_never_ended_is_a_problem_and_the_final_sweep_takes_its_label(tmp_path):
     run = livekit.Run(tmp_path, "run1")
-    run_dir = run.dir
-    _opened(run, "rvtest-aws-1a2b", kept=False)
+    _opened(run, "rvtest-lib-h1-1a2b", kept=False)  # its worker process died before the teardown
 
     def sweep(prefixes):
+        assert prefixes == ["ray-vast-test-20261016", "ray-vast:rvtest-lib-h1-1a2b"]
         raise RuntimeError("vast is down")
 
-    checked = []
-    problems, kept = livekit.end_of_run(run_dir, "ray-vast-test-20261016", sweep, lambda n, r: checked.append(n) or [],
-                                        lambda: ["F17/x.txt"])
-    assert problems == ["vast sweep failed: RuntimeError: vast is down", "the secret scan found 1 file(s): F17/x.txt"]
-    assert checked == ["rvtest-aws-1a2b"] and kept == []
+    problems, kept = livekit.end_of_run(run.dir, "ray-vast-test-20261016", sweep, lambda regions, skip: [])
+    assert problems == ["vast sweep failed: RuntimeError: vast is down",
+                        "rvtest-lib-h1-1a2b joined the run but did not end: run HOME=/h/rvtest-lib-h1-1a2b ray-vast down "
+                        "/r/rvtest-lib-h1-1a2b.yaml"]
+    assert kept == []
 
 
 def test_the_vast_spend_of_one_cluster_comes_from_its_timeline_and_a_failed_sample_keeps_the_last_known_instances():
@@ -445,3 +455,160 @@ def test_a_test_without_a_call_report_is_not_recorded_as_passed():
     assert livekit.outcome_of({"setup": _Report("passed")})[0] == "failed"
     assert livekit.outcome_of({"setup": _Report("passed"), "call": _Report("passed")}) == ("passed", "")
     assert livekit.outcome_of({"setup": _Report("skipped", ("f", 1, "Skipped: kept")), "call": None})[0] == "skipped"
+
+
+class _Done:
+    def __init__(self, stdout="left: nothing\n", returncode=0):
+        self.stdout, self.stderr, self.returncode = stdout, "", returncode
+
+
+class _FakeCluster:
+    """A cluster at the seam of `livekit.end_cluster`: its `down` outputs come from `downs`, one for each call."""
+
+    def __init__(self, run, tmp_path, name="rvtest-life-1a2b", kept=False, downs=None, last_down=None):
+        self.name, self.region, self.kept, self.last_down = name, "us-east-2", kept, last_down
+        self.yaml, self.home, self.secrets = tmp_path / f"{name}.yaml", tmp_path / "home", []
+        self.records = [tmp_path / "results" / "_session" / name]
+        self.records[0].mkdir(parents=True)
+        self.downs, self.down_calls = list(downs or [_Done()]), 0
+        run.register(self)
+
+    def down(self):
+        self.down_calls += 1
+        self.last_down = self.downs.pop(0) if self.downs else _Done()
+        return self.last_down
+
+
+def _guards():
+    """A fake vast sweep and AWS check that log their calls. `left` sets what each one finds."""
+    calls = {"sweep": [], "aws": [], "destroyed": [], "left": []}
+
+    def sweep(prefixes):
+        calls["sweep"].append(prefixes)
+        return ["0 left"] if not calls["destroyed"] else ["1 left", *calls["destroyed"], "0 left"]
+
+    def aws_check(name, region):
+        calls["aws"].append((name, region))
+        return calls["left"]
+    return calls, sweep, aws_check
+
+
+def test_a_clean_cluster_ends_with_one_down_its_label_sweep_its_aws_check_and_no_problem(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    calls, sweep, aws_check = _guards()
+    assert livekit.end_cluster(run, cluster, sweep, aws_check) == []
+    assert cluster.down_calls == 1
+    assert calls["sweep"] == [["ray-vast:rvtest-life-1a2b"]] and calls["aws"] == [("rvtest-life-1a2b", "us-east-2")]
+    ended = json.loads((run.dir / "ended" / "rvtest-life-1a2b.json").read_text())
+    assert ended["problems"] == [] and ended["kept"] is False
+
+
+def test_a_down_that_leaves_something_is_a_problem_and_down_runs_once_more(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, downs=[_Done("deleted key pair x\nleft: security group sg-1\n", 1), _Done()])
+    calls, sweep, aws_check = _guards()
+    assert livekit.end_cluster(run, cluster, sweep, aws_check) == [
+        "down left something (exit 1): deleted key pair x left: security group sg-1"]
+    assert cluster.down_calls == 2
+
+
+def test_an_instance_that_the_sweep_still_finds_and_a_resource_that_aws_still_has_are_problems(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    calls, sweep, aws_check = _guards()
+    calls["destroyed"].append("destroyed 41 (ray-vast:rvtest-life-1a2b)")
+    calls["left"].append("volume vol-1")
+    assert livekit.end_cluster(run, cluster, sweep, aws_check) == [
+        "vast: 1 instance(s) with the cluster label after down: destroyed 41 (ray-vast:rvtest-life-1a2b)", "AWS left: volume vol-1"]
+
+
+def test_the_secret_scan_of_a_cluster_reads_its_own_records_only_never_a_directory_with_a_similar_name(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    for scenario in ("L03", "LB03"):  # an `L*` glob matched both (the 2026-10-17 bug)
+        (tmp_path / "results" / scenario).mkdir(parents=True)
+        (tmp_path / "results" / scenario / "probe.log").write_text("token: cluster-token-value\n")
+    cluster.records.append(tmp_path / "results" / "L03")
+    cluster.secrets.append("cluster-token-value")  # it arrives after `up`
+    calls, sweep, aws_check = _guards()
+    assert livekit.end_cluster(run, cluster, sweep, aws_check) == [
+        f"the secret scan found 1 file(s): {tmp_path / 'results' / 'L03' / 'probe.log'}"]
+
+
+def test_a_kept_cluster_gets_no_down_no_sweep_and_no_aws_check_but_its_records_are_scanned(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, name="rvtest-life-keep", kept=True)
+    (cluster.records[0] / "cli.log").write_text("-----BEGIN RSA PRIVATE KEY-----\n")
+    calls, sweep, aws_check = _guards()
+    problems = livekit.end_cluster(run, cluster, sweep, aws_check, after_down=lambda done: [f"S3 after down {done}"])
+    assert problems == ["S3 after down None", f"the secret scan found 1 file(s): {cluster.records[0] / 'cli.log'}"]
+    assert cluster.down_calls == 0 and calls["sweep"] == [] and calls["aws"] == []
+    assert json.loads((run.dir / "ended" / "rvtest-life-keep.json").read_text())["kept"] is True
+
+
+def test_a_cluster_that_a_scenario_already_ended_cleanly_gets_no_second_down_but_still_its_sweep_and_aws_check(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, name="gpu-24gb", last_down=_Done())  # R02 ran the tutorial's `down`
+    calls, sweep, aws_check = _guards()
+    seen = []
+    assert livekit.end_cluster(run, cluster, sweep, aws_check, after_down=lambda done: seen.append(done) or []) == []
+    assert cluster.down_calls == 0 and seen == [cluster.last_down]
+    assert calls["sweep"] == [["ray-vast:gpu-24gb"]] and calls["aws"] == [("gpu-24gb", "us-east-2")]
+
+
+def test_a_cluster_whose_up_failed_half_way_still_gets_the_sweep_and_the_aws_check_when_down_or_vast_fails(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+
+    def down():
+        raise TimeoutError("ray-vast down: 1800 s")
+    cluster.down = down
+
+    def sweep(prefixes):
+        raise ConnectionError("vast is down")
+    checked = []
+    problems = livekit.end_cluster(run, cluster, sweep, lambda name, region: checked.append(name) or ["key pair ray-vast-x"])
+    assert problems == ["down failed: TimeoutError: ray-vast down: 1800 s", "vast sweep failed: ConnectionError: vast is down",
+                        "AWS left: key pair ray-vast-x"]
+    assert checked == ["rvtest-life-1a2b"]
+    assert json.loads((run.dir / "ended" / "rvtest-life-1a2b.json").read_text())["problems"] == problems
+
+
+def test_the_process_scan_reads_each_record_of_the_process_that_no_cluster_owns(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    run.secret("iam-user-secret")
+    run.record("A10", ["aws"], "none").evidence("denials.txt", "iam-user-secret")
+    (run.group_dir("restricted_user") / "user.log").write_text("iam-user-secret")
+    cluster = _FakeCluster(run, tmp_path)
+    owned = run.record("L03", ["lifecycle"], "lifecycle")
+    owned.evidence("probe.log", "iam-user-secret")  # scanned when its cluster ends, not again here
+    cluster.records.append(owned.dir)
+    run.record("F01", ["free"], "none").evidence("ok.txt", "nothing secret")
+    assert run.scan_unowned() == ["A10/denials.txt", "_session/restricted_user/user.log"]
+
+
+def test_in_lb11_refused_forks_are_data_so_a_tuned_run_with_refused_forks_still_passes(monkeypatch):
+    from pathlib import Path
+    c10 = Path(livekit.__file__).resolve().parents[3] / "tests" / "manual" / "c10"
+    if not (c10 / "run_c10.py").exists():
+        pytest.skip("the C10 runner is in the repository, not in the package tree (F18 copies the package tree only)")
+    monkeypatch.syspath_prepend(str(c10))
+    from run_c10 import verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "1280"}
+    post = {"node_id": "n1", "pids.events": "max 7", "pids.max": "1280"}
+    warnings = ["WARNING worker 41 is at its process limit: 7 refused forks/threads (+7), pids 1280 of 1280"]
+    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings)[0] == "FAIL"  # the C10 runner's own rule
+    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings, refused_fails=False) == (
+        "PASS", ["completed, node alive, refused forks 7 (data, not a pass criterion)"])
+
+
+def test_a_run_without_a_cluster_calls_no_cloud_guard_but_still_sums_up_the_process_scans(tmp_path):
+    run = livekit.Run(tmp_path, "run1")
+    run.record("F01", ["free"], "none")
+    (run.dir / "scan_gw0.txt").write_text("F17/x.txt\n")
+
+    def no_cloud(*args):
+        raise AssertionError("a free run calls no cloud API")
+    assert livekit.end_of_run(run.dir, "ray-vast-test-20261016", no_cloud, no_cloud) == (
+        ["the secret scan found 1 file(s): F17/x.txt"], [])

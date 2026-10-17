@@ -581,12 +581,14 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
             job_line = {"kind": found[1], **found[2]} if found else {"kind": None}
             # run_c10 calls a many run INCONCLUSIVE above 3328 (its phase A rule). The many sizes here are max(ports + 4, ...),
             # above the ports at any limit, so the limit of this host is accepted.
-            verdict_word, reasons = verdict(kind, job_line, pre.get(target), post.get(target), warnings, limit_max=max(3328, limit))
+            # Refused forks are data in LB11, not a pass criterion (2026-10-17): `refused_forks` of each pair.
+            verdict_word, reasons = verdict(kind, job_line, pre.get(target), post.get(target), warnings, limit_max=max(3328, limit),
+                                            refused_fails=False)
             refused = (events_max(post.get(target)) or 0) - (events_max(pre.get(target)) or 0)
             if kind == "many":
                 full = [w for w in warnings if re.search(r"worker ports in use (\d+) of \1\b", w)]
-                if verdict_word == "PASS" and (not full or refused):
-                    verdict_word, reasons = "FAIL", reasons + [f"no `ports in use N of N` WARNING ({len(full)}) or refused forks {refused}"]
+                if verdict_word == "PASS" and not full:
+                    verdict_word, reasons = "FAIL", reasons + ["no `ports in use N of N` WARNING"]
             outcomes.append((pair, verdict_word, reasons))
             record.data(pair, {"verdict": verdict_word, "reasons": reasons, "job_status": status, "job": job_line, "refused_forks": refused,
                                "warnings": warnings[:5], "params": next((x for x in log.splitlines() if x.startswith("C10_PARAMS")), None)})

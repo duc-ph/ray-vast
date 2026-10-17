@@ -86,7 +86,8 @@ class Cluster:
                     "PATH": f"{BIN}:{os.environ['PATH']}"}
         self.env.pop("AWS_PROFILE", None)
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
-        self.up_output = None
+        self.records = [self.dir]  # the directories that livekit.end_cluster scans; the record fixture adds each scenario's
+        self.up_output = self.last_down = None
         self.timeline = []
         self._poller = None
         run.register(self)
@@ -105,6 +106,7 @@ class Cluster:
 
     def up(self):
         started = time.time()
+        self.last_down = None  # a new `up` makes resources again
         done = self.cli("up", self.yaml, "--profile", self.profile)
         self.up_output = {"returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr, "wall_s": round(time.time() - started, 1)}
         if done.returncode != 0:
@@ -114,10 +116,11 @@ class Cluster:
 
     def down(self, *extra, env=None):
         """`down`; without a state file (an earlier `down` deleted it) `down` needs `--profile` (cli.md), so it gets the
-        cluster's profile."""
+        cluster's profile. The result is `last_down` (livekit.end_cluster runs no second `down` after a clean one)."""
         if not self.state and "--profile" not in extra:
             extra = (*extra, "--profile", self.profile)
-        return self.cli("down", self.yaml, *extra, env=env)
+        self.last_down = self.cli("down", self.yaml, *extra, env=env)
+        return self.last_down
 
     # --- state and SSH ---------------------------------------------------------------------------------------------
     @property
@@ -299,6 +302,70 @@ class Cluster:
         return ""
 
 
+class ReleaseCluster:
+    """The cluster of the release group (test_release.py, R01-R02): the second adapter of the cluster seam, next to
+    Cluster. It follows the getting-started tutorial verbatim, so it differs from a suite cluster in three ways: its name
+    (`gpu-24gb`, from the packaged YAML) is not a suite name, it runs the plain `ray-vast` CLI of a clean venv with
+    ray-vast from PyPI, and its YAML is the packaged one (only `region` changes). Like every cluster it joins the run when it
+    is made, and livekit.end_cluster ends it. `up()` is the tutorial up to `ray-vast up`; `shell(script)` runs a script in
+    the tutorial's directory (`work`) with the tutorial's env (`env`)."""
+
+    def __init__(self, run, out_dir, home, region, version):
+        self.fixture, self.name, self.region, self.version, self.kept = "release", "gpu-24gb", region, version, False
+        self.dir, self.home = Path(out_dir), Path(home)
+        self.work = self.home / "work"
+        self.work.mkdir(parents=True, exist_ok=True)
+        self.yaml = self.work / "cluster.yaml"
+        self.config = {}  # the packaged YAML, after the `cp` of `up`
+        self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "AWS_PROFILE": ADMIN_PROFILE,
+                    "AWS_CONFIG_FILE": str(Path("~/.aws/config").expanduser()),
+                    "AWS_SHARED_CREDENTIALS_FILE": str(Path("~/.aws/credentials").expanduser())}
+        self.env.pop("VIRTUAL_ENV", None)
+        self.records, self.secrets, self.timeline, self._poller = [self.dir], [], [], None
+        self.up_output = self.last_down = self.started = None
+        run.register(self)
+
+    # The vast poller and the instance list of Cluster: they use only name, dir, secrets, timeline and _poller.
+    start_poller, stop_poller, instances = Cluster.start_poller, Cluster.stop_poller, Cluster.instances
+
+    def shell(self, script, timeout=1800):
+        done = subprocess.run(["bash", "-c", f"cd {self.work} && {script}"], env=self.env, capture_output=True, text=True,
+                              timeout=timeout)
+        with open(self.dir / "cli.log", "a") as f:
+            f.write(f"\n=== {time.strftime('%FT%TZ', time.gmtime())} {script} (exit {done.returncode})\n{done.stdout}{done.stderr}")
+        return done
+
+    def up(self):
+        self.started, self.last_down = time.time(), None
+        done = self.shell('python3 -m venv .venv && source .venv/bin/activate && pip install -q ray-vast "ray[default]==2.59.*" && '
+                          'ray-vast --help >/dev/null && python -c "import ray_vast; print(ray_vast.__version__)"')
+        if done.returncode != 0 or not done.stdout.strip().endswith(self.version):
+            raise RuntimeError(f"the install of ray-vast {self.version} from PyPI failed: {(done.stderr or done.stdout)[-500:]}")
+        done = self.shell('source .venv/bin/activate && cp "$(python -c \'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))\')/'
+                          f'examples/gpu-24gb.yaml" cluster.yaml && sed -i "s/region: us-west-2/region: {self.region}/" cluster.yaml')
+        if done.returncode != 0:
+            raise RuntimeError(f"the cp of gpu-24gb.yaml failed: {done.stderr[-300:]}")
+        self.config = yaml.safe_load(self.yaml.read_text())
+        if self.config["cluster_name"] != self.name:
+            raise RuntimeError(f"the packaged YAML names the cluster {self.config['cluster_name']}, not {self.name}")
+        started = time.time()
+        done = self.shell(f"source .venv/bin/activate && ray-vast up cluster.yaml --profile {ADMIN_PROFILE}", timeout=2400)
+        self.up_output = {"returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr, "wall_s": round(time.time() - started, 1)}
+        if done.returncode != 0:
+            raise RuntimeError(f"ray-vast up {self.name} failed (exit {done.returncode}): {(done.stderr or done.stdout)[-800:]}")
+        return self
+
+    def down(self):
+        """The tutorial's `ray-vast down cluster.yaml`. Before it, the token file of `ray-vast dashboard` joins the secrets."""
+        token = self.home / ".ray-vast" / self.name / "token"
+        if token.exists() and token.read_text().strip() not in self.secrets:
+            self.secrets.append(token.read_text().strip())
+        if not (self.work / ".venv" / "bin" / "ray-vast").exists():  # the install failed: no cluster was made
+            return subprocess.CompletedProcess(["ray-vast", "down"], 0, "the install failed before `up`: nothing to end\nleft: nothing\n", "")
+        self.last_down = self.shell("source .venv/bin/activate && ray-vast down cluster.yaml")
+        return self.last_down
+
+
 VOLUME_GONE_S = 180
 
 
@@ -330,6 +397,43 @@ def _aws_leftovers(cluster, region, profile):
             left.append(f"{kind} {name}")
         except iam.exceptions.NoSuchEntityException:
             pass
+    return left
+
+
+def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
+    """The account-wide AWS check at the end of a run (as the admin): every resource with a suite cluster name
+    (`ray-vast-rvtest-*`) in `regions` (instances and volumes by the cluster tag, security groups, key pairs) and in IAM
+    (roles, instance profiles), except the kept clusters in `skip`. It finds what a cluster that never reached
+    livekit.end_cluster left. A suite run in parallel on the same account would show here too."""
+    session = boto3.Session(profile_name=profile)
+    kept = [f"ray-vast-{name}" for name in skip]
+
+    def ours(name):
+        return name.startswith("ray-vast-rvtest-") and not any(name == k or name.startswith(k + "-") for k in kept)
+
+    left = []
+    for region in regions:
+        ec2 = session.client("ec2", region_name=region)
+        tag = [{"Name": "tag-key", "Values": [commands.TAG_KEY]}]
+        for r in ec2.describe_instances(Filters=tag + [{"Name": "instance-state-name", "Values": ["pending", "running", "stopping", "stopped",
+                                                                                                    "shutting-down"]}])["Reservations"]:
+            for i in r["Instances"]:
+                cluster = next((t["Value"] for t in i.get("Tags", []) if t["Key"] == commands.TAG_KEY), "")
+                if ours(f"ray-vast-{cluster}"):
+                    left.append(f"EC2 instance {i['InstanceId']} ({cluster}, {region})")
+        for v in ec2.describe_volumes(Filters=tag)["Volumes"]:
+            cluster = next((t["Value"] for t in v.get("Tags", []) if t["Key"] == commands.TAG_KEY), "")
+            if ours(f"ray-vast-{cluster}"):
+                left.append(f"volume {v['VolumeId']} ({cluster}, {region})")
+        name_filter = [{"Name": "group-name", "Values": ["ray-vast-rvtest-*"]}]
+        left += [f"security group {g['GroupId']} ({g['GroupName']}, {region})" for g in ec2.describe_security_groups(Filters=name_filter)["SecurityGroups"]
+                 if ours(g["GroupName"])]
+        left += [f"key pair {k['KeyName']} ({region})" for k in ec2.describe_key_pairs(Filters=[{"Name": "key-name", "Values": ["ray-vast-rvtest-*"]}])["KeyPairs"]
+                 if ours(k["KeyName"])]
+    iam = session.client("iam")
+    left += [f"role {r['RoleName']}" for page in iam.get_paginator("list_roles").paginate() for r in page["Roles"] if ours(r["RoleName"])]
+    left += [f"instance profile {p['InstanceProfileName']}" for page in iam.get_paginator("list_instance_profiles").paginate()
+             for p in page["InstanceProfiles"] if ours(p["InstanceProfileName"])]
     return left
 
 

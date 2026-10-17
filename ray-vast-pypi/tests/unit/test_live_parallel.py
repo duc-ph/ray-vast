@@ -33,6 +33,7 @@ class Cluster:
         self.name, self.config, self.dir, self.home, self.kept = config["cluster_name"], config, Path(out_dir), Path(home), kept
         self.dir.mkdir(parents=True, exist_ok=True)
         self.yaml, self.region, self.secrets, self.timeline, self.up_output = self.dir / "cluster.yaml", "us-west-2", [], [], None
+        self.records, self.last_down = [self.dir], None
         self.state_file = self.home / ".ray-vast" / f"{self.name}.json"
         run.register(self)  # as the real Cluster
 
@@ -45,7 +46,7 @@ class Cluster:
         time.sleep(0.5)
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self.state_file.write_text("{\\"head_ip\\": \\"192.0.2.1\\"}")
-        self.up_output = {}
+        self.up_output, self.last_down = {}, None
         return self
 
     def down(self, *args, **kwargs):
@@ -54,6 +55,7 @@ class Cluster:
         done = Done()
         if os.environ.get("DOWN_LEAVES") and not self.name.endswith("-keep"):
             done.stdout = "left: security group sg-1\\n"
+        self.last_down = done
         return done
 
     def instances(self):
@@ -85,13 +87,24 @@ def invoices():
     return []
 
 
+def aws_account_leftovers(regions, skip, profile=ADMIN_PROFILE):
+    event("ACCOUNTCHECK", *regions)
+    return []
+
+
 def sweep_label(prefixes):
-    event("GUARDS", *prefixes)
+    event("SWEEP", *prefixes)
     return ["0 left"]
 
 
 def vast_key():
     return "fake-vast-key"
+
+
+class ReleaseCluster(Cluster):
+    """The release cluster: the user's YAML verbatim, so its name is not a suite name."""
+    def __init__(self, run, out_dir, home, region, version):
+        super().__init__(run, "release", {"cluster_name": "gpu-24gb"}, out_dir, home)
 '''
 
 FAKE_RESTRICTED = '''
@@ -127,12 +140,19 @@ class LibrariesCluster(Cluster):
 
     def end_checks(self, record, done):
         event("END_CHECKS", self.name, "kept" if done is None else "ended")
+        return []
 '''
 
 SUITE = '''
+import os
 import time
 import pytest
 from cluster import event
+
+
+def leak(record):
+    if os.environ.get("LEAK"):
+        record.evidence("leak.txt", "fake-vast-key")
 
 
 def test_A02_boundary(record):
@@ -146,6 +166,7 @@ def test_A03_down_recovery(record, account_gate):
 
 def test_A10_denials(record, restricted_user):
     event("RUN", "A10", "-")
+    leak(record)
 
 
 def test_A04_exists(record, aws_only):
@@ -164,6 +185,7 @@ def test_L01_up(record, lifecycle):
 
 def test_L02_scale(record, lifecycle):
     event("RUN", "L02", lifecycle.name)
+    leak(record)
 
 
 @pytest.mark.parametrize("where", ["H1", "H3"])
@@ -175,6 +197,7 @@ def test_LB00_probe(record, libraries, where):
 @pytest.mark.host("H3")
 def test_LB01_jobs(record, libraries):
     event("RUN", "LB01", libraries.name)
+    leak(record)
 
 
 @pytest.mark.host("H1")
@@ -224,7 +247,7 @@ CLUSTERS = ("rvtest-aws", "rvtest-life", "rvtest-lib-h1", "rvtest-lib-h3")
 
 @pytest.mark.slow
 @pytest.mark.parametrize("workers", [[], ["-n", "4"]], ids=["one process", "4 xdist workers"])
-def test_each_cluster_is_up_and_down_once_in_the_process_of_its_tests_and_the_guards_run_once_after_every_down(tmp_path, workers):
+def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_run_wide_guards_run_once_after_every_end(tmp_path, workers):
     code, out, events = _run(tmp_path, _suite(tmp_path), *workers)
     assert code == 0, out
     ups = {e[1][0]: e for e in events if e[0] == "UP"}
@@ -236,11 +259,14 @@ def test_each_cluster_is_up_and_down_once_in_the_process_of_its_tests_and_the_gu
     a02_end = next(e[3] for e in events if e[0] == "A02_END")
     assert all(e[3] >= a02_end for e in ups.values())                          # every `up` waits for A02
     assert [e[0] for e in events].count("USER_CREATE") == 1 and [e[0] for e in events].count("USER_DELETE") == 1
-    guards = [e for e in events if e[0] == "GUARDS"]
-    assert len(guards) == 1 and guards[0][3] >= max(e[3] for e in downs)        # once, after every down
-    assert sorted(guards[0][1]) == sorted([f"ray-vast-test-{guards[0][1][0][-8:]}"] + [f"ray-vast:{n}" for n in ups])
+    for name, (_, _, pid, _) in ups.items():  # livekit.end_cluster, in the process of the cluster: down, its sweep, its AWS check
+        assert [(e[0], e[1]) for e in events if e[2] == pid and name in " ".join(e[1]) and e[0] in ("DOWN", "SWEEP", "AWSCHECK")] == [
+            ("DOWN", [name]), ("SWEEP", [f"ray-vast:{name}"]), ("AWSCHECK", [name])], name
+    final = [e for e in events if e[0] in ("SWEEP", "ACCOUNTCHECK") and not any(f.startswith("ray-vast:") for f in e[1])]
+    assert [(e[0], e[1][0][:14]) for e in final] == [("SWEEP", "ray-vast-test-"), ("ACCOUNTCHECK", "us-west-2")]  # once, the test label only
+    assert min(e[3] for e in final) >= max(e[3] for e in events if e[0] == "AWSCHECK")  # after every cluster ended
     if workers:
-        assert guards[0][2] not in {e[2] for e in events if e[0] in ("RUN", "UP")}  # the controller, not a worker
+        assert {e[2] for e in final}.isdisjoint({e[2] for e in events if e[0] in ("RUN", "UP")})  # the controller, not a worker
         assert len({e[2] for e in ups.values()}) == 4                          # the 4 clusters ran in parallel
 
 
@@ -252,16 +278,17 @@ def test_each_cluster_group_ends_with_its_teardown_checks_and_a_down_that_leaves
     groups = ("aws_only", "lifecycle", "libraries-h1", "libraries-h3")
     for group in groups:
         teardown = json.loads((tmp_path / "results" / "_session" / group / "teardown" / "result.json").read_text())
-        assert teardown["outcome"] == "passed" and [c["name"] for c in teardown["checks"]][:2] == [
-            "down: exit 0, left: nothing", "vast: 0 instances with the cluster label"], (group, teardown)
-    libraries = [e for e in events if e[0] in ("KEEP_ONE", "DOWN", "END_CHECKS") and e[1][0].startswith("rvtest-lib-")]
-    for name in {e[1][0] for e in libraries}:
-        assert [e[0] for e in libraries if e[1][0] == name] == ["KEEP_ONE", "DOWN", "END_CHECKS"]  # one worker runs at the `down`
+        assert teardown["outcome"] == "passed" and [(c["name"], c["ok"]) for c in teardown["checks"]] == [
+            ("the cluster ended cleanly (livekit.end_cluster)", True)], (group, teardown)
+    libraries = [e for e in events if e[0] in ("KEEP_ONE", "DOWN", "END_CHECKS", "SWEEP") and e[1][0].removeprefix("ray-vast:").startswith("rvtest-lib-")]
+    for name in {e[1][0] for e in libraries if e[0] == "DOWN"}:
+        assert [e[0] for e in libraries if name in e[1][0]] == ["KEEP_ONE", "DOWN", "END_CHECKS", "SWEEP"]  # one worker runs at the `down`
 
     code, out, events = _run(tmp_path, suite, "-n", "4", extra_env={"DOWN_LEAVES": "1"})
     assert code != 0 and "teardown of lifecycle" in out, out
     teardown = json.loads((tmp_path / "results" / "_session" / "lifecycle" / "teardown" / "result.json").read_text())
     assert teardown["outcome"] == "failed" and not teardown["checks"][0]["ok"]
+    assert "down left something (exit 0): left: security group sg-1" in teardown["checks"][0]["detail"]
 
 
 @pytest.mark.slow
@@ -271,7 +298,7 @@ def test_a_kept_cluster_is_reused_never_ended_or_swept_and_a_run_without_the_opt
     assert code == 0, out
     assert sorted(e[1][0] for e in events if e[0] == "UP") == sorted(f"{c}-keep" for c in CLUSTERS)
     assert not [e for e in events if e[0] in ("DOWN", "AWSCHECK")]
-    assert next(e for e in events if e[0] == "GUARDS")[1] == [next(e for e in events if e[0] == "GUARDS")[1][0]]  # the test label only
+    assert [e[1][0][:14] for e in events if e[0] == "SWEEP"] == ["ray-vast-test-"]  # the final sweep, the test label only
     assert all(f"KEPT CLUSTER {c}-keep still runs" in out for c in CLUSTERS), out
 
     code, out, events = _run(tmp_path, suite, "-n", "4", "--keep-cluster")
@@ -285,3 +312,44 @@ def test_a_kept_cluster_is_reused_never_ended_or_swept_and_a_run_without_the_opt
     assert sorted(downs) == sorted([f"{c}-keep" for c in CLUSTERS] + fresh) and not [n for n in fresh if n.endswith("-keep")]
     assert sorted(e[1][0] for e in events if e[0] == "AWSCHECK") == sorted(downs)  # the ended kept clusters are checked too
     assert "KEPT CLUSTER" not in out and not (tmp_path / "home" / ".cache" / "ray-vast-live" / "aws_only").exists()
+
+
+RELEASE_SUITE = '''
+from cluster import event
+
+
+def test_R01_up(record, release):
+    event("RUN", "R01", release.name)
+
+
+def test_R02_tutorial(record, release):
+    event("RUN", "R02", release.name)
+    release.down()  # the tutorial ends with `down`
+'''
+
+
+@pytest.mark.slow
+def test_a_release_cluster_with_a_foreign_name_joins_the_run_and_is_ended_once_by_the_same_module(tmp_path):
+    suite = _suite(tmp_path)
+    (suite / "test_release.py").write_text(RELEASE_SUITE)
+    code, out, events = _run(tmp_path, suite, "-n", "2", "-k", "R01_up or R02_tutorial", extra_env={"RAYVAST_LIVE_RELEASE": "9.9.9"})
+    assert code == 0, out
+    of_release = [e[0] for e in events if "gpu-24gb" in e[1] or "ray-vast:gpu-24gb" in e[1]]
+    assert of_release == ["UP", "RUN", "RUN", "DOWN", "SWEEP", "AWSCHECK"], out  # R02's `down` is the only one
+    opened = tmp_path / "results" / "_session" / "runs"
+    assert [p.name for p in opened.glob("*/opened/*.json")] == ["gpu-24gb.json"]
+    assert [p.name for p in opened.glob("*/ended/*.json")] == ["gpu-24gb.json"]
+
+
+@pytest.mark.slow
+def test_a_secret_in_a_record_is_found_once_by_the_end_of_the_cluster_that_owns_the_record_else_by_the_process_scan(tmp_path):
+    code, out, events = _run(tmp_path, _suite(tmp_path), "-n", "4", extra_env={"LEAK": "1"})
+    assert code != 0
+    teardowns = {group: json.loads((tmp_path / "results" / "_session" / group / "teardown" / "result.json").read_text())["checks"][0]
+                 for group in ("aws_only", "lifecycle", "libraries-h1", "libraries-h3")}
+    found = {group: check["detail"] for group, check in teardowns.items() if not check["ok"]}
+    assert sorted(found) == ["libraries-h3", "lifecycle"], teardowns  # LB01 is H3, L02 is lifecycle; never LB in lifecycle
+    assert found["lifecycle"].endswith("/results/L02/leak.txt") and found["libraries-h3"].endswith("/results/LB01/leak.txt")
+    problems = (next((tmp_path / "results" / "_session" / "runs").glob("*/problems.txt"))).read_text().splitlines()
+    assert [p for p in problems if "secret scan" in p and "A10" in p] == ["the secret scan found 1 file(s): A10/leak.txt"]
+    assert sum("L02/leak.txt" in p for p in problems) == 1 and sum("LB01/leak.txt" in p for p in problems) == 1  # no second scan
