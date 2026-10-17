@@ -49,8 +49,6 @@ DATE = time.strftime("%Y-%m-%d", time.gmtime())
 TEST_LABEL = f"ray-vast-test-{DATE.replace('-', '')}"
 CLUSTERS = Path(__file__).parent / "clusters"
 KEEP_HOME = Path.home() / ".cache" / "ray-vast-live"  # the HOME of each kept cluster (its state file and SSH key)
-GROUP_MARKERS = ("free", "aws", "lifecycle", "failure", "security", "limits", "libraries", "release")
-CLUSTER_FIXTURES = ("aws_only", "lifecycle", "libraries", "release")
 # In one process a session cluster lives until the end of the session: the files without a cluster or with a cheap one first.
 FILE_ORDER = ["test_free.py", "test_aws.py", "test_lifecycle.py", "test_libraries.py", "test_release.py"]
 EC2_PRICE = {"t3.large": 0.0832, "t3.medium": 0.0416}  # $/h, us regions on-demand
@@ -75,7 +73,7 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     config.stash[RUN] = livekit.Run.of_process(os.environ, REPO / "archive" / "results" / DATE,
                                                f"{time.strftime('%H%M%S', time.gmtime())}-{os.getpid()}")
-    for name in GROUP_MARKERS:
+    for name in livekit.GROUP_MARKERS:
         config.addinivalue_line("markers", f"{name}: live suite group (docs/test-plan.md, claim matrix)")
     for name, meaning in livekit.NEEDS.items():
         config.addinivalue_line("markers", f"{name}: {meaning}")
@@ -163,11 +161,10 @@ def end(run, cluster, after_down=None):
 @pytest.fixture(autouse=True)
 def record(request, run):
     node = request.node
-    markers = [m.name for m in node.iter_markers() if m.name in GROUP_MARKERS]
-    fixture = next((f for f in CLUSTER_FIXTURES if f in request.fixturenames), "none")
-    rec = run.record(scenario_id(node), markers, fixture)
+    markers = [m.name for m in node.iter_markers() if m.name in livekit.GROUP_MARKERS]
+    rec = run.record(scenario_id(node), markers, livekit.cluster_fixture(request.fixturenames))
     yield rec
-    for name in CLUSTER_FIXTURES:  # the record belongs to the cluster of the test: the end of that cluster scans it
+    for name in livekit.CLUSTER_FIXTURES:  # the record belongs to the cluster of the test: the end of that cluster scans it
         if node.funcargs.get(name) is not None:
             node.funcargs[name].records.append(rec.dir)
     rec.finish(*livekit.outcome_of(node.stash.get(REPORTS, {})))
@@ -336,7 +333,7 @@ def libraries(request, library_clusters):
 
 
 def pytest_sessionstart(session):
-    if not is_worker(session.config):
+    if not is_worker(session.config) and not session.config.option.collectonly:  # a collection (livekit.suite_rows) rents nothing
         try:  # the vast spend of the whole run (all groups): the credit before and after
             session.config.stash[CREDIT_BEFORE] = credit_sample()
         except Exception:  # noqa: BLE001 - no key or no network: no run spend

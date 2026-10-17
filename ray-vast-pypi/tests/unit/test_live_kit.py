@@ -201,23 +201,51 @@ def test_the_matrix_parser_reads_id_markers_and_fixture_of_each_row_of_the_matri
                                          {"id": "A07", "markers": ["aws", "security"], "fixture": "aws_only"}]
 
 
-def test_the_suite_parser_reads_tests_markers_and_cluster_fixture(tmp_path):
+def test_the_suite_rows_come_from_the_pytest_collection_with_the_fixture_closure_and_the_markers_of_each_item(tmp_path):
+    (tmp_path / "conftest.py").write_text('''
+import pytest
+
+@pytest.fixture
+def aws_only():
+    pass
+
+@pytest.fixture
+def session_env(aws_only):  # a cluster fixture reached through another fixture
+    pass
+''')
     (tmp_path / "test_x.py").write_text('''
 import pytest
 pytestmark = pytest.mark.aws
 
 @pytest.mark.security
-def test_A07_boundary(record, aws_only):
+def test_A07_boundary(session_env):
     pass
 
-def test_A02_policy(record, tmp_path):
+def test_A02_policy(tmp_path):
     pass
 
-test_F08_local = make("F08")
+@pytest.mark.parametrize("where", ["H1", pytest.param("H2", marks=pytest.mark.limits)])
+def test_A05_hosts(where):
+    pass
+
+def _make():
+    def test():
+        pass
+    return test
+
+test_F08_local = _make()
 ''')
     assert livekit.suite_rows(tmp_path) == [{"id": "A07", "markers": ["aws", "security"], "fixture": "aws_only"},
                                             {"id": "A02", "markers": ["aws"], "fixture": "none"},
+                                            {"id": "A05", "markers": ["aws"], "fixture": "none"},
+                                            {"id": "A05", "markers": ["aws", "limits"], "fixture": "none"},
                                             {"id": "F08", "markers": ["aws"], "fixture": "none"}]
+
+
+def test_a_collection_error_of_the_suite_fails_the_parity_check_and_does_not_give_fewer_rows(tmp_path):
+    (tmp_path / "test_x.py").write_text("import no_such_module\n\n\ndef test_A07_boundary():\n    pass\n")
+    with pytest.raises(RuntimeError, match="collection"):
+        livekit.suite_rows(tmp_path)
 
 
 def test_the_claim_matrix_and_the_live_suite_have_the_same_scenarios_markers_and_fixtures():
@@ -226,8 +254,8 @@ def test_the_claim_matrix_and_the_live_suite_have_the_same_scenarios_markers_and
     matrix = livekit.matrix_rows((repo / "docs" / "test-plan.md").read_text())
     suite = livekit.suite_rows(Path(livekit.__file__).parent)
     assert sorted(r["id"] for r in matrix) == sorted({r["id"] for r in suite})
-    by_id = {r["id"]: r for r in suite}
-    assert [r for r in matrix if r != by_id[r["id"]]] == []
+    by_id = {r["id"]: r for r in matrix}
+    assert [r for r in suite if r != by_id[r["id"]]] == []  # each item, so also each parameter of a test
 
 
 def test_a_cluster_shape_sets_min_and_max_workers_of_every_worker_type_and_the_pinned_queries():
@@ -462,6 +490,58 @@ def test_the_secret_sink_of_a_run_holds_its_own_secrets_and_the_later_secrets_of
     run.secret("iam-user-secret")
     made.secrets.append("cluster-token")  # the token and the join tokens arrive after `up`
     assert sorted(run.secret_values()) == ["cluster-token", "iam-user-secret"]
+
+
+def test_only_the_exact_run_suffix_marks_an_earlier_run_never_a_parameter_with_run_in_its_name(tmp_path):
+    _result(tmp_path, "L05[a.running]", "passed", [("ok", True)])
+    _result(tmp_path, "L05[b]", "failed", message="the earlier run")
+    _result(tmp_path, "L05[b]", "passed", [("ok", True)])  # the Recorder keeps the first one as L05[b].run1
+    assert (tmp_path / "L05[b].run1").exists()
+    rows = [line for line in livekit.summary_table(tmp_path, ["L05"]).splitlines() if line.startswith("| L05")]
+    assert [row.split(" | ")[:2] for row in rows] == [["| L05[a.running]", "PASS"], ["| L05[b]", "PASS"]]
+
+
+def test_the_spend_tables_list_each_cluster_group_and_each_run_and_read_the_old_group_field(tmp_path):
+    def spend(path, **fields):
+        path.mkdir(parents=True)
+        (path / "spend.json").write_text(json.dumps(fields))
+    spend(tmp_path / "_session" / "lifecycle", group="lifecycle", cluster="ray-vast-rvtest-lc-1a2b", vast_estimate=1.23456,
+          hours=1.5, ec2_estimate=0.1248)
+    spend(tmp_path / "_session" / "aws_only", group="aws_only", cluster="ray-vast-rvtest-aws-3c4d", spend=0.5, hours=0.4,
+          ec2_estimate=0.033)  # a record from before 2026-10-17: the credit change `spend`
+    spend(tmp_path / "_session" / "runs" / "101500-77", spend=3.2, top_ups=10.0, credit_before=5.5, credit_after=12.3)
+    assert livekit.spend_tables(tmp_path) == (
+        "\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate "
+        "from the hours):\n\n| Group | Cluster | vast | Hours | EC2 |\n|---|---|---|---|---|\n"
+        "| aws_only | ray-vast-rvtest-aws-3c4d | $0.5000 | 0.4 h | $0.03 |\n"
+        "| lifecycle | ray-vast-rvtest-lc-1a2b | $1.2346 | 1.5 h | $0.12 |\n"
+        "\nvast spend of each run (the credit before and after, plus the auto top-ups in between):\n\n"
+        "| Run | vast | Top-ups |\n|---|---|---|\n| 101500-77 | $3.2000 | $10.00 |\n")
+    assert livekit.spend_tables(tmp_path / "no_run") == ""
+
+
+def test_the_live_tests_take_the_worker_port_formula_from_the_product_and_never_write_it_again():
+    """The expected worker ports and soft limit come from ray_vast.worker.bootstrap.worker_ports_and_soft_limit (through
+    livekit.expected_limits). A copy of the formula in a test passes with the same bug as the product."""
+    import re
+    from pathlib import Path
+    copies = [r"400\s*\)\s*//", r"//\s*60\b", r"min\(\s*58\b", r"max\(\s*4\s*,\s*min\(", r"\bports\s*//\s*2\b", r"PIDS_RESERVE",
+              r"PIDS_PER_WORKER"]
+    live = Path(livekit.__file__).parent
+    found = [f"{path.relative_to(live)}:{n}: {line.strip()}" for path in sorted(live.rglob("*.py"))
+             for n, line in enumerate(path.read_text().splitlines(), 1) if any(re.search(c, line) for c in copies)]
+    assert found == []
+
+
+@pytest.mark.parametrize("probe, limits", [
+    ({"pids.max": "max", "ray_cpus": 48.0}, (58, 29)),    # no limit: all 58 worker ports
+    ({"ray_cpus": 8.0}, (58, 8)),                         # no pids.max file; the soft limit is the CPUs
+    ({"pids.max": "1280", "ray_cpus": 16.0}, (14, 7)),    # (1280 - 400) // 60
+    ({"pids.max": "500", "ray_cpus": 4.0}, (4, 2)),       # at least 4 ports
+    ({"pids.max": "11776", "ray_cpus": 46.0}, (58, 29)),  # at most 58 ports
+])
+def test_the_expected_limits_of_a_node_probe_are_the_worker_ports_and_soft_limit_of_the_bootstrap(probe, limits):
+    assert livekit.expected_limits(probe) == limits
 
 
 def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_path):

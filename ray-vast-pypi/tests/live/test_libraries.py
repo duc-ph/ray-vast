@@ -161,17 +161,16 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
     for name, rows in hosts.items():
         for n in rows:
             cid = n["container_id"]
-            limit = n.get("pids.max")
-            ports = 58 if limit in (None, "max") else max(4, min(58, (int(limit) - 400) // 60))
+            ports, soft_limit = livekit.expected_limits(n)
             env_ray = n.get("ray_env") or {}
             enroll_s = enroll.get(int(cid))
             record.data(f"{name}_{cid}", {**{k: n.get(k) for k in ("machine_id", "pids.max", "cgroup", "cpu_quota", "affinity", "ray_cpus",
                                                                    "ports", "ray_env", "worker_threads", "cpu_count")},
                                           "enroll_s_from_first_running_sample": enroll_s})
-            check(record, f"{name} {cid}: worker ports = (pids.max - 400) // 60 in 4..58 (pids.max {limit})", n.get("ports") == ports,
+            check(record, f"{name} {cid}: worker ports of the bootstrap formula (pids.max {n.get('pids.max')})", n.get("ports") == ports,
                   (n.get("ports"), ports))
-            check(record, f"{name} {cid}: soft limit min(CPUs, ports // 2), grpc threads 4, startup concurrency 8",
-                  env_ray.get("RAY_num_workers_soft_limit") == str(min(int(n["ray_cpus"]), ports // 2)) and
+            check(record, f"{name} {cid}: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
+                  env_ray.get("RAY_num_workers_soft_limit") == str(soft_limit) and
                   env_ray.get("RAY_num_grpc_internal_threads") == "4" and env_ray.get("RAY_worker_maximum_startup_concurrency") == "8", env_ray)
             check(record, f"{name} {cid}: Ray CPUs = the real core count (affinity and quota)", 1 <= n["ray_cpus"] <= n["affinity"],
                   (n["ray_cpus"], n["affinity"], n["cpu_quota"]))

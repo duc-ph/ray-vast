@@ -271,18 +271,19 @@ def test_F17_wheel_and_sdist(record, dist):
 @pytest.mark.release
 def test_F18_python_3_10_install(record, dist):
     """The wheel installs and runs on 3.10. Then the unit tests run on 3.10 in the layout they need: the package source
-    tree (an editable install: some CLI tests build a wheel from it) next to the repository's docs/test-plan.md (the
-    claim matrix test)."""
+    tree (an editable install: some CLI tests build a wheel from it) next to the repository's docs/test-plan.md and
+    tests/manual (the claim matrix test collects tests/live, and test_libraries.py imports tests/manual/c10/run_c10.py)."""
     wheel = next(dist.glob("*.whl"))
     script = f"""set -e
 pip install -q /dist/{wheel.name} > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
 python -V
 ray-vast --help | head -3
-mkdir -p /tmp/repo/docs && cp /plan/test-plan.md /tmp/repo/docs/ && cp -r /pkg /tmp/repo/ray-vast-pypi && cd /tmp/repo/ray-vast-pypi && rm -rf .venv
+mkdir -p /tmp/repo/docs /tmp/repo/tests && cp /plan/test-plan.md /tmp/repo/docs/ && cp -r /manual /tmp/repo/tests/manual && cp -r /pkg /tmp/repo/ray-vast-pypi && cd /tmp/repo/ray-vast-pypi && rm -rf .venv
 pip install -q -e '.[test]' > /tmp/pip.log 2>&1 || (tail -20 /tmp/pip.log; exit 1)
 python -m pytest -q -p no:cacheprovider tests/unit 2>&1 | tail -3
 """
-    done = docker("run", "--rm", "-v", f"{dist}:/dist:ro", "-v", f"{PKG}:/pkg:ro", "-v", f"{PKG.parent / 'docs'}:/plan:ro", "python:3.10",
+    done = docker("run", "--rm", "-v", f"{dist}:/dist:ro", "-v", f"{PKG}:/pkg:ro", "-v", f"{PKG.parent / 'docs'}:/plan:ro",
+                  "-v", f"{PKG.parent / 'tests' / 'manual'}:/manual:ro", "python:3.10",
                   "bash", "-c", script, timeout=3600)
     record.evidence("py310.txt", done.stdout + done.stderr)
     check(record, "Python 3.10", "Python 3.10" in done.stdout, re.findall(r"Python 3\.\S+", done.stdout))

@@ -73,7 +73,7 @@ def summary_table(root, expected):
     root = Path(root)
     runs = {}
     for path in sorted(root.glob("*/result.json")):
-        if ".run" in path.parent.name:  # an earlier run of a scenario (Recorder keeps it); the last run counts
+        if re.search(r"\.run\d+$", path.parent.name):  # an earlier run of a scenario (Recorder keeps it); the last run counts
             continue
         result = json.loads(path.read_text())
         runs.setdefault(path.parent.name.split("[")[0], []).append((path.parent.name, result))
@@ -87,6 +87,29 @@ def summary_table(root, expected):
             line = " ".join(line.replace("|", "/").split())  # one row: no line break, no pipe
             lines.append(f"| {name} | {word} | {result.get('wall_s', '')} | {line} | `{root.name}/{name}/` |")
     return "\n".join(lines) + "\n"
+
+
+def spend_tables(root):
+    """The markdown spend tables of the run records under `root` ("" without a spend record): one row for each cluster
+    group (`_session/<group>/spend.json`, written by the group teardown) and one for each run
+    (`_session/runs/<run>/spend.json`, the credit before and after)."""
+    root, text = Path(root), ""
+    groups = []
+    for path in sorted((root / "_session").glob("*/spend.json")):
+        s = json.loads(path.read_text())  # before 2026-10-17: `spend` (credit change); since: `vast_estimate` (timeline)
+        groups.append(f"| {s['group']} | {s['cluster']} | ${s.get('vast_estimate', s.get('spend', 0)):.4f} | {s['hours']} h | "
+                      f"${s['ec2_estimate']:.2f} |")
+    if groups:
+        text += ("\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an "
+                 "estimate from the hours):\n\n| Group | Cluster | vast | Hours | EC2 |\n|---|---|---|---|---|\n" + "\n".join(groups) + "\n")
+    runs = []
+    for path in sorted((root / "_session" / "runs").glob("*/spend.json")):
+        s = json.loads(path.read_text())
+        runs.append(f"| {path.parent.name} | ${s['spend']:.4f} | ${s['top_ups']:.2f} |")
+    if runs:
+        text += ("\nvast spend of each run (the credit before and after, plus the auto top-ups in between):\n\n"
+                 "| Run | vast | Top-ups |\n|---|---|---|\n" + "\n".join(runs) + "\n")
+    return text
 
 
 def write_summary(doc, date, table):
@@ -190,6 +213,7 @@ def check(record, name, ok, detail=""):
     assert ok, f"{name}: {detail}"
 
 
+GROUP_MARKERS = ("free", "aws", "lifecycle", "failure", "security", "limits", "libraries", "release")  # the claim matrix's groups
 CLUSTER_FIXTURES = ("aws_only", "lifecycle", "libraries", "release")
 ROW = re.compile(r"^\|\s*([A-Z]+\d\d)\s*\|[^|]*\|([^|]*)\|([^|]*)\|")
 
@@ -210,27 +234,40 @@ def matrix_rows(text):
     return rows
 
 
+def cluster_fixture(fixturenames):
+    """The cluster fixture of a test from its fixture closure (`item.fixturenames`: also a fixture that another fixture
+    uses), or "none"."""
+    return next((f for f in CLUSTER_FIXTURES if f in fixturenames), "none")
+
+
 def suite_rows(directory):
-    """The scenarios of the live suite: each `test_<ID>_...` function (or assignment) in `directory/test_*.py`, with its
-    markers (the module `pytestmark` and its decorators) and its cluster fixture (`none` without one)."""
-    import ast
-    rows = []
-    for path in sorted(Path(directory).glob("test_*.py")):
-        tree = ast.parse(path.read_text())
-        module_marks = []
-        for node in tree.body:
-            if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "pytestmark" for t in node.targets):
-                values = node.value.elts if isinstance(node.value, (ast.List, ast.Tuple)) else [node.value]
-                module_marks = [v.attr for v in values if isinstance(v, ast.Attribute)]
-        for node in tree.body:
-            if isinstance(node, ast.FunctionDef) and re.match(r"test_[A-Z]+\d\d_", node.name):
-                marks = [d.attr for d in node.decorator_list if isinstance(d, ast.Attribute) and isinstance(d.value, ast.Attribute)
-                         and d.value.attr == "mark"]
-                args = [a.arg for a in node.args.args]
-                fixture = next((f for f in CLUSTER_FIXTURES if f in args), "none")
-                rows.append({"id": node.name.split("_")[1], "markers": sorted(set(module_marks + marks)), "fixture": fixture})
-            elif isinstance(node, ast.Assign) and len(node.targets) == 1 and re.match(r"test_[A-Z]+\d\d_", getattr(node.targets[0], "id", "")):
-                rows.append({"id": node.targets[0].id.split("_")[1], "markers": sorted(module_marks), "fixture": "none"})
+    """The scenarios of the live suite as pytest collects them (in this process, `--collect-only`, with the conftest of
+    `directory`): one row for each `test_<ID>_...` item, so also for each parameter. A row has the group and need markers
+    of the item (also a marker that the conftest or `pytest.param` adds) and its cluster fixture (`cluster_fixture` of
+    its fixture closure). A collection error raises RuntimeError. The conftest changes os.environ and the SIGTERM handler
+    of the process; both are restored."""
+    import os
+    import pytest
+    rows, wanted = [], set(GROUP_MARKERS) | set(NEEDS)
+
+    class Collect:
+        @staticmethod
+        def pytest_collection_finish(session):
+            for item in session.items:
+                m = re.match(r"test_([A-Z]+\d\d)_", item.name)
+                if m:
+                    rows.append({"id": m.group(1), "markers": sorted({x.name for x in item.iter_markers()} & wanted),
+                                 "fixture": cluster_fixture(item.fixturenames)})
+
+    environ, sigterm = dict(os.environ), signal.getsignal(signal.SIGTERM)
+    try:
+        code = pytest.main([str(directory), "--collect-only", "-qq", "-o", "addopts=", "-p", "no:cacheprovider"], plugins=[Collect()])
+    finally:
+        os.environ.clear()
+        os.environ.update(environ)
+        signal.signal(signal.SIGTERM, sigterm)
+    if code != 0:
+        raise RuntimeError(f"the collection of {directory} failed (pytest exit {code})")
     return rows
 
 
@@ -269,6 +306,15 @@ def host_facts(probe, machine_id):
     pids_max = int(value) if value and value.isdigit() else None
     return {"machine_id": machine_id, "pids_max": pids_max, "cgroup": probe.get("cgroup"), "cpus": int(probe["ray_cpus"]),
             "limited": pids_max is not None}
+
+
+def expected_limits(probe):
+    """(worker ports, RAY_num_workers_soft_limit) that the bootstrap must set on the node of one NODE_PROBE row: the
+    product's own formula (ray_vast.worker.bootstrap.worker_ports_and_soft_limit) on the probed Ray CPUs and pids.max.
+    A test never writes the formula again (a unit test greps for it)."""
+    from ray_vast.worker.bootstrap import worker_ports_and_soft_limit
+    facts = host_facts(probe, probe.get("machine_id"))
+    return worker_ports_and_soft_limit(facts["cpus"], facts["pids_max"])
 
 
 NEEDS = {  # the markers that declare a need of a test; conftest registers them and xdist_group maps them

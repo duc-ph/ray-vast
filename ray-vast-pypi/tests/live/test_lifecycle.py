@@ -12,7 +12,7 @@ import time
 import boto3
 import pytest
 
-from livekit import check
+from livekit import check, expected_limits
 from cluster import ADMIN_PROFILE, JOBS, MANUAL
 from window import phase, wait_until
 
@@ -142,12 +142,12 @@ def test_L03_host_and_task_probe_on_each_worker(record, lifecycle, session_env, 
                                                           "worker_threads", "cpu_count")})
         check(record, f"{cid}: Ray CPUs = the real core count (affinity, quota)", n["ray_cpus"] <= n["affinity"] and n["ray_cpus"] >= 4,
               (n["ray_cpus"], n["affinity"], quota))
-        limit = n.get("pids.max")
-        expected = 58 if limit in (None, "max") else max(4, min(58, (int(limit) - 400) // 60))
-        check(record, f"{cid}: worker ports = formula of pids.max {limit}", n.get("ports") == expected, (n.get("ports"), expected))
+        ports, soft_limit = expected_limits(n)
+        check(record, f"{cid}: worker ports of the bootstrap formula (pids.max {n.get('pids.max')})", n.get("ports") == ports,
+              (n.get("ports"), ports))
         env = n.get("ray_env") or {}
-        check(record, f"{cid}: soft limit min(CPUs, ports // 2), grpc 4, startup 8",
-              env.get("RAY_num_workers_soft_limit") == str(min(int(n["ray_cpus"]), expected // 2)) and
+        check(record, f"{cid}: soft limit of the bootstrap formula, grpc 4, startup 8",
+              env.get("RAY_num_workers_soft_limit") == str(soft_limit) and
               env.get("RAY_num_grpc_internal_threads") == "4" and env.get("RAY_worker_maximum_startup_concurrency") == "8", env)
         check(record, f"{cid}: GPU device nodes = 1", n["gpu_device_nodes"] == 1 and n["ray_gpus"] == 1, (n["gpu_device_nodes"], n["ray_gpus"]))
     for i in lifecycle.instances():
