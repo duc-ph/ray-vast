@@ -79,11 +79,11 @@ def pids_max(limits):
     return int(value) if value and value.isdigit() else None
 
 
-def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX, refused_fails=True):
+def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX):
     """Decide one test. kind: tuned or many. job: {"kind": COMPLETED|HUNG|ERROR|None, ...}. pre and post: the probe of the
     target node before and after (None if it is gone). warnings: the head WARNING lines for the node (None = not checked,
-    for the local check). limit_max: a many test on a node with a higher pids.max is INCONCLUSIVE. refused_fails=False (the
-    live LB11): refused forks of a tuned test are data, not a reason to fail. Returns (status, reasons)."""
+    for the local check). limit_max: a many test on a node with a higher pids.max is INCONCLUSIVE. A refused fork fails a
+    tuned test (the advice is wrong); in a many test it is data. Returns (status, reasons)."""
     alive = post is not None and "error" not in post and post.get("node_id") == (pre or {}).get("node_id")
     before, after = events_max(pre), events_max(post)
     refused = None if before is None or after is None else after - before
@@ -109,12 +109,10 @@ def verdict(kind, job, pre, post, warnings, limit_max=PIDS_LIMIT_MAX, refused_fa
         reasons.append(f"the job did not complete ({job.get('kind')})")
     if not alive:
         reasons.append("the node crashed or left the cluster")
-    if refused_fails and refused:
+    if refused:
         reasons.append(f"pids.events: {refused} refused forks")
-    if refused_fails and warnings and any(REFUSED_PATTERN.search(w) for w in warnings):
+    if warnings and any(REFUSED_PATTERN.search(w) for w in warnings):
         reasons.append("a head WARNING line with new refused forks or thread starts")
-    if not refused_fails:
-        return ("FAIL" if reasons else "PASS"), reasons or [f"completed, node alive, refused forks {refused} (data, not a pass criterion)"]
     return ("FAIL" if reasons else "PASS"), reasons or ["completed, node alive, no refused fork"]
 
 

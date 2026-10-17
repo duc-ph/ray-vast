@@ -815,7 +815,8 @@ def test_a_secret_in_the_record_of_a_scenario_s_own_cluster_is_reported_once_by_
     assert run.scan_unowned() == ["A03/check.txt"]
 
 
-def test_in_lb11_refused_forks_are_data_so_a_tuned_run_with_refused_forks_still_passes(monkeypatch):
+def test_in_lb11_a_refused_fork_fails_a_tuned_run_and_is_data_in_a_many_run(monkeypatch):
+    import inspect
     from pathlib import Path
     c10 = Path(livekit.__file__).resolve().parents[3] / "tests" / "manual" / "c10"
     if not (c10 / "run_c10.py").exists():
@@ -825,9 +826,13 @@ def test_in_lb11_refused_forks_are_data_so_a_tuned_run_with_refused_forks_still_
     pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "1280"}
     post = {"node_id": "n1", "pids.events": "max 7", "pids.max": "1280"}
     warnings = ["WARNING worker 41 is at its process limit: 7 refused forks/threads (+7), pids 1280 of 1280"]
-    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings)[0] == "FAIL"  # the C10 runner's own rule
-    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings, refused_fails=False) == (
-        "PASS", ["completed, node alive, refused forks 7 (data, not a pass criterion)"])
+    # A tuned run uses the recommended settings: a refused fork means the advice is wrong. No caller can turn this off.
+    assert "refused_fails" not in inspect.signature(verdict).parameters
+    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings) == (
+        "FAIL", ["pids.events: 7 refused forks", "a head WARNING line with new refused forks or thread starts"])
+    # A many run hangs or queues; its refused forks are data.
+    status, [reason] = verdict("many", {"kind": "HUNG"}, pre, post, warnings)
+    assert status == "PASS" and "refused forks 7" in reason
 
 
 def test_a_run_without_a_cluster_calls_no_cloud_guard_but_still_sums_up_the_process_scans(tmp_path):

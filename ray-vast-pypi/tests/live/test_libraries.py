@@ -530,9 +530,8 @@ def test_LB11_process_limit_pairs_on_h1_and_h2(record, libraries, env, where):
             job_line = {"kind": job.word, **job.data}
             # run_c10 calls a many run INCONCLUSIVE above 3328 (its phase A rule). The many sizes here are max(ports + 4, ...),
             # above the ports at any limit, so the limit of this host is accepted.
-            # Refused forks are data in LB11, not a pass criterion (2026-10-17): `refused_forks` of each pair.
-            verdict_word, reasons = verdict(kind, job_line, pre.get(target), post.get(target), warnings, limit_max=max(3328, limit),
-                                            refused_fails=False)
+            # A refused fork fails a tuned run; in a many run it is data (2026-10-17): `refused_forks` of each pair.
+            verdict_word, reasons = verdict(kind, job_line, pre.get(target), post.get(target), warnings, limit_max=max(3328, limit))
             refused = (events_max(post.get(target)) or 0) - (events_max(pre.get(target)) or 0)
             if kind == "many":
                 full = [e.line for e in events if e.fields["ports_in_use"] == e.fields["ports_total"]]
