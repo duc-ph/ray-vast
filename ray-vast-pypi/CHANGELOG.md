@@ -2,11 +2,15 @@
 
 ## Unreleased
 
+- Ray gets the `CPU` of the node type on each worker (`ray start --num-cpus=<CPU>`). Before, Ray got the whole cores of the container's CPU quota. vast gives a quota of 0.96 × the offer's effective cores, so an offer with 8 cores gave Ray 7 CPUs. Ray now plans and runs with the same `CPU`. Read [CPU and GPU](https://duc-ph.github.io/ray-vast/how-to/node-types/#cpu-and-gpu).
+    - The head refuses a worker with fewer cores than 90 % of `CPU` (the smaller of its CPU affinity and its CPU quota). It destroys the instance and blocks the host for 30 days, as for a wrong GPU count.
+    - The offer filter stays `cpu_cores_effective >= CPU`.
+    - Protocol: the `/enroll` body has `cpu_quota` (cores, or null), and `cpu_count` is the CPU affinity. The answer has `num_cpus`.
 - The process limit of vast containers (`pids.max`) no longer kills a worker under load. Too much work now waits for a port. It does not crash the worker. Read [The process limit of vast hosts](https://duc-ph.github.io/ray-vast/reference/limits/#the-process-limit-of-vast-hosts).
     - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`).
     - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
     - A worker with a process limit gets fewer worker ports. The count comes from `pids.max`.
-    - Ray still gets all the cores as `CPU`.
+    - The process limit does not change the Ray CPUs.
 - The worker sets `RAY_num_workers_soft_limit` to at most half its worker ports. Then idle worker processes cannot hold all ports, and a job that needs a new kind of worker process (for example, another runtime env) finds a free port. The `/enroll` answer no longer has `num_workers_soft_limit`.
 - Fix: the provider no longer destroys a worker that enrolled while the reconcile pass ended the other candidates of its request. Ray then asked for a new node.
 - Fix: the provider no longer destroys a worker that enrolled while the reconcile pass ended it for the enrollment timeout or the pull limit. The provider also does not block its host.

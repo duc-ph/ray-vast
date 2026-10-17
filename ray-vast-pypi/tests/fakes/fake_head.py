@@ -1,6 +1,6 @@
 """A fake head server for the worker tests: the endpoints of docs/design.md section 5 on ports A and B, in threads.
 
-Behavior switches (plain attributes, change them while it runs): `refuse_enroll`, `answer_heartbeats`.
+Behavior switches (plain attributes, change them while it runs): `refuse_enroll`, `answer_heartbeats`, `num_cpus`.
 Everything it receives is recorded in `events` as (monotonic time, port name, path, body).
 """
 import base64
@@ -30,6 +30,7 @@ class FakeHead:
         self.served_ca = None  # bytes to serve at /ca.pem instead of the real CA cert
         self.trickle_bootstrap = False  # send /bootstrap at one byte per second
         self.refuse_enroll = False
+        self.num_cpus = 2  # the declared CPU of the node type, in the /enroll answer
         self.enroll_503s = 0  # answer 503 to this many /enroll calls first
         self.answer_heartbeats = True
         self.events = []
@@ -115,7 +116,7 @@ class FakeHead:
                         "slot_id": "slot-1", "node_type": "worker", "cert_pem": cert_pem.decode(),
                         "key_pem": key_pem.decode(),
                         "token": (head.pki_dir / "token").read_text().strip(), "shim_b64": head.shim_b64,
-                        "gcs_address": head.gcs_address,
+                        "gcs_address": head.gcs_address, "num_cpus": head.num_cpus,
                     }
                     self._send(200, json.dumps(answer).encode())
                 elif self.path == "/report":

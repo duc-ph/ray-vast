@@ -30,7 +30,7 @@ The head container logs in the local time zone of the head.
 1. **Check the demand.** Run `sudo docker exec ray-vast-head ray status` on the head. Look at "Pending" and "Recent failures".
 2. **Check the offers.** A narrow query can match no offer. The datacenter filter removes many offers. In `monitor.log`, look for `no rentable offer matches the node type query`. Make the query wider.
 3. **Check the budget.** Look for `every matching offer would pass max_dollars_per_hour`. Raise the budget or choose cheaper GPUs.
-4. **Check the enrollment.** Look for `enroll refused` and `ending instance`. A host can fail a host check (egress IP, capabilities, own network namespace, `/dev/shm`, the 64 identity ports). The provider puts the host on the blocklist for this cluster and rents another one.
+4. **Check the enrollment.** Look for `enroll refused` and `ending instance`. A host can fail a host check (egress IP, capabilities, own network namespace, `/dev/shm`, the 64 identity ports, the CPU or GPU count). The provider puts the host on the blocklist for this cluster and rents another one.
 5. **Check the pull time.** A big image on a slow host can pass the pull limit. Add `inet_down: {gte: 500}` to the query. Read [Use GPU images](gpu-images.md).
 
 ### `LaunchFailed` in `ray status`
@@ -42,6 +42,21 @@ The head container logs in the local time zone of the head.
 | `no rentable offer matches the node type query` | No offer matches. | Make the offer query wider. |
 | `every matching offer would pass max_dollars_per_hour` | The budget stops the rental. | Raise `max_dollars_per_hour`, or wait for workers to end. |
 | `slots in a row ended with no enrolled worker` | The rent-loop breaker. 3 slots of this node type ended without a worker. The provider stops this node type for 10 minutes. | Read the `enroll refused` and `ending instance` lines before it. Fix the cause (often the image). |
+
+### A worker is refused for its CPU or GPU count
+
+`monitor.log` has one of these lines:
+
+```text
+ending instance <id> (machine <id>, ip <ip>): 'CPU: the container has <cores> cores, the node type declares <CPU> (at least 90% needed)'
+ending instance <id> (machine <id>, ip <ip>): 'GPU count: the container has <n>, the node type declares <GPU>'
+```
+
+The host gave the container fewer cores, or another number of GPUs, than its offer.
+The cores are the smaller of the CPU affinity and the CPU quota of the container. vast usually gives 0.96 × the offer's effective cores.
+The provider destroys the instance, blocks the host for 30 days, and rents another one. You do not have to do anything.
+
+If many hosts are refused for their CPU, vast gives less CPU than before. Then lower `CPU`, or add a stricter filter to the query, for example `cpu_cores_effective: {gte: <CPU + 2>}`. Read [CPU and GPU](node-types.md#cpu-and-gpu).
 
 ## Jobs wait
 

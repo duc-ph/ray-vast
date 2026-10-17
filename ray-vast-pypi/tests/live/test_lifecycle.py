@@ -144,8 +144,10 @@ def test_L03_host_and_task_probe_on_each_worker(record, lifecycle, session_env, 
         quota = n["cpu_quota"]
         record.data(f"host_{cid}", {k: n.get(k) for k in ("pids.max", "cgroup", "cpu_quota", "affinity", "ray_cpus", "ports", "ray_env",
                                                           "worker_threads", "cpu_count")})
-        check(record, f"{cid}: Ray CPUs = the real core count (affinity, quota)", n["ray_cpus"] <= n["affinity"] and n["ray_cpus"] >= 4,
-              (n["ray_cpus"], n["affinity"], quota))
+        declared = lifecycle.config["available_node_types"][n["node_type"]]["resources"]["CPU"]
+        cores = n["affinity"] if quota is None else min(n["affinity"], quota)
+        check(record, f"{cid}: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
+              n["ray_cpus"] == declared and cores >= 0.9 * declared, (n["ray_cpus"], declared, n["affinity"], quota))
         ports, soft_limit = expected_limits(n)
         check(record, f"{cid}: worker ports of the bootstrap formula (pids.max {n.get('pids.max')})", n.get("ports") == ports,
               (n.get("ports"), ports))

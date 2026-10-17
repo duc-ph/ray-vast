@@ -20,7 +20,7 @@ A worker with a process limit gets fewer worker ports. Read [The process limit o
 - When no port is free, tasks wait.
 - An actor that gets no port hangs, or fails with `Failed to startup worker after retrying 5 times`. This error does not name the port limit. The real cause (`No available ports`) is only in the worker log.
 - Actors use ports too.
-- Ray has no setting for the total number of worker processes. Idle worker processes keep their ports up to `RAY_num_workers_soft_limit`. ray-vast sets this limit to the smaller of the cores and half the worker ports. So a job that needs a new kind of worker process (for example, another runtime env) finds a free port.
+- Ray has no setting for the total number of worker processes. Idle worker processes keep their ports up to `RAY_num_workers_soft_limit`. ray-vast sets this limit to the smaller of the node type's `CPU` and half the worker ports. So a job that needs a new kind of worker process (for example, another runtime env) finds a free port.
 - Do not set `CPU` above 58.
 
 ## The process limit of vast hosts
@@ -35,7 +35,7 @@ ray-vast keeps each worker below its limit:
 - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
 - The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at most 58 and at least 4. With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
 - The library pages use B = worker ports − 4: the number of worker processes that your work can use on one worker. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
-- Ray still gets all the cores as `CPU`.
+- The process limit does not change the Ray CPUs. Ray gets the `CPU` of the node type. Read [CPU and GPU](../how-to/node-types.md#cpu-and-gpu).
 
 Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
 The symptom of too much work is a queue, not a crash:

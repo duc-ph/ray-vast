@@ -127,6 +127,7 @@ def test_cgroup_cpu_max_parse(text, cores):
 
 @pytest.mark.slow
 def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
+    world.head.num_cpus = 5  # the node type declares CPU 5; the container has a quota of 2 cores
     run = world.run()
     assert wait_for(lambda: world.head.bodies("B", "/heartbeat") and run.ray_out.exists()), run.stdout
     enroll = world.head.bodies("A", "/enroll")[0]
@@ -135,7 +136,8 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert "container_api_key" not in enroll and world.api_key not in json.dumps(enroll)
     assert enroll["ports"] == {str(70000 + i): world.port_base + i for i in range(64)}
     assert set(enroll["checks"]) == {"egress_ip_ok", "no_net_raw_admin", "own_netns", "shm_empty", "details"}
-    assert enroll["cpu_count"] >= 1 and enroll["gpu_count"] == 0
+    assert enroll["cpu_count"] == len(os.sched_getaffinity(0)) and enroll["cpu_quota"] == 2.0
+    assert enroll["gpu_count"] == 0
 
     p = world.port_base
     argv = run.ray["argv"]
@@ -146,7 +148,7 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
         f"--dashboard-agent-grpc-port={p + 3}", f"--dashboard-agent-listen-port={p + 4}",
         f"--runtime-env-agent-port={p + 5}",
         "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 64)),
-        f"--num-cpus={enroll['cpu_count']}", "--num-gpus=0",
+        "--num-cpus=5", "--num-gpus=0",  # Ray gets the declared CPU (F4); the head checked the quota
     }
     env = run.ray["env"]
     assert env["RAY_CLOUD_INSTANCE_ID"] == "slot-1" and env["RAY_NODE_TYPE_NAME"] == "worker"
@@ -156,7 +158,7 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert env["LD_PRELOAD"] == f"{run.dir}/librayvast_shim.so"
     assert env["RAYVAST_PUBLIC_IP"] == "127.0.0.1" and env["RAYVAST_PRIVATE_IP"] == "127.0.0.1"
     assert env["RAYVAST_LOCALHOST_PORTS"] == f"{p + 4},{p + 5}"
-    assert enroll["cpu_count"] == 2 and env["RAY_num_workers_soft_limit"] == "2"  # 2 cores, 58 ports
+    assert env["RAY_num_workers_soft_limit"] == "5"  # min(the declared CPU 5, 58 ports // 2)
     assert env["RAY_num_grpc_internal_threads"] == "4" and env["RAY_worker_maximum_startup_concurrency"] == "8"
     assert "CONTAINER_API_KEY" not in env and "RAYVAST_JOIN_TOKEN" not in env
     assert world.api_key not in env.values() and world.join_token not in env.values()
@@ -205,7 +207,8 @@ def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_lim
     p = world.port_base
     assert "--worker-port-list=" + ",".join(str(p + i) for i in range(6, 6 + 14)) in run.ray["argv"]
     assert run.ray["env"]["RAY_num_workers_soft_limit"] == "2"
-    beat = world.head.bodies("B", "/heartbeat")[-1]
+    assert world.head.bodies("A", "/enroll")[0]["cpu_quota"] == 2.0  # cpu.max (v2) or cpu.cfs_quota_us (v1)
+    beat =world.head.bodies("B", "/heartbeat")[-1]
     assert beat == {"instance_id": 424242, "pids_current": 1203, "pids_max": 1280, "pids_refused": 17,
                     "ports_in_use": 3, "ports_total": 14}
     start_line = next(line for line in run.stdout.splitlines() if "pids.max" in line)
@@ -214,16 +217,17 @@ def test_a_pids_limit_gives_fewer_worker_ports_and_the_heartbeat_reports_the_lim
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("quota, period, cpus", [("150000\n", "100000\n", 1), ("-1\n", "100000\n", len(os.sched_getaffinity(0))),
-                                                ("150000\n", "0\n", len(os.sched_getaffinity(0)))])
-def test_cgroup_v1_cpu_quota_sets_the_cpu_count_and_minus_1_is_no_limit(world, tmp_path, quota, period, cpus):
+@pytest.mark.parametrize("quota, period, cores", [("150000\n", "100000\n", 1.5), ("-1\n", "100000\n", None),
+                                                 ("150000\n", "0\n", None)])
+def test_cgroup_v1_cpu_quota_is_reported_in_enroll_and_minus_1_is_no_limit(world, tmp_path, quota, period, cores):
     # cgroup v1 (no cgroup.controllers): the CPU controller is in cpu/, with the quota and the period in microseconds.
     cgroup = cgroup_dir(tmp_path, "v1", "max\n")
     (cgroup / "cpu" / "cpu.cfs_quota_us").write_text(quota)
     (cgroup / "cpu" / "cpu.cfs_period_us").write_text(period)
     run = world.run(RAYVAST_CGROUP_DIR=str(cgroup))
     assert wait_for(lambda: world.head.bodies("A", "/enroll")), run.stdout
-    assert world.head.bodies("A", "/enroll")[0]["cpu_count"] == cpus
+    enroll = world.head.bodies("A", "/enroll")[0]
+    assert enroll["cpu_quota"] == cores and enroll["cpu_count"] == len(os.sched_getaffinity(0))
 
 
 @pytest.mark.slow

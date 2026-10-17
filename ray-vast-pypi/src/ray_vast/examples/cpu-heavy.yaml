@@ -1,5 +1,5 @@
 # A CPU-heavy variant: one GPU and many CPU cores in each worker.
-# CPU is a minimum. The offer must have at least this many effective cores.
+# CPU is the number of Ray CPUs of each worker. The offer must have at least this many effective cores.
 # Do not set CPU above 58. Each Ray worker process needs one worker port.
 # Every field is listed. A commented-out field keeps its default or does not apply here.
 # Reference: https://duc-ph.github.io/ray-vast/reference/configuration/
@@ -24,7 +24,7 @@ available_node_types:
       region: us-west-2            # required: the AWS region of the EC2 head
       # instance_type: t3.large    # EC2 instance type of the head (default: t3.large)
   cpu32:
-    resources: {CPU: 32, GPU: 1}    # CPU: at least this many effective cores; GPU: exactly this many GPUs
+    resources: {CPU: 32, GPU: 1}    # CPU: Ray CPUs, and at least this many effective cores; GPU: exactly this many GPUs
     min_workers: 0                  # the fewest workers of this type
     max_workers: 3                  # the most workers of this type
     node_config:

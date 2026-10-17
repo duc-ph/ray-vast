@@ -38,7 +38,7 @@ B is the number of worker processes that your work can use on one worker. B = wo
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
-CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type. [Ray Core](core.md#settings) shows how to get CPUS in your driver.
+CPUS is the number of Ray CPUs of one worker. It is the `CPU` of the node type in your cluster YAML. [Ray Core](core.md#settings) shows how to get CPUS in your driver.
 
 The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library settings below come on top of this rule.
 

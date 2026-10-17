@@ -20,19 +20,19 @@ available_node_types:
 ```
 
 - `resources.GPU` is exact. The offer must have exactly this many GPUs.
-- `resources.CPU` is a minimum. The offer must have at least this many effective cores.
+- `resources.CPU` is the number of Ray CPUs of each worker. The offer must have at least this many effective cores.
 - `node_config.offer_query` is a YAML mapping in the vast API JSON form.
 - `node_config.disk_gb` is the disk size of the instance. The default is 50 GB. Make it large enough for the image and your data.
 
-## CPU is a minimum, GPU is exact
+## CPU and GPU
 
 The provider adds `cpu_cores_effective >= CPU` and `num_gpus == GPU` to the query.
-A running worker reports its real core count to Ray. Ray uses the real count for that worker.
-But Ray plans a new worker with the declared `CPU` value. So declare a `CPU` value that is close to the real hosts.
 
-**Cold-start overshoot.** Before the first worker reports its real cores, Ray plans with the declared `CPU`.
-So Ray can start more workers than necessary. In a local spike (one machine, Ray 2.59), Ray started 2 workers for 4 tasks.
-The extra worker stays idle until `idle_timeout_minutes` removes it. This costs a few minutes of one worker.
+- Ray gets the declared `CPU` on each worker. A host with more cores gives no more Ray CPUs. To use more cores, declare a larger `CPU`.
+- Ray plans new workers with the same `CPU` value. So Ray starts the number of workers that the work needs.
+- vast gives a container a CPU quota of 0.96 × the offer's effective cores. For example, an offer with 8 effective cores gives 7.68 cores. Ray still gets 8 CPUs.
+- The head refuses a worker that has fewer cores than 90 % of `CPU`. The cores are the smaller of the CPU affinity and the CPU quota of the container. The provider blocks the host and rents another one. Read [A worker is refused for its CPU or GPU count](troubleshoot.md#a-worker-is-refused-for-its-cpu-or-gpu-count).
+- `GPU` is exact. The head refuses a worker that has another number of GPUs.
 
 Do not set `CPU` above 58. Read [Limits](../reference/limits.md#58-worker-ports-for-each-worker).
 

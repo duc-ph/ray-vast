@@ -153,8 +153,10 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
             check(record, f"{name} {cid}: soft limit of the bootstrap formula, grpc threads 4, startup concurrency 8",
                   env_ray.get("RAY_num_workers_soft_limit") == str(soft_limit) and
                   env_ray.get("RAY_num_grpc_internal_threads") == "4" and env_ray.get("RAY_worker_maximum_startup_concurrency") == "8", env_ray)
-            check(record, f"{name} {cid}: Ray CPUs = the real core count (affinity and quota)", 1 <= n["ray_cpus"] <= n["affinity"],
-                  (n["ray_cpus"], n["affinity"], n["cpu_quota"]))
+            declared = libraries.config["available_node_types"][n["node_type"]]["resources"]["CPU"]
+            cores = n["affinity"] if n["cpu_quota"] is None else min(n["affinity"], n["cpu_quota"])
+            check(record, f"{name} {cid}: Ray CPUs = the declared CPU, the cores (affinity, quota) at least 90% of it",
+                  n["ray_cpus"] == declared and cores >= 0.9 * declared, (n["ray_cpus"], declared, n["affinity"], n["cpu_quota"]))
             # design.md:56, :86: enrollment within 1 min of `running`; the suite's 10 s samples allow -15 to 75 s.
             check(record, f"{name} {cid}: enrolled within 1 min of `running` (design.md:86; -15 to 75 s on the suite's samples)",
                   enroll_s is not None and -15 <= enroll_s <= 75, enroll_s)

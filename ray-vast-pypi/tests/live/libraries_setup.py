@@ -29,8 +29,9 @@ from window import wait_until
 HERE = Path(__file__).parent
 # The named hosts (archive/results/2026-10-14/c9, 2026-10-16/c10, 2026-10-17) and the query to use when none of them is
 # rentable. vast sets pids.max = 256 x the CPU quota in whole cores (2026-10-17: 1280 at 5.76 cores, 9728 at 38.4, 11776 at
-# 46.08, 15616 at 61.44), so no host has many Ray CPUs and pids.max 1280. H1 is the large-host case: 32 or more Ray CPUs,
-# any pids limit (m36376: 38 Ray CPUs, 9728, v1; m58013: 46, 11776, v2; m148655: 61, 15616, v1).
+# 46.08, 15616 at 61.44), so no host has many Ray CPUs and pids.max 1280. H1 is the large-host case: the h1 type declares
+# CPU 32, so Ray gets 32 CPUs, with any pids limit (CPU quota: m36376 38.4 cores, 9728, v1; m58013 46.08, 11776, v2;
+# m148655 61.44, 15616, v1).
 PINS = {
     "h1": {"named": [36376, 58013, 148655], "fallback": {"cpu_cores_effective": {"gte": 32}},
            "want": {"cpus": {"gte": 32}, "limited": True}},

@@ -38,7 +38,7 @@ B is the number of worker processes that your work can use on one worker. B = wo
 The start line of each worker shows its port count, for example `worker ports 14` (in the vast console, or `vastai logs <instance id>`).
 Hosts with `pids.max` 1280 give 14 worker ports, so B = 10. Most workers in our tests had 14. A host with a lower limit gives fewer ports, so read the start line. If you cannot read it, use B = 10.
 
-CPUS is the number of Ray CPUs of one worker. It is the real core count of the host, not the `CPU` of the node type.
+CPUS is the number of Ray CPUs of one worker. It is the `CPU` of the node type in your cluster YAML.
 
 The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. The library pages add their own settings on top of this rule.
 
@@ -65,15 +65,15 @@ pool = [Runner.remote() for _ in range(5)]   # B // 2, because each call also ne
 | `num_cpus` of each actor | 2.4 | CPUS / B |
 | Actors that wait for a task | 5 | B // 2 |
 
-To get CPUS in your driver (it needs at least one worker; the head has `CPU: 0`):
+You can also get CPUS in your driver (it needs at least one worker; the head has `CPU: 0`):
 
 ```python
 CPUS = max(n["Resources"]["CPU"] for n in ray.nodes()
            if n["Alive"] and n["Resources"].get("CPU", 0) > 0)
 ```
 
-If your workers have different core counts, this gives the largest. Then the smaller workers run fewer tasks at the same time.
-To keep the workers alike, add an upper bound to `cpu_cores_effective` in the offer query. Read [Choose node types and offer queries](../how-to/node-types.md).
+If your worker types have different `CPU` values, this gives the largest. Then the workers of the smaller types run fewer tasks at the same time.
+To keep the workers alike, give all worker types the same `CPU`. Read [Choose node types and offer queries](../how-to/node-types.md).
 
 ## Why
 

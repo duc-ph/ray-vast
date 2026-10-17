@@ -149,9 +149,11 @@ class HeadServer:
             instance_id = int(body["instance_id"])
             checks = body["checks"]
             ports = {int(k): int(v) for k, v in body["ports"].items()}
-            cpu_count, gpu_count = int(body["cpu_count"]), int(body["gpu_count"])
+            cpu_count, gpu_count, cpu_quota = int(body["cpu_count"]), int(body["gpu_count"]), body["cpu_quota"]
             if not isinstance(checks, dict):
                 raise ValueError("types")
+            if cpu_quota is not None and (type(cpu_quota) not in (int, float) or not 0 < cpu_quota <= 4096):
+                raise ValueError("cpu_quota")  # type(): a bool is not a quota
             if sorted(ports) != list(IDENTITY_PORTS) or not all(0 < p < 65536 for p in ports.values()):
                 raise ValueError("ports")
             if len(set(ports.values())) != len(ports) or not 1 <= cpu_count <= 4096 or not 0 <= gpu_count <= 64:
@@ -189,8 +191,16 @@ class HeadServer:
             return 403, {"reason": reason}
 
         # GPU is exact (design F4). Fewer GPUs is a broken host; more can be another tenant's GPUs.
+        # Ray gets the declared CPU, so the container needs at least 90% of it: the cores are the smaller of the
+        # affinity and the quota (vast gives a quota of 0.96 x the offer's cpu_cores_effective, S6).
+        cores = cpu_count if cpu_quota is None else min(cpu_count, cpu_quota)
+        reason = None
         if gpu_count != cand.gpus:
             reason = "GPU count: the container has %d, the node type declares %d" % (gpu_count, cand.gpus)
+        elif cores < 0.9 * cand.cpus:
+            reason = "CPU: the container has %g cores, the node type declares %d (at least 90%% needed)" % (
+                cores, cand.cpus)
+        if reason:
             self.end(cand, reason, "security")
             return 403, {"reason": reason}
 
@@ -237,6 +247,7 @@ class HeadServer:
             "token": self.token,
             "shim_b64": base64.b64encode(self.shim_bytes).decode(),
             "gcs_address": f"{self.head_ip}:6379",
+            "num_cpus": cand.cpus,  # `ray start --num-cpus` (F4)
         }
 
     def report_before_enrollment(self, body, source_ip):

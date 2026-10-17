@@ -176,7 +176,7 @@ def test_F07_bootloader_in_docker(record):
 LOCAL_E2E = {
     "F08": "test_scale_up_three_workers_with_k_2_runs_the_battery_then_idle_scale_down_to_zero",
     "F09": "test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_removed",
-    "F10": "test_host_with_more_cores_than_declared_runs_with_the_real_core_count",
+    "F10": "test_ray_gets_the_declared_cpu_on_a_host_with_a_cpu_quota_of_96_percent",
     "F11": "test_a_candidate_that_never_enrolls_is_ended_and_its_slot_is_asked_for_again",
     "F12": "test_head_silence_makes_each_worker_report_and_destroy_itself",
     "F13": "test_container_restart_is_refused_a_second_enrollment_and_destroys_itself",
@@ -197,7 +197,7 @@ def _local_e2e_test(scenario):
 
 test_F08_local_e2e_scale_up_battery_scale_down = _local_e2e_test("F08")
 test_F09_local_e2e_two_workers_one_public_ip = _local_e2e_test("F09")
-test_F10_local_e2e_more_cores_than_declared = _local_e2e_test("F10")
+test_F10_local_e2e_declared_cpu_with_a_96_percent_quota = _local_e2e_test("F10")
 test_F11_local_e2e_candidate_never_enrolls = _local_e2e_test("F11")
 test_F12_local_e2e_head_silent = _local_e2e_test("F12")
 test_F13_local_e2e_container_restart = _local_e2e_test("F13")

@@ -10,7 +10,7 @@ This page tells how a worker starts, runs and ends. It also tells why a worker d
 4. **Pull.** vast pulls the image and starts the container.
 5. **Enroll.** The first candidates that enroll fill the slots. Read [Enrollment and the join token](enrollment.md).
 6. **Extra candidates.** When every slot of the request has a worker, the provider destroys the other candidates of the request.
-7. **Ray.** The worker starts Ray with its real core count. The autoscaler matches the Ray node to the slot, and schedules the work.
+7. **Ray.** The worker starts Ray with the `CPU` of the node type. The autoscaler matches the Ray node to the slot, and schedules the work.
 
 A live test on 2026-10-14 used the CPU image, on a host that had the image in its cache. The results:
 

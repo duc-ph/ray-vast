@@ -86,23 +86,23 @@ def test_the_head_server_of_a_test_never_takes_a_port_of_a_port_block_that_a_wor
 
 
 def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN_TOKEN, node_type="gpu", machine_id=7,
-                  gpus=1):
+                  gpus=1, cpus=8):
     """A candidate that the provider has seen `running` with `ip` (ip None: not seen running yet)."""
     with env.state.lock:
         if slot_id not in env.state.slots:
             env.state.add_slot(Slot(slot_id, node_type))
         env.state.add_candidate(Candidate(instance_id, slot_id, 1, machine_id, node_type, public_ip=ip, join_token=token,
-                                         gpus=gpus))
+                                         gpus=gpus, cpus=cpus))
         if ip:
             env.state.ip_ref_add(ip)
 
 
-def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None, gpu_count=1):
+def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None, gpu_count=1, cpu_count=16, cpu_quota=7.68):
     body = {
         "instance_id": instance_id, "join_token": token,
         "checks": checks or {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True,
                              "details": ""},
-        "ports": ports or env.ports, "cpu_count": 8, "gpu_count": gpu_count,
+        "ports": ports or env.ports, "cpu_count": cpu_count, "cpu_quota": cpu_quota, "gpu_count": gpu_count,
     }
     return requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
 
@@ -113,8 +113,9 @@ def test_good_enrollment_gives_files_and_a_verifiable_cert(env):
     assert resp.status_code == 200
     answer = resp.json()
     # The worker has the CA (pinned), its own GPU count (the head checked it) and the heartbeat constants already.
-    assert set(answer) == {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address"}
+    assert set(answer) == {"slot_id", "node_type", "cert_pem", "key_pem", "token", "shim_b64", "gcs_address", "num_cpus"}
     assert answer["slot_id"] == "slot-1" and answer["node_type"] == "gpu"
+    assert answer["num_cpus"] == 8  # the node type's declared CPU (F4), not the container's 7.68 cores
     assert answer["token"] == TOKEN and answer["gcs_address"] == "127.0.0.1:6379"
     (env.tmp / "node.pem").write_text(answer["cert_pem"])
     out = subprocess.run(["openssl", "verify", "-CAfile", env.ca_file, str(env.tmp / "node.pem")],
@@ -151,7 +152,7 @@ def test_body_without_the_join_token_field_is_refused_without_a_destroy(env):
     add_candidate(env, 11)
     body = {"instance_id": 11, "checks": {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True,
                                           "shm_empty": True, "details": ""},
-            "ports": env.ports, "cpu_count": 8, "gpu_count": 1}
+            "ports": env.ports, "cpu_count": 8, "cpu_quota": 7.68, "gpu_count": 1}
     resp = requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
     assert resp.status_code == 403 and env.end.ended == [] and 11 in env.state.candidates
 
@@ -192,7 +193,7 @@ def test_duplicate_ports_are_a_400(env):
 def test_out_of_range_cpu_or_gpu_count_is_a_400(env, cpu, gpu):
     add_candidate(env, 11)
     body = {"instance_id": 11, "join_token": JOIN_TOKEN, "checks": {}, "ports": env.ports,
-            "cpu_count": cpu, "gpu_count": gpu}
+            "cpu_count": cpu, "cpu_quota": None, "gpu_count": gpu}
     assert requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file).status_code == 400
 
 
@@ -261,6 +262,43 @@ def test_a_gpu_count_other_than_the_declared_one_is_refused_and_ends_the_candida
     assert resp.status_code == 403
     assert resp.json()["reason"] == f"GPU count: the container has {found}, the node type declares {declared}"
     assert env.end.ended == [11] and 11 not in env.state.enrolled
+
+
+@pytest.mark.parametrize("declared, affinity, quota", [(8, 16, 7.19), (8, 7, None), (8, 4, 16.0), (32, 64, 28.0)])
+def test_fewer_cpu_cores_than_90_percent_of_the_declared_cpu_is_refused_and_ends_the_candidate(env, declared, affinity,
+                                                                                                 quota):
+    # vast gives a quota of 0.96 x cpu_cores_effective (S6). The cores are the smaller of the affinity and the quota.
+    add_candidate(env, 11, cpus=declared)
+    resp = enroll(env, 11, cpu_count=affinity, cpu_quota=quota)
+    assert resp.status_code == 403
+    cores = affinity if quota is None else min(affinity, quota)
+    assert resp.json()["reason"] == (f"CPU: the container has {cores:g} cores, the node type declares {declared} "
+                                     f"(at least 90% needed)")
+    assert env.end.ended == [11] and 11 not in env.state.enrolled
+
+
+@pytest.mark.parametrize("declared, affinity, quota", [(8, 16, 7.68), (8, 16, 7.2), (8, 8, None), (1, 64, 0.96), (0, 1, 0.24)])
+def test_at_least_90_percent_of_the_declared_cpu_enrolls(env, declared, affinity, quota):
+    add_candidate(env, 11, cpus=declared)
+    resp = enroll(env, 11, cpu_count=affinity, cpu_quota=quota)
+    assert resp.status_code == 200 and resp.json()["num_cpus"] == declared
+    assert env.end.ended == []
+
+
+def test_a_cpu_check_failure_blocks_the_host_as_a_gpu_count_mismatch_does(env):
+    kinds = []
+    env.server.end = lambda cand, reason, block_kind=None: kinds.append(block_kind)
+    add_candidate(env, 11, cpus=8)
+    enroll(env, 11, cpu_quota=7.0)
+    add_candidate(env, 12, slot_id="slot-2", gpus=2)
+    enroll(env, 12)
+    assert kinds == ["security", "security"]
+
+
+@pytest.mark.parametrize("quota", [True, "7.68", 0, -1.0, 5000.0, [8]])
+def test_a_bad_cpu_quota_is_a_400(env, quota):
+    add_candidate(env, 11)
+    assert enroll(env, 11, cpu_quota=quota).status_code == 400
 
 
 def test_a_cpu_node_type_enrolls_a_container_with_0_gpus(env):

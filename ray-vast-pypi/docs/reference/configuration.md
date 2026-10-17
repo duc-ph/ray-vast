@@ -73,7 +73,7 @@ head:
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
-| `resources.CPU` | whole number ≥ 0 | required | A minimum. The offer must have at least this many effective cores. A worker reports its real core count to Ray. |
+| `resources.CPU` | whole number ≥ 0 | required | The number of Ray CPUs of each worker. The offer must have at least this many effective cores. The head refuses a worker with fewer cores than 90 % of `CPU`. |
 | `resources.GPU` | whole number ≥ 0 | required | Exact. The offer must have exactly this many GPUs. |
 | `min_workers` | integer | Ray default | Ray field. The fewest workers of this type. |
 | `max_workers` | integer | Ray default | Ray field. The most workers of this type. |

@@ -9,7 +9,6 @@ import base64
 import hashlib
 import http.client
 import json
-import math
 import os
 import signal
 import socket
@@ -284,8 +283,9 @@ def main():
             listener.listen(16)
             listeners.append(listener)
 
-        # 4. Enroll. The real core count is the smaller of the affinity and the cgroup CPU quota: cgroup v2 `cpu.max`,
-        # else cgroup v1 `cpu/cpu.cfs_quota_us` and `cpu/cpu.cfs_period_us` (microseconds; a quota of -1 is no limit).
+        # 4. Enroll. The head checks the cores against the node type's CPU: the affinity count, and the cgroup CPU quota
+        # (cores, None for no limit) from cgroup v2 `cpu.max`, else cgroup v1 `cpu/cpu.cfs_quota_us` and
+        # `cpu/cpu.cfs_period_us` (microseconds; a quota of -1 is no limit).
         cgroup_version = "v2" if os.path.exists(f"{CGROUP_DIR}/cgroup.controllers") else "v1"
         cpu_count = len(os.sched_getaffinity(0))
         try:
@@ -298,12 +298,10 @@ def main():
                 quota_cores = quota / period if quota > 0 and period > 0 else None
         except (OSError, ValueError):
             quota_cores = None
-        if quota_cores is not None:
-            cpu_count = min(cpu_count, max(1, math.floor(quota_cores)))
         gpu_count = count_gpus(os.listdir("/dev"))
         enroll_body = {
             "instance_id": state.instance_id, "join_token": state.join_token, "checks": checks, "ports": ports,
-            "cpu_count": cpu_count, "gpu_count": gpu_count,
+            "cpu_count": cpu_count, "cpu_quota": quota_cores, "gpu_count": gpu_count,
         }
         while True:
             try:
@@ -355,7 +353,8 @@ def main():
                 pids_max = int(f.read())
         except (OSError, ValueError):
             pids_max = None
-        port_count, soft_limit = worker_ports_and_soft_limit(cpu_count, pids_max)
+        num_cpus = answer["num_cpus"]  # the node type's CPU (F4); the head refused fewer than 90% of it in cores
+        port_count, soft_limit = worker_ports_and_soft_limit(num_cpus, pids_max)
         worker_ports = [ports[str(p)] for p in WORKER_PORT_IDS[:port_count]]
         ray_cmd = [
             sys.executable, "-c", "from ray.scripts.scripts import main; main()", "start", "--block",
@@ -364,7 +363,7 @@ def main():
             f"--metrics-export-port={ports['70002']}", f"--dashboard-agent-grpc-port={ports['70003']}",
             f"--dashboard-agent-listen-port={ports['70004']}", f"--runtime-env-agent-port={ports['70005']}",
             f"--worker-port-list={','.join(map(str, worker_ports))}",
-            f"--num-cpus={cpu_count}", f"--num-gpus={gpu_count}",  # the head refuses a count other than the node type's GPU
+            f"--num-cpus={num_cpus}", f"--num-gpus={gpu_count}",  # the head refuses a count other than the node type's GPU
         ]
         ray_env = dict(
             env,
@@ -380,8 +379,8 @@ def main():
             RAY_worker_maximum_startup_concurrency=str(STARTUP_CONCURRENCY),
         )
         ray = subprocess.Popen(ray_cmd, env=ray_env, stdin=subprocess.DEVNULL)
-        log(f"enrolled as slot {answer['slot_id']}; started ray (pid {ray.pid}) with {cpu_count} cpus")
-        log(f"limits: pids.max {pids_max or 'none'} (cgroup {cgroup_version}), cpus {cpu_count}, "
+        log(f"enrolled as slot {answer['slot_id']}; started ray (pid {ray.pid}) with {num_cpus} cpus")
+        log(f"limits: pids.max {pids_max or 'none'} (cgroup {cgroup_version}), cpus {num_cpus}, "
             f"worker ports {len(worker_ports)}, soft limit {soft_limit}, grpc threads {GRPC_THREADS}, "
             f"startup concurrency {STARTUP_CONCURRENCY}")
 

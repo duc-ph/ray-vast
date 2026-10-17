@@ -2,9 +2,9 @@
 # The tests choose the workers of each scenario: LibrariesCluster.set_shape() writes min_workers = max_workers of every
 # type into the head's copy of this YAML, and the autoscaler reads that file again in each loop. So only the hosts of
 # one scenario run, and the library code (the doc snippets, the C9 and C10 jobs) needs no node pinning.
-#   h1:   H1, the large-host case: 32 or more Ray CPUs, any pids limit. vast sets pids.max = 256 x the CPU quota in whole
-#         cores, so a host with many Ray CPUs and pids.max 1280 does not exist (2026-10-17). Named hosts (2026-10-17):
-#         m36376 (38 Ray CPUs, 9728, v1), m58013 (46, 11776, v2), m148655 (61, 15616, v1).
+#   h1:   H1, the large-host case: CPU 32 (Ray gets the declared CPU), any pids limit. vast sets pids.max = 256 x the CPU
+#         quota in whole cores, so a host with many Ray CPUs and pids.max 1280 does not exist (2026-10-17). Named hosts
+#         (2026-10-17, CPU quota): m36376 (38.4 cores, 9728, v1), m58013 (46.08, 11776, v2), m148655 (61.44, 15616, v1).
 #   h2:   H2, a cgroup v2 host. C9: m51706 (CMP 170HX, 72 Ray CPUs, 3328, v2). C10: m55704 (CMP 170HX, 15 Ray CPUs, 3840,
 #         v2). Both hosts also rent 1 GPU.
 #   gpu:  H3, the C9 layout: 2 workers, compute_cap 600-899 (torch 2.7.1). The pinned hosts are left out.
@@ -22,7 +22,7 @@ head_node_type: head
 available_node_types:
   head: {resources: {CPU: 0}, node_config: {region: us-west-2, instance_type: t3.large}}
   h1:
-    resources: {CPU: 4, GPU: 1}
+    resources: {CPU: 32, GPU: 1}
     min_workers: 0
     max_workers: 1
     node_config: {disk_gb: 60, offer_query: {machine_id: {in: [36376, 58013, 148655]}}}

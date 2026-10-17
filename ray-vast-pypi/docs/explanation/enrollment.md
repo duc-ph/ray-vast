@@ -42,9 +42,9 @@ sequenceDiagram
     - the container has no `NET_RAW` or `NET_ADMIN` capability;
     - the container has its own network namespace;
     - `/dev/shm` is empty.
-5. **Enroll.** The bootstrap sends `POST /enroll` with its instance ID, the join token, the check results and its port map.
-6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results and the GPU count. Then it connects to all 64 ports from outside (the port check).
-7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the cluster token, the shim and the Ray parameters. The worker already has the CA: it pinned it in step 3.
+5. **Enroll.** The bootstrap sends `POST /enroll` with its instance ID, the join token, the check results, its port map, its CPU affinity and CPU quota, and its GPU count.
+6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results, the GPU count and the CPU cores. Then it connects to all 64 ports from outside (the port check).
+7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the cluster token, the shim and the Ray parameters (the GCS address and the `CPU` of the node type). The worker already has the CA: it pinned it in step 3.
 8. **Ray.** The bootstrap removes the secrets from Ray's environment, and starts Ray. Ray joins the head with TLS and the token.
 
 ## The join token
@@ -69,6 +69,7 @@ After a valid token, a failed check destroys the candidate:
 |---|---|
 | Capability, network namespace or `/dev/shm` check | `security`, 30 days |
 | A GPU count other than the node type's `GPU` | `security`, 30 days |
+| Fewer CPU cores than 90 % of the node type's `CPU` | `security`, 30 days |
 | Egress IP check or port check | `network`, 1 day |
 | No free slot | none |
 

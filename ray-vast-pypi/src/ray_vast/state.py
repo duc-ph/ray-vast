@@ -41,6 +41,7 @@ class Candidate:
     last_seen_at: Optional[float] = None  # the last reconcile pass whose vast listing had the instance
     dph_total: float = 0.0
     gpus: int = 0  # the declared GPU of the node type, set by the provider at rent time (design F4: GPU is exact)
+    cpus: int = 0  # the declared CPU of the node type, set by the provider at rent time (design F4: Ray gets this count)
     last_heartbeat: Optional[float] = None  # set by the head server on each worker heartbeat
     limit_warned_at: Optional[float] = None  # when the head server last logged the process-limit warning
     limit_warned_refused: int = 0  # the count of refused forks/threads in that warning

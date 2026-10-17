@@ -13,7 +13,7 @@ This page gives a short summary. The full list, with the rejected options, is in
 | What does a worker do when it loses the head? | It destroys its own instance after 5 minutes. It never only exits. | vast restarts a stopped container and keeps billing it. |
 | Does the head restart itself? | No. | Ray never restarts a dead monitor. The result is the same as with a standard `ray up` cluster. |
 | Why rent extra candidates? | `candidate_factor` 2 by default. | About 8% of hosts in a test had a port that we could not reach, and about 8% had a wrong egress IP. Extra candidates hide one bad host. |
-| How do you choose GPUs? | An offer query in the vast API JSON form, with MB units. `CPU` is a minimum, `GPU` is exact. | No own copy of the vast CLI parser. Ray reports the real cores of a running worker. |
+| How do you choose GPUs? | An offer query in the vast API JSON form, with MB units. `CPU` is a minimum for the offer and the Ray CPUs of the worker. `GPU` is exact. | No own copy of the vast CLI parser. Ray plans and runs with the same `CPU`. vast gives a container 0.96 × the offer's effective cores, so the head accepts 90 % of `CPU` or more. |
 | Is there a budget? | `max_dollars_per_hour` is required. | A missing budget must not mean "no limit". |
 | Does the head get an Elastic IP? | No. | A reboot keeps the IP, but the cluster does not survive a reboot: the head container has no restart policy, and the state is in memory. After a reboot or a stop and start, run `down` and `up`. |
 | How many worker IPs? | Up to 5 security groups, about 299 worker IPs with the default quota. | 5 is the AWS default limit of groups for one network interface. An open head would let a DDoS stop the cluster. |

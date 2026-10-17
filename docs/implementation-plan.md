@@ -114,7 +114,7 @@ A fake vast server runs each "instance" as a local Docker container with the rea
 Scenarios:
 - Scale up 3 workers with k=2: 6 candidates, 3 slots filled, 3 destroyed. Run the C2 battery (`tests/manual/battery.py`, with `ray job submit`). Idle scale-down to 0.
 - Two workers with the same public IP: both are seen, and scale-down removes the correct one (F3).
-- A host with more cores than declared: Ray uses the real core count (F4).
+- A host with more cores than declared: Ray uses the real core count (F4). Changed on 2026-10-17: Ray gets the declared `CPU`, and a CPU quota of 0.96 × `CPU` enrolls (local e2e F10).
 - A candidate that never enrolls: the slot is removed and asked for again.
 - Stop the head server for 6 min: both workers destroy themselves, and each worker tries to send its reason to the report endpoint first (the endpoint is down with the head, so the test checks the attempt in the worker log).
 - Container restart: the second enrollment is refused, and the worker destroys itself.

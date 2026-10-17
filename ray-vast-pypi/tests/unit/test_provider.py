@@ -724,7 +724,7 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
     p.reconcile_once()
     checks = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True, "details": ""}
     body = {"instance_id": iid, "join_token": env.vast.requests[-1]["env"]["RAYVAST_JOIN_TOKEN"], "checks": checks,
-            "ports": identity_listeners, "cpu_count": 4, "gpu_count": 1}
+            "ports": identity_listeners, "cpu_count": 4, "cpu_quota": 3.84, "gpu_count": 1}
     status, answer = p.head_server.enroll(body, "127.0.0.1")
     assert status == 200, answer
     fail_one_slot(env, p)
@@ -762,7 +762,8 @@ def running_candidate(env, p):
 
 def head_enroll(env, p, iid, ports, checks=GOOD_CHECKS):
     token = env.vast.requests[iid - 101]["env"]["RAYVAST_JOIN_TOKEN"]
-    body = {"instance_id": iid, "join_token": token, "checks": checks, "ports": ports, "cpu_count": 4, "gpu_count": 1}
+    body = {"instance_id": iid, "join_token": token, "checks": checks, "ports": ports, "cpu_count": 4, "cpu_quota": 3.84,
+            "gpu_count": 1}
     return p.head_server.enroll(body, "127.0.0.1")
 
 
@@ -914,13 +915,14 @@ def test_a_failed_port_check_blocks_the_host_even_when_the_autoscaler_ended_the_
 
 
 @pytest.mark.parametrize("failure, blocked_after_2_days", [
-    ("security check", True), ("egress check", False), ("gpu count", True), ("port check", False)])
+    ("security check", True), ("egress check", False), ("gpu count", True), ("cpu quota", True), ("port check", False)])
 def test_a_head_refusal_blocks_the_host_for_30_days_on_a_security_failure_and_1_day_on_a_network_failure(
         env, identity_listeners, failure, blocked_after_2_days):
     env.vast.offers = [offer(1, 11)]
     p = env.make(candidate_factor=1)
     _, iid = running_candidate(env, p)
     body = {"instance_id": iid, "join_token": env.vast.requests[0]["env"]["RAYVAST_JOIN_TOKEN"], "cpu_count": 4,
+            "cpu_quota": 3.5 if failure == "cpu quota" else 3.84,  # the node type declares CPU 4 (RESOURCES)
             "checks": {**GOOD_CHECKS, "egress_ip_ok": False} if failure == "egress check" else
             BAD_CHECKS if failure == "security check" else GOOD_CHECKS,
             "gpu_count": 2 if failure == "gpu count" else 1,

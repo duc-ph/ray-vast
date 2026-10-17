@@ -81,13 +81,14 @@ def test_two_workers_with_the_same_public_ip_both_join_and_the_idle_one_is_remov
     cluster.assert_live([busy])
 
 
-def test_host_with_more_cores_than_declared_runs_with_the_real_core_count(make_cluster):
-    cluster = make_cluster(docker_args=["--cpus", "2"])  # the box has 4 cores; the cgroup allows 2
-    cluster.write_config(cpu=1)  # the node type declares 1
+def test_ray_gets_the_declared_cpu_on_a_host_with_a_cpu_quota_of_96_percent(make_cluster):
+    # vast gives a quota of 0.96 x cpu_cores_effective (S6): 1.92 cores for an offer with 2. The head accepts 90% or more.
+    cluster = make_cluster(docker_args=["--cpus", "1.92"])
+    cluster.write_config(cpu=2)  # the node type declares 2
     cluster.start_head()
 
     result = hold(cluster, 1)
-    assert [n["cpu"] for n in result["nodes"]] == [2]
+    assert [n["cpu"] for n in result["nodes"]] == [2]  # the declared CPU, not floor(1.92) = 1
 
 
 def hold_two_workers_that_passed_the_token_check(cluster):
