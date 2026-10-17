@@ -25,11 +25,24 @@ Another party's instance on the same host as ours.
 The `offer_query` of a node type: a mapping in the vast API JSON form that defines which offers the node type may rent.
 _Avoid_: filters, spec
 
+**Identity port**:
+A port that vast maps to the same port number on the host and in the container (P→P). A rental asks for the smaller of 64 and the offer's `direct_port_count`; vast names them 70000 to at most 70063 (`VAST_TCP_PORT_700xx`). The first 6 are Ray's fixed ports.
+_Avoid_: direct port (that is the offer's count), mapped port
+
+**Worker port**:
+An identity port after the 6 fixed ones, which Ray gives to one Ray worker process (`--worker-port-list`). A worker has at most 58; a process limit gives it fewer.
+
 ### Cluster shape
 
 **Node type**:
 A named class of workers with fixed declared Ray resources and one offer query that guarantees those resources on every rented host.
 _Avoid_: GPU class, worker group, pool
+
+**CPUS**:
+The number of Ray CPUs of one worker: the `CPU` of its node type. The head refuses a container with fewer than 90% of it in cores.
+
+**B**:
+The number of worker processes that the work can use on one worker: worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to the work.
 
 ### Cluster lifecycle
 

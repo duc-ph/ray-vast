@@ -102,16 +102,9 @@ The dashboard at http://127.0.0.1:8265 shows the nodes, the jobs and the logs.
 
 The job itself needs no settings. The driver runs on the head and uses no worker port of a vast worker.
 
-The work in the job can need settings. They use **B**, the number of worker processes that your work can use on one worker:
+The work in the job can need settings. Two rules tell you if it does. Read [The process rules](../reference/limits.md#the-process-rules). That section gives the two rules and the table of B for each host size. B is the number of worker processes that your work can use on one worker.
 
-- B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
-- The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. CPUS is the number of Ray CPUs of one worker. Then Ray puts at most B of them on one worker. The library settings come on top of this rule.
-- The start line of each worker shows its port count, for example `worker ports 18`. Read it in the vast console (the instance log), or with `vastai logs <instance id>`.
-- B depends on the host: 2 on a host with 4 effective cores, 54 from 17 effective cores up (58 worker ports, the maximum). Each library page has the table.
-- Rule 1: with Ray's defaults (about one worker process for each CPU), you need the settings only when your node type has more CPUs than B, or when you start many processes with `num_cpus` below 1.
-- Rule 2: keep each process under about 60 threads, and keep its child processes few and small.
-
-Each library page gives the two rules and its settings, with example values for B = 10.
+The rule for every library: each process that your code starts (a task, an actor, a replica, a trial, a Train worker or an env runner) asks for `num_cpus` = CPUS / B. Then Ray puts at most B of them on one worker. Each library page gives its own settings on top of this rule, with example values for B = 10.
 
 ## Why
 

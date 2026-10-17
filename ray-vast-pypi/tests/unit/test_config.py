@@ -428,3 +428,13 @@ def test_bootstrap_keeps_a_top_level_max_workers():
     config = make(max_workers=2)
     config["available_node_types"]["w"]["max_workers"] = 5
     assert bootstrap_config(config)[0]["max_workers"] == 2
+
+
+def test_the_port_constants_of_the_worker_match_the_copies_on_the_head():
+    """The bootstrap uses only the stdlib, so it keeps its own copies of the port constants (design 5.5)."""
+    from ray_vast import config, vast_api
+    from ray_vast.worker import bootstrap
+
+    assert bootstrap.IDENTITY_PORT_IDS == vast_api.IDENTITY_PORTS == range(70000, 70064)
+    assert config.MIN_DIRECT_PORTS == bootstrap.FIXED_PORTS + bootstrap.MIN_WORKER_PORTS == 6 + 4
+    assert config.WORKER_PORTS == len(vast_api.IDENTITY_PORTS) - bootstrap.FIXED_PORTS == 64 - 6

@@ -4,7 +4,9 @@ import json
 import sys
 from pathlib import Path
 
+import boto3
 import pytest
+from moto import mock_aws
 
 LIVE = Path(__file__).resolve().parents[1] / "live"
 sys.path.insert(0, str(LIVE))  # the live suite imports its modules by their own names, as its conftest does
@@ -319,22 +321,26 @@ def test_a_substitution_that_is_not_in_the_snippet_exactly_once_is_an_error(old)
         libraries_setup.doc_snippet(DOC, "## Settings", 0, [(old, "x")])
 
 
-NO_QUOTA = {"quota": None, "visible_cpus": None, "visible_per_quota": None}
+NO_QUOTA = {"quota": None, "visible_cpus": None, "visible_per_quota": None, "cores": None}
 
 
 @pytest.mark.parametrize("probe, facts", [
     ({"pids.max": "1280", "cgroup": "v1", "ray_cpus": 48.0}, {"pids_max": 1280, "cgroup": "v1", "cpus": 48, "limited": True, **NO_QUOTA}),
     ({"pids.max": "max", "cgroup": "v2", "ray_cpus": 15.0}, {"pids_max": None, "cgroup": "v2", "cpus": 15, "limited": False, **NO_QUOTA}),
     ({"cgroup": "v1", "ray_cpus": 24.0}, {"pids_max": None, "cgroup": "v1", "cpus": 24, "limited": False, **NO_QUOTA}),
+    # The cores are the smaller of the visible CPUs and the quota, as the head counts them for the 90% CPU rule.
+    ({"cgroup": "v2", "ray_cpus": 64.0, "cpu_count": 60, "affinity": 60, "cpu_quota": {"cpu.max": "6144000 100000"}},
+     {"pids_max": None, "cgroup": "v2", "cpus": 64, "limited": False, "quota": 61.44, "visible_cpus": 60, "visible_per_quota": 0.98,
+      "cores": 60}),
     # S6: m45592 (128 visible CPUs, quota 15.36 cores, cgroup v2); the visible CPUs are the smaller of cpu_count and affinity.
     ({"pids.max": "3840", "cgroup": "v2", "ray_cpus": 16.0, "cpu_count": 128, "affinity": 128, "cpu_quota": {"cpu.max": "1536000 100000"}},
-     {"pids_max": 3840, "cgroup": "v2", "cpus": 16, "limited": True, "quota": 15.36, "visible_cpus": 128, "visible_per_quota": 8.33}),
+     {"pids_max": 3840, "cgroup": "v2", "cpus": 16, "limited": True, "quota": 15.36, "visible_cpus": 128, "visible_per_quota": 8.33, "cores": 15.36}),
     # S6: m150419 (384 CPUs, a cpuset of 48, quota 46.08 cores, here as cgroup v1).
     ({"pids.max": "11776", "cgroup": "v1", "ray_cpus": 16.0, "cpu_count": 384, "affinity": 48,
       "cpu_quota": {"cpu.cfs_quota_us": "4608000", "cpu.cfs_period_us": "100000"}},
-     {"pids_max": 11776, "cgroup": "v1", "cpus": 16, "limited": True, "quota": 46.08, "visible_cpus": 48, "visible_per_quota": 1.04}),
+     {"pids_max": 11776, "cgroup": "v1", "cpus": 16, "limited": True, "quota": 46.08, "visible_cpus": 48, "visible_per_quota": 1.04, "cores": 46.08}),
     ({"cgroup": "v2", "ray_cpus": 4.0, "cpu_count": 8, "affinity": 8, "cpu_quota": {"cpu.max": "max 100000"}},
-     {"pids_max": None, "cgroup": "v2", "cpus": 4, "limited": False, "quota": None, "visible_cpus": 8, "visible_per_quota": None}),
+     {"pids_max": None, "cgroup": "v2", "cpus": 4, "limited": False, "quota": None, "visible_cpus": 8, "visible_per_quota": None, "cores": 8}),
 ])
 def test_the_host_facts_of_a_node_probe_are_what_find_host_compares(probe, facts):
     assert libraries_setup.host_facts(probe, 32816) == dict(facts, machine_id=32816)
@@ -563,25 +569,31 @@ def test_a_sweep_with_instance_ids_destroys_only_those_instances_of_the_label(mo
     assert account.destroyed == [2]
 
 
-@pytest.mark.parametrize("vast_labels, aws_left", [
-    (["ray-vast:gpu-24gb"], []),                           # the user's own vast instance of a cluster gpu-24gb
-    ([], ["key pair ray-vast-gpu-24gb"]),                  # the user's own AWS cluster ray-vast-gpu-24gb
-    (["ray-vast:gpu-24gb-mine", "ray-vast-test-20261017"], None),  # other labels: the release cluster can start
+@pytest.mark.parametrize("vast_labels, key_pair, starts", [
+    (["ray-vast:gpu-24gb"], None, False),                     # the user's own vast instance of a cluster gpu-24gb
+    ([], "ray-vast-gpu-24gb", False),                         # the user's own AWS cluster ray-vast-gpu-24gb (us-east-2)
+    (["ray-vast:gpu-24gb-mine", "ray-vast-test-20261017"], "ray-vast-gpu-24gb-mine", True),  # other names: it can start
 ])
 def test_the_release_cluster_refuses_to_start_when_a_cluster_of_its_name_already_exists_and_destroys_nothing(
-        tmp_path, monkeypatch, vast_labels, aws_left):
+        tmp_path, monkeypatch, vast_labels, key_pair, starts):
     cluster, account = _vast_account(monkeypatch, vast_labels)
-    checked = []
-    monkeypatch.setattr(cluster, "_aws_leftovers", lambda name, region, profile: checked.append((name, region)) or aws_left or [])
+    (tmp_path / "aws_config").write_text(f"[profile {cluster.ADMIN_PROFILE}]\nregion = us-east-2\n")
+    (tmp_path / "aws_credentials").write_text(f"[{cluster.ADMIN_PROFILE}]\naws_access_key_id = testing\n"
+                                              "aws_secret_access_key = testing\n")
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "aws_config"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "aws_credentials"))
     run = liverun.Run(tmp_path / "results", "run1")
-    if aws_left is None:
-        made = cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
-        assert made.name == "gpu-24gb" and [p.name for p in (run.dir / "opened").glob("*.json")] == ["gpu-24gb.json"]
-    else:
-        with pytest.raises(RuntimeError, match="gpu-24gb already exists"):
-            cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
-        assert not (run.dir / "opened").exists()   # it never joined the run: no `down`, no sweep, no end
-    assert checked == [("gpu-24gb", "us-east-2")] and account.destroyed == []
+    with mock_aws():
+        if key_pair:
+            boto3.client("ec2", region_name="us-east-2").create_key_pair(KeyName=key_pair)
+        if starts:
+            made = cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+            assert made.name == "gpu-24gb" and [p.name for p in (run.dir / "opened").glob("*.json")] == ["gpu-24gb.json"]
+        else:
+            with pytest.raises(RuntimeError, match="gpu-24gb already exists"):
+                cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+            assert not (run.dir / "opened").exists()   # it never joined the run: no `down`, no sweep, no end
+    assert account.destroyed == []
 
 
 @pytest.mark.parametrize("kept", [False, True])
@@ -611,14 +623,14 @@ def test_only_the_exact_run_suffix_marks_an_earlier_run_never_a_parameter_with_r
     assert [row.split(" | ")[:2] for row in rows] == [["| L05[a.running]", "PASS"], ["| L05[b]", "PASS"]]
 
 
-def test_the_spend_tables_list_each_cluster_group_and_each_run_and_read_the_old_group_field(tmp_path):
+def test_the_spend_tables_list_each_cluster_group_and_each_run(tmp_path):
     def spend(path, **fields):
         path.mkdir(parents=True)
         (path / "spend.json").write_text(json.dumps(fields))
     spend(tmp_path / "_session" / "lifecycle", group="lifecycle", cluster="ray-vast-rvtest-lc-1a2b", vast_estimate=1.23456,
           hours=1.5, ec2_estimate=0.1248)
-    spend(tmp_path / "_session" / "aws_only", group="aws_only", cluster="ray-vast-rvtest-aws-3c4d", spend=0.5, hours=0.4,
-          ec2_estimate=0.033)  # a record from before 2026-10-17: the credit change `spend`
+    spend(tmp_path / "_session" / "aws_only", group="aws_only", cluster="ray-vast-rvtest-aws-3c4d", vast_estimate=0.5,
+          hours=0.4, ec2_estimate=0.033)
     spend(tmp_path / "_session" / "runs" / "101500-77", spend=3.2, top_ups=10.0, credit_before=5.5, credit_after=12.3)
     assert liverecords.spend_tables(tmp_path) == (
         "\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate "
@@ -892,7 +904,7 @@ def test_a_false_check_is_recorded_and_the_test_goes_on_and_a_false_require_stop
 
 def test_a_poller_sample_lists_the_instances_of_its_label_and_keeps_each_join_token_once_as_a_secret(tmp_path):
     listing = [{"id": 1, "label": "ray-vast:rvtest-x-1a2b", "actual_status": "running", "extra_env": [["RAYVAST_JOIN_TOKEN", "jt-1"]]},
-               {"id": 2, "label": "ray-vast:rvtest-x-1a2b-old", "extra_env": {"RAYVAST_JOIN_TOKEN": "jt-2"}}]
+               {"id": 2, "label": "ray-vast:rvtest-x-1a2b-old", "extra_env": [["RAYVAST_JOIN_TOKEN", "jt-2"]]}]
 
     class Vast:
         def list_instances(self):

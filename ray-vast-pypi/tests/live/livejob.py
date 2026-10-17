@@ -138,16 +138,16 @@ def run(env, entrypoint, *, out_dir, name="job", working_dir=None, runtime_env=N
     if working_dir:
         command += ["--working-dir", str(working_dir)]
     env_file = None
-    if runtime_env:
-        fd, env_file = tempfile.mkstemp(prefix="rvjob-env-", suffix=".yaml")  # mode 600; JSON is YAML
-        with os.fdopen(fd, "w") as f:
-            json.dump(runtime_env, f)
-        command += ["--runtime-env", env_file]
-    command += ["--", *entrypoint]
-    job = Job(env, ray, sid, out_dir, name, prefix, secrets, time.time() + timeout)
-    submitted = f"ray job {shlex.join(command)}\n" + (f"runtime env: {json.dumps(runtime_env)}\n" if runtime_env else "")
-    (out_dir / f"{name}_submit.txt").write_text(job.redact(submitted))
-    try:
+    try:  # the env file holds secrets: it goes also when a write fails
+        if runtime_env:
+            fd, env_file = tempfile.mkstemp(prefix="rvjob-env-", suffix=".yaml")  # mode 600; JSON is YAML
+            with os.fdopen(fd, "w") as f:
+                json.dump(runtime_env, f)
+            command += ["--runtime-env", env_file]
+        command += ["--", *entrypoint]
+        job = Job(env, ray, sid, out_dir, name, prefix, secrets, time.time() + timeout)
+        submitted = f"ray job {shlex.join(command)}\n" + (f"runtime env: {json.dumps(runtime_env)}\n" if runtime_env else "")
+        (out_dir / f"{name}_submit.txt").write_text(job.redact(submitted))
         done = ray.submit(env, command)
     finally:
         if env_file:

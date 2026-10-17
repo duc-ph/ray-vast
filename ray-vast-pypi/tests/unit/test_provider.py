@@ -231,42 +231,34 @@ def test_a_candidate_that_enrolls_while_the_pass_ends_its_finished_request_keeps
         env.vast.run(iid, f"198.51.100.{iid}")
     p.reconcile_once()
     enroll(p, 101, slot_1)
-    enroll(p, 102, slot_2)  # request 2 has no free slot now; 103 and 104 are its candidates
-    end = p._end
-
-    def head_enrolls_103_first(cand, reason, *args, **kwargs):
-        if cand.instance_id == 103 and 103 not in p.state.enrolled:
-            enroll(p, 103, slot_3)  # the head server's request thread wins the race for the free slot of request 3
-        return end(cand, reason, *args, **kwargs)
-    p._end = head_enrolls_103_first
+    enroll(p, 104, slot_2)  # requests 1 and 2 have no free slot now: the pass ends 102, then 103
+    # The head server's request thread wins the race for the free slot of request 3 while the pass destroys 102.
+    env.vast.on_destroy = lambda iid: enroll(p, 103, slot_3)
     p.reconcile_once()
     assert 103 in instance_ids(env) and p.state.slots[slot_3].instance_id == 103
-    assert 104 not in instance_ids(env)
+    assert 102 not in instance_ids(env)
 
 
 @pytest.mark.parametrize("timeout", ["enrollment", "pull"])
 def test_a_candidate_that_enrolls_while_the_pass_ends_it_for_a_timeout_stays_and_its_host_is_not_blocked(env, timeout):
     """The pass decides a timeout under the lock and ends the candidate after it releases the lock. The head server can
     enroll the candidate in between. That worker must stay, and its host must not be blocked."""
-    env.vast.offers = [offer(1, 11)]
-    p = env.make(candidate_factor=1)
-    (slot_id,) = create(p)
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make()
+    (slot_id,) = create(p)  # candidates 101 and 102
     if timeout == "enrollment":
         env.vast.run(101, "198.51.100.55")
+        env.vast.run(102, "198.51.100.56")
         p.reconcile_once()
         env.clock.now += 61
     else:
         env.clock.now += 901
-    end = p._end
-
-    def head_enrolls_101_first(cand, reason, *args, **kwargs):
-        if cand.instance_id == 101 and 101 not in p.state.enrolled:
-            enroll(p, 101, slot_id)  # the head server's request thread enrolls between the decision and the end
-        return end(cand, reason, *args, **kwargs)
-    p._end = head_enrolls_101_first
+    env.vast.instances[101]["actual_status"] = "exited"  # the pass ends 101 first, then 102 for the timeout
+    # The head server's request thread enrolls 102 between the decision and the end, while the pass destroys 101.
+    env.vast.on_destroy = lambda iid: enroll(p, 102, slot_id)
     p.reconcile_once()
-    assert instance_ids(env) == [101] and p.state.slots[slot_id].instance_id == 101
-    assert not p.state.is_blocked(11, env.clock())
+    assert instance_ids(env) == [102] and p.state.slots[slot_id].instance_id == 102
+    assert not p.state.is_blocked(12, env.clock())
 
 
 def test_free_slot_stays_while_a_pending_candidate_of_its_type_remains(env):

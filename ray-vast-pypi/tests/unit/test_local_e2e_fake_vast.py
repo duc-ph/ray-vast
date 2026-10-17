@@ -16,6 +16,7 @@ def test_two_deletes_of_one_instance_at_the_same_time_give_one_destroy_and_one_4
         return subprocess.CompletedProcess(args, 0, "", "")
     monkeypatch.setattr(fake_vast_server.subprocess, "run", slow_docker)
     fake = FakeVast("192.0.2.7", [], "st11-test-", "127.0.0.1", "none")
+    fake.start()
     try:
         offer = {"id": 500, "machine_id": 900, "dph_total": 0.1}
         fake.instances[1003] = dict(key="instance-key", offer=offer, name="st11-test-w-1003", block=20000, label="ray-vast:c1")
@@ -28,5 +29,4 @@ def test_two_deletes_of_one_instance_at_the_same_time_give_one_destroy_and_one_4
             call.join()
         assert sorted(answers) == [200, 404] and [d[0] for d in fake.destroys] == [1003] and fake.live_ids() == []
     finally:
-        fake._server.server_close()
-        fake._tmp.cleanup()
+        fake.stop()

@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -164,13 +165,22 @@ def run_job(test_id, script, args, torch, timeout, out_dir, env=None, jobs=JOBS,
     if job_env:
         runtime_env["env_vars"] = job_env
     command = ["submit", "--submission-id", sid, "--working-dir", str(jobs), "--no-wait"]
-    if runtime_env:
-        command += ["--runtime-env-json", json.dumps(runtime_env)]
-    command += ["--", "python", script, *args]
-    (out_dir / f"{name}_submit.txt").write_text(f"ray job submit --address {ADDRESS} " + " ".join(command[1:]) + "\n")
-    shutil.copy(jobs / script, out_dir / script)
-    t0 = time.time()
-    code, out = ray_cli(*command, timeout=600)
+    env_file = None
+    try:  # the runtime env goes in a file of mode 600, never on a command line (as livejob.run does)
+        if runtime_env:
+            fd, env_file = tempfile.mkstemp(prefix="c10-env-", suffix=".yaml")  # JSON is YAML
+            with os.fdopen(fd, "w") as f:
+                json.dump(runtime_env, f)
+            command += ["--runtime-env", env_file]
+        command += ["--", "python", script, *args]
+        (out_dir / f"{name}_submit.txt").write_text(f"ray job submit --address {ADDRESS} " + " ".join(command[1:]) + "\n"
+                                                    + (f"runtime env: {json.dumps(runtime_env)}\n" if runtime_env else ""))
+        shutil.copy(jobs / script, out_dir / script)
+        t0 = time.time()
+        code, out = ray_cli(*command, timeout=600)
+    finally:
+        if env_file:
+            os.unlink(env_file)
     (out_dir / f"{name}_submit.out").write_text(out)
     if code != 0:
         return "SUBMIT_FAILED", out, sid

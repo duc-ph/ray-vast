@@ -29,16 +29,16 @@ HERE = Path(__file__).parent
 # The named hosts (the S6 survey, archive/results/2026-10-17/survey/machines.csv) and the query to use when none of them is
 # rentable. vast sets pids.max = 256 x the CPU quota in whole cores, so a worker has 58 worker ports (B = 54) from 17
 # effective cores up. H1 and H2 are the hosts where the process settings are needed: the h1 and h2 types declare CPU 64,
-# so Ray has 64 CPUs, more than B (decisions.md 2026-10-17, "on hosts with 64 or more effective cores"). The provider adds the filter
-# cpu_cores_effective >= 64. H1: any pids limit (m148655 61.44 cores, 15616, v1; m45547 v1; m151137 v1). H2: cgroup v2
+# so Ray has 64 CPUs, more than B (decisions.md 2026-10-17, "on hosts with 64 or more effective cores"). The provider adds
+# cpu_cores_effective >= 64 to the offer query. The probe checks the container's cores: at least 0.9 x 64, as the head does. H1: any pids limit (m148655 61.44 cores, 15616, v1; m45547 v1; m151137 v1). H2: cgroup v2
 # (m149678 v2; m153955, m154115, m154116 A40 v2, verified, not datacenter). H4: many visible CPUs for each quota core, the
 # thread measurement: the h4 type declares CPU 16, and the query asks for 128 or more host cores and at most 32 effective
 # cores, so 4 or more visible CPUs for each core (m45592 128 CPUs at 15.36 cores, v2; m43571, m45777, m45775; m153046).
 PINS = {
     "h1": {"named": [148655, 45547, 151137], "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}},
-           "want": {"cpus": {"gte": 64}, "limited": True}},
+           "want": {"cores": {"gte": 0.9 * 64}, "limited": True}},
     "h2": {"named": [149678, 153955, 154115, 154116], "fallback": {"verified": {"eq": True}},
-           "want": {"cgroup": "v2", "cpus": {"gte": 64}}},
+           "want": {"cgroup": "v2", "cores": {"gte": 0.9 * 64}}},
     "h4": {"named": [45592, 43571, 45777, 45775, 153046],
            "fallback": {"verified": {"eq": True}, "datacenter": {"eq": True}, "cpu_cores": {"gte": 128}, "cpu_cores_effective": {"gte": 16, "lte": 32}},
            "want": {"visible_per_quota": {"gte": 4}, "limited": True}},
@@ -56,7 +56,7 @@ HOST_RENTALS_MAX = 3
 
 
 def find_host(want, rent, end):
-    """Rent a host until its probe matches `want` (for example {"cpus": {"gte": 64}, "cgroup": "v1"}: a value is the exact
+    """Rent a host until its probe matches `want` (for example {"cores": {"gte": 57.6}, "cgroup": "v1"}: a value is the exact
     value of that fact, or {"gte": n} for a number of at least n).
     `rent(blocked)` rents one host, never on a blocked machine, and returns its probe (with `machine_id`). `end(probe)`
     ends a host that does not match. vast can give the same machine again, so each tried machine is blocked.
@@ -95,7 +95,8 @@ def host_facts(probe, machine_id):
     the cgroup version, the Ray CPUs, whether the container has a process limit, the CPU quota in cores (cgroup v2
     `cpu.max`, or v1 `cpu.cfs_quota_us` / `cpu.cfs_period_us`; None for no quota), the visible CPUs (the smaller of
     `os.cpu_count()` and the affinity: the thread pools of Arrow, torch and gRPC size themselves by these) and the visible
-    CPUs per quota core (2 decimals)."""
+    CPUs per quota core (2 decimals), and the cores: the smaller of the visible CPUs and the quota, as the head counts them
+    for its 90% CPU rule."""
     value = probe.get("pids.max")
     pids_max = int(value) if value and value.isdigit() else None
     raw = probe.get("cpu_quota") or {}
@@ -108,7 +109,8 @@ def host_facts(probe, machine_id):
     visible = min(counts) if counts else None
     return {"machine_id": machine_id, "pids_max": pids_max, "cgroup": probe.get("cgroup"), "cpus": int(probe["ray_cpus"]),
             "limited": pids_max is not None, "quota": quota, "visible_cpus": visible,
-            "visible_per_quota": round(visible / quota, 2) if visible and quota else None}
+            "visible_per_quota": round(visible / quota, 2) if visible and quota else None,
+            "cores": min(visible, quota) if visible and quota else visible}
 
 
 def expected_limits(probe):

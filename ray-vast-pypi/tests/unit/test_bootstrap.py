@@ -174,6 +174,9 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     (48, None, 58, 29), (4, None, 58, 4), (48, 3328, 48, 24),
     (48, 1280, 14, 7), (4, 1280, 14, 4), (48, 1299, 14, 7), (48, 1300, 15, 7),
     (48, 900, 8, 4), (48, 500, 4, 2), (48, 100, 4, 2),
+    # A node type with CPU 0: Ray's own soft limit for `--num-cpus=0` is 0 too (the default is the CPU count). Checked
+    # on Ray 2.59: tasks and actors with num_cpus=0 run the same with RAY_num_workers_soft_limit=0 and without it.
+    (0, None, 58, 0),
 ])
 def test_worker_ports_fit_the_pids_limit_and_the_soft_limit_leaves_free_ports(cpus, pids_max, ports, soft_limit):
     assert bootstrap.worker_ports_and_soft_limit(cpus, pids_max, 64) == (ports, soft_limit)

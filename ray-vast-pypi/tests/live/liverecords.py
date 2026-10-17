@@ -106,8 +106,8 @@ def spend_tables(root):
     root, text = Path(root), ""
     groups = []
     for path in sorted((root / "_session").glob("*/spend.json")):
-        s = json.loads(path.read_text())  # before 2026-10-17: `spend` (credit change); since: `vast_estimate` (timeline)
-        groups.append(f"| {s['group']} | {s['cluster']} | ${s.get('vast_estimate', s.get('spend', 0)):.4f} | {s['hours']} h | "
+        s = json.loads(path.read_text())
+        groups.append(f"| {s['group']} | {s['cluster']} | ${s['vast_estimate']:.4f} | {s['hours']} h | "
                       f"${s['ec2_estimate']:.2f} |")
     if groups:
         text += ("\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an "

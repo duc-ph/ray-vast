@@ -256,17 +256,17 @@ class VastNodeProvider(NodeProvider):
 
     # ---- ending instances ----
 
-    def _end(self, cand, reason, block_kind=None, candidate_only=False):
+    def _end(self, cand, reason, block_kind=None, unless_enrolled=False):
         """End a candidate or worker: block its host when `block_kind` is given, drop it and the slot that it fills
         from state, lower the IP ref count, destroy the instance, and remove the SG rule at 0. The one ending path for
         the provider and the head server (rule 9). The block happens on every call (a check can fail after another
         path ended the candidate); the rest only for the first caller for an instance. It never raises for a failed
         destroy or a failed rule removal: its callers are the reconcile pass and the head server's request threads.
-        A free slot stays; the reconcile pass removes it and counts it for the rent-loop breaker. `candidate_only`: the
+        A free slot stays; the reconcile pass removes it and counts it for the rent-loop breaker. `unless_enrolled`: the
         caller decided on a candidate that was not enrolled; one that the head server enrolled since then stays."""
         instance_id = cand.instance_id
         with self.state.lock:
-            if candidate_only and instance_id in self.state.enrolled:
+            if unless_enrolled and instance_id in self.state.enrolled:
                 return
             if block_kind:
                 self.state.block(cand.machine_id, reason, block_kind, self._clock())
@@ -321,8 +321,7 @@ class VastNodeProvider(NodeProvider):
         by_id = {i["id"]: i for i in instances if i.get("label") == self._label}
         ended_ids = set()
 
-        # 1. Judge each candidate and worker against what vast says. `candidate_only`: the reason holds only for a
-        # candidate that is not enrolled; the head server can enroll it after the lock is released, and then it stays.
+        # 1. Judge each candidate and worker against what vast says. Each end is the keyword arguments of its `_end`.
         to_end, newly_running = [], []
         with self.state.lock:
             for cand in list(self.state.candidates.values()):
@@ -332,20 +331,20 @@ class VastNodeProvider(NodeProvider):
                 vast_ip = instance.get("public_ipaddr") if instance else None
                 if instance is not None:
                     cand.last_seen_at = now
-                reason, block, candidate_only = None, None, False
+                end = None
                 if instance is None:
                     # One listing can miss an instance (a partial answer, a label edited in the console). So the grace
                     # counts from the last listing that had it, not from the rental.
                     if now - (cand.last_seen_at or cand.rented_at) > MISSING_GRACE_S:
-                        reason = "instance is gone from vast"
+                        end = {"reason": "instance is gone from vast"}
                 elif status in FAILED_STATUSES or str(instance.get("status_msg") or "").lower().startswith("error"):
-                    reason, block = f"instance status {status!r}: {str(instance.get('status_msg'))[:100]}", \
-                        (None if enrolled else "network")
+                    end = {"reason": f"instance status {status!r}: {str(instance.get('status_msg'))[:100]}",
+                           "block_kind": None if enrolled else "network"}
                 elif cand.public_ip and vast_ip and vast_ip != cand.public_ip:
-                    reason = "public IP changed"
+                    end = {"reason": "public IP changed"}
                 elif enrolled:
                     if now - (cand.last_heartbeat or cand.running_at or cand.rented_at) > HEARTBEAT_TIMEOUT_S:
-                        reason = "no heartbeat for 5 min"
+                        end = {"reason": "no heartbeat for 5 min"}
                 elif status == "running" and vast_ip and cand.running_at is None:
                     # first time running: record the IP (never refreshed) and its ref count
                     cand.public_ip, cand.running_at = vast_ip, now
@@ -353,14 +352,16 @@ class VastNodeProvider(NodeProvider):
                     newly_running.append(cand)
                 elif cand.running_at is not None:
                     if now - cand.running_at > ENROLL_TIMEOUT_S:
-                        reason, block, candidate_only = f"not enrolled {ENROLL_TIMEOUT_S} s after running", "timeout", True
+                        end = {"reason": f"not enrolled {ENROLL_TIMEOUT_S} s after running", "block_kind": "timeout",
+                               "unless_enrolled": True}
                 elif now - cand.rented_at > cand.pull_limit_s:
-                    reason, block, candidate_only = f"not running with an IP after {cand.pull_limit_s:.0f} s", "timeout", True
+                    end = {"reason": f"not running with an IP after {cand.pull_limit_s:.0f} s", "block_kind": "timeout",
+                           "unless_enrolled": True}
                 if status not in PENDING_STATUSES | FAILED_STATUSES and status not in self._seen_statuses:
                     self._seen_statuses.add(status)
                     log.warning("reconcile: unknown vast actual_status %r (treated as pending)", status)
-                if reason:
-                    to_end.append((cand, reason, block, candidate_only))
+                if end:
+                    to_end.append((cand, end))
 
         # 2. A rule for each new candidate IP. A full security group ends the candidate.
         for cand in newly_running:
@@ -373,11 +374,11 @@ class VastNodeProvider(NodeProvider):
                     if in_use:
                         self._sg.allow_ip(cand.public_ip)
             except SgQuotaError as e:
-                to_end.append((cand, str(e), None, False))
+                to_end.append((cand, {"reason": str(e)}))
             except botocore.exceptions.ClientError as e:
                 log.error("SG rule for %s failed (the candidate will time out): %s", cand.public_ip, e)
-        for cand, reason, block, candidate_only in to_end:
-            self._end(cand, reason, block, candidate_only)
+        for cand, end in to_end:
+            self._end(cand, **end)
             ended_ids.add(cand.instance_id)
 
         # 3. Candidates of a finished request; instances that are not ours to keep (orphan sweep).
@@ -390,7 +391,7 @@ class VastNodeProvider(NodeProvider):
             if not self._creating:  # a create call may hold an instance that is not recorded yet
                 keep = set(self.state.candidates) | ended_ids
         for cand in request_ends:
-            self._end(cand, "its request has no free slot left", candidate_only=True)
+            self._end(cand, "its request has no free slot left", unless_enrolled=True)
         if keep is not None:
             sweep(self._vast, instances, self.cluster_name, keep)
         with self._sg_lock:

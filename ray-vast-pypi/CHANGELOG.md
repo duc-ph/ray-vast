@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Breaking: ray-vast no longer adds `verified = true` and `datacenter = true` to the offer query. The provider field `allow_non_datacenter` is removed: `up` stops with an error that says what to do. `down`, `attach` and `dashboard` accept it. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type (highly recommended). The example YAMLs have them. Read [Keep the verified and datacenter filters](https://duc-ph.github.io/ray-vast/how-to/node-types/#keep-the-verified-and-datacenter-filters).
+- Breaking: ray-vast no longer adds `verified = true` and `datacenter = true` to the offer query. The provider field `allow_non_datacenter` is removed: `up` stops with an error that says what to do. `down`, `attach` and `dashboard` accept it. Add `verified: {eq: true}` and `datacenter: {eq: true}` to the `offer_query` of each node type (highly recommended). The example YAMLs have them. Read [Keep verified and datacenter in the offer query](https://duc-ph.github.io/ray-vast/how-to/node-types/#keep-verified-and-datacenter-in-the-offer-query).
 - The added core filter is `cpu_cores_effective >= max(CPU, 4)`. A host with fewer cores has a process limit below 640, and its 4 worker ports had no room for threads.
 - The added port filter is `direct_port_count >= 10`, not 64. Each rental asks for the smaller of 64 and the offer's `direct_port_count` identity ports. The worker gets the mapped identity ports minus 6 as worker ports, or fewer with a process limit. Before, the filter left out about 20 % of the verified machines.
     - Protocol: the `/enroll` body has 10 to 64 identity ports, from 70000 up.

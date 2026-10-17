@@ -50,11 +50,21 @@ SMALL = {"cpus": 6, "quota": "6.72", "pids_limit": 1536}
 
 
 def job(script, *args, env=None, timeout=900):
-    """`ray job submit --working-dir` of a C10 job in the head container (the jobs reach the worker as on vast). Returns the log."""
-    runtime_env = ["--runtime-env-json", json.dumps({"env_vars": env})] if env else []
-    result = subprocess.run(["docker", "exec", HEAD, "ray", "job", "submit", "--address", "http://127.0.0.1:8265",
-                             "--working-dir", "/tmp/c10jobs", *runtime_env, "--", "python", script, *args],
-                            capture_output=True, text=True, timeout=timeout)
+    """`ray job submit --working-dir` of a C10 job in the head container (the jobs reach the worker as on vast). Returns the log.
+    The runtime env goes in a file of mode 600 in the head container, never on a command line (as livejob.run does)."""
+    env_file = "/tmp/c10-runtime-env.yaml"  # JSON is YAML; one job at a time in the head container
+    runtime_env = []
+    if env:
+        subprocess.run(["docker", "exec", "-i", HEAD, "sh", "-c", f"umask 077 && cat > {env_file}"],
+                       input=json.dumps({"env_vars": env}), text=True, check=True, timeout=60)
+        runtime_env = ["--runtime-env", env_file]
+    try:
+        result = subprocess.run(["docker", "exec", HEAD, "ray", "job", "submit", "--address", "http://127.0.0.1:8265",
+                                 "--working-dir", "/tmp/c10jobs", *runtime_env, "--", "python", script, *args],
+                                capture_output=True, text=True, timeout=timeout)
+    finally:
+        if env:
+            subprocess.run(["docker", "exec", HEAD, "rm", "-f", env_file], capture_output=True, timeout=60)
     return result.stdout + result.stderr
 
 

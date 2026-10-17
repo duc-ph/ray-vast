@@ -34,10 +34,32 @@ ray-vast keeps each worker below its limit:
 - Each Ray process gets small gRPC thread pools (`RAY_num_grpc_internal_threads=4`). Then a Ray task or actor process has 25 to 29 threads, not about 50, and a Serve replica with a FastAPI ingress has 50. We measured these numbers with `RAY_num_grpc_internal_threads=4` on a simulated 48-core host (2026-10-16).
 - The raylet starts at most 8 worker processes at the same time (`RAY_worker_maximum_startup_concurrency=8`).
 - The worker gives Ray fewer worker ports: `(pids.max - 400) // 60`, at least 4, and at most the identity ports minus 6 (at most 58). With 1280, that is 14 ports. With 3328, it is 48. The value 60 is for the heaviest common worker process (a Serve replica) plus 10 of your threads.
-- The library pages use B = worker ports − 4: the number of worker processes that your work can use on one worker. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
+- The library pages use B = worker ports − 4. Read [B](#b).
 - The process limit does not change the Ray CPUs. Ray gets the `CPU` of the node type. Read [CPU and GPU](../how-to/node-types.md#cpu-and-gpu).
 
-The worker ports and B for each host size (a host with 64 or more direct ports):
+Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
+Read [The process rules](#the-process-rules) to find out if your work needs the process settings.
+The symptom of too much work is a queue, not a crash:
+
+- Tasks wait for a free port. A job takes longer.
+- An actor that waits for a port hangs, or fails with an error that does not name the port limit. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
+- A job that needs more processes at the same time than the ports allow can hang. For example, a Ray Data `groupby` needs its map tasks and its aggregator actors at the same time.
+
+Your own threads count too. Read [Rule 2](#rule-2-threads-and-child-processes).
+
+The head log warns when a worker is at its limit. Read [A worker is at its process limit](../how-to/troubleshoot.md#a-worker-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
+
+## The process rules
+
+This section has the two rules that tell you if you need the process settings of the library pages.
+
+### B
+
+B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
+
+CPUS is the number of Ray CPUs of one worker. It is the `CPU` of the node type in your cluster YAML.
+
+B depends on the host. The table is for a host with 64 or more direct ports:
 
 | `cpu_cores_effective` of the host | CPU quota (cores) | `pids.max` | Worker ports | B |
 |---|---|---|---|---|
@@ -50,21 +72,53 @@ The worker ports and B for each host size (a host with 64 or more direct ports):
 | 16 | 15.36 | 3840 | 57 | 53 |
 | 17 or more | 16.32 or more | 4096 or more | 58 | 54 |
 
-A host with fewer direct ports gives at most the direct ports minus 6 worker ports.
+The provider adds `cpu_cores_effective >= max(CPU, 4)` to the offer query of each node type. So on a host with 64 or more direct ports, a node type with `CPU` from 5 to 54 gets a B of at least `CPU`.
+A node type with `CPU` 3 or 4 can get a host with 4 effective cores. That host has B = 2.
+A node type with `CPU` above 54 always has more CPUs than B.
+A host with fewer direct ports gives fewer worker ports: at most the direct ports minus 6. For example, 20 direct ports give at most 14 worker ports. Then B = 10.
 
-Each Ray worker process needs a port, so at most that many tasks and actors run on the worker at the same time.
-With Ray's defaults, Ray starts about one worker process for each CPU. So the defaults fit when the node type's `CPU` is at most B. The library pages call this rule 1. They give their process settings for the other cases.
-The symptom of too much work is a queue, not a crash:
+Read the real value in the start line of the worker. The start line is in the vast console (the instance log), or in the output of `vastai logs <instance id>`:
 
-- Tasks wait for a free port. A job takes longer.
-- An actor that waits for a port hangs, or fails with an error that does not name the port limit. Read [58 worker ports for each worker](#58-worker-ports-for-each-worker).
-- A job that needs more processes at the same time than the ports allow can hang. For example, a Ray Data `groupby` needs its map tasks and its aggregator actors at the same time.
+```text
+bootstrap: limits: pids.max 1536 (cgroup v2), cpus 6, worker ports 18, soft limit 6, grpc threads 4, startup concurrency 8
+```
 
-Your own threads count too. Each worker process has room for about 10 of your threads. A task that starts many threads (for example, PyTorch with many intra-op threads, or a `DataLoader` with many workers) can pass the limit. Free worker ports do not help: in a local test (2026-10-17), 6 tasks with 200 threads each reached the limit of 1536 with 13 Ray worker processes for 18 worker ports.
-Thread pools often size themselves by the CPUs that the container sees. A vast container often sees all the CPUs of the host (for example 384), not its CPU quota (for example 46 cores). The threads of each library's processes on such a host, and the fixes: _measured in LB15 (not run yet)_.
-The library pages call this rule 2: keep each process under about 60 threads, and keep its child processes few and small.
+Here B = 18 − 4 = 14. The value `cpus 6` is less than B. So this worker needs no settings for the defaults.
 
-The head log warns when a worker is at its limit. Read [A worker is at its process limit](../how-to/troubleshoot.md#a-worker-is-at-its-process-limit). That section also lists the Ray settings that use fewer processes.
+### Rule 1: processes
+
+With Ray's defaults, Ray starts about one worker process for each CPU.
+You need the process settings only if your node type has more CPUs than B, or if you start many tasks or actors with `num_cpus` below 1.
+An actor with the default `num_cpus` needs 1 CPU to start, but it holds 0 CPUs while it runs. So many actors also count.
+Each library page lists the settings of that library that also start many processes.
+
+### Rule 2: threads and child processes
+
+The process limit counts threads and child processes too. ray-vast sizes the worker ports for about 60 threads in each worker process.
+Keep each process under about 60 threads, and keep its child processes few and small.
+
+- Your own thread pools count, for example `concurrent.futures.ThreadPoolExecutor`. Give them a fixed `max_workers`. The default of Python is the number of CPUs that the container sees, plus 4.
+- Each worker process has room for about 10 of your threads. A task that starts many threads can pass the limit. Examples are PyTorch with many intra-op threads, or a `DataLoader` with many workers.
+- Thread pools often size themselves by the CPUs that the container sees. A vast container often sees all the CPUs of the host (for example 384), not its CPU quota (for example 46 cores).
+- The threads of each library's processes on such a host: _measured in LB15 (not run yet)_.
+- The fixes and their effect: _measured in LB15 (not run yet)_. LB15 tests `OMP_NUM_THREADS` in `env_vars`, `pyarrow.set_cpu_count()` and `torch.set_num_threads()`.
+
+Each library page lists the threads and child processes of that library.
+
+### Tests of the rules
+
+We tested the two rules on a local worker with the real ray-vast head and worker bootstrap (2026-10-17). The worker had 6 Ray CPUs, `pids.max` 1536 and 18 worker ports.
+
+Rule 1 (scenario F21): the default code of each library completed. The head wrote no process-limit warning, and the container refused no thread. The default code of each library was:
+
+- Ray Core: 6 actors with the default options. Each actor waits for a task with the default `num_cpus`.
+- Ray Data: `range`, `map_batches` with the default `num_cpus`, and `groupby`.
+- Ray Train: a `TorchTrainer` with 6 workers of 1 CPU each.
+- Ray Tune: 22 trials with the default of 1 CPU each. 6 trials ran at the same time.
+- Ray Serve: 6 replicas with the default `num_cpus` of 1.
+- RLlib: PPO with 6 env runners of 1 CPU each.
+
+Rule 2 (scenario F22): 6 tasks (one for each CPU) started 200 threads each. The worker had only 13 Ray worker processes for its 18 worker ports. Free worker ports did not help. The container reached its limit of 1536 in two runs. In the two runs, 5 and 6 of the 6 tasks got `RuntimeError: can't start new thread`. The container refused 47 and 48 thread starts. The worker stayed alive in this test. But at the limit the raylet can stop, and then the worker ends.
 
 ## No multi-node Ray Train
 

@@ -34,52 +34,21 @@ Packages, credentials and GPUs: read [Ray Jobs](jobs.md).
 
 ## Do you need the process settings?
 
-ray-vast gives each worker a fixed number of worker ports. Each Ray worker process (a task, an actor, a replica, a trial, a Train worker or an env runner) needs one port. The process limit of the host (`pids.max`) sets the number of ports. Read [Limits](../reference/limits.md#the-process-limit-of-vast-hosts).
-
-B is the number of worker processes that your work can use on one worker. B = worker ports − 4. The 4 ports stay free for the processes that Ray's libraries start next to your work (the Serve proxy, the Data and Train helpers).
+Read [The process rules](../reference/limits.md#the-process-rules) first. That section defines B and CPUS, gives B for each host size, and gives rule 1 and rule 2. B is the number of worker processes that your work can use on one worker. B = worker ports − 4.
 
 ### Rule 1: processes
 
-With Ray's defaults, Ray starts about one worker process for each CPU. You need the [settings](#settings) below only in these cases:
+Rule 1 is in [Limits](../reference/limits.md#rule-1-processes). For Ray Core, you also need the [settings](#settings) in these cases:
 
-- Your node type has more CPUs (`CPU`) than B.
-- You start many actors. An actor with the default `num_cpus` needs 1 CPU to start, but it holds 0 CPUs while it runs. So Ray does not limit the number of such actors on a worker.
-
-B depends on the host. vast gives a container a CPU quota of 0.96 × `cpu_cores_effective`, and a process limit of 256 for each whole core of that quota. The table is for a host with 64 or more direct ports:
-
-| `cpu_cores_effective` of the host | Worker ports | B |
-|---|---|---|
-| 4 | 6 | 2 |
-| 5 to 7 | 10 to 18 | 6 to 14 |
-| 8 to 16 | 23 to 57 | 19 to 53 |
-| 17 or more | 58 (the maximum) | 54 |
-
-The offer filter is `cpu_cores_effective >= max(CPU, 4)`. So on a host with 64 or more direct ports, a node type with `CPU` from 5 to 54 gets a B of at least `CPU`. A node type with `CPU` 3 or 4 can get a 4-core host with B = 2. A node type with `CPU` above 54 always has more CPUs than B.
-A host with fewer direct ports gives fewer worker ports: at most the direct ports minus 6. For example, 20 direct ports give at most 14 worker ports (B = 10).
-
-Read the real value in the start line of the worker (in the vast console, or `vastai logs <instance id>`):
-
-```text
-bootstrap: limits: pids.max 1536 (cgroup v2), cpus 6, worker ports 18, soft limit 6, grpc threads 4, startup concurrency 8
-```
-
-Here B = 18 − 4 = 14, and `cpus 6` is less than B. So this worker needs no settings for the defaults.
-
-We tested rule 1 on a local worker with the real ray-vast head and worker bootstrap: 6 Ray CPUs, `pids.max` 1536 and 18 worker ports (2026-10-17, scenario F21). The default code (6 actors with the default options, each of which waits for a task with the default `num_cpus`) completed. The head wrote no process-limit warning, and the container refused no thread.
+- You start many tasks or actors with `num_cpus` below 1.
+- You start many actors with the default `num_cpus`. Such an actor needs 1 CPU to start, but it holds 0 CPUs while it runs. So Ray does not limit the number of such actors on a worker.
 
 ### Rule 2: threads and child processes
 
-The process limit counts threads and child processes too. ray-vast sizes the worker ports for about 60 threads in each worker process. Keep each process under about 60 threads, and keep its child processes few and small. Look at these:
+Rule 2 is in [Limits](../reference/limits.md#rule-2-threads-and-child-processes). For Ray Core, look at these:
 
 - Your own thread pools, for example `concurrent.futures.ThreadPoolExecutor`. Give them a fixed `max_workers`. The default of Python is the number of CPUs that the container sees, plus 4.
-- The libraries that your tasks import. NumPy, PyTorch and pyarrow start thread pools. Read the measured numbers below.
-
-Thread pools often size themselves by the CPUs that the container sees. A vast container often sees all the CPUs of the host (for example 384), not its CPU quota (for example 46 cores).
-
-- The threads of each library's processes on such a host: _measured in LB15 (not run yet)_.
-- The fixes and their effect: _measured in LB15 (not run yet)_. LB15 tests `OMP_NUM_THREADS` in `env_vars`, `pyarrow.set_cpu_count()` and `torch.set_num_threads()`.
-
-We tested rule 2 on the worker of rule 1 (2026-10-17, scenario F22). 6 tasks (one for each CPU) started 200 threads each. The worker had only 13 Ray worker processes for its 18 worker ports. The container reached its limit of 1536 in two runs: 5 and 6 of the 6 tasks got `RuntimeError: can't start new thread`, and the container refused 47 and 48 thread starts. The worker stayed alive in this test, but at the limit the raylet can stop, and then the worker ends.
+- The libraries that your tasks import. NumPy, PyTorch and pyarrow start thread pools. Limits has the measured numbers.
 
 ## Settings
 
@@ -112,7 +81,7 @@ pool = [Runner.remote() for _ in range(5)]   # B // 2, because each call also ne
 | `num_cpus` of each actor | 2.4 | CPUS / B |
 | Actors that wait for a task | 5 | B // 2 |
 
-You can also get CPUS in your driver (it needs at least one worker; the head has `CPU: 0`):
+You can also get CPUS in your driver. This needs at least one worker, because the head has `CPU: 0`:
 
 ```python
 CPUS = max(n["Resources"]["CPU"] for n in ray.nodes()

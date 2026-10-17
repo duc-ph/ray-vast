@@ -28,7 +28,7 @@ The head container logs in the local time zone of the head.
 ## A worker never arrives
 
 1. **Check the demand.** Run `sudo docker exec ray-vast-head ray status` on the head. Look at "Pending" and "Recent failures".
-2. **Check the offers.** A narrow query can match no offer. The `verified` and `datacenter` filters remove many offers. In `monitor.log`, look for `no rentable offer matches the node type query`. Make the query wider.
+2. **Check the offers.** A narrow offer query can match no offer. `verified` and `datacenter` in the offer query remove many offers. In `monitor.log`, look for `no rentable offer matches the node type query`. Make the query wider.
 3. **Check the budget.** Look for `every matching offer would pass max_dollars_per_hour`. Raise the budget or choose cheaper GPUs.
 4. **Check the enrollment.** Look for `enroll refused` and `ending instance`. A host can fail a host check (egress IP, capabilities, own network namespace, `/dev/shm`, the identity ports, the CPU or GPU count). The provider puts the host on the blocklist for this cluster and rents another one.
 5. **Check the pull time.** A big image on a slow host can pass the pull limit. Add `inet_down: {gte: 500}` to the query. Read [Use GPU images](gpu-images.md).
@@ -56,7 +56,7 @@ The host gave the container fewer cores, or another number of GPUs, than its off
 The cores are the smaller of the CPU affinity and the CPU quota of the container. vast usually gives 0.96 × the offer's effective cores.
 The provider destroys the instance, blocks the host for 30 days, and rents another one. You do not have to do anything.
 
-If many hosts are refused for their CPU, vast gives less CPU than before. Then lower `CPU`, or add a stricter filter to the query, for example `cpu_cores_effective: {gte: <CPU + 2>}`. Read [CPU and GPU](node-types.md#cpu-and-gpu).
+If many hosts are refused for their CPU, vast gives less CPU than before. Then lower `CPU`, or set a stricter `cpu_cores_effective` in the offer query, for example `cpu_cores_effective: {gte: <CPU + 2>}`. Read [CPU and GPU](node-types.md#cpu-and-gpu).
 
 ## Jobs wait
 
@@ -103,7 +103,7 @@ bootstrap: limits: pids.max 1280 (cgroup v1), cpus 5, worker ports 14, soft limi
 - **Refused forks or high pids:** your tasks start many threads, or too many processes run. Use the settings below.
 - **A job hangs with all ports in use:** the job needs more processes at the same time than the worker has ports. Use the settings below.
 
-Each library page gives two rules. Rule 1 (processes): you need the process settings only when your node type has more CPUs than B (worker ports − 4), or when you start many processes with `num_cpus` below 1. Rule 2 (threads): keep each process under about 60 threads. The pages also give the settings that use fewer worker processes:
+[The process rules](../reference/limits.md#the-process-rules) tell you if your work needs the process settings. The library pages give the settings that use fewer worker processes:
 
 | Library | Settings |
 |---|---|

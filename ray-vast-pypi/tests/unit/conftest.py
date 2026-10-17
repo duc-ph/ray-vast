@@ -17,6 +17,7 @@ class FakeVast:
         self.fail_list = self.fail_destroy = False
         self.next_id, self.requests = 100, []
         self.on_create = None  # one-shot hook that runs inside the next create_instance call, before the rental
+        self.on_destroy = None  # one-shot hook that runs inside the next destroy_instance call, with the instance id
         self.state = None  # set by the env fixture: every call checks that the provider lock is not held
 
     def _call(self, name):
@@ -50,6 +51,9 @@ class FakeVast:
 
     def destroy_instance(self, instance_id):
         self._call("destroy_instance")
+        hook, self.on_destroy = self.on_destroy, None
+        if hook:
+            hook(instance_id)
         if self.fail_destroy:
             raise VastError("DELETE: HTTP 500")
         self.instances.pop(instance_id, None)

@@ -28,9 +28,8 @@ class Poller:
         try:
             found = self.instances()
             for i in found:
-                env = i.get("extra_env") or []
-                pairs = env.items() if isinstance(env, dict) else [p for p in env if isinstance(p, (list, tuple)) and len(p) == 2]
-                token = next((v for k, v in pairs if k == "RAYVAST_JOIN_TOKEN"), None)
+                # vast gives extra_env as [name, value] pairs
+                token = next((v for k, v in i.get("extra_env") or [] if k == "RAYVAST_JOIN_TOKEN"), None)
                 if token and token not in self.secrets:
                     self.secrets.append(token)
             row["instances"] = [{k: i.get(k) for k in FIELDS} for i in found]

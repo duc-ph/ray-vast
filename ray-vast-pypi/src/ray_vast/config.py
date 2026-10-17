@@ -3,8 +3,8 @@ import copy
 QUERY_OPS = {"eq", "neq", "gt", "gte", "lt", "lte", "in", "notin"}
 MB_FIELDS = ("gpu_ram", "cpu_ram", "gpu_total_ram")
 WORKER_PORTS = 58  # at most: the identity ports 70006-70063
-# The added filter floors (design section 9). An offer needs the 6 fixed identity ports plus the bootstrap's minimum of 4
-# worker ports. Below about 3 effective cores, pids.max is below 640 (S6): 4 worker ports with no thread room.
+# The floors that the provider adds to each offer query (design section 9). An offer needs the 6 fixed identity ports plus the bootstrap's minimum of 4
+# worker ports. Below 4 effective cores, pids.max is below 640 (S6): 4 worker ports with no thread room.
 MIN_DIRECT_PORTS = 10
 MIN_CORES = 4
 # Ray's validate_config() needs these; ray-vast does not use them (no node updaters).

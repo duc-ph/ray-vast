@@ -51,7 +51,7 @@ A YAML with one of these `provider` fields gets an error. The error tells what t
 | `cert_max_age_days` | Removed. The CA and the certificates always live 365 days. |
 | `image_size_gb` | Removed. `up` measures the image. |
 | `order_by` | Removed. The provider always rents the cheapest offers first (`dph_total`). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
-| `allow_non_datacenter` | Removed. ray-vast adds no `datacenter` filter. Set `datacenter: {eq: true}` and `verified: {eq: true}` in the `offer_query` of each node type (highly recommended). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
+| `allow_non_datacenter` | Removed. ray-vast adds no `datacenter` field to the offer query. Set `datacenter: {eq: true}` and `verified: {eq: true}` in the `offer_query` of each node type (highly recommended). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
 
 ## `available_node_types`: the head
 
@@ -99,16 +99,16 @@ Checks:
 - `gpu_ram`, `cpu_ram` and `gpu_total_ram` are in MB. Their values must be numbers of 1000 or more ("the unit is MB").
 - A range that can never match, for example `{gte: 10, lte: 5}`, is an error.
 
-ray-vast adds these filters:
+ray-vast adds these fields to each offer query:
 
-| Field | Filter | Your own filter on this field |
+| Field | Added value | Your own value for this field |
 |---|---|---|
 | `num_gpus` | `eq: <GPU>` | Must be the same (`eq` or `in` with the one value `GPU`). |
 | `cpu_cores_effective` | `gte: <the larger of CPU and 4>` | Allowed when it is at least as strict. |
 | `direct_port_count` | `gte: 10` (the 6 fixed identity ports and at least 4 worker ports) | Allowed when it is at least as strict. |
 | `rentable` | `eq: true` | Must be the same. |
 
-ray-vast does not add `verified` or `datacenter`. We highly recommend `verified: {eq: true}` and `datacenter: {eq: true}` in every query. Read [Keep the verified and datacenter filters](../how-to/node-types.md#keep-the-verified-and-datacenter-filters).
+ray-vast does not add `verified` or `datacenter`. We highly recommend `verified: {eq: true}` and `datacenter: {eq: true}` in every query. Read [Keep verified and datacenter in the offer query](../how-to/node-types.md#keep-verified-and-datacenter-in-the-offer-query).
 
 The search also sends `type: on-demand` and `limit: 100`.
 

@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "live"))  # the live suite imports its modules by their own names
 import livejob  # noqa: E402
 
@@ -110,6 +112,18 @@ def test_the_secrets_go_to_the_job_but_into_no_file_log_result_or_command_line(t
     assert "<redacted>" in submitted and "s3://b/out" in submitted
     assert secret not in job.log and job.data == {"error": "denied for <redacted>"}
     assert secret not in job.stop().stdout + job.logs()
+
+
+def test_a_runtime_env_that_cannot_be_written_leaves_no_file_with_its_secrets(tmp_path, monkeypatch):
+    """A runtime env with a value that JSON cannot hold fails the run, and its half-written file of mode 600 is gone."""
+    monkeypatch.setattr(livejob.tempfile, "tempdir", str(tmp_path))
+    runtime_env = {"env_vars": {"AWS_SECRET_ACCESS_KEY": "wJalrXUtnFEMI/K7MDENG", "BAD": object()}}
+
+    with pytest.raises(TypeError):
+        livejob.run(ENV, ["python", "x.py"], out_dir=tmp_path / "out", name="data", prefix="LB_RESULT",
+                    runtime_env=runtime_env, ray=FakeRay())
+
+    assert not list(tmp_path.glob("rvjob-env-*"))
 
 
 def test_a_job_without_wait_is_a_handle_that_the_caller_stops_then_waits_for(tmp_path):

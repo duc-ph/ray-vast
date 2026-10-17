@@ -23,7 +23,7 @@ A host without the image in its cache must pull the image first. For the 18 GB G
 
 ## How the provider picks an offer
 
-- The provider searches with your offer query plus the filters that it adds. It asks vast for up to 100 offers.
+- The provider searches with your offer query plus the fields that it adds. It asks vast for up to 100 offers.
 - It sorts the offers by `dph_total`, in ascending order. So the cheapest offers come first. You cannot change the order.
 - It skips the hosts on the blocklist. A host that fails a check goes on the blocklist for this cluster.
 - It skips an offer that would take the total price above `max_dollars_per_hour`.

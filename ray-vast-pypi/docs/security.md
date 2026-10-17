@@ -91,7 +91,7 @@ For a short explanation, read [Enrollment and the join token](explanation/enroll
 **A dishonest host** (design 9)
 
 - ray-vast does not add `datacenter` or `verified` to the offer query. We highly recommend `datacenter: {eq: true}` and `verified: {eq: true}` in every node type. The example YAMLs have them.
-- These filters make a bad host less likely. They do not stop a bad host. Read the next section.
+- These two fields make a bad host less likely. They do not stop a bad host. Read the next section.
 
 ## What a malicious vast host can do
 

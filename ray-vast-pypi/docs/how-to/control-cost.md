@@ -49,9 +49,9 @@ provider:
 
 Then a bad host costs a retry, and a worker can arrive later.
 
-## Keep the verified and datacenter filters
+## Keep verified and datacenter in the offer query
 
-An unverified or non-datacenter host can be cheaper. But more of these hosts never start, or fail the port check. Each such host costs a retry, and the worker arrives later. Keep `verified: {eq: true}` and `datacenter: {eq: true}` in the offer query. Read [Keep the verified and datacenter filters](node-types.md#keep-the-verified-and-datacenter-filters).
+An unverified or non-datacenter host can be cheaper. But more of these hosts never start, or fail the port check. Each such host costs a retry, and the worker arrives later. Keep `verified: {eq: true}` and `datacenter: {eq: true}` in the offer query. Read [Keep verified and datacenter in the offer query](node-types.md#keep-verified-and-datacenter-in-the-offer-query).
 
 ## The EC2 head
 

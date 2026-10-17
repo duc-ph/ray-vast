@@ -116,7 +116,7 @@ def host(cluster, env, record, name):
         if rows[0]["machine_id"] == cluster.matched[kind]["machine_id"]:
             return rows[0]
     facts, tries = cluster.find(env, kind, PINS[kind]["want"], {}, record.dir)
-    record.data(f"{name}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cpus", "match", "query")} for t in tries])
+    record.data(f"{name}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cores", "match", "query")} for t in tries])
     return facts["probe"]
 
 
@@ -128,7 +128,7 @@ def test_LB00_host_probe_on_every_libraries_host(record, libraries, env, where):
     if where in ("H1", "H2"):
         kind = where.lower()
         facts, tries = libraries.find(env, kind, PINS[kind]["want"], {}, record.dir)
-        record.data(f"{where}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cpus", "match", "query")} for t in tries])
+        record.data(f"{where}_rentals", [{k: t.get(k) for k in ("machine_id", "pids_max", "cgroup", "cores", "match", "query")} for t in tries])
         hosts = {where: [facts["probe"]]}
     else:
         kind = HOST_TYPE[where]
