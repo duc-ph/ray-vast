@@ -8,13 +8,17 @@
 - The cluster fixtures (`aws_only`, `lifecycle`, `libraries`, `release`) run `up` once and end the cluster at the end of
   the session, also after a failure, Ctrl-C or SIGTERM (`group_lifetime`). `libraries` is one cluster for each host (H1,
   H2, H3, gpu2). `release` is the tutorial's cluster (cluster.ReleaseCluster: a foreign name, the plain CLI). A scenario
-  makes its own clusters with the `new_cluster` factory (A02, A03); they end at the end of the test.
+  makes its own clusters with the `new_cluster` factory; they end at the end of the test.
 - One module ends every cluster: `livekit.end_cluster` (its `down` unless kept or already clean, its vast label sweep, its
   AWS check, the secret scan of its own records). The result of a group goes to `_session/<group>/teardown/result.json`
   (for libraries also the destroyed worker and the S3 cleanup); a problem fails the run.
-- Parallel runs: `pytest tests/live -n 12` (pytest-xdist; this file makes it `--dist loadgroup`). Each cluster and the
-  tests that share its setup are one xdist group (`livekit.xdist_group`), so one worker process owns the cluster: one `up`,
-  one `down`. Other tests go to any worker. The clusters wait for A02 (it deletes the account boundary) when it runs.
+- Declared needs: a test states a need with a marker of `livekit.NEEDS`, never the kit with a scenario ID.
+  `exclusive_account`: the test runs first (in one process before every other test; in an xdist run its group is the
+  first work unit), and every cluster `up` of the run waits until each such test ended (`after_exclusive_account`).
+  `box_disk`: the tests share one process (one after the other).
+- Parallel runs: `pytest tests/live -n 12` (pytest-xdist; this file makes it `--dist loadgroup`, in the collection order).
+  Each cluster and the tests that share its setup are one xdist group, and so is each need (`livekit.xdist_group`), so
+  one worker process owns the cluster: one `up`, one `down`. Other tests go to any worker.
 - `--keep-cluster`: a cluster is named `<name>-keep`, its HOME is ~/.cache/ray-vast-live/<group>; a later run reuses it
   while its head runs, and no `down` runs at the end (the scenarios that end the cluster skip). A run without the option
   ends a kept cluster of its groups first, then makes a fresh one.
@@ -47,13 +51,14 @@ CLUSTERS = Path(__file__).parent / "clusters"
 KEEP_HOME = Path.home() / ".cache" / "ray-vast-live"  # the HOME of each kept cluster (its state file and SSH key)
 GROUP_MARKERS = ("free", "aws", "lifecycle", "failure", "security", "limits", "libraries", "release")
 CLUSTER_FIXTURES = ("aws_only", "lifecycle", "libraries", "release")
+# In one process a session cluster lives until the end of the session: the files without a cluster or with a cheap one first.
 FILE_ORDER = ["test_free.py", "test_aws.py", "test_lifecycle.py", "test_libraries.py", "test_release.py"]
 EC2_PRICE = {"t3.large": 0.0832, "t3.medium": 0.0416}  # $/h, us regions on-demand
-A02_WAIT_S = 1200
+EXCLUSIVE_WAIT_S = 1200  # the longest that a cluster `up` waits for the `exclusive_account` tests; then it fails
 
 RUN = pytest.StashKey[livekit.Run]()
 REPORTS = pytest.StashKey[dict]()
-A02_SELECTED = pytest.StashKey[bool]()
+EXCLUSIVE = pytest.StashKey[list]()  # the record names of the selected `exclusive_account` tests
 END_LINES = pytest.StashKey[list]()
 CREDIT_BEFORE = pytest.StashKey[dict]()
 
@@ -72,9 +77,14 @@ def pytest_configure(config):
                                                f"{time.strftime('%H%M%S', time.gmtime())}-{os.getpid()}")
     for name in GROUP_MARKERS:
         config.addinivalue_line("markers", f"{name}: live suite group (docs/test-plan.md, claim matrix)")
+    for name, meaning in livekit.NEEDS.items():
+        config.addinivalue_line("markers", f"{name}: {meaning}")
     config.addinivalue_line("markers", "host(name): the libraries host of a test (H1, H2, H3 or gpu2): its cluster and xdist group")
     # pytest -n N: --dist loadgroup, so the groups keep each cluster in one worker. A worker parses the command line again
-    # (dist "load"), and xdist adds the group to the test ids only when its own `loadgroup` option is set.
+    # (dist "load"), and xdist adds the group to the test ids only when its own `loadgroup` option is set. No reorder by
+    # group size: xdist then gives out the groups in the collection order, so the `exclusive_account` group is the first
+    # work unit of the first worker (else it can wait behind a cluster whose `up` waits for it).
+    config.option.loadscopereorder = False
     if is_worker(config):
         config.option.loadgroup = True
     elif config.getoption("dist", "no") == "load":
@@ -91,16 +101,36 @@ def pytest_collection_modifyitems(config, items):
         item.add_marker(pytest.mark.live)
         if item.get_closest_marker("timeout") is None:
             item.add_marker(pytest.mark.timeout(0))  # a live scenario runs for minutes to hours; its own waits have limits
-        group = livekit.xdist_group(scenario_id(item).split("[")[0], item.fixturenames, livekit.host_of(item))
+        try:
+            group = livekit.xdist_group([m.name for m in item.iter_markers()], item.fixturenames, livekit.host_of(item))
+        except ValueError as e:
+            raise pytest.UsageError(f"{item.nodeid}: {e}") from None
         if group:
             item.add_marker(pytest.mark.xdist_group(group))
     rank = {name: n for n, name in enumerate(FILE_ORDER)}
-    items.sort(key=lambda i: rank.get(Path(i.fspath).name, -1) if Path(i.fspath).parent == here else -1)
+    items.sort(key=lambda i: (not exclusive_account(i), rank.get(Path(i.fspath).name, -1) if Path(i.fspath).parent == here else -1))
+
+
+def exclusive_account(item):
+    return Path(item.fspath).parent == Path(__file__).parent and item.get_closest_marker("exclusive_account") is not None
 
 
 def pytest_collection_finish(session):
-    session.config.stash[A02_SELECTED] = any(Path(i.fspath).parent == Path(__file__).parent and scenario_id(i) == "A02"
-                                             for i in session.items)
+    session.config.stash[EXCLUSIVE] = [scenario_id(i) for i in session.items if exclusive_account(i)]
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item, nextitem):
+    yield
+    if exclusive_account(item):  # also after a failure or a skip: the barrier needs only its end
+        item.config.stash[RUN].mark_ended(scenario_id(item))
+
+
+def after_exclusive_account(config):
+    """Every cluster `up` (of a group, or a scenario's own) waits here until each selected `exclusive_account` test ended,
+    in any process of the run (at most EXCLUSIVE_WAIT_S, then a TimeoutError). In one process they ran first, so it
+    returns at once."""
+    config.stash[RUN].wait_ended(config.stash.get(EXCLUSIVE, []), EXCLUSIVE_WAIT_S)
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -111,7 +141,7 @@ def pytest_runtest_makereport(item, call):
 
 
 def scenario_id(node):
-    """`test_F01_shim_rules[H1]` gives `F01[H1]`."""
+    """`test_X01_some_name[H1]` gives `X01[H1]`."""
     name = node.name
     base, _, param = name.partition("[")
     return base.split("_")[1] + (f"[{param}" if param else "")
@@ -141,33 +171,18 @@ def record(request, run):
         if node.funcargs.get(name) is not None:
             node.funcargs[name].records.append(rec.dir)
     rec.finish(*livekit.outcome_of(node.stash.get(REPORTS, {})))
-    if scenario_id(node) == "A02":
-        (run.dir / "A02.done").touch()
-
-
-def wait_for_a02(config):
-    """A02 needs an account with no ray-vast role, and it deletes the boundary for a moment. In an xdist run its group
-    starts at once; every other `up` of the run waits here until it is done (at most A02_WAIT_S)."""
-    if not is_worker(config) or not config.stash.get(A02_SELECTED, False):
-        return  # one process: A02 is the first test of test_aws.py, before every cluster
-    deadline = time.time() + A02_WAIT_S
-    while not (config.stash[RUN].dir / "A02.done").exists() and time.time() < deadline:
-        time.sleep(5)
 
 
 @pytest.fixture
-def account_gate(request):
-    """For a test that makes a ray-vast role without a cluster fixture (A03)."""
-    wait_for_a02(request.config)
-
-
-@pytest.fixture
-def new_cluster(run, record):
-    """The factory of a scenario's own clusters (A02, A03): `new_cluster(config, out_dir, home)` gives a Cluster of the
-    run. At the end of the test, `end` ends each one (also after a failure); a problem is a failed check of the scenario."""
+def new_cluster(request, run, record):
+    """The factory of a scenario's own clusters: `new_cluster(config, out_dir, home)` gives a Cluster of the run, after
+    the `exclusive_account` tests (not in such a test itself). At the end of the test, `end` ends each one (also after a
+    failure); a problem is a failed check of the scenario."""
     made = []
 
     def make(config, out_dir, home):
+        if not exclusive_account(request.node):
+            after_exclusive_account(request.config)
         made.append(Cluster(run, "none", config, out_dir, home))
         return made[-1]
     yield make
@@ -197,7 +212,7 @@ def group_lifetime(run, group, make, request, tmp_path_factory, before_down=None
     holder = {"problems": []}
 
     def up():
-        wait_for_a02(request.config)
+        after_exclusive_account(request.config)
         if not keep and (kept_home / ".ray-vast").exists():  # end the kept cluster of an earlier run first
             old = make(group_dir / "ended_kept", kept_home, "keep", False)  # not kept now
             holder["problems"] += [f"the kept cluster {old.name} of an earlier run: {p}" for p in end(run, old)]
@@ -300,7 +315,7 @@ def library_clusters(request, tmp_path_factory, run):
 
 @pytest.fixture(scope="session")
 def release(request, tmp_path_factory, run):
-    """The release cluster (cluster.ReleaseCluster, R01-R02): the getting-started tutorial from a clean venv with
+    """The release cluster (cluster.ReleaseCluster): the getting-started tutorial from a clean venv with
     ray-vast from PyPI. Only with RAYVAST_LIVE_RELEASE=<version> (after the publish) and without --keep-cluster (the
     tutorial ends its cluster). RAYVAST_LIVE_RELEASE_REGION changes the region (default us-west-2)."""
     version = os.environ.get("RAYVAST_LIVE_RELEASE")

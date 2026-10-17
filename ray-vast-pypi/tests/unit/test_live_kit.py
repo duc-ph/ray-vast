@@ -303,21 +303,57 @@ def test_a_second_run_of_a_scenario_keeps_the_earlier_records_as_run1_and_run2(t
     assert livekit.summary_table(tmp_path, ["A05"]).count("| A05") == 1
 
 
-@pytest.mark.parametrize("scenario, fixtures, host, group", [
-    ("A04", ["record", "aws_only", "tmp_path"], None, "aws_only"),
-    ("A02", ["record", "tmp_path"], None, "aws_only"),           # deletes the boundary: before the aws_only `up`
-    ("L03", ["record", "lifecycle", "session_env"], None, "lifecycle"),
-    ("A10", ["record", "restricted_user"], None, "lifecycle"),   # one restricted IAM user for each run
-    ("LB11[H1]", ["record", "libraries", "env"], "H1", "libraries-h1"),
-    ("LB07", ["record", "libraries", "env", "s3"], "gpu2", "libraries-gpu2"),
-    ("R01", ["record", "release"], None, "release"),
-    ("F18", ["record", "dist"], None, "dist"),                   # F17 and F18 share one wheel build
-    ("F20", ["record", "tmp_path"], None, "dist"),               # after F18: each fills about 1.5 GB of the box disk
-    ("F08", ["record"], None, None),
-    ("A03", ["record", "tmp_path", "account_gate"], None, None),
+@pytest.mark.parametrize("markers, fixtures, host, group", [
+    (["aws"], ["record", "aws_only", "tmp_path"], None, "aws_only"),
+    (["aws", "exclusive_account"], ["record", "new_cluster", "tmp_path"], None, "exclusive_account"),
+    (["lifecycle"], ["record", "lifecycle", "session_env"], None, "lifecycle"),
+    (["aws"], ["record", "restricted_user"], None, "lifecycle"),        # one restricted IAM user for each run
+    (["libraries"], ["record", "libraries", "env"], "H1", "libraries-h1"),
+    (["libraries"], ["record", "libraries", "env", "s3"], "gpu2", "libraries-gpu2"),
+    (["release"], ["record", "release"], None, "release"),
+    (["box_disk", "free"], ["record", "dist"], None, "box_disk"),
+    (["box_disk", "free"], ["record", "tmp_path"], None, "box_disk"),
+    (["free"], ["record", "dist"], None, None),                          # a fixture alone is no declared need
+    (["free"], ["record"], None, None),
+    (["aws", "failure"], ["record", "new_cluster", "tmp_path"], None, None),
 ])
-def test_each_cluster_and_the_tests_that_share_its_setup_get_one_xdist_group(scenario, fixtures, host, group):
-    assert livekit.xdist_group(scenario, fixtures, host) == group
+def test_each_cluster_and_each_declared_need_gets_one_xdist_group(markers, fixtures, host, group):
+    assert livekit.xdist_group(markers, fixtures, host) == group
+
+
+@pytest.mark.parametrize("markers, fixtures", [
+    (["exclusive_account"], ["record", "aws_only"]),   # it would wait for itself: its cluster `up` waits for it
+    (["box_disk"], ["record", "lifecycle"]),
+    ([], ["record", "aws_only", "restricted_user"]),
+])
+def test_a_test_with_two_groups_is_an_error(markers, fixtures):
+    with pytest.raises(ValueError, match="two xdist groups"):
+        livekit.xdist_group(markers, fixtures, None)
+
+
+def test_the_wait_for_tests_returns_once_each_has_ended_and_names_the_missing_ones_at_its_deadline(tmp_path):
+    run = livekit.Run(tmp_path / "results", "run1")
+    other = livekit.Run(tmp_path / "results", "run1")  # another process of the same run
+    run.wait_ended([], timeout_s=0)
+    other.mark_ended("X01")
+    with pytest.raises(TimeoutError, match=r"did not end in 0.2 s: X02$"):
+        run.wait_ended(["X01", "X02"], timeout_s=0.2, poll_s=0.05)
+    other.mark_ended("X02[H1]")
+    other.mark_ended("X02")
+    run.wait_ended(["X01", "X02", "X02[H1]"], timeout_s=0)
+
+
+def test_no_scenario_id_of_the_matrix_is_in_the_infrastructure_modules():
+    """The infrastructure knows declared needs (markers, fixtures), never a scenario: a scenario ID is only in the test
+    names, the matrix and the records."""
+    import re
+    from pathlib import Path
+    live = Path(livekit.__file__).parent
+    ids = {r["id"] for r in livekit.matrix_rows((live.parents[2] / "docs" / "test-plan.md").read_text())}
+    assert len(ids) > 40
+    found = {name: sorted(set(re.findall(r"\b(?:" + "|".join(sorted(ids)) + r")\b", (live / name).read_text())))
+             for name in ("conftest.py", "livekit.py", "cluster.py", "libraries_setup.py", "restricted.py", "summarize.py")}
+    assert {name: f for name, f in found.items() if f} == {}
 
 
 def _opened(run, name, kept, region="us-west-2"):

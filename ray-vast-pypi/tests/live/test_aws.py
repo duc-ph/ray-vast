@@ -1,6 +1,6 @@
-"""Group `aws` (docs/test-plan.md, claim matrix A01-A10): real AWS, no vast rental. The scenarios without a cluster
-fixture come first (A02 changes the account policy, so it is the very first); then the `aws_only` cluster (the head only),
-with its destructive scenario A07 and its `down` (A01) last. About 60 min, EC2 under $0.30."""
+"""Group `aws` (docs/test-plan.md, claim matrix A01-A10): real AWS, no vast rental. A02 needs the account with no
+ray-vast role and changes the account policy: its marker `exclusive_account` makes it run before every cluster `up`. The
+`aws_only` cluster (the head only) has its destructive scenario A07 and its `down` (A01) last in this file. About 60 min, EC2 under $0.30."""
 import json
 import os
 import re
@@ -57,6 +57,7 @@ def run_until(cluster, args, ready, timeout=900):
 # --- no cluster fixture ------------------------------------------------------------------------------------------------
 
 
+@pytest.mark.exclusive_account
 @pytest.mark.security
 def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
     """With no cluster: delete the boundary policy, `up` stops before it makes anything, then the documented command
@@ -94,7 +95,7 @@ def test_A02_boundary_policy_missing(record, new_cluster, tmp_path):
 
 
 @pytest.mark.failure
-def test_A03_down_recovery(record, new_cluster, tmp_path, account_gate):
+def test_A03_down_recovery(record, new_cluster, tmp_path):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
     terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything. The end of
     the test checks AWS and vast after each `down` (the `new_cluster` factory: livekit.end_cluster)."""

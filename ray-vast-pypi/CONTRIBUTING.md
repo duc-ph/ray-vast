@@ -67,6 +67,8 @@ The local end-to-end tests also run in parallel: `pytest -o addopts="" -m local_
 | `slow` | Starts processes, containers, TLS servers or wheel builds, or waits on real timers. | Skipped |
 | `live` | Uses real AWS or vast.ai (every test in `tests/live`). | Skipped |
 | `free`, `aws`, `lifecycle`, `libraries`, `release`, `failure`, `security`, `limits` | The groups of the live suite (`docs/test-plan.md`). | Skipped (with `live`) |
+| `exclusive_account` | A live test that needs the AWS account with no ray-vast role. It runs before every cluster `up` of the run. | Skipped (with `live`) |
+| `box_disk` | A live test that builds or installs the package on the dev box. These tests run in one process, one after the other. | Skipped (with `live`) |
 | `local_e2e` | Runs a Ray head and workers in Docker on the dev box. | Skipped |
 
 ### Rules for slow tests

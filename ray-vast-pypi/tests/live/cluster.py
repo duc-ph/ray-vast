@@ -303,7 +303,7 @@ class Cluster:
 
 
 class ReleaseCluster:
-    """The cluster of the release group (test_release.py, R01-R02): the second adapter of the cluster seam, next to
+    """The cluster of the release group (test_release.py): the second adapter of the cluster seam, next to
     Cluster. It follows the getting-started tutorial verbatim, so it differs from a suite cluster in three ways: its name
     (`gpu-24gb`, from the packaged YAML) is not a suite name, it runs the plain `ray-vast` CLI of a clean venv with
     ray-vast from PyPI, and its YAML is the packaged one (only `region` changes). Like every cluster it joins the run when it

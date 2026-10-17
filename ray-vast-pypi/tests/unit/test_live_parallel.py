@@ -155,13 +155,17 @@ def leak(record):
         record.evidence("leak.txt", "fake-vast-key")
 
 
-def test_A02_boundary(record):
+@pytest.mark.exclusive_account
+def test_X01_account_wide(record):
     time.sleep(2)
-    event("A02_END")
+    event("X01_END")
 
 
-def test_A03_down_recovery(record, account_gate):
-    event("RUN", "A03", "-")
+def test_A03_own_cluster(record, new_cluster, tmp_path, request):
+    if request.config.getoption("--keep-cluster"):
+        pytest.skip("this fake makes a cluster that is never kept")
+    own = new_cluster({"cluster_name": "rvtest-own-1a2b"}, record.dir / "a", tmp_path / "home").up()
+    event("RUN", "A03", own.name)
 
 
 def test_A10_denials(record, restricted_user):
@@ -205,6 +209,17 @@ def test_LB11_pairs(record, libraries):
     event("RUN", "LB11", libraries.name)
 
 
+@pytest.mark.box_disk
+def test_F17_build(record):
+    event("RUN", "F17", "-")
+    time.sleep(0.5)
+
+
+@pytest.mark.box_disk
+def test_F20_snippets(record):
+    event("RUN", "F20", "-")
+
+
 @pytest.mark.parametrize("n", range(6))
 def test_F01_free(record, n):
     event("RUN", f"F01[{n}]", "-")
@@ -246,18 +261,20 @@ CLUSTERS = ("rvtest-aws", "rvtest-life", "rvtest-lib-h1", "rvtest-lib-h3")
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("workers", [[], ["-n", "4"]], ids=["one process", "4 xdist workers"])
+@pytest.mark.parametrize("workers", [[], ["-n", "2"], ["-n", "4"]], ids=["one process", "2 xdist workers", "4 xdist workers"])
 def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_run_wide_guards_run_once_after_every_end(tmp_path, workers):
     code, out, events = _run(tmp_path, _suite(tmp_path), *workers)
     assert code == 0, out
     ups = {e[1][0]: e for e in events if e[0] == "UP"}
     downs = [e for e in events if e[0] == "DOWN"]
-    assert sorted(n.rsplit("-", 1)[0] for n in ups) == sorted(CLUSTERS) and len(ups) == len([e for e in events if e[0] == "UP"])
+    assert sorted(n.rsplit("-", 1)[0] for n in ups) == sorted(CLUSTERS + ("rvtest-own",)) and len(ups) == len([e for e in events if e[0] == "UP"])
     assert sorted(e[1][0] for e in downs) == sorted(ups)                      # one down for each up
     for kind, (scenario, name), pid, _ in [e for e in events if e[0] == "RUN" and e[1][1] != "-"]:
         assert pid == ups[name][2], (scenario, name)                            # the tests of a cluster run in its process
-    a02_end = next(e[3] for e in events if e[0] == "A02_END")
-    assert all(e[3] >= a02_end for e in ups.values())                          # every `up` waits for A02
+    exclusive_end = next(e[3] for e in events if e[0] == "X01_END")
+    assert all(e[3] >= exclusive_end for e in ups.values())                    # every `up` (also a scenario's own) after `exclusive_account`
+    box = [e for e in events if e[0] == "RUN" and e[1][0] in ("F17", "F20")]
+    assert len(box) == 2 and len({e[2] for e in box}) == 1                      # `box_disk`: one process, one after the other
     assert [e[0] for e in events].count("USER_CREATE") == 1 and [e[0] for e in events].count("USER_DELETE") == 1
     for name, (_, _, pid, _) in ups.items():  # livekit.end_cluster, in the process of the cluster: down, its sweep, its AWS check
         assert [(e[0], e[1]) for e in events if e[2] == pid and name in " ".join(e[1]) and e[0] in ("DOWN", "SWEEP", "AWSCHECK")] == [
@@ -267,7 +284,7 @@ def test_each_cluster_is_up_and_ended_once_in_the_process_of_its_tests_and_the_r
     assert min(e[3] for e in final) >= max(e[3] for e in events if e[0] == "AWSCHECK")  # after every cluster ended
     if workers:
         assert {e[2] for e in final}.isdisjoint({e[2] for e in events if e[0] in ("RUN", "UP")})  # the controller, not a worker
-        assert len({e[2] for e in ups.values()}) == 4                          # the 4 clusters ran in parallel
+        assert len({e[2] for n, e in ups.items() if not n.startswith("rvtest-own")}) == int(workers[1])  # the clusters ran in parallel
 
 
 @pytest.mark.slow

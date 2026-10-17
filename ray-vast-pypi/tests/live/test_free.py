@@ -234,6 +234,7 @@ def dist(tmp_path_factory):
     return out
 
 
+@pytest.mark.box_disk
 @pytest.mark.release
 def test_F17_wheel_and_sdist(record, dist):
     wheel, sdist = next(dist.glob("*.whl")), next(dist.glob("*.tar.gz"))
@@ -263,6 +264,7 @@ def test_F17_wheel_and_sdist(record, dist):
     check(record, "no secret in the wheel or the sdist", not real, [str(p.relative_to(unpacked)) for p in real][:5])
 
 
+@pytest.mark.box_disk
 @pytest.mark.release
 def test_F18_python_3_10_install(record, dist):
     """The wheel installs and runs on 3.10. Then the unit tests run on 3.10 in the layout they need: the package source
@@ -329,6 +331,7 @@ def test_F19_offer_queries_of_the_examples_and_the_docs(record):
     record.evidence("offers.json", json.dumps(rows, indent=1))
 
 
+@pytest.mark.box_disk
 def test_F20_doc_snippets_run_in_ray_2_59(record, tmp_path):
     """Every Python block of the library pages compiles, and its imports work in the Ray 2.59 image. The core snippet runs
     on a local single node (the snippets on a cluster run verbatim in the libraries group)."""

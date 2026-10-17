@@ -271,22 +271,31 @@ def host_facts(probe, machine_id):
             "limited": pids_max is not None}
 
 
-def xdist_group(scenario, fixturenames, host=None):
-    """The xdist group of one test, for `pytest -n N --dist loadgroup` (conftest forces loadgroup). xdist runs all tests
-    of a group in one worker process, so a session fixture of that group runs `up` once and `down` once. A02 joins the
-    aws_only group (it deletes the account boundary, so it runs first there; the other clusters wait for it). A test with
-    the restricted IAM user joins lifecycle (one user for each run). F17 and F18 share one wheel build; F20 joins them,
-    because F18 and F20 each fill about 1.5 GB of the dev box disk in a container (pip installs). Each libraries host
-    (H1, H2, H3, gpu2) is its own cluster and group. None: any worker."""
-    if "aws_only" in fixturenames or scenario == "A02":
-        return "aws_only"
-    if "lifecycle" in fixturenames or "restricted_user" in fixturenames:
-        return "lifecycle"
-    if "libraries" in fixturenames:
-        return f"libraries-{host.lower()}"
-    if "dist" in fixturenames or scenario == "F20":
-        return "dist"
-    return "release" if "release" in fixturenames else None
+NEEDS = {  # the markers that declare a need of a test; conftest registers them and xdist_group maps them
+    "exclusive_account": "the test needs the AWS account with no ray-vast role, and it may change an account-wide resource "
+                         "(the boundary policy): it runs before every cluster `up` of the run (no cluster fixture)",
+    "box_disk": "the test builds or installs the package on the dev box (up to about 1.5 GB of disk): the tests with this "
+                "marker run in one process, one after the other, and share one wheel build",
+}
+
+
+def xdist_group(markers, fixturenames, host=None):
+    """The xdist group of one test, for `pytest -n N --dist loadgroup` (conftest forces loadgroup), from its markers and
+    fixtures only. xdist runs all tests of a group in one worker process, so a session fixture of that group runs `up` once
+    and `down` once. Each cluster fixture is a group; a test with the restricted IAM user joins lifecycle (one user for
+    each run); each libraries host (H1, H2, H3, gpu2) is its own cluster and group. A need of NEEDS is a group of the
+    same name. None: any worker. A test with two groups is a ValueError (an `exclusive_account` test with a cluster
+    fixture would wait for itself)."""
+    wanted = {"exclusive_account": "exclusive_account" in markers,
+              "aws_only": "aws_only" in fixturenames,
+              "lifecycle": "lifecycle" in fixturenames or "restricted_user" in fixturenames,
+              f"libraries-{(host or '').lower()}": "libraries" in fixturenames,
+              "box_disk": "box_disk" in markers,
+              "release": "release" in fixturenames}
+    groups = [group for group, want in wanted.items() if want]
+    if len(groups) > 1:
+        raise ValueError(f"a test in two xdist groups: {', '.join(groups)}")
+    return groups[0] if groups else None
 
 
 class Run:
@@ -352,6 +361,24 @@ class Run:
                                     "home": str(cluster.home)}))
         self._clusters.append(cluster)
 
+    def mark_ended(self, test):
+        """`<dir>/ended_tests/<test>`: the test ended (passed, failed or skipped), seen by every process of the run."""
+        path = self.dir / "ended_tests" / test
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch()
+
+    def wait_ended(self, tests, timeout_s, poll_s=5):
+        """Wait until each test of `tests` ended in some process of the run (`mark_ended`). Raises TimeoutError with the
+        missing tests after `timeout_s`."""
+        deadline = time.time() + timeout_s
+        while True:
+            missing = [t for t in tests if not (self.dir / "ended_tests" / t).exists()]
+            if not missing:
+                return
+            if time.time() >= deadline:
+                raise TimeoutError(f"these tests did not end in {timeout_s} s: {', '.join(missing)}")
+            time.sleep(poll_s)
+
 
 def _clean(done):
     return done.returncode == 0 and "left: nothing" in done.stdout
@@ -360,7 +387,7 @@ def _clean(done):
 def end_cluster(run, cluster, sweep, aws_check, after_down=None):
     """End one cluster cleanly: the only place in the suite that does. Every cluster of the run comes here once (a group
     cluster at the end of its group, a scenario's own cluster at the end of its test, the release cluster).
-    1. `down`, unless the cluster is kept, or its last `down` (a scenario's, for example A01, L10, R02) exited 0 with
+    1. `down`, unless the cluster is kept, or its last `down` (a scenario's own `down`) exited 0 with
        `left: nothing`. A `down` that leaves something is a problem, and it runs once more.
     2. `after_down(done)` (the checks of the group; `done` is the last `down`, None for a kept cluster) gives more problems.
     3. Not kept: the vast label sweep of this cluster (an instance that it still finds is a problem) and the AWS check of
