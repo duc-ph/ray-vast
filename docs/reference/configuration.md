@@ -84,6 +84,93 @@ Checks:
 - `gpu_ram`, `cpu_ram` and `gpu_total_ram` are in MB. Their values must be numbers of 1000 or more ("the unit is MB").
 - A range that can never match, for example `{gte: 10, lte: 5}`, is an error.
 
+ray-vast does not check the field names. vast rejects an unknown field with HTTP 400 ("is not a valid search key"). Then the autoscaler log shows this error each time Ray tries to add a worker.
+
+### Offer fields
+
+The vast search API accepts these fields. The units are the units of the API. They are not always the units of the `vastai` CLI.
+
+GPU:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `num_gpus` | integer | The number of GPUs. ray-vast sets it from `resources.GPU`. |
+| `gpu_name` | string | The GPU model as vast writes it, with spaces. For example `RTX 4090`, `H100 SXM`, `A100 PCIE`. |
+| `gpu_arch` | string | `nvidia` or `amd`. |
+| `gpu_ram` | number | The memory of one GPU, in **MB**. |
+| `gpu_total_ram` | number | The memory of all GPUs of the offer, in **MB**. |
+| `gpu_mem_bw` | number | GPU memory bandwidth, in GB/s. |
+| `compute_cap` | integer | CUDA compute capability × 100. For example `890` is 8.9. |
+| `dlperf` | number | vast's deep learning speed score. Read [Choose a GPU by memory and speed](../how-to/node-types.md#choose-a-gpu-by-memory-and-speed). |
+| `total_flops` | number | FP32 TFLOPS of all GPUs, without tensor cores. |
+| `bw_nvlink` | number | NVLink bandwidth. `0` means no NVLink. |
+| `gpu_max_power` | number | GPU power limit, in W. |
+| `gpu_max_temp` | number | GPU temperature limit, in °C. |
+| `gpu_display_active` | boolean | `true` if a display is attached to the GPU. |
+| `gpu_frac` | number | The GPUs of the offer divided by the GPUs of the machine. `1` means the full machine. |
+| `pci_gen` | number | PCIe generation. |
+| `gpu_lanes` | integer | PCIe lanes of the GPU. |
+| `pcie_bw` | number | Bandwidth from the CPU to the GPU, in GB/s. |
+| `cuda_max_good` | number | The highest CUDA version that the driver supports. For example `12.8`. |
+| `driver_version` | integer | The driver version as one number: major × 1000000 + minor × 1000 + patch. For example `570133007` is 570.133.07. |
+
+CPU and memory:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `cpu_cores_effective` | number | The virtual CPUs that the instance gets. ray-vast adds a floor. |
+| `cpu_cores` | integer | The virtual CPUs of the machine. |
+| `cpu_ghz` | number | CPU clock speed, in GHz. |
+| `cpu_ram` | number | System memory of the instance, in **MB**. |
+| `cpu_arch` | string | `amd64` or `arm64`. |
+| `cpu_name` | string | The CPU model. |
+
+Disk:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `disk_space` | number | Free disk space, in GB. |
+| `disk_bw` | number | Disk read bandwidth, in MB/s. |
+
+Network:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `inet_down` | number | Download speed, in Mb/s. It sets the pull limit of a candidate. Read [Image size and the pull limit](../how-to/node-types.md#image-size-and-the-pull-limit). |
+| `inet_up` | number | Upload speed, in Mb/s. A fast network moves Ray objects between hosts sooner. |
+| `inet_down_cost` | number | Download traffic price, in $/GB. |
+| `inet_up_cost` | number | Upload traffic price, in $/GB. |
+| `direct_port_count` | integer | Open ports on the router of the host. ray-vast adds a floor. |
+| `static_ip` | boolean | `true` if the IP address is stable. When the IP address of a worker changes, ray-vast destroys the worker. Use it for long jobs. |
+
+Host:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `verified` | boolean | `true` if vast verified the machine. |
+| `datacenter` | boolean | `true` if the host is a datacenter. |
+| `reliability` | number | vast's reliability score of the machine, from 0 to 1. `reliability2` is the same value. |
+| `duration` | number | The longest rental time that the host allows, in **seconds**. |
+| `geolocation` | string | Two-letter country code. Use `eq`, `neq`, `in` or `notin`. For example `{in: [US, CA]}`. |
+| `os_version` | string | Ubuntu version of the host, for example `22.04`. `ubuntu_version` is the same field. |
+| `vms_enabled` | boolean | `true` if the machine is a VM instance (vast's meaning). |
+| `mobo_name` | string | The motherboard model. |
+| `machine_id` | integer | The machine. Use `notin` to skip a machine. |
+| `host_id` | integer | The host account. Use `notin` to skip a host. |
+| `cluster_id` | integer | vast's cluster of the machine, or `null`. |
+| `rentable` | boolean | ray-vast sets it to `true`. |
+
+Price:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `dph_total` | number | Price of the instance, in $/hour. The provider rents the cheapest offers first. |
+| `dlperf_per_dphtotal` | number | `dlperf` for each $/hour. |
+| `flops_per_dphtotal` | number | `total_flops` for each $/hour. |
+| `storage_cost` | number | Disk price, in $/GB/month. |
+
+The fields `external`, `rented` and `has_avx` do not change the result. Do not use them.
+
 ray-vast adds these fields to each offer query:
 
 | Field | Added value | Your own value for this field |

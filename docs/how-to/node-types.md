@@ -119,17 +119,10 @@ Set a GPU memory range and a `dlperf` minimum.
 - Do not use `total_flops`. It is FP32 speed without tensor cores.
 - `verified` and `datacenter` in the offer query remove many offers. A narrow offer query can match no offer.
 
-## Optional fields
+## Other fields
 
-| Field | Use |
-|---|---|
-| `inet_down: {gte: 500}`, `inet_up: {gte: 500}` | Network speed in Mb/s. A fast download pulls the image sooner. A fast network moves Ray objects between hosts sooner. |
-| `static_ip: {eq: true}` | For long jobs. When the IP of a worker changes, ray-vast destroys the worker. |
-| `geolocation: {in: [US]}` | Location of the host. |
-| `reliability2: {gte: 0.98}` | vast's reliability score of the host. |
-| `dph_total: {lte: 0.5}` | Price limit for one instance, in $/hour. |
-
-ray-vast does not add the network speed fields. Add them to the offer query when your jobs need them.
+All the vast offer fields, with their units, are in [Offer fields](../reference/configuration.md#offer-fields).
+ray-vast does not add the network speed fields `inet_down` and `inet_up`. Add them to the offer query when your jobs need them.
 
 The provider sorts the offers by `dph_total`, the cheapest first. Read [How the provider picks an offer](../explanation/architecture.md#how-the-provider-picks-an-offer).
 
@@ -204,4 +197,4 @@ A big image takes long to pull. The provider gives each candidate a pull limit. 
 
 `up` also takes longer with a big image, because the head pulls it. In our tests, `up` took 8 to 10 minutes with the 18 GB GPU image, and 2.5 to 6.5 minutes with the CPU image.
 
-To pull faster, add `inet_down: {gte: 500}` to the offer query. Read [Optional fields](#optional-fields).
+To pull faster, add `inet_down: {gte: 500}` to the offer query. Read [Offer fields](../reference/configuration.md#offer-fields).
