@@ -30,7 +30,14 @@ Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59
 
 ## 2. Set up AWS { #aws-setup }
 
-ray-vast uses an AWS profile with admin permissions. If you have one already, go to item 3. To use a restricted user instead, read [A restricted user](reference/iam.md#a-restricted-user).
+ray-vast uses an AWS profile. The user of the profile needs permission to:
+
+- start and stop an EC2 instance (the head), and make its key pair and security groups;
+- make an IAM role and an instance profile for the head, and give them to EC2;
+- create one IAM policy, `ray-vast-head-boundary`, at the first `up` in the account.
+
+The policy `AdministratorAccess` gives all of this. To give only these permissions, read [A restricted user](reference/iam.md#a-restricted-user).
+If you have a profile already, go to item 3.
 
 1. In the AWS console, create an access key for your user: **IAM**, **Users**, your user, **Security credentials**, **Create access key**, **Command Line Interface (CLI)**.
 2. Save the key in a profile. Type the access key ID, the secret access key, and the region of your head:
