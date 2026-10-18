@@ -1,7 +1,7 @@
 """The work of the `ray-vast` commands : `up`, `down`, `attach`, `dashboard`. `cli.py` parses the
 arguments and calls `run`; the split keeps `ray-vast --help` free of boto3, yaml and the other dependencies.
 
-`up` makes, in this order: an IAM role, 5 security groups, the role's policy, an instance profile, and the EC2 head
+`up` makes, in this order: the boundary policy (once for each AWS account, when it is missing), an IAM role, 5 security groups, the role's policy, an instance profile, and the EC2 head
 (all tagged `ray-vast-cluster=<name>`). On the head it builds a derived image (`provider.image` plus ray-vast), makes the secrets inside a container, and starts the Ray head as the main process of a container.
 `down` finds everything by tag or by name, so it works when `up` failed half way, when the head is gone, and
 when `~/.ray-vast/<cluster>.json` is missing.
@@ -54,8 +54,8 @@ NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
 # AWS gives no own error code for an instance profile that has not propagated yet: RunInstances answers with the generic
 # `InvalidParameterValue` and this text in the message ("Invalid IAM Instance Profile name/ARN"). Match on the text.
 PROFILE_NOT_READY = "Invalid IAM Instance Profile"
-BOUNDARY_POLICY = "ray-vast-head-boundary"  # the permissions boundary of every head role; the user creates it once
-SETUP_DOCS = "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup"
+BOUNDARY_POLICY = "ray-vast-head-boundary"  # the permissions boundary of every head role, shared by all clusters
+BOUNDARY_DOCS = "https://duc-ph.github.io/ray-vast/reference/iam/#the-boundary-policy"
 USER_DATA = """#!/bin/bash
 set -e
 export DEBIAN_FRONTEND=noninteractive
@@ -168,17 +168,35 @@ def up(config_path, raw_config, session, ssh, *, profile, wheel=None, vast_key, 
         raise CliError(f"cluster {cluster} already exists; use `ray-vast down` first")
     account = session.client("sts", config=ec2_client_config()).get_caller_identity()["Account"]
 
-    # 1. AWS resources. The role comes first: if the user lacks IAM permissions or the boundary policy is missing, nothing
-    # else exists yet. The boundary caps what the role can ever do, also after a later change of its inline policy.
+    # 1. AWS resources. The head goes into the default VPC (no subnet or VPC is given to AWS), so check that it exists.
+    if not ec2.describe_vpcs(Filters=[{"Name": "is-default", "Values": ["true"]}])["Vpcs"]:
+        raise CliError(f"region {region} has no default VPC. Create it once with "
+                       f"`aws ec2 create-default-vpc --region {region}`. Nothing was created.")
+    # The boundary caps what the head role can ever do, also after a later change of its inline policy. All clusters of
+    # the account share it, so `up` creates it when it is missing and `down` keeps it. A restricted user may not create
+    # policies (AccessDenied); then an admin creates it once.
     boundary = f"arn:aws:iam::{account}:policy/{BOUNDARY_POLICY}"
     try:
-        iam.create_role(RoleName=name, Tags=tags, PermissionsBoundary=boundary, AssumeRolePolicyDocument=json.dumps({
-            "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
+        iam.create_policy(PolicyName=BOUNDARY_POLICY, Description="ray-vast: the permissions boundary of the head roles",
+                          PolicyDocument=(Path(__file__).parent / "iam" / f"{BOUNDARY_POLICY}.json").read_text())
+        created_boundary = True
     except botocore.exceptions.ClientError as e:
-        if e.response["Error"]["Code"] != "NoSuchEntity":
+        if e.response["Error"]["Code"] not in ("EntityAlreadyExists", "AccessDenied"):
             raise
-        raise CliError(f"the IAM policy {BOUNDARY_POLICY} does not exist in AWS account {account}. Create it once (one command): "
-                       f"{SETUP_DOCS}. Nothing was created.") from None
+        created_boundary = False
+    # The role comes first: if the user lacks IAM permissions or the boundary is missing, nothing else exists yet.
+    for attempt in range(12):  # a new policy can take several seconds to be usable as a boundary
+        try:
+            iam.create_role(RoleName=name, Tags=tags, PermissionsBoundary=boundary, AssumeRolePolicyDocument=json.dumps({
+                "Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]}))
+            break
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] != "NoSuchEntity":
+                raise
+            if not created_boundary or attempt == 11:
+                raise CliError(f"the IAM policy {BOUNDARY_POLICY} does not exist in AWS account {account}, and these credentials "
+                               f"cannot create it. An admin creates it once: {BOUNDARY_DOCS}. Nothing was created.") from None
+            sleep(5)
     state_file = Path(state_dir) / f"{cluster}.json"
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state = {"cluster": cluster, "region": region, "profile": profile}  # `down` uses the saved profile by default

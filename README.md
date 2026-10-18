@@ -25,7 +25,7 @@ pip install ray-vast "ray[default]==2.59.*"
 The Ray pin keeps Ray on your laptop at the same version as Ray in the cluster image. ray-vast is tested with Ray 2.59.
 
 The CLI is tested on Linux. macOS is not tested.
-You need Python 3.10 or later, the AWS CLI, an AWS profile, a default VPC in the region of the head, the IAM policy `ray-vast-head-boundary` in your AWS account (a one-time step), and a vast.ai API key.
+You need Python 3.10 or later, an AWS profile, and a vast.ai API key.
 Details: [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
 
 ## Quick start
@@ -77,7 +77,7 @@ Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/
 - [Getting started](https://duc-ph.github.io/ray-vast/getting-started/): your first cluster, step by step.
 - Run your work: [submit jobs](https://duc-ph.github.io/ray-vast/libraries/jobs/), [Ray libraries](https://duc-ph.github.io/ray-vast/libraries/), [many tasks or actors](https://duc-ph.github.io/ray-vast/libraries/many-tasks/).
 - How-to guides: [choose node types and GPU images](https://duc-ph.github.io/ray-vast/how-to/node-types/), [control cost](https://duc-ph.github.io/ray-vast/how-to/control-cost/), [troubleshoot](https://duc-ph.github.io/ray-vast/how-to/troubleshoot/), [clean up](https://duc-ph.github.io/ray-vast/how-to/clean-up/).
-- Reference: [CLI](https://duc-ph.github.io/ray-vast/reference/cli/), [configuration](https://duc-ph.github.io/ray-vast/reference/configuration/), [limits](https://duc-ph.github.io/ray-vast/reference/limits/), [IAM permissions](https://duc-ph.github.io/ray-vast/reference/iam/), [changelog](https://duc-ph.github.io/ray-vast/reference/changelog/).
+- Reference: [CLI](https://duc-ph.github.io/ray-vast/reference/cli/), [configuration](https://duc-ph.github.io/ray-vast/reference/configuration/), [limits](https://duc-ph.github.io/ray-vast/reference/limits/), [AWS permissions](https://duc-ph.github.io/ray-vast/reference/iam/), [changelog](https://duc-ph.github.io/ray-vast/reference/changelog/).
 - How it works: [architecture](https://duc-ph.github.io/ray-vast/explanation/architecture/), [security model](https://duc-ph.github.io/ray-vast/security/). Read the security model before you use the cluster with real data. A vast host has root access to the worker container.
 
 ## Status

@@ -6,6 +6,7 @@ import select
 import shlex
 import subprocess
 import sys
+import urllib.parse
 from pathlib import Path
 
 import boto3
@@ -903,15 +904,70 @@ def test_up_makes_the_head_role_with_the_permissions_boundary(aws, cluster_yaml,
     assert role["PermissionsBoundary"]["PermissionsBoundaryArn"] == "arn:aws:iam::123456789012:policy/ray-vast-head-boundary"
 
 
-def test_up_without_the_boundary_policy_stops_with_a_pointer_to_the_setup_docs_and_leaves_nothing(aws, cluster_yaml, wheel, tmp_path):
-    def no_policy(**kwargs):  # what AWS answers (seen live); moto does not check that the boundary exists
-        raise botocore.exceptions.ClientError({"Error": {"Code": "NoSuchEntity", "Message": "Scope ARN: arn:aws:iam::123456789012:policy/"
-                                               "ray-vast-head-boundary does not exist or is not attachable."}}, "CreateRole")
-    aws.events.register("before-call.iam.CreateRole", no_policy)
-    with pytest.raises(commands.CliError, match=r"ray-vast-head-boundary.*does not exist.*getting-started"):
+def aws_error(code, operation, message=""):
+    def hook(**kwargs):
+        raise botocore.exceptions.ClientError({"Error": {"Code": code, "Message": message}}, operation)
+    return hook
+
+
+def no_boundary(**kwargs):  # what AWS answers for a missing boundary (seen live); moto does not check that it exists
+    raise botocore.exceptions.ClientError({"Error": {"Code": "NoSuchEntity", "Message": "Scope ARN: arn:aws:iam::123456789012:policy/"
+                                           "ray-vast-head-boundary does not exist or is not attachable."}}, "CreateRole")
+
+
+def test_up_creates_the_boundary_policy_from_the_packaged_file_when_it_is_missing(aws, cluster_yaml, wheel, tmp_path):
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    iam = aws.client("iam")
+    arn = "arn:aws:iam::123456789012:policy/ray-vast-head-boundary"
+    version = iam.get_policy(PolicyArn=arn)["Policy"]["DefaultVersionId"]
+    document = iam.get_policy_version(PolicyArn=arn, VersionId=version)["PolicyVersion"]["Document"]
+    document = json.loads(urllib.parse.unquote(document)) if isinstance(document, str) else document
+    packaged = json.loads((Path(commands.__file__).parent / "iam" / "ray-vast-head-boundary.json").read_text())
+    assert document == packaged
+
+
+def test_up_uses_an_existing_boundary_policy_and_down_keeps_it(aws, cluster_yaml, wheel, tmp_path):
+    iam = aws.client("iam")
+    iam.create_policy(PolicyName="ray-vast-head-boundary", PolicyDocument=json.dumps({"Version": "2012-10-17", "Statement": [
+        {"Effect": "Allow", "Action": "ec2:DescribeInstances", "Resource": "*"}]}))
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert commands.down(CLUSTER, REGION, aws, FakeVast(), tmp_path / "state", sleep=lambda s: None, out=lambda m: None) == []
+    [policy] = iam.list_policies(Scope="Local")["Policies"]
+    assert policy["PolicyName"] == "ray-vast-head-boundary" and policy["DefaultVersionId"] == "v1"  # not replaced, not deleted
+
+
+def test_up_waits_until_a_new_boundary_policy_is_usable(aws, cluster_yaml, wheel, tmp_path):
+    answers = [no_boundary, no_boundary]
+    aws.events.register("before-call.iam.CreateRole", lambda **kwargs: answers.pop(0)(**kwargs) if answers else None)
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert answers == []
+    assert aws.client("iam").get_role(RoleName=f"ray-vast-{CLUSTER}")["Role"]["PermissionsBoundary"]
+
+
+def test_up_without_the_boundary_policy_and_without_create_policy_stops_with_a_pointer_to_the_docs_and_leaves_nothing(aws, cluster_yaml, wheel, tmp_path):
+    aws.events.register("before-call.iam.CreatePolicy", aws_error("AccessDenied", "CreatePolicy"))
+    aws.events.register("before-call.iam.CreateRole", no_boundary)
+    with pytest.raises(commands.CliError, match=r"ray-vast-head-boundary does not exist.*cannot create it. An admin creates it once: "
+                                                 r"https://duc-ph.github.io/ray-vast/reference/iam/#the-boundary-policy"):
         run_up(aws, cluster_yaml, wheel, tmp_path)
     assert what_is_left(aws, FakeVast()) == []
     assert not (tmp_path / "state" / f"{CLUSTER}.json").exists()  # so the next `up` can run at once
+
+
+def test_up_with_an_existing_boundary_policy_and_without_create_policy_works(aws, cluster_yaml, wheel, tmp_path):
+    aws.events.register("before-call.iam.CreatePolicy", aws_error("AccessDenied", "CreatePolicy"))
+    run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert aws.client("iam").get_role(RoleName=f"ray-vast-{CLUSTER}")["Role"]["PermissionsBoundary"]
+
+
+def test_up_in_a_region_without_a_default_vpc_stops_with_the_command_and_leaves_nothing(aws, cluster_yaml, wheel, tmp_path):
+    aws.events.register("before-call.ec2.DescribeVpcs", lambda **kwargs: (AWSResponse("https://aws", 200, {}, None), {"Vpcs": []}))
+    with pytest.raises(commands.CliError, match=rf"region {REGION} has no default VPC. Create it once with "
+                                                 rf"`aws ec2 create-default-vpc --region {REGION}`. Nothing was created."):
+        run_up(aws, cluster_yaml, wheel, tmp_path)
+    assert what_is_left(aws, FakeVast()) == []
+    assert aws.client("iam").list_policies(Scope="Local")["Policies"] == []
+    assert not (tmp_path / "state" / f"{CLUSTER}.json").exists()
 
 
 def test_up_saves_the_profile_in_the_state_file(aws, cluster_yaml, wheel, tmp_path):

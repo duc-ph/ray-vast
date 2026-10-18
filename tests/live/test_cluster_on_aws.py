@@ -1,5 +1,5 @@
 """The cluster on real AWS, with no vast rental. The boundary-policy test needs the account with no ray-vast role and
-changes the account policy: its `exclusive_account` fixture makes it run before every cluster `up`. The `aws_only` cluster
+deletes the account policy: its `exclusive_account` fixture makes it run before every cluster `up`. The `aws_only` cluster
 (the head only) has its destructive test (the boundary caps the head role) and its life cycle with `down` last in this
 file. About 60 min; EC2 under $0.30, no vast cost."""
 import json
@@ -57,9 +57,11 @@ def run_until(cluster, args, ready, timeout=900):
 # --- no cluster fixture ------------------------------------------------------------------------------------------------
 
 
-def test_up_stops_before_it_makes_anything_when_the_boundary_policy_is_missing(record, new_cluster, tmp_path, exclusive_account):
-    """With no cluster: delete the boundary policy, `up` stops before it makes anything, then the documented command
-    makes the policy again (always, in `finally`)."""
+def test_up_creates_the_missing_boundary_policy_and_down_keeps_it(record, new_cluster, tmp_path, exclusive_account):
+    """With no cluster: delete the boundary policy. `up` as the admin creates it from the packaged file and then makes
+    the head role with it (a new policy can take seconds to be usable). `up` is stopped once the role exists; `down`
+    removes the cluster and keeps the policy. If the policy is still missing at the end, the documented admin command
+    makes it again (always, in `finally`)."""
     iam = admin("iam")
     account = admin("sts").get_caller_identity()["Account"]
     arn = f"arn:aws:iam::{account}:policy/{BOUNDARY}"
@@ -70,26 +72,39 @@ def test_up_stops_before_it_makes_anything_when_the_boundary_policy_is_missing(r
         if not version["IsDefaultVersion"]:
             iam.delete_policy_version(PolicyArn=arn, VersionId=version["VersionId"])
     iam.delete_policy(PolicyArn=arn)
-    cluster = None
     try:
         cluster = new_cluster(small_config("nob"), record.dir, tmp_path / "home")
-        done = cluster.cli("up", cluster.yaml, "--profile", ADMIN_PROFILE)
-        expected = (f"the IAM policy {BOUNDARY} does not exist in AWS account {account}. Create it once (one command): "
-                    "https://duc-ph.github.io/ray-vast/getting-started/#aws-setup. Nothing was created.")
-        record.check("up exits 1 with the message and the link", done.returncode == 1 and expected in done.stderr, done.stderr[-400:])
-        left = aws_leftovers(cluster.name, REGION)  # before any `down`: the claim is that `up` made nothing
-        record.check("nothing was made", left == [], left)
-        record.check("no state file", not (cluster.state_dir / f"{cluster.name}.json").exists(), "")
+        role = f"ray-vast-{cluster.name}"
+
+        def role_exists():
+            try:
+                return bool(iam.get_role(RoleName=role))
+            except iam.exceptions.NoSuchEntityException:
+                return False
+        out = run_until(cluster, ["up", cluster.yaml, "--profile", ADMIN_PROFILE], role_exists)
+        record.check("up made the head role", role_exists(), out[-300:])
+        policy = iam.get_policy(PolicyArn=arn)["Policy"]
+        document = iam.get_policy_version(PolicyArn=arn, VersionId=policy["DefaultVersionId"])["PolicyVersion"]["Document"]
+        from ray_vast import commands
+        packaged = json.loads((Path(commands.__file__).parent / "iam" / f"{BOUNDARY}.json").read_text())
+        record.check("up created the policy from the packaged file", document == packaged, document)
+        boundary = iam.get_role(RoleName=role)["Role"].get("PermissionsBoundary", {}).get("PermissionsBoundaryArn", "")
+        record.check("the head role has the new policy as its boundary", boundary == arn, boundary)
+        done = cluster.down()
+        record.check("down: left nothing", done.returncode == 0 and "left: nothing" in done.stdout, done.stdout[-300:])
+        record.check("down kept the policy", iam.get_policy(PolicyArn=arn)["Policy"]["PolicyName"] == BOUNDARY, "")
     finally:
-        # The getting-started command, verbatim except the profile name.
-        command = ("IAM_DIR=\"$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam\"\n"
-                   f"aws iam create-policy --policy-name {BOUNDARY} \\\n"
-                   f"    --policy-document \"file://$IAM_DIR/{BOUNDARY}.json\" --profile {ADMIN_PROFILE}\n")
-        done = subprocess.run(["bash", "-c", command], env={**os.environ, "PATH": f"{BIN}:{os.environ['PATH']}"},
-                              capture_output=True, text=True, timeout=120)
-        record.evidence("recreate.txt", f"$ {command}\nexit {done.returncode}\n{done.stdout}{done.stderr}")
-        assert done.returncode == 0, done.stderr
-    record.check("the documented command made the policy again", iam.get_policy(PolicyArn=arn)["Policy"]["PolicyName"] == BOUNDARY, "")
+        try:
+            iam.get_policy(PolicyArn=arn)
+        except iam.exceptions.NoSuchEntityException:
+            # The admin command of the AWS permissions page, verbatim except the profile name.
+            command = ("IAM_DIR=\"$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam\"\n"
+                       f"aws iam create-policy --policy-name {BOUNDARY} \\\n"
+                       f"    --policy-document \"file://$IAM_DIR/{BOUNDARY}.json\" --profile {ADMIN_PROFILE}\n")
+            done = subprocess.run(["bash", "-c", command], env={**os.environ, "PATH": f"{BIN}:{os.environ['PATH']}"},
+                                  capture_output=True, text=True, timeout=120)
+            record.evidence("recreate.txt", f"$ {command}\nexit {done.returncode}\n{done.stdout}{done.stderr}")
+            assert done.returncode == 0, done.stderr
 
 
 def test_down_removes_everything_after_an_interrupted_up_and_a_lost_state_file(record, new_cluster, tmp_path):

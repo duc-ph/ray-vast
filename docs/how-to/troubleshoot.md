@@ -155,8 +155,10 @@ Run the `export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...` line that `ray-vast
 |---|---|---|
 | ``cluster <name> already exists; use `ray-vast down` first`` | An EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`, exists. | Run `ray-vast down cluster.yaml`. |
 | `the head image build failed while installing ray-vast==<version> from PyPI` | The `docker build` on the head failed. Possible causes: the version is not on PyPI, PyPI is not reachable, or the base image pull failed. | Read the build output below the message. Run `ray-vast down cluster.yaml`. Read [CLI](../reference/cli.md). |
+| `region <region> has no default VPC` | ray-vast puts the head in the default VPC of the region. Somebody deleted it. | Run the command in the message: `aws ec2 create-default-vpc --region <region>`. Then run `up` again. |
+| `the IAM policy ray-vast-head-boundary does not exist ... these credentials cannot create it` | A restricted user runs the first `up` in the account. | An admin creates the policy once. Read [The boundary policy](../reference/iam.md#the-boundary-policy). |
 | `no vast key: set VAST_API_KEY or put it in ~/.config/vastai/vast_api_key` | No vast key. | Set the key. |
-| `AWS error ...` and `The AWS user lacks a permission` | The AWS user does not have a permission that ray-vast needs. | Read [IAM permissions](../reference/iam.md). |
+| `AWS error ...` and `The AWS user lacks a permission` | The AWS user does not have a permission that ray-vast needs. | Read [AWS permissions](../reference/iam.md). |
 | `the image check printed no single RAYVAST_IMAGE_INFO ... line` | The image has no Python with `ray` and `ray_vast`, or its ENTRYPOINT does not run the command. | Read [Use GPU images](node-types.md#use-gpu-images). |
 
 After a failed `up`, run `ray-vast down cluster.yaml`. Read [Clean up after a failure](clean-up.md).

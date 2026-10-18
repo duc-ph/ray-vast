@@ -80,7 +80,7 @@ For the mechanisms, read [Enrollment and the join token](explanation/architectur
 
 - The IAM role of the head can only change the rules of the 5 security groups of the cluster, and describe EC2.
 - The role has the permissions boundary `ray-vast-head-boundary`. The role can never do more than the boundary allows: describe EC2, and change the rules of security groups with the tag `ray-vast-cluster`. This stays true if someone changes the role policy.
-- A restricted user with the policy `ray-vast-user` can make a head role only with this boundary. Read [IAM permissions](reference/iam.md).
+- A restricted user with the policy `ray-vast-user` can make a head role only with this boundary. Read [AWS permissions](reference/iam.md).
 
 **A worker that the head no longer controls keeps running and costs money**
 

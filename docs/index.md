@@ -49,7 +49,7 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 
 ## Quick start
 
-You need the AWS CLI, an AWS profile, a default VPC in the region, the boundary policy (a one-time AWS step), and a vast API key in `~/.config/vastai/vast_api_key`.
+You need an AWS profile and a vast API key in `~/.config/vastai/vast_api_key`.
 The full steps are in [Getting started](getting-started.md).
 
 ```bash

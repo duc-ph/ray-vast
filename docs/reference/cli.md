@@ -50,7 +50,7 @@ ray-vast up cluster.yaml --profile my-aws-profile
 `up` does these steps:
 
 1. It reads and checks the YAML. It shows the warnings. It stops at once if the cluster already exists: an EC2 head with the cluster tag, or `~/.ray-vast/<cluster_name>.json`.
-2. It makes the IAM role `ray-vast-<cluster_name>` with the permissions boundary `ray-vast-head-boundary`. If the boundary policy does not exist, `up` stops here and makes nothing. Read [Getting started](../getting-started.md#aws-setup).
+2. It checks that the region has a default VPC. It creates the IAM policy `ray-vast-head-boundary` if it is missing (one time in each account). Then it makes the IAM role `ray-vast-<cluster_name>` with this policy as the permissions boundary. If the region has no default VPC, or the policy is missing and your user cannot create it, `up` stops here and makes nothing. Read [The boundary policy](iam.md#the-boundary-policy).
 3. It writes `~/.ray-vast/<cluster_name>.json` with the region and the AWS profile.
 4. It makes the EC2 key pair `ray-vast-<cluster_name>` and saves the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem` (mode 600).
 5. It makes the 5 security groups `ray-vast-<cluster_name>-0` … `-4`, the role policy and the instance profile. Group 0 gets one SSH rule for the public IP of your laptop.
