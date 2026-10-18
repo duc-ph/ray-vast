@@ -30,8 +30,13 @@ Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59
 
 ## 2. Set up AWS { #aws-setup }
 
+Steps 2.1 to 2.4 need an admin profile. Then you have two choices:
+
+- **Use the admin profile for ray-vast.** This is the simple choice. Do steps 2.1 to 2.4. Then go to step 3.
+- **Use a restricted user for ray-vast.** The user can do only what ray-vast needs. Do steps 2.1 to 2.4, and then step 2.5.
+
 Steps 2.1 and 2.2 are one time on your laptop. Step 2.3 is one time in each region. Step 2.4 is one time in each AWS account.
-In the commands, replace `my-aws-profile` with the name of your profile and `us-west-2` with the region of your head.
+In the commands, replace `my-aws-profile` with the name of your admin profile and `us-west-2` with the region of your head.
 
 ### 2.1 Make an AWS profile
 
@@ -39,7 +44,6 @@ ray-vast uses an AWS profile: a named set of credentials on your laptop.
 If you have a profile already, go to step 2.2.
 
 1. In the AWS console, open **IAM**, then **Users**. Create a user with the policy `AdministratorAccess`, or use an existing admin user.
-   To give ray-vast less access, read [Use a restricted IAM user](#use-a-restricted-iam-user) below.
 2. Open the user, then **Security credentials**, then **Create access key**. Select **Command Line Interface (CLI)**.
 3. Run this command. Type the access key ID and the secret access key. For the region, type the region of your head.
 
@@ -104,25 +108,11 @@ To create the policy in the AWS console instead:
 2. Select the **JSON** tab. Paste the policy above.
 3. Select **Next**. Type the name `ray-vast-head-boundary`. Select **Create policy**.
 
-### What `up` makes in AWS
+### 2.5 Optional: make a restricted user { #use-a-restricted-iam-user }
 
-`ray-vast up` makes these resources in the region of the head. `ray-vast down` deletes them.
+Do this step only if you do not want to use the admin profile for ray-vast. Do steps 2.1 to 2.4 first.
 
-| Resource | What it is for |
-|---|---|
-| An EC2 instance, with its disk | The head. It runs the Ray head and the ray-vast provider. |
-| 5 security groups | The firewall of the head. They let in SSH from your laptop's IP and the IPs of the workers. |
-| An EC2 key pair | The SSH key of the head. `up` keeps the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem`. |
-| An IAM role and an instance profile | They let the provider on the head add and remove the worker IPs in the security groups. |
-
-All of them have the name `ray-vast-<cluster_name>` and the tag `ray-vast-cluster=<cluster_name>`.
-The full list of AWS actions is in [IAM permissions](reference/iam.md).
-
-### Use a restricted IAM user { #use-a-restricted-iam-user }
-
-If you use admin credentials, skip this section.
-
-A restricted user can do only what ray-vast needs. An admin does steps 2.3 and 2.4, and then makes the user. The policy `ray-vast-user` gives the user these permissions:
+The policy `ray-vast-user` gives the user these permissions:
 
 - EC2: make, change and delete only resources with the tag `ray-vast-cluster`, and key pairs with names `ray-vast-*`.
 - IAM: make and delete roles and instance profiles with names `ray-vast-*`.
@@ -139,19 +129,17 @@ This is the policy:
 --8<-- "src/ray_vast/iam/ray-vast-user.json"
 ```
 
-Do these steps as an admin.
-
-With the AWS CLI:
+With the AWS CLI and the admin profile:
 
 ```bash
 IAM_DIR="$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam"
-ACCOUNT=$(aws sts get-caller-identity --query Account --output text --profile my-admin-profile)
+ACCOUNT=$(aws sts get-caller-identity --query Account --output text --profile my-aws-profile)
 aws iam create-policy --policy-name ray-vast-user \
-    --policy-document "file://$IAM_DIR/ray-vast-user.json" --profile my-admin-profile
-aws iam create-user --user-name ray-vast --profile my-admin-profile
+    --policy-document "file://$IAM_DIR/ray-vast-user.json" --profile my-aws-profile
+aws iam create-user --user-name ray-vast --profile my-aws-profile
 aws iam attach-user-policy --user-name ray-vast \
-    --policy-arn "arn:aws:iam::$ACCOUNT:policy/ray-vast-user" --profile my-admin-profile
-aws iam create-access-key --user-name ray-vast --profile my-admin-profile
+    --policy-arn "arn:aws:iam::$ACCOUNT:policy/ray-vast-user" --profile my-aws-profile
+aws iam create-access-key --user-name ray-vast --profile my-aws-profile
 ```
 
 The last command prints the access key ID and the secret access key. Keep the secret safe.
@@ -163,13 +151,28 @@ In the AWS console:
 3. Select **Attach policies directly**. Select `ray-vast-user`. Create the user.
 4. Open the user, then **Security credentials**, then **Create access key**. Select **Command Line Interface (CLI)**. Copy the access key ID and the secret access key.
 
-Then make the profile `ray-vast` with this key, as in step 2.1:
+Then make the profile `ray-vast` with this key, and check it:
 
 ```bash
 aws configure --profile ray-vast
+aws sts get-caller-identity --profile ray-vast
 ```
 
-Use `--profile ray-vast` on `ray-vast up`, or `export AWS_PROFILE=ray-vast`.
+In step 5, use `--profile ray-vast` instead of the admin profile.
+
+### What `up` makes in AWS
+
+`ray-vast up` makes these resources in the region of the head. `ray-vast down` deletes them.
+
+| Resource | What it is for |
+|---|---|
+| An EC2 instance, with its disk | The head. It runs the Ray head and the ray-vast provider. |
+| 5 security groups | The firewall of the head. They let in SSH from your laptop's IP and the IPs of the workers. |
+| An EC2 key pair | The SSH key of the head. `up` keeps the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem`. |
+| An IAM role and an instance profile | They let the provider on the head add and remove the worker IPs in the security groups. |
+
+All of them have the name `ray-vast-<cluster_name>` and the tag `ray-vast-cluster=<cluster_name>`.
+The full list of AWS actions is in [IAM permissions](reference/iam.md).
 
 ## 3. Save the vast API key
 

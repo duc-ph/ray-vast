@@ -1,4 +1,4 @@
-"""The restricted IAM user of the suite: the getting-started commands ("Optional: use a restricted IAM user"), run as the
+"""The restricted IAM user of the suite: the getting-started commands (step 2.5, "make a restricted user"), run as the
 admin with the AWS CLI. Two changes from the docs: the user name is `ray-vast-livetest-<date>` (not `ray-vast`), and
 `create-policy` of `ray-vast-user` is skipped when the policy exists (the account keeps it). The secret access key goes
 only into a mode-600 credentials file in a temp directory, never into a log."""
