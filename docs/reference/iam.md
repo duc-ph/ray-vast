@@ -7,7 +7,7 @@ ray-vast uses two AWS identities:
 
 ## Your AWS user
 
-You can use your own AWS credentials, for example an admin profile. Then the only setup is the boundary policy. Read [Getting started](../getting-started.md#aws-setup).
+You can use your own AWS credentials, for example an admin profile. Then the setup is a default VPC and the boundary policy. Read [Getting started](../getting-started.md#aws-setup).
 
 For a restricted user, attach the policy `ray-vast-user`. It is in the package, in `ray_vast/iam/ray-vast-user.json`:
 

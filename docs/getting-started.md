@@ -9,9 +9,9 @@ You need these on your laptop (the operator machine). The CLI is tested on Linux
 
 - **Python 3.10 or later.** Ray 2.59 needs Python 3.10 or later.
 - **`ssh` and `scp`.** ray-vast uses them to reach the head.
-- **An AWS account and a profile.** You can use your own AWS credentials as they are, for example an admin profile. Step 2 tells what ray-vast does in AWS.
-- **A vast.ai account with credit, and an API key.** Get the key in the vast console. Put it in `~/.config/vastai/vast_api_key`, or in the `VAST_API_KEY` environment variable. Never put the key in the cluster YAML.
-- **Ray 2.59.** Step 1 installs it on the laptop.
+- **The AWS CLI, version 2.** Step 2 uses it. Install it from the [AWS CLI page](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html). ray-vast itself does not use the AWS CLI.
+- **An AWS account.**
+- **A vast.ai account with credit.**
 
 You do not need an EC2 key pair. `ray-vast up` makes one SSH key for each cluster.
 
@@ -30,35 +30,50 @@ Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59
 
 ## 2. Set up AWS { #aws-setup }
 
-### What ray-vast does in AWS
+Steps 2.1 and 2.2 are one time on your laptop. Step 2.3 is one time in each region. Step 2.4 is one time in each AWS account.
+In the commands, replace `my-aws-profile` with the name of your profile and `us-west-2` with the region of your head.
 
-`ray-vast up` makes these resources in the region of the head. `ray-vast down` deletes them.
+### 2.1 Make an AWS profile
 
-| Resource | What it is for |
-|---|---|
-| An EC2 instance, with its disk | The head. It runs the Ray head and the ray-vast provider. |
-| 5 security groups | The firewall of the head. They let in your SSH and the IPs of the workers. |
-| An EC2 key pair | The SSH key of the head. `up` keeps the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem`. |
-| An IAM role and an instance profile | They let the provider on the head add and remove the worker IPs in the security groups. |
+ray-vast uses an AWS profile: a named set of credentials on your laptop.
+If you have a profile already, go to step 2.2.
 
-All of them have the name `ray-vast-<cluster_name>` and the tag `ray-vast-cluster=<cluster_name>`.
-The full list of AWS actions is in [IAM permissions](reference/iam.md).
+1. In the AWS console, open **IAM**, then **Users**. Create a user with the policy `AdministratorAccess`, or use an existing admin user.
+   To give ray-vast less access, read [Use a restricted IAM user](#use-a-restricted-iam-user) below.
+2. Open the user, then **Security credentials**, then **Create access key**. Select **Command Line Interface (CLI)**.
+3. Run this command. Type the access key ID and the secret access key. For the region, type the region of your head.
 
-### Create the boundary policy (one time in each AWS account)
-
-The head role has a permissions boundary: the IAM policy `ray-vast-head-boundary`.
-The boundary is a limit. The head role can never do more than the boundary allows, even if its own policy changes.
-The boundary allows only what the head needs: read EC2, and change the rules of the ray-vast security groups.
-
-Every user must do this step once in each AWS account. `ray-vast up` does not create the policy. If it is missing, `up` stops before it makes anything, with a link to this section.
-
-This is the policy:
-
-```json
---8<-- "src/ray_vast/iam/ray-vast-head-boundary.json"
+```bash
+aws configure --profile my-aws-profile
 ```
 
-With the AWS CLI (the file is in the package):
+### 2.2 Check the profile
+
+```bash
+aws sts get-caller-identity --profile my-aws-profile
+```
+
+The output shows your AWS account ID. If it shows an error, the profile is not correct.
+
+### 2.3 Check the default VPC (one time in each region)
+
+ray-vast puts the head in the default VPC of the region. New AWS accounts have a default VPC in each region.
+Check it:
+
+```bash
+aws ec2 describe-vpcs --filters Name=is-default,Values=true \
+    --query 'Vpcs[].VpcId' --region us-west-2 --profile my-aws-profile
+```
+
+If the output is `[]`, there is no default VPC. Create one:
+
+```bash
+aws ec2 create-default-vpc --region us-west-2 --profile my-aws-profile
+```
+
+### 2.4 Create the boundary policy (one time in each AWS account)
+
+Run these two commands:
 
 ```bash
 IAM_DIR="$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam"
@@ -66,68 +81,111 @@ aws iam create-policy --policy-name ray-vast-head-boundary \
     --policy-document "file://$IAM_DIR/ray-vast-head-boundary.json" --profile my-aws-profile
 ```
 
-Or in the AWS console:
+The first command finds the policy file in the installed package. The second command creates the IAM policy `ray-vast-head-boundary` in your account.
+If the output says `EntityAlreadyExists`, the policy exists already. That is correct.
+
+Why the policy is necessary:
+
+- The head is an EC2 instance. It adds the IPs of new workers to its security groups. For this, `up` gives the head an IAM role.
+- The policy `ray-vast-head-boundary` is the permissions boundary of that role. The role can never do more than the boundary allows.
+- The boundary allows only two things: read EC2, and change the rules of the ray-vast security groups.
+- All clusters in the account use the same policy. So `up` does not create it, and `down` does not delete it.
+- If the policy is missing, `up` stops before it makes anything.
+
+This is the policy:
+
+```json
+--8<-- "src/ray_vast/iam/ray-vast-head-boundary.json"
+```
+
+To create the policy in the AWS console instead:
 
 1. Open **IAM**, then **Policies**, then **Create policy**.
 2. Select the **JSON** tab. Paste the policy above.
 3. Select **Next**. Type the name `ray-vast-head-boundary`. Select **Create policy**.
 
-??? note "Optional: use a restricted IAM user for ray-vast"
+### What `up` makes in AWS
 
-    If you use your own admin credentials, skip this section.
+`ray-vast up` makes these resources in the region of the head. `ray-vast down` deletes them.
 
-    A restricted user can do only what ray-vast needs. The policy `ray-vast-user` gives these permissions:
+| Resource | What it is for |
+|---|---|
+| An EC2 instance, with its disk | The head. It runs the Ray head and the ray-vast provider. |
+| 5 security groups | The firewall of the head. They let in SSH from your laptop's IP and the IPs of the workers. |
+| An EC2 key pair | The SSH key of the head. `up` keeps the private key in `~/.ray-vast/<cluster_name>/ssh_key.pem`. |
+| An IAM role and an instance profile | They let the provider on the head add and remove the worker IPs in the security groups. |
 
-    - EC2: make, change and delete only resources with the tag `ray-vast-cluster`, and key pairs with names `ray-vast-*`.
-    - IAM: make and delete roles and instance profiles with names `ray-vast-*`.
-    - IAM: make a role or change its policy only with the boundary `ray-vast-head-boundary`.
-    - IAM: pass the roles `ray-vast-*` only to EC2.
-    - No `iam:CreatePolicy`.
+All of them have the name `ray-vast-<cluster_name>` and the tag `ray-vast-cluster=<cluster_name>`.
+The full list of AWS actions is in [IAM permissions](reference/iam.md).
 
-    So the user cannot make a role with more permissions than the boundary.
-    For the same reason, ray-vast cannot create the boundary for a restricted user. A key that can create the boundary policy can also create an admin policy. So an admin creates the boundary once (above), and then the restricted user.
+### Use a restricted IAM user { #use-a-restricted-iam-user }
 
-    This is the policy:
+If you use admin credentials, skip this section.
 
-    ```json
-    --8<-- "src/ray_vast/iam/ray-vast-user.json"
-    ```
+A restricted user can do only what ray-vast needs. An admin does steps 2.3 and 2.4, and then makes the user. The policy `ray-vast-user` gives the user these permissions:
 
-    Do these steps as an admin.
+- EC2: make, change and delete only resources with the tag `ray-vast-cluster`, and key pairs with names `ray-vast-*`.
+- IAM: make and delete roles and instance profiles with names `ray-vast-*`.
+- IAM: make a role or change its policy only with the boundary `ray-vast-head-boundary`.
+- IAM: pass the roles `ray-vast-*` only to EC2.
+- No `iam:CreatePolicy`.
 
-    With the AWS CLI:
+So the user cannot make a role with more permissions than the boundary.
+The user cannot create the boundary policy. A user that can create policies can also create an admin policy.
 
-    ```bash
-    IAM_DIR="$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam"
-    ACCOUNT=$(aws sts get-caller-identity --query Account --output text --profile my-admin-profile)
-    aws iam create-policy --policy-name ray-vast-user \
-        --policy-document "file://$IAM_DIR/ray-vast-user.json" --profile my-admin-profile
-    aws iam create-user --user-name ray-vast --profile my-admin-profile
-    aws iam attach-user-policy --user-name ray-vast \
-        --policy-arn "arn:aws:iam::$ACCOUNT:policy/ray-vast-user" --profile my-admin-profile
-    aws iam create-access-key --user-name ray-vast --profile my-admin-profile
-    ```
+This is the policy:
 
-    The last command prints the access key ID and the secret access key. Keep the secret safe.
+```json
+--8<-- "src/ray_vast/iam/ray-vast-user.json"
+```
 
-    In the AWS console:
+Do these steps as an admin.
 
-    1. Create the policy `ray-vast-user` as you created the boundary: **IAM**, **Policies**, **Create policy**, **JSON**. Paste the policy above.
-    2. Open **IAM**, then **Users**, then **Create user**. Type the name `ray-vast`. Do not give console access.
-    3. Select **Attach policies directly**. Select `ray-vast-user`. Create the user.
-    4. Open the user, then **Security credentials**, then **Create access key**. Select **Command Line Interface (CLI)**. Copy the access key ID and the secret access key.
+With the AWS CLI:
 
-    Then add a named profile `ray-vast` to `~/.aws/credentials`:
+```bash
+IAM_DIR="$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam"
+ACCOUNT=$(aws sts get-caller-identity --query Account --output text --profile my-admin-profile)
+aws iam create-policy --policy-name ray-vast-user \
+    --policy-document "file://$IAM_DIR/ray-vast-user.json" --profile my-admin-profile
+aws iam create-user --user-name ray-vast --profile my-admin-profile
+aws iam attach-user-policy --user-name ray-vast \
+    --policy-arn "arn:aws:iam::$ACCOUNT:policy/ray-vast-user" --profile my-admin-profile
+aws iam create-access-key --user-name ray-vast --profile my-admin-profile
+```
 
-    ```ini
-    [ray-vast]
-    aws_access_key_id = <access key id>
-    aws_secret_access_key = <secret access key>
-    ```
+The last command prints the access key ID and the secret access key. Keep the secret safe.
 
-    Use the profile with `export AWS_PROFILE=ray-vast`, or with `--profile ray-vast` on `ray-vast up`.
+In the AWS console:
 
-## 3. Write a cluster YAML
+1. Create the policy `ray-vast-user` as you created the boundary: **IAM**, **Policies**, **Create policy**, **JSON**. Paste the policy above.
+2. Open **IAM**, then **Users**, then **Create user**. Type the name `ray-vast`. Do not give console access.
+3. Select **Attach policies directly**. Select `ray-vast-user`. Create the user.
+4. Open the user, then **Security credentials**, then **Create access key**. Select **Command Line Interface (CLI)**. Copy the access key ID and the secret access key.
+
+Then make the profile `ray-vast` with this key, as in step 2.1:
+
+```bash
+aws configure --profile ray-vast
+```
+
+Use `--profile ray-vast` on `ray-vast up`, or `export AWS_PROFILE=ray-vast`.
+
+## 3. Save the vast API key
+
+1. In the vast console, open **Account**, then **Keys**. Copy your API key, or create one.
+2. Save the key in a file that only you can read:
+
+```bash
+mkdir -p ~/.config/vastai
+(umask 077; cat > ~/.config/vastai/vast_api_key)   # paste the key, press Enter, then Ctrl-D
+```
+
+ray-vast can also read the key from the `VAST_API_KEY` environment variable. Never put the key in the cluster YAML.
+
+The `vastai` CLI is optional. The clean-up pages use it to list and destroy instances. To install it, run `pip install vastai`.
+
+## 4. Write a cluster YAML
 
 The package has three examples in `ray_vast/examples/`: `gpu-24gb.yaml`, `gpu-80gb.yaml` and `cpu-heavy.yaml`.
 Each example lists all fields. A field in a comment keeps its default.
@@ -146,7 +204,7 @@ Edit `cluster.yaml`. Set the region of the head and your budget:
 The fields are in [Configuration](reference/configuration.md).
 To choose other GPUs, read [Choose node types and GPU images](how-to/node-types.md).
 
-## 4. Start the cluster
+## 5. Start the cluster
 
 ```bash
 ray-vast up cluster.yaml --profile my-aws-profile
@@ -172,7 +230,7 @@ It takes about 8 to 10 minutes with the 18 GB GPU image, because the head pulls 
 
 If `up` stops with an error, run `ray-vast down cluster.yaml` and read [Clean up after a failure](how-to/clean-up.md).
 
-## 5. Open the dashboard
+## 6. Open the dashboard
 
 ```bash
 ray-vast dashboard cluster.yaml
@@ -190,7 +248,7 @@ The command copies the cluster token to `~/.ray-vast/<cluster_name>/token` (mode
 Then it opens an SSH tunnel to port 8265 of the head.
 Keep this terminal open. Open http://127.0.0.1:8265 in your browser to see the Ray dashboard.
 
-## 6. Submit a job
+## 7. Submit a job
 
 Open a second terminal. Activate the venv, and run the `export` line that `dashboard` printed:
 
@@ -232,7 +290,7 @@ ray-vast attach cluster.yaml
 sudo docker exec ray-vast-head ray status
 ```
 
-## 7. Watch the cost
+## 8. Watch the cost
 
 - `max_dollars_per_hour` is a hard limit. The provider does not rent above it.
 - The vast console shows each instance and its price. The instances have the label `ray-vast:<cluster_name>`.
@@ -241,7 +299,7 @@ sudo docker exec ray-vast-head ray status
 
 Read [Control cost](how-to/control-cost.md) for more.
 
-## 8. Remove the cluster
+## 9. Remove the cluster
 
 Stop the tunnel with Ctrl-C. The `dashboard` command prints `tunnel closed`. Then run:
 

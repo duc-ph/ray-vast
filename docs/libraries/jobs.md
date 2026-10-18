@@ -9,7 +9,7 @@ You send work to a ray-vast cluster with Ray Jobs. Every library page uses the s
 
 ## Run it
 
-Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/src/ray_vast/examples/gpu-24gb.yaml). Set the region of the head (`node_config.region` of the head node type). Read [Getting started](../getting-started.md#3-write-a-cluster-yaml).
+Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/duc-ph/ray-vast/blob/main/src/ray_vast/examples/gpu-24gb.yaml). Set the region of the head (`node_config.region` of the head node type). Read [Getting started](../getting-started.md#4-write-a-cluster-yaml).
 
 Terminal 1: start the cluster and the tunnel. Keep the tunnel open.
 
