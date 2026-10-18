@@ -38,21 +38,6 @@ ray-vast sets `type`, `module` and `disable_node_updaters` itself. Do not set th
 
 The vast API key is not a config field. ray-vast reads it from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`.
 
-### Fields of older versions
-
-A YAML with one of these `provider` fields gets an error. The error tells what to do.
-
-| Old field | Now |
-|---|---|
-| `region` | `node_config.region` of the head node type. |
-| `head_instance_type` | `node_config.instance_type` of the head node type. |
-| `key_name`, `key_file` | Removed. `up` makes an EC2 key pair for each cluster. |
-| `port_a`, `port_b` | Removed. The head server always uses ports 7443 and 7444. |
-| `cert_max_age_days` | Removed. The CA and the certificates always live 365 days. |
-| `image_size_gb` | Removed. `up` measures the image. |
-| `order_by` | Removed. The provider always rents the cheapest offers first (`dph_total`). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
-| `allow_non_datacenter` | Removed. ray-vast adds no `datacenter` field to the offer query. Set `datacenter: {eq: true}` and `verified: {eq: true}` in the `offer_query` of each node type (highly recommended). Remove the field before you run `up`. `down`, `attach` and `dashboard` accept it. |
-
 ## `available_node_types`: the head
 
 ```yaml

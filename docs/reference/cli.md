@@ -5,7 +5,7 @@ ray-vast {up,down,attach,dashboard} CLUSTER_YAML [options]
 ```
 
 Every command takes the path of the cluster YAML. The YAML needs `cluster_name` and `node_config.region` of the head node type.
-`down`, `attach` and `dashboard` take the region from the state file `~/.ray-vast/<cluster_name>.json` when it exists. Only `up` rejects the removed and moved `provider` fields.
+`down`, `attach` and `dashboard` take the region from the state file `~/.ray-vast/<cluster_name>.json` when it exists.
 `ray-vast --help` and `ray-vast <command> --help` show the options.
 
 ## Commands
@@ -30,7 +30,7 @@ Every command takes the path of the cluster YAML. The YAML needs `cluster_name` 
 |---|---|
 | 0 | Success. |
 | 1 | An error. For `down`: something is left. |
-| 2 | A bad command line, for example an unknown option such as the removed `--index-url`, `--key-name` or `--key-file`. |
+| 2 | A bad command line, for example an unknown option. |
 
 `attach` and `dashboard` return the exit code of `ssh`.
 

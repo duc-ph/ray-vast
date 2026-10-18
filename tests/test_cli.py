@@ -838,7 +838,7 @@ def test_main_up_with_a_failed_head_image_build_names_the_version(aws, home, fak
         def run(self, ip, command, stdin=None, timeout=900):
             if "docker build" in command:
                 self._record("run", ip, command, stdin)
-                raise commands.SshError("ssh: exit 1: sudo docker build\nERROR: No matching distribution found for ray-vast==0.1.0rc1")
+                raise commands.SshError("ssh: exit 1: sudo docker build\nERROR: No matching distribution found for ray-vast==9.9.9")
             return super().run(ip, command, stdin, timeout)
     fake_ssh.fake = PipFails()
     assert cli.main(["up", str(cluster_yaml)]) == 1
@@ -947,59 +947,12 @@ def test_main_attach_and_dashboard_without_the_generated_key_exit_1(running_clus
     assert f"no SSH key for cluster {CLUSTER}" in capsys.readouterr().err
 
 
-def test_main_up_with_the_old_provider_region_names_the_new_place(home, cluster_yaml, capsys):
-    raw = yaml.safe_load(cluster_yaml.read_text())
-    raw["provider"]["region"] = REGION
-    cluster_yaml.write_text(yaml.safe_dump(raw))
-    assert cli.main(["up", str(cluster_yaml)]) == 1
-    assert "provider.region is no longer a field (moved: set node_config.region of the head node type)" in capsys.readouterr().err
-
-
-def test_main_up_with_the_old_allow_non_datacenter_says_it_is_removed(aws, home, fake_ssh, cluster_yaml, capsys):
-    raw = yaml.safe_load(cluster_yaml.read_text())
-    raw["provider"]["allow_non_datacenter"] = True
-    cluster_yaml.write_text(yaml.safe_dump(raw))
-    assert cli.main(["up", str(cluster_yaml)]) == 1
-    assert "provider.allow_non_datacenter is no longer a field (removed: " in capsys.readouterr().err
-    assert fake_ssh.fake.calls == []
-
-
 @pytest.mark.parametrize("command", ["up", "down"])
 def test_main_with_a_bad_cluster_name_prints_one_line_and_creates_nothing(aws, home, fake_ssh, cluster_yaml, capsys, command):
     cluster_yaml.write_text(yaml.safe_dump(dict(CLUSTER_YAML, cluster_name="bad name")))
     assert cli.main([command, str(cluster_yaml)]) == 1
     assert "cluster_name 'bad name' must match" in capsys.readouterr().err
     assert fake_ssh.fake.calls == []
-
-
-def test_main_down_removes_a_cluster_that_version_0_1_0_made(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch, capsys):
-    """A 0.1.0 YAML has provider.region and other old fields; the 0.1.0 state file holds the region and no profile."""
-    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
-    assert main_up(cluster_yaml, wheel) == 0
-    state_file = home / ".ray-vast" / f"{CLUSTER}.json"
-    state_file.write_text(json.dumps({"cluster": CLUSTER, "region": REGION, "head_instance_id": "i-0", "head_ip": "203.0.113.9",
-                                      "security_group_ids": [], "role_name": f"ray-vast-{CLUSTER}",
-                                      "instance_profile_name": f"ray-vast-{CLUSTER}"}))
-    old_yaml = dict(CLUSTER_YAML, provider={"region": REGION, "key_name": "my-key", "image": "rayproject/ray:2.59.0-py311-cpu",
-                                            "max_dollars_per_hour": 1.0})
-    old_yaml["available_node_types"] = dict(CLUSTER_YAML["available_node_types"], head={"resources": {"CPU": 0}, "node_config": {}})
-    cluster_yaml.write_text(yaml.safe_dump(old_yaml))
-    assert cli.main(["down", str(cluster_yaml)]) == 0, capsys.readouterr().err
-    assert what_is_left(aws, FakeVast()) == []
-
-
-def test_main_down_of_a_0_1_0_yaml_without_the_state_file_takes_the_region_from_provider_region(aws, home, fake_ssh, cluster_yaml, wheel,
-                                                                                                monkeypatch, capsys):
-    """cli.md: `down` works when the state file is missing; clean-up.md: use the 0.1.0 YAML as it is."""
-    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
-    assert main_up(cluster_yaml, wheel) == 0
-    (home / ".ray-vast" / f"{CLUSTER}.json").unlink()
-    old_yaml = dict(CLUSTER_YAML, provider={"region": REGION, "key_name": "my-key", "image": "rayproject/ray:2.59.0-py311-cpu",
-                                            "max_dollars_per_hour": 1.0})
-    old_yaml["available_node_types"] = dict(CLUSTER_YAML["available_node_types"], head={"resources": {"CPU": 0}, "node_config": {}})
-    cluster_yaml.write_text(yaml.safe_dump(old_yaml))
-    assert cli.main(["down", str(cluster_yaml)]) == 0, capsys.readouterr().err
-    assert what_is_left(aws, FakeVast()) == []
 
 
 @pytest.mark.parametrize("command", ["down", "attach", "dashboard"])

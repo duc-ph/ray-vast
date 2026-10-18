@@ -82,7 +82,7 @@ Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/
 
 ## Status
 
-Version 0.2.0. Tested with Ray 2.59.
+Tested with Ray 2.59.
 
 ## Contributing
 

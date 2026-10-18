@@ -26,20 +26,6 @@ PROVIDER_DEFAULTS = {
 }
 HEAD_INSTANCE_TYPE = "t3.large"
 PORT_A, PORT_B = 7443, 7444  # head server ports: download and enrollment (TLS); heartbeat and reports (mTLS)
-# Provider fields of older versions. A YAML that sets one gets an error that says what to do instead.
-OLD_PROVIDER_FIELDS = {
-    "region": "moved: set node_config.region of the head node type",
-    "head_instance_type": "moved: set node_config.instance_type of the head node type",
-    "port_a": f"removed: the head server always uses port {PORT_A}",
-    "port_b": f"removed: the head server always uses port {PORT_B}",
-    "cert_max_age_days": "removed: the CA and the certificates always live 365 days",
-    "image_size_gb": "removed: `ray-vast up` measures the image",
-    "key_name": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
-    "key_file": "removed: `ray-vast up` makes an EC2 key pair for each cluster",
-    "order_by": "removed: ray-vast always rents the cheapest offers first (dph_total)",
-    "allow_non_datacenter": "removed: ray-vast adds no datacenter filter; set datacenter and verified in the offer_query "
-                            "of each node type (highly recommended: datacenter: {eq: true}, verified: {eq: true})",
-}
 
 
 def build_offer_query(node_type_config, name):
@@ -157,9 +143,3 @@ def bootstrap_config(config):
 
     return config, warnings
 
-
-def check_old_provider_fields(provider):
-    """Raise ValueError for a provider field that an older version had (`OLD_PROVIDER_FIELDS`)."""
-    for field, what_to_do in OLD_PROVIDER_FIELDS.items():
-        if field in provider:
-            raise ValueError(f"provider.{field} is no longer a field ({what_to_do})")

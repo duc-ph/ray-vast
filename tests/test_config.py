@@ -5,7 +5,7 @@ import pytest
 import requests
 import yaml
 
-from ray_vast.config import bootstrap_config, build_offer_query, check_old_provider_fields
+from ray_vast.config import bootstrap_config, build_offer_query
 
 EXAMPLES = sorted(pathlib.Path(__file__).parents[1].joinpath("src/ray_vast/examples").glob("*.yaml"))
 
@@ -312,11 +312,6 @@ def test_bootstrap_warns_when_cpu_is_above_the_processes_at_once():
     assert len(warnings) == 1 and "'w'" in warnings[0] and "54" in warnings[0]
 
 
-def test_old_allow_non_datacenter_field_is_removed():
-    with pytest.raises(ValueError, match=r"provider.allow_non_datacenter is no longer a field \(removed: .*offer_query"):
-        check_old_provider_fields({"allow_non_datacenter": True})
-
-
 @pytest.mark.parametrize("path", EXAMPLES, ids=lambda p: p.name)
 def test_example_passes_validation_and_ray_validate_config(path):
     from ray.autoscaler._private.util import validate_config
@@ -411,18 +406,6 @@ def test_bootstrap_keeps_a_head_instance_type():
     config = make()
     config["available_node_types"]["head"]["node_config"]["instance_type"] = "m7i.xlarge"
     assert bootstrap_config(config)[0]["available_node_types"]["head"]["node_config"]["instance_type"] == "m7i.xlarge"
-
-
-@pytest.mark.parametrize("field, new_place", [
-    ("region", "node_config.region of the head node type"),
-    ("head_instance_type", "node_config.instance_type of the head node type"),
-    ("port_a", "7443"), ("port_b", "7444"), ("cert_max_age_days", "365 days"),
-    ("image_size_gb", "measures the image"), ("key_name", "makes an EC2 key pair"), ("key_file", "makes an EC2 key pair"),
-    ("order_by", "cheapest offers first"),
-])
-def test_an_old_provider_field_is_rejected_with_its_new_place(field, new_place):
-    with pytest.raises(ValueError, match=rf"provider.{field} .*{new_place}"):
-        check_old_provider_fields({field: 1})
 
 
 def test_bootstrap_sets_max_workers_to_the_sum_of_the_worker_types_when_missing():
