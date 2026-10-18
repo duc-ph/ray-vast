@@ -1,5 +1,5 @@
 """A release check: the getting-started tutorial, verbatim, from a clean venv with ray-vast from PyPI. It runs only
-after the release is on PyPI: set RAYVAST_LIVE_RELEASE=<version> (for example 0.2.0). The cluster YAML is the packaged `gpu-24gb.yaml`; only `region` may change (RAYVAST_LIVE_RELEASE_REGION, default
+after the release is on PyPI: set RAYVAST_LIVE_RELEASE=<version> (for example 0.3.0). The cluster YAML is the packaged `gpu-24gb.yaml`; only `region` may change (RAYVAST_LIVE_RELEASE_REGION, default
 us-west-2). The `release` fixture (conftest) is a cluster.ReleaseCluster: the cluster joins the run and
 liverun.end_cluster ends it (no second `down` after the tutorial's clean one; the sweep, the AWS check and the scan).
 About 25 min; vast under $1."""
