@@ -1,0 +1,118 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Read",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetCallerIdentity",
+        "ec2:DescribeInstances",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeImages",
+        "ec2:DescribeKeyPairs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateTaggedSecurityGroups",
+      "Effect": "Allow",
+      "Action": "ec2:CreateSecurityGroup",
+      "Resource": "arn:aws:ec2:*:*:security-group/*",
+      "Condition": {"Null": {"aws:RequestTag/ray-vast-cluster": "false"}}
+    },
+    {
+      "Sid": "CreateSecurityGroupsInAnyVpc",
+      "Effect": "Allow",
+      "Action": "ec2:CreateSecurityGroup",
+      "Resource": "arn:aws:ec2:*:*:vpc/*"
+    },
+    {
+      "Sid": "CreateTaggedKeyPairs",
+      "Effect": "Allow",
+      "Action": "ec2:CreateKeyPair",
+      "Resource": "arn:aws:ec2:*:*:key-pair/ray-vast-*",
+      "Condition": {"Null": {"aws:RequestTag/ray-vast-cluster": "false"}}
+    },
+    {
+      "Sid": "RunTaggedInstances",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": ["arn:aws:ec2:*:*:instance/*", "arn:aws:ec2:*:*:volume/*"],
+      "Condition": {"Null": {"aws:RequestTag/ray-vast-cluster": "false"}}
+    },
+    {
+      "Sid": "RunInstancesWithTheseResources",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:*::image/*",
+        "arn:aws:ec2:*:*:subnet/*",
+        "arn:aws:ec2:*:*:network-interface/*",
+        "arn:aws:ec2:*:*:key-pair/ray-vast-*"
+      ]
+    },
+    {
+      "Sid": "RunInstancesInRayVastGroups",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:*:*:security-group/*",
+      "Condition": {"Null": {"aws:ResourceTag/ray-vast-cluster": "false"}}
+    },
+    {
+      "Sid": "TagOnCreate",
+      "Effect": "Allow",
+      "Action": "ec2:CreateTags",
+      "Resource": "arn:aws:ec2:*:*:*/*",
+      "Condition": {"StringEquals": {"ec2:CreateAction": ["CreateSecurityGroup", "CreateKeyPair", "RunInstances"]}}
+    },
+    {
+      "Sid": "ChangeAndDeleteTaggedResources",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:DeleteSecurityGroup",
+        "ec2:TerminateInstances",
+        "ec2:DeleteKeyPair"
+      ],
+      "Resource": [
+        "arn:aws:ec2:*:*:security-group/*",
+        "arn:aws:ec2:*:*:instance/*",
+        "arn:aws:ec2:*:*:key-pair/ray-vast-*"
+      ],
+      "Condition": {"Null": {"aws:ResourceTag/ray-vast-cluster": "false"}}
+    },
+    {
+      "Sid": "HeadRoleOnlyWithTheBoundary",
+      "Effect": "Allow",
+      "Action": ["iam:CreateRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:DeleteRole"],
+      "Resource": "arn:aws:iam::*:role/ray-vast-*",
+      "Condition": {"StringEquals": {"iam:PermissionsBoundary": "arn:aws:iam::${aws:PrincipalAccount}:policy/ray-vast-head-boundary"}}
+    },
+    {
+      "Sid": "HeadRoleReadAndTag",
+      "Effect": "Allow",
+      "Action": ["iam:GetRole", "iam:ListRolePolicies", "iam:TagRole"],
+      "Resource": "arn:aws:iam::*:role/ray-vast-*"
+    },
+    {
+      "Sid": "PassHeadRoleToEc2",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::*:role/ray-vast-*",
+      "Condition": {"StringEquals": {"iam:PassedToService": "ec2.amazonaws.com"}}
+    },
+    {
+      "Sid": "HeadInstanceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateInstanceProfile",
+        "iam:TagInstanceProfile",
+        "iam:GetInstanceProfile",
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:DeleteInstanceProfile"
+      ],
+      "Resource": "arn:aws:iam::*:instance-profile/ray-vast-*"
+    }
+  ]
+}

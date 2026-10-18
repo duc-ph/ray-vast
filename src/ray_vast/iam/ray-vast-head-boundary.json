@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Describe",
+      "Effect": "Allow",
+      "Action": ["ec2:DescribeSecurityGroups", "ec2:DescribeInstances"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "WorkerRulesInRayVastGroups",
+      "Effect": "Allow",
+      "Action": ["ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress"],
+      "Resource": "arn:aws:ec2:*:*:security-group/*",
+      "Condition": {"Null": {"aws:ResourceTag/ray-vast-cluster": "false"}}
+    }
+  ]
+}

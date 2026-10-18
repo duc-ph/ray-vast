@@ -1,0 +1,51 @@
+# The cluster of the library tests. One cluster for each host, with one worker type of the same name, all with
+# min_workers 0. The tests choose the workers of each test: LibrariesCluster.set_shape() writes min_workers = max_workers
+# of every type into the head's copy of this YAML, and the autoscaler reads that file again in each loop. So only the
+# workers of one test run, and the library code (the doc snippets and the jobs) needs no node pinning.
+#   gpu:       2 workers, compute_cap 600-899 (torch 2.7.1): the multi-node tests.
+#   gpu2:      one worker with 2 GPUs (Train and RLlib learners on 2 GPUs of one worker).
+#   big-a, big-b: one worker with CPU 64. The provider adds cpu_cores_effective >= 64, so the worker has 54 processes at
+#              once (the most), fewer than its CPUs: the process settings of the library pages are needed. Two hosts of
+#              the same kind, so that the process-limit pairs of six libraries run on two hosts at the same time.
+#   few-ports: a host with 14 to 63 direct ports (the provider rents min(64, direct_port_count) identity ports, and the
+#              worker gives Ray at most mapped - 6 worker ports). It asks for 17 or more effective cores, so the process
+#              limit gives 58 worker ports and the port count sets the number.
+# inet_down/inet_up are a test-only speed floor (Mb/s).
+cluster_name: rvtest-lib
+idle_timeout_minutes: 5
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu
+  # Peak: the gpu tests rent 2 workers and 2 candidates each (k = 2): about $1.5/h for a minute.
+  max_dollars_per_hour: 3.0
+  candidate_factor: 2
+head_node_type: head
+available_node_types:
+  head: {resources: {CPU: 0}, node_config: {region: us-west-2, instance_type: t3.large}}
+  gpu:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 2
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
+                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}}}
+  gpu2:
+    resources: {CPU: 4, GPU: 2}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {gpu_ram: {gte: 8000, lt: 70000}, compute_cap: {gte: 600, lt: 900}, inet_down: {gte: 500},
+                                             inet_up: {gte: 500}, verified: {eq: true}, datacenter: {eq: true}}}
+  big-a:
+    resources: {CPU: 64, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {verified: {eq: true}}}
+  big-b:
+    resources: {CPU: 64, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {verified: {eq: true}}}
+  few-ports:
+    resources: {CPU: 4, GPU: 1}
+    min_workers: 0
+    max_workers: 1
+    node_config: {disk_gb: 60, offer_query: {direct_port_count: {gte: 14, lte: 63}, cpu_cores_effective: {gte: 17}, verified: {eq: true},
+                                             datacenter: {eq: true}, inet_down: {gte: 500}, inet_up: {gte: 500}}}

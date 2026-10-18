@@ -1,0 +1,797 @@
+"""The logic of the live suite (`tests/live/`): result records, the run summary, spend, the process-limit verdict, safety
+names, the secret scan, and the cluster lifetime. No cloud call: fakes stand in for `up`, `down` and vast."""
+import json
+import sys
+from pathlib import Path
+
+import boto3
+import pytest
+from moto import mock_aws
+
+LIVE = Path(__file__).resolve().parent / "live"
+sys.path.insert(0, str(LIVE))  # the live suite imports its modules by their own names, as its conftest does
+import libraries_setup  # noqa: E402
+import livepoller  # noqa: E402
+import liverecords  # noqa: E402
+import liverun  # noqa: E402
+import liveschedule  # noqa: E402
+import pairs  # noqa: E402
+
+
+def test_a_finished_record_writes_result_json_with_outcome_checks_and_evidence(tmp_path):
+    record = liverecords.Recorder(tmp_path, "second_up", fixture="aws_only")
+    record.evidence("up.log", "cluster rvtest-x is up")
+    record.check("second up stops", True, "exit 1")
+    record.finish("passed", "")
+
+    result = json.loads((tmp_path / "second_up" / "result.json").read_text())
+    assert result["id"] == "second_up" and result["outcome"] == "passed" and result["fixture"] == "aws_only"
+    assert result["checks"] == [{"name": "second up stops", "ok": True, "detail": "exit 1"}]
+    assert (tmp_path / "second_up" / "up.log").read_text() == "cluster rvtest-x is up"
+
+
+def _result(root, scenario, outcome, checks=(), message=""):
+    record = liverecords.Recorder(root, scenario, fixture="none")
+    for name, ok in checks:
+        record.check(name, ok)
+    record.finish(outcome, message)
+
+
+def test_the_summary_has_one_row_per_scenario_and_a_failed_check_or_a_missing_record_is_never_a_pass(tmp_path):
+    root = tmp_path / "2026-10-16"
+    _result(root, "shim", "passed", [("14 shim tests", True)])
+    _result(root, "fake_ip", "passed", [("node alive", False)])
+    _result(root, "config", "failed", message="AssertionError: exit 0")
+    table = liverecords.summary_table(root, expected=["shim", "fake_ip", "config", "provider"])
+
+    rows = {line.split("|")[1].strip(): line for line in table.splitlines()[2:]}
+    assert "PASS" in rows["shim"]
+    assert "FAIL" in rows["fake_ip"] and "node alive" in rows["fake_ip"]
+    assert "FAIL" in rows["config"] and "AssertionError: exit 0" in rows["config"]
+    assert "NOT RUN" in rows["provider"]
+
+
+def test_spend_adds_back_the_auto_top_ups_inside_the_window_only():
+    invoices = [{"type": "payment", "timestamp": 50.0, "amount": -10.0},   # before the group
+                {"type": "payment", "timestamp": 150.0, "amount": -10.0},  # an auto top-up during the group
+                {"type": "charge", "timestamp": 160.0, "amount": 3.0}]
+    # credit 5.50 -> (spend 2.00, top-up +10) -> 13.50
+    assert liverecords.vast_spend({"t": 100.0, "credit": 5.50}, {"t": 200.0, "credit": 13.50}, invoices) == {
+        "spend": 2.0, "top_ups": 10.0, "credit_before": 5.5, "credit_after": 13.5}
+
+
+@pytest.mark.parametrize("name", ["ray-vast-rvtest-aws-1a2b", "ray-vast-rvtest-aws-1a2b-3", "ray-vast-livetest-20261016",
+                                  "ray-vast-livetest-20261016-s3", "ray-vast-livetest-20261016-s3-big-a", "ray-vast-livetest-20261016-s3-gpu2",
+                                  "ray-vast-rvtest-20261016-0a1b", "ray-vast-rvtest-lib-big-a-keep"])
+def test_the_suite_may_delete_its_own_resources(name):
+    liverun.assert_ours(name)
+
+
+@pytest.mark.parametrize("name", ["ray-vast-dev", "ray-vast-devbox", "ray-vast-dev-sg", "my-box",
+                                  "ray-vast-head-boundary", "ray-vast-user", "ray-vast-livetest-20261016-admin", ""])
+def test_the_suite_refuses_to_delete_anything_else(name):
+    with pytest.raises(liverun.NotOurs):
+        liverun.assert_ours(name)
+
+
+def test_the_secret_scan_names_each_file_with_a_secret_value_or_pattern_and_never_the_text(tmp_path):
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "clean.log").write_text("enrolled instance 1 as slot slot-1-abc\nCONTAINER_API_KEY in environ: False\n")
+    (tmp_path / "token.log").write_text("x" * 10 + "c0ffee" * 8)
+    (tmp_path / "sub" / "key.pem").write_text("-----BEGIN OPENSSH PRIVATE KEY-----\n")
+    (tmp_path / "bearer.txt").write_text("Authorization: Bearer abc123\n")
+    (tmp_path / "env.txt").write_text("CONTAINER_API_KEY=deadbeef\n")
+    (tmp_path / "api.json").write_text('{"instance_api_key": "zz9"}')
+
+    (tmp_path / "submit.txt").write_text('runtime env: {"env_vars": {"AWS_ACCESS_KEY_ID": "AKIA' + 'EXAMPLEKEYID0001"}}\n')
+    (tmp_path / "session.txt").write_text("key ASIA" + "EXAMPLEKEYID0002 expired\n")
+    (tmp_path / "redacted.txt").write_text('{"AWS_ACCESS_KEY_ID": "<redacted>"} AKIA-not-a-key AKIAshort\n')
+
+    found = liverecords.scan_secrets(tmp_path, ["c0ffee" * 8, "", "  "])
+    assert sorted(p.relative_to(tmp_path).as_posix() for p in found) == [
+        "api.json", "bearer.txt", "env.txt", "session.txt", "sub/key.pem", "submit.txt", "token.log"]
+
+
+INNER = '''
+import os, sys, time, pytest
+import liverun
+liverun.sigterm_as_interrupt()
+MARK = os.environ["MARK_DIR"]
+
+def up():
+    open(os.path.join(MARK, "up"), "w").close()
+    if os.environ.get("UP_FAILS"):
+        raise RuntimeError("up failed half way")
+    return "cluster"
+
+def down():
+    open(os.path.join(MARK, "down"), "w").close()
+
+@pytest.fixture(scope="session")
+def cluster():
+    yield from liverun.lifetime(up, down)
+
+def test_one(cluster):
+    open(os.path.join(MARK, "started"), "w").close()
+    if os.environ.get("INTERRUPT"):
+        raise KeyboardInterrupt
+    if os.environ.get("WAIT"):
+        time.sleep(60)
+'''
+
+
+def _inner_run(tmp_path, wait=False, **env):
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+    (tmp_path / "test_inner.py").write_text(INNER)
+    live_dir = str(LIVE)
+    run_env = {**os.environ, "PYTHONPATH": live_dir, "MARK_DIR": str(tmp_path), **env}
+    proc = subprocess.Popen([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-o", "addopts=", str(tmp_path / "test_inner.py")],
+                            cwd=tmp_path, env=run_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    if wait:
+        for _ in range(300):
+            if (tmp_path / "started").exists():
+                break
+            time.sleep(0.1)
+        proc.send_signal(signal.SIGTERM)
+    try:
+        out = proc.communicate(timeout=120)[0]
+    finally:
+        if proc.poll() is None:
+            os.killpg(proc.pid, signal.SIGKILL)
+    return proc.returncode, out
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("env", [{}, {"UP_FAILS": "1"}, {"INTERRUPT": "1"}], ids=["normal end", "up fails", "Ctrl-C in a test"])
+def test_down_runs_once_the_cluster_was_asked_for_also_when_up_fails_or_a_test_is_interrupted(tmp_path, env):
+    code, out = _inner_run(tmp_path, **env)
+    assert (tmp_path / "up").exists() and (tmp_path / "down").exists(), out
+
+
+@pytest.mark.slow
+def test_sigterm_during_a_test_still_runs_down(tmp_path):
+    code, out = _inner_run(tmp_path, wait=True, WAIT="1")
+    assert (tmp_path / "started").exists() and (tmp_path / "down").exists(), out
+
+
+def test_a_cluster_shape_sets_min_and_max_workers_of_every_worker_type():
+    config = {"max_workers": 5, "head_node_type": "head", "available_node_types": {
+        "head": {"resources": {"CPU": 0}, "node_config": {"region": "us-west-2"}},
+        "big-a": {"min_workers": 0, "max_workers": 1, "node_config": {"disk_gb": 60, "offer_query": {"verified": {"eq": True}}}},
+        "gpu": {"min_workers": 0, "max_workers": 2, "node_config": {"disk_gb": 60, "offer_query": {"gpu_ram": {"gte": 8000}}}}}}
+    shaped = libraries_setup.shaped_config(config, {"gpu": 2})
+    types = shaped["available_node_types"]
+    assert (types["gpu"]["min_workers"], types["gpu"]["max_workers"]) == (2, 2)
+    assert (types["big-a"]["min_workers"], types["big-a"]["max_workers"]) == (0, 0)
+    assert types["head"] == {"resources": {"CPU": 0}, "node_config": {"region": "us-west-2"}}
+    assert shaped["max_workers"] == 2
+    assert config["available_node_types"]["gpu"]["min_workers"] == 0  # a copy
+
+
+DOC = """# Ray Core
+
+## Run it
+
+```python
+print("not this one")
+```
+
+## Settings
+
+```python
+@ray.remote(num_cpus=2.4)          # CPU / N
+def child(i):
+    ...
+
+pool = [Runner.remote() for _ in range(5)]   # N // 2
+```
+
+```python
+CPUS = max(n["Resources"]["CPU"] for n in ray.nodes())
+```
+
+## Why
+"""
+
+
+def test_a_doc_snippet_is_the_python_block_of_its_section_with_each_substitution_applied_once():
+    code = libraries_setup.doc_snippet(DOC, "## Settings", 0, [("num_cpus=2.4", "num_cpus=4.8"), ("range(5)", "range(3)")])
+    assert code == ('@ray.remote(num_cpus=4.8)          # CPU / N\ndef child(i):\n    ...\n\n'
+                    'pool = [Runner.remote() for _ in range(3)]   # N // 2\n')
+    assert libraries_setup.doc_snippet(DOC, "## Settings", 1, []) == 'CPUS = max(n["Resources"]["CPU"] for n in ray.nodes())\n'
+
+
+@pytest.mark.parametrize("old", ["num_cpus=9", "\n"])
+def test_a_substitution_that_is_not_in_the_snippet_exactly_once_is_an_error(old):
+    with pytest.raises(ValueError, match="exactly once"):
+        libraries_setup.doc_snippet(DOC, "## Settings", 0, [(old, "x")])
+
+
+NO_QUOTA = {"quota": None, "visible_cpus": None, "visible_per_quota": None, "cores": None}
+
+
+@pytest.mark.parametrize("probe, facts", [
+    ({"pids.max": "1280", "cgroup": "v1", "ray_cpus": 48.0}, {"pids_max": 1280, "cgroup": "v1", "cpus": 48, "limited": True, **NO_QUOTA}),
+    ({"pids.max": "max", "cgroup": "v2", "ray_cpus": 15.0}, {"pids_max": None, "cgroup": "v2", "cpus": 15, "limited": False, **NO_QUOTA}),
+    ({"cgroup": "v1", "ray_cpus": 24.0}, {"pids_max": None, "cgroup": "v1", "cpus": 24, "limited": False, **NO_QUOTA}),
+    # The cores are the smaller of the visible CPUs and the quota, as the head counts them for the 90% CPU rule.
+    ({"cgroup": "v2", "ray_cpus": 64.0, "cpu_count": 60, "affinity": 60, "cpu_quota": {"cpu.max": "6144000 100000"}},
+     {"pids_max": None, "cgroup": "v2", "cpus": 64, "limited": False, "quota": 61.44, "visible_cpus": 60, "visible_per_quota": 0.98,
+      "cores": 60}),
+    # A host with 128 visible CPUs, a quota of 15.36 cores, cgroup v2; the visible CPUs are the smaller of cpu_count and affinity.
+    ({"pids.max": "3840", "cgroup": "v2", "ray_cpus": 16.0, "cpu_count": 128, "affinity": 128, "cpu_quota": {"cpu.max": "1536000 100000"}},
+     {"pids_max": 3840, "cgroup": "v2", "cpus": 16, "limited": True, "quota": 15.36, "visible_cpus": 128, "visible_per_quota": 8.33, "cores": 15.36}),
+    # A host with 384 CPUs, a cpuset of 48, a quota of 46.08 cores, here as cgroup v1.
+    ({"pids.max": "11776", "cgroup": "v1", "ray_cpus": 16.0, "cpu_count": 384, "affinity": 48,
+      "cpu_quota": {"cpu.cfs_quota_us": "4608000", "cpu.cfs_period_us": "100000"}},
+     {"pids_max": 11776, "cgroup": "v1", "cpus": 16, "limited": True, "quota": 46.08, "visible_cpus": 48, "visible_per_quota": 1.04, "cores": 46.08}),
+    ({"cgroup": "v2", "ray_cpus": 4.0, "cpu_count": 8, "affinity": 8, "cpu_quota": {"cpu.max": "max 100000"}},
+     {"pids_max": None, "cgroup": "v2", "cpus": 4, "limited": False, "quota": None, "visible_cpus": 8, "visible_per_quota": None, "cores": 8}),
+])
+def test_the_host_facts_of_a_node_facts_row(probe, facts):
+    assert libraries_setup.host_facts(probe, 32816) == dict(facts, machine_id=32816)
+
+
+def test_a_second_run_of_a_scenario_keeps_the_earlier_records_as_run1_and_run2(tmp_path):
+    for outcome in ("failed", "failed", "passed"):
+        record = liverecords.Recorder(tmp_path, "head_exposure", fixture="aws_only")
+        record.evidence("log.txt", outcome)
+        record.finish(outcome, "")
+    assert json.loads((tmp_path / "head_exposure" / "result.json").read_text())["outcome"] == "passed"
+    assert (tmp_path / "head_exposure.run1" / "result.json").exists() and (tmp_path / "head_exposure.run2" / "log.txt").read_text() == "failed"
+    assert liverecords.summary_table(tmp_path, ["head_exposure"]).count("| head_exposure") == 1
+
+
+@pytest.mark.parametrize("fixtures, host, group", [
+    (["record", "aws_only", "tmp_path"], None, "aws_only"),
+    (["record", "new_cluster", "tmp_path", "exclusive_account"], None, "exclusive_account"),
+    (["record", "lifecycle", "session_env"], None, "lifecycle"),
+    (["record", "restricted_user"], None, "lifecycle"),        # one restricted IAM user for each run
+    (["record", "libraries", "env"], "big-a", "libraries-big-a"),
+    (["record", "libraries", "env", "s3"], "gpu2", "libraries-gpu2"),
+    (["record", "release"], None, "release"),
+    (["record"], None, None),
+    (["record", "new_cluster", "tmp_path"], None, None),
+])
+def test_each_cluster_and_the_exclusive_account_need_get_one_xdist_group(fixtures, host, group):
+    assert liveschedule.xdist_group(fixtures, host) == group
+
+
+@pytest.mark.parametrize("fixtures", [
+    ["record", "aws_only", "exclusive_account"],   # it would wait for itself: its cluster `up` waits for it
+    ["record", "aws_only", "restricted_user"],
+])
+def test_a_test_with_two_groups_is_an_error(fixtures):
+    with pytest.raises(ValueError, match="two xdist groups"):
+        liveschedule.xdist_group(fixtures, None)
+
+
+def test_the_record_name_of_a_test_is_its_name_without_the_test_prefix():
+    assert liveschedule.record_name("test_jobs_workflow[gpu]") == "jobs_workflow[gpu]"
+
+
+def test_the_wait_for_tests_returns_once_each_has_ended_and_names_the_missing_ones_at_its_deadline(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    other = liverun.Run(tmp_path / "results", "run1")  # another process of the same run
+    run.wait_ended([], timeout_s=0)
+    other.mark_ended("first")
+    with pytest.raises(TimeoutError, match=r"did not end in 0.2 s: second$"):
+        run.wait_ended(["first", "second"], timeout_s=0.2, poll_s=0.05)
+    other.mark_ended("second[gpu]")
+    other.mark_ended("second")
+    run.wait_ended(["first", "second", "second[gpu]"], timeout_s=0)
+
+
+def _opened(run, name, kept, region="us-west-2"):
+    from types import SimpleNamespace
+    run.register(SimpleNamespace(name=name, region=region, kept=kept, yaml=f"/r/{name}.yaml", home=f"/h/{name}", secrets=[]))
+
+
+def _ended(run, name, problems, kept=False):
+    (run.dir / "ended").mkdir(parents=True, exist_ok=True)
+    (run.dir / "ended" / f"{name}.json").write_text(json.dumps({"name": name, "kept": kept, "problems": problems}))
+
+
+def test_the_end_of_a_run_does_only_the_run_wide_guards_and_sums_up_the_problems_of_each_ended_cluster(tmp_path):
+    run = liverun.Run(tmp_path, "run1")
+    _opened(run, "rvtest-aws-1a2b", kept=False)
+    _opened(run, "gpu-24gb", kept=False)
+    _opened(run, "rvtest-life-keep", kept=True, region="us-east-2")
+    _ended(run, "rvtest-aws-1a2b", ["AWS left: volume vol-1"])
+    _ended(run, "gpu-24gb", [])
+    _ended(run, "rvtest-life-keep", [], kept=True)
+    (run.dir / "scan_gw1.txt").write_text("denials/denials.txt\n")  # a record that no cluster owns
+    swept, checked = [], []
+
+    def sweep(labels, prefixes=()):
+        swept.append((labels, prefixes))
+        return ["0 left"]
+
+    def account_check(regions, skip):
+        checked.append((regions, skip))
+        return ["security group sg-9 (ray-vast-rvtest-old-0000-head)"]
+
+    problems, kept = liverun.end_of_run(run.dir, "ray-vast-test-20261016", sweep, account_check)
+    assert swept == [([], ["ray-vast-test-20261016"])]                 # each ended cluster had its own sweep
+    assert checked == [(["us-east-2", "us-west-2"], ["rvtest-life-keep"])]
+    assert problems == ["rvtest-aws-1a2b: AWS left: volume vol-1",
+                        "AWS account check: security group sg-9 (ray-vast-rvtest-old-0000-head)",
+                        "the secret scan found 1 file(s): denials/denials.txt"]
+    assert len(kept) == 1 and "KEPT CLUSTER rvtest-life-keep" in kept[0] and "ray-vast down /r/rvtest-life-keep.yaml" in kept[0]
+
+
+def test_a_cluster_that_joined_the_run_but_never_ended_is_a_problem_and_the_final_sweep_takes_its_label(tmp_path):
+    run = liverun.Run(tmp_path, "run1")
+    _opened(run, "rvtest-lib-big-a-1a2b", kept=False)  # its worker process died before the teardown
+    _opened(run, "gpu-24gb", kept=False)  # not a suite name: a user's cluster can have this label, so never a label sweep
+
+    def sweep(labels, prefixes=()):
+        assert (labels, prefixes) == (["ray-vast:rvtest-lib-big-a-1a2b"], ["ray-vast-test-20261016"])
+        raise RuntimeError("vast is down")
+
+    problems, kept = liverun.end_of_run(run.dir, "ray-vast-test-20261016", sweep, lambda regions, skip: [])
+    assert problems == ["vast sweep failed: RuntimeError: vast is down",
+                        "gpu-24gb joined the run but did not end: run HOME=/h/gpu-24gb ray-vast down /r/gpu-24gb.yaml",
+                        "rvtest-lib-big-a-1a2b joined the run but did not end: run HOME=/h/rvtest-lib-big-a-1a2b ray-vast down "
+                        "/r/rvtest-lib-big-a-1a2b.yaml"]
+    assert kept == []
+
+
+def test_the_vast_spend_of_one_cluster_comes_from_its_timeline_and_a_failed_sample_keeps_the_last_known_instances():
+    rows = [{"t": 0.0, "instances": [{"id": 1, "dph_total": 0.36}, {"id": 2, "dph_total": 0.36}]},
+            {"t": 1800.0, "error": "ConnectionError"},                  # still 2 instances
+            {"t": 3600.0, "instances": [{"id": 1, "dph_total": 0.36}]},
+            {"t": 7200.0, "instances": []}]
+    assert liverecords.timeline_spend(rows) == 0.72 + 0.36
+    assert liverecords.timeline_spend([]) == 0.0
+
+
+def test_the_run_identity_is_set_by_the_first_process_and_every_later_process_of_the_run_inherits_it(tmp_path):
+    environ = {}
+    first = liverun.Run.of_process(environ, tmp_path / "results", "120000-11")
+    worker = liverun.Run.of_process(dict(environ), tmp_path / "other", "120005-12")  # an xdist worker: the controller's env
+    assert first.dir == worker.dir == tmp_path / "results" / "_session" / "runs" / "120000-11"
+    assert first.results == worker.results == tmp_path / "results"
+
+
+def test_a_record_of_the_run_goes_under_its_record_root_and_marks_the_run_as_live(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    assert not run.live
+    record = run.record("head_exposure", fixture="aws_only")
+    record.finish("passed", "")
+    assert (tmp_path / "results" / "head_exposure" / "result.json").exists() and run.live
+
+
+def _cluster_module(monkeypatch):
+    """tests/live/cluster.py, imported fresh, with a fake vast key."""
+    import sys
+    monkeypatch.syspath_prepend(str(LIVE))
+    monkeypatch.setenv("VAST_API_KEY", "fake-key")
+    sys.modules.pop("cluster", None)
+    import cluster
+    return cluster
+
+
+def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
+    config = {"cluster_name": "rvtest-intb-1a2b", "head_node_type": "head",
+              "available_node_types": {"head": {"node_config": {"region": "us-west-2"}}}}
+    return _cluster_module(monkeypatch).Cluster(run, config, tmp_path / "out", tmp_path / "home", **kwargs)
+
+
+def test_a_down_after_an_earlier_down_deleted_the_state_file_names_the_profile_of_the_cluster(tmp_path, monkeypatch):
+    """A test's own `down` deleted the state file; the teardown's `down` had no AWS profile then (without a state file
+    `down` needs `--profile`), so it failed with `no AWS credentials`."""
+    run = liverun.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch, profile="ray-vast-livetest")
+    calls = []
+    monkeypatch.setattr(made, "cli", lambda *args, env=None: calls.append(args) or "done")
+    state = made.state_dir / f"{made.name}.json"
+    state.write_text('{"head_ip": "192.0.2.1"}')
+    made.down()
+    state.unlink()
+    made.down()
+    assert calls == [("down", made.yaml), ("down", made.yaml, "--profile", "ray-vast-livetest")]
+
+
+class _FakeVast:
+    """The vast account at the seam of cluster.vast(): its instances; a destroy removes one."""
+
+    def __init__(self, labels):
+        self.instances = [{"id": n, "label": text} for n, text in enumerate(labels, 1)]
+        self.destroyed = []
+
+    def list_instances(self):
+        return list(self.instances)
+
+    def destroy_instance(self, instance_id):
+        self.destroyed.append(instance_id)
+        self.instances = [i for i in self.instances if i["id"] != instance_id]
+
+
+def _vast_account(monkeypatch, labels):
+    cluster = _cluster_module(monkeypatch)
+    account = _FakeVast(labels)
+    monkeypatch.setattr(cluster, "vast", lambda: account)
+    monkeypatch.setattr(cluster.time, "sleep", lambda s: None)
+    return cluster, account
+
+
+def test_the_label_sweep_of_a_cluster_destroys_only_the_instances_with_exactly_its_label(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast:rvtest-life-1a2b", "ray-vast:rvtest-life-1a2b-old", "ray-vast:gpu-24gb",
+                                                   "ray-vast:gpu-24gb-mine", None])
+    lines = cluster.sweep_label(["ray-vast:rvtest-life-1a2b"])
+    assert account.destroyed == [1] and "destroyed 1 (ray-vast:rvtest-life-1a2b)" in lines and lines[-1].endswith(" 0 left")
+
+
+def test_the_sweep_takes_a_prefix_only_for_the_suite_test_label_and_refuses_any_other_prefix(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast-test-20261017", "ray-vast-test-20261017-b", "my-ray-vast-test-20261017",
+                                                   "ray-vast:rvtest-life-1a2b", "ray-vast:gpu-24gb"])
+    cluster.sweep_label(["ray-vast:rvtest-life-1a2b"], prefixes=["ray-vast-test-20261017"])
+    assert account.destroyed == [1, 2, 4]
+    for prefix in ("ray-vast:", "ray-vast:gpu-24gb", "ray-vast-test-", ""):
+        with pytest.raises(ValueError, match="test label"):
+            cluster.sweep_label([], prefixes=[prefix])
+    assert account.destroyed == [1, 2, 4]
+
+
+def test_a_sweep_with_instance_ids_destroys_only_those_instances_of_the_label(monkeypatch):
+    cluster, account = _vast_account(monkeypatch, ["ray-vast:gpu-24gb", "ray-vast:gpu-24gb", "ray-vast:gpu-24gb"])
+    cluster.sweep_label(["ray-vast:gpu-24gb"], ids=[2])
+    assert account.destroyed == [2]
+    cluster.sweep_label(["ray-vast:gpu-24gb"], ids=[])
+    assert account.destroyed == [2]
+
+
+@pytest.mark.parametrize("vast_labels, key_pair, starts", [
+    (["ray-vast:gpu-24gb"], None, False),                     # the user's own vast instance of a cluster gpu-24gb
+    ([], "ray-vast-gpu-24gb", False),                         # the user's own AWS cluster ray-vast-gpu-24gb (us-east-2)
+    (["ray-vast:gpu-24gb-mine", "ray-vast-test-20261017"], "ray-vast-gpu-24gb-mine", True),  # other names: it can start
+])
+def test_the_release_cluster_refuses_to_start_when_a_cluster_of_its_name_already_exists_and_destroys_nothing(
+        tmp_path, monkeypatch, vast_labels, key_pair, starts):
+    cluster, account = _vast_account(monkeypatch, vast_labels)
+    (tmp_path / "aws_config").write_text(f"[profile {cluster.ADMIN_PROFILE}]\nregion = us-east-2\n")
+    (tmp_path / "aws_credentials").write_text(f"[{cluster.ADMIN_PROFILE}]\naws_access_key_id = testing\n"
+                                              "aws_secret_access_key = testing\n")
+    monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "aws_config"))
+    monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "aws_credentials"))
+    run = liverun.Run(tmp_path / "results", "run1")
+    with mock_aws():
+        if key_pair:
+            boto3.client("ec2", region_name="us-east-2").create_key_pair(KeyName=key_pair)
+        if starts:
+            made = cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+            assert made.name == "gpu-24gb" and [p.name for p in (run.dir / "opened").glob("*.json")] == ["gpu-24gb.json"]
+        else:
+            with pytest.raises(RuntimeError, match="gpu-24gb already exists"):
+                cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
+            assert not (run.dir / "opened").exists()   # it never joined the run: no `down`, no sweep, no end
+    assert account.destroyed == []
+
+
+@pytest.mark.parametrize("kept", [False, True])
+def test_a_cluster_joins_its_run_once_when_it_is_made_with_whether_the_run_keeps_it(tmp_path, monkeypatch, kept):
+    run = liverun.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch, kept=kept)
+    opened = list((run.dir / "opened").glob("*.json"))
+    assert [p.name for p in opened] == ["rvtest-intb-1a2b.json"] and made.kept is kept
+    assert json.loads(opened[0].read_text()) == {"name": "rvtest-intb-1a2b", "region": "us-west-2", "kept": kept,
+                                                 "yaml": str(made.yaml), "home": str(tmp_path / "home")}
+
+
+def test_the_secret_sink_of_a_run_holds_its_own_secrets_and_the_later_secrets_of_each_cluster(tmp_path, monkeypatch):
+    run = liverun.Run(tmp_path / "results", "run1")
+    made = _cluster_of(run, tmp_path, monkeypatch)
+    run.secret("iam-user-secret")
+    made.secrets.append("cluster-token")  # the token and the join tokens arrive after `up`
+    assert sorted(run.secret_values()) == ["cluster-token", "iam-user-secret"]
+
+
+def test_only_the_exact_run_suffix_marks_an_earlier_run_never_a_parameter_with_run_in_its_name(tmp_path):
+    _result(tmp_path, "monitor_log[a.running]", "passed", [("ok", True)])
+    _result(tmp_path, "monitor_log[b]", "failed", message="the earlier run")
+    _result(tmp_path, "monitor_log[b]", "passed", [("ok", True)])  # the Recorder keeps the first one as monitor_log[b].run1
+    assert (tmp_path / "monitor_log[b].run1").exists()
+    rows = [line for line in liverecords.summary_table(tmp_path, ["monitor_log"]).splitlines() if line.startswith("| monitor_log")]
+    assert [row.split(" | ")[:2] for row in rows] == [["| monitor_log[a.running]", "PASS"], ["| monitor_log[b]", "PASS"]]
+
+
+def test_the_spend_tables_list_each_cluster_group_and_each_run(tmp_path):
+    def spend(path, **fields):
+        path.mkdir(parents=True)
+        (path / "spend.json").write_text(json.dumps(fields))
+    spend(tmp_path / "_session" / "lifecycle", group="lifecycle", cluster="ray-vast-rvtest-lc-1a2b", vast_estimate=1.23456,
+          hours=1.5, ec2_estimate=0.1248)
+    spend(tmp_path / "_session" / "aws_only", group="aws_only", cluster="ray-vast-rvtest-aws-3c4d", vast_estimate=0.5,
+          hours=0.4, ec2_estimate=0.033)
+    spend(tmp_path / "_session" / "runs" / "101500-77", spend=3.2, top_ups=10.0, credit_before=5.5, credit_after=12.3)
+    assert liverecords.spend_tables(tmp_path) == (
+        "\nSpend for each cluster group (vast: the dph_total of its instances over time, from its timeline; EC2: an estimate "
+        "from the hours):\n\n| Group | Cluster | vast | Hours | EC2 |\n|---|---|---|---|---|\n"
+        "| aws_only | ray-vast-rvtest-aws-3c4d | $0.5000 | 0.4 h | $0.03 |\n"
+        "| lifecycle | ray-vast-rvtest-lc-1a2b | $1.2346 | 1.5 h | $0.12 |\n"
+        "\nvast spend of each run (the credit before and after, plus the auto top-ups in between):\n\n"
+        "| Run | vast | Top-ups |\n|---|---|---|\n| 101500-77 | $3.2000 | $10.00 |\n")
+    assert liverecords.spend_tables(tmp_path / "no_run") == ""
+
+
+@pytest.mark.parametrize("probe, limits", [
+    ({"pids.max": "max", "ray_cpus": 48.0, "identity_ports": 64}, (58, 29)),    # no limit: all 58 worker ports
+    ({"ray_cpus": 8.0, "identity_ports": 64}, (58, 8)),                         # no pids.max file; the soft limit is the CPUs
+    ({"pids.max": "1280", "ray_cpus": 16.0, "identity_ports": 64}, (14, 7)),    # (1280 - 400) // 60
+    ({"pids.max": "500", "ray_cpus": 4.0, "identity_ports": 64}, (4, 2)),       # at least 4 ports
+    ({"pids.max": "11776", "ray_cpus": 46.0, "identity_ports": 64}, (58, 29)),  # at most 58 ports
+    ({"pids.max": "11776", "ray_cpus": 46.0, "identity_ports": 20}, (14, 7)),   # 20 mapped identity ports: 14 worker ports
+])
+def test_the_expected_limits_of_a_node_facts_row_are_the_worker_ports_and_soft_limit_of_the_bootstrap(probe, limits):
+    assert libraries_setup.expected_limits(probe) == limits
+
+
+def test_a_check_detail_with_line_breaks_stays_on_one_row_of_the_summary(tmp_path):
+    record = liverecords.Recorder(tmp_path, "down_recovery", fixture="none")
+    record.check("up was stopped", True, "Traceback\n  File x\nKeyboardInterrupt\n")
+    record.finish("passed", "")
+    rows = [line for line in liverecords.summary_table(tmp_path, ["down_recovery"]).splitlines() if line.startswith("| down_recovery")]
+    assert len(rows) == 1 and "KeyboardInterrupt" in rows[0] and rows[0].endswith("`" + tmp_path.name + "/down_recovery/` |")
+
+
+class _Report:
+    def __init__(self, outcome, longrepr=None):
+        self.failed, self.skipped, self.passed = outcome == "failed", outcome == "skipped", outcome == "passed"
+        self.longrepr = longrepr
+
+
+def test_a_test_without_a_call_report_is_not_recorded_as_passed():
+    # Ctrl-C or SIGTERM during the test: pytest makes no call report, and the record must not say "passed".
+    assert liverecords.outcome_of({"setup": _Report("passed")})[0] == "failed"
+    assert liverecords.outcome_of({"setup": _Report("passed"), "call": _Report("passed")}) == ("passed", "")
+    assert liverecords.outcome_of({"setup": _Report("skipped", ("f", 1, "Skipped: kept")), "call": None})[0] == "skipped"
+
+
+class _Done:
+    def __init__(self, stdout="left: nothing\n", returncode=0):
+        self.stdout, self.stderr, self.returncode = stdout, "", returncode
+
+
+class _FakeCluster:
+    """A cluster at the seam of `liverun.end_cluster`: its `down` outputs come from `downs`, one for each call."""
+
+    def __init__(self, run, tmp_path, name="rvtest-life-1a2b", kept=False, downs=None, last_down=None, timeline=()):
+        self.name, self.region, self.kept, self.last_down, self.timeline = name, "us-east-2", kept, last_down, list(timeline)
+        self.yaml, self.home, self.secrets = tmp_path / f"{name}.yaml", tmp_path / "home", []
+        self.records = [tmp_path / "results" / "_session" / name]
+        self.records[0].mkdir(parents=True)
+        self.downs, self.down_calls = list(downs or [_Done()]), 0
+        run.register(self)
+
+    def down(self):
+        self.down_calls += 1
+        self.last_down = self.downs.pop(0) if self.downs else _Done()
+        return self.last_down
+
+
+def _guards():
+    """A fake vast sweep and AWS check that log their calls. `left` sets what each one finds."""
+    calls = {"sweep": [], "ids": [], "aws": [], "destroyed": [], "left": []}
+
+    def sweep(labels, ids=None):
+        calls["sweep"].append(labels)
+        calls["ids"].append(ids)
+        return ["0 left"] if not calls["destroyed"] else ["1 left", *calls["destroyed"], "0 left"]
+
+    def aws_check(name, region):
+        calls["aws"].append((name, region))
+        return calls["left"]
+    return calls, sweep, aws_check
+
+
+def test_a_clean_cluster_ends_with_one_down_its_label_sweep_its_aws_check_and_no_problem(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    calls, sweep, aws_check = _guards()
+    assert liverun.end_cluster(run, cluster, sweep, aws_check) == []
+    assert cluster.down_calls == 1
+    assert calls["sweep"] == [["ray-vast:rvtest-life-1a2b"]] and calls["aws"] == [("rvtest-life-1a2b", "us-east-2")]
+    ended = json.loads((run.dir / "ended" / "rvtest-life-1a2b.json").read_text())
+    assert ended["problems"] == [] and ended["kept"] is False
+
+
+def test_a_down_that_leaves_something_is_a_problem_and_down_runs_once_more(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, downs=[_Done("deleted key pair x\nleft: security group sg-1\n", 1), _Done()])
+    calls, sweep, aws_check = _guards()
+    assert liverun.end_cluster(run, cluster, sweep, aws_check) == [
+        "down left something (exit 1): deleted key pair x left: security group sg-1"]
+    assert cluster.down_calls == 2
+
+
+def test_an_instance_that_the_sweep_still_finds_and_a_resource_that_aws_still_has_are_problems(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    calls, sweep, aws_check = _guards()
+    calls["destroyed"].append("destroyed 41 (ray-vast:rvtest-life-1a2b)")
+    calls["left"].append("volume vol-1")
+    assert liverun.end_cluster(run, cluster, sweep, aws_check) == [
+        "vast: 1 instance(s) with the cluster label after down: destroyed 41 (ray-vast:rvtest-life-1a2b)", "AWS left: volume vol-1"]
+
+
+def test_the_secret_scan_of_a_cluster_reads_its_own_records_only_never_a_directory_with_a_similar_name(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+    for scenario in ("node_facts", "node_facts_after"):  # a prefix glob matched both (an earlier bug)
+        (tmp_path / "results" / scenario).mkdir(parents=True)
+        (tmp_path / "results" / scenario / "probe.log").write_text("token: cluster-token-value\n")
+    cluster.records.append(tmp_path / "results" / "node_facts")
+    cluster.secrets.append("cluster-token-value")  # it arrives after `up`
+    calls, sweep, aws_check = _guards()
+    assert liverun.end_cluster(run, cluster, sweep, aws_check) == [
+        f"the secret scan found 1 file(s): {tmp_path / 'results' / 'node_facts' / 'probe.log'}"]
+
+
+def test_a_kept_cluster_gets_no_down_no_sweep_and_no_aws_check_but_its_records_are_scanned(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, name="rvtest-life-keep", kept=True)
+    (cluster.records[0] / "cli.log").write_text("-----BEGIN RSA PRIVATE KEY-----\n")
+    calls, sweep, aws_check = _guards()
+    problems = liverun.end_cluster(run, cluster, sweep, aws_check, after_down=lambda done: [f"S3 after down {done}"])
+    assert problems == ["S3 after down None", f"the secret scan found 1 file(s): {cluster.records[0] / 'cli.log'}"]
+    assert cluster.down_calls == 0 and calls["sweep"] == [] and calls["aws"] == []
+    assert json.loads((run.dir / "ended" / "rvtest-life-keep.json").read_text())["kept"] is True
+
+
+def test_a_cluster_that_a_scenario_already_ended_cleanly_gets_no_second_down_but_still_its_sweep_and_aws_check(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, name="gpu-24gb", last_down=_Done(),  # the tutorial test ran its `down`
+                           timeline=[{"t": 1.0, "instances": [{"id": 41}]}, {"t": 2.0, "error": "ConnectionError"},
+                                     {"t": 3.0, "instances": [{"id": 41}, {"id": 42}]}, {"t": 4.0, "instances": []}])
+    calls, sweep, aws_check = _guards()
+    seen = []
+    assert liverun.end_cluster(run, cluster, sweep, aws_check, after_down=lambda done: seen.append(done) or []) == []
+    assert cluster.down_calls == 0 and seen == [cluster.last_down]
+    assert calls["sweep"] == [["ray-vast:gpu-24gb"]] and calls["aws"] == [("gpu-24gb", "us-east-2")]
+    # gpu-24gb is not a suite name: a user can have a cluster of that name on the same account. The sweep may destroy
+    # only the instances that this run saw for the cluster (its timeline), never every instance with the label.
+    assert calls["ids"] == [[41, 42]]
+
+
+def test_the_sweep_of_a_suite_cluster_takes_its_label_with_no_instance_id_filter(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path, timeline=[{"t": 1.0, "instances": [{"id": 41}]}])
+    calls, sweep, aws_check = _guards()
+    liverun.end_cluster(run, cluster, sweep, aws_check)
+    assert calls["sweep"] == [["ray-vast:rvtest-life-1a2b"]] and calls["ids"] == [None]
+
+
+def test_a_cluster_whose_up_failed_half_way_still_gets_the_sweep_and_the_aws_check_when_down_or_vast_fails(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    cluster = _FakeCluster(run, tmp_path)
+
+    def down():
+        raise TimeoutError("ray-vast down: 1800 s")
+    cluster.down = down
+
+    def sweep(prefixes):
+        raise ConnectionError("vast is down")
+    checked = []
+    problems = liverun.end_cluster(run, cluster, sweep, lambda name, region: checked.append(name) or ["key pair ray-vast-x"])
+    assert problems == ["down failed: TimeoutError: ray-vast down: 1800 s", "vast sweep failed: ConnectionError: vast is down",
+                        "AWS left: key pair ray-vast-x"]
+    assert checked == ["rvtest-life-1a2b"]
+    assert json.loads((run.dir / "ended" / "rvtest-life-1a2b.json").read_text())["problems"] == problems
+
+
+def test_the_process_scan_reads_each_record_of_the_process_that_no_cluster_owns(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    run.secret("iam-user-secret")
+    run.record("denials", "none").evidence("denials.txt", "iam-user-secret")
+    (run.group_dir("restricted_user") / "user.log").write_text("iam-user-secret")
+    cluster = _FakeCluster(run, tmp_path)
+    owned = run.record("node_facts", "lifecycle", owner=cluster)
+    owned.evidence("probe.log", "iam-user-secret")  # scanned when its cluster ends, not again here
+    run.record("shim", "none").evidence("ok.txt", "nothing secret")
+    assert run.scan_unowned() == ["_session/restricted_user/user.log", "denials/denials.txt"]
+
+
+def test_a_secret_in_the_record_of_a_scenario_s_own_cluster_is_reported_once_by_that_cluster_s_end_not_by_the_process_scan(tmp_path):
+    run = liverun.Run(tmp_path / "results", "run1")
+    run.secret("iam-user-secret")
+    record = run.record("down_recovery", "none")
+    record.evidence("a/cli.log", "iam-user-secret")    # the scenario's own cluster records <record>/a
+    record.evidence("check.txt", "iam-user-secret")    # the scenario's own file: no cluster owns it
+    own = _FakeCluster(run, tmp_path, name="rvtest-own-1a2b")
+    own.records = [record.dir / "a"]
+    calls, sweep, aws_check = _guards()
+    assert liverun.end_cluster(run, own, sweep, aws_check) == [f"the secret scan found 1 file(s): {record.dir / 'a' / 'cli.log'}"]
+    assert run.scan_unowned() == ["down_recovery/check.txt"]
+
+
+def test_in_a_pair_a_refused_fork_fails_a_tuned_run_and_is_data_in_a_many_run():
+    import inspect
+    verdict = pairs.verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "1280"}
+    post = {"node_id": "n1", "pids.events": "max 7", "pids.max": "1280"}
+    warnings = ["WARNING worker 41 is at its process limit: 7 refused forks/threads (+7), pids 1280 of 1280"]
+    # A tuned run uses the recommended settings: a refused fork means the advice is wrong. No caller can turn this off.
+    assert "refused_fails" not in inspect.signature(verdict).parameters
+    assert verdict("tuned", {"kind": "COMPLETED"}, pre, post, warnings) == (
+        "FAIL", ["pids.events: 7 refused forks", "a head WARNING line with new refused forks or thread starts"])
+    # A many run hangs or queues; its refused forks are data.
+    status, [reason] = verdict("many", {"kind": "HUNG"}, pre, post, warnings)
+    assert status == "PASS" and "refused forks 7" in reason
+
+
+def test_a_many_run_that_hangs_with_free_worker_ports_fails_with_the_reason_that_names_it():
+    # Ray had 1 CPU (the declared CPU), the Data job waited for CPUs with 3 of 4 ports in use. The head rightly wrote no
+    # WARNING line; the verdict must say that the job did not reach the port limit.
+    verdict = pairs.verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "560", "no_port_errors": 0}
+    post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "560", "no_port_errors": 0}
+    assert verdict("many", {"kind": "HUNG"}, pre, post, []) == ("FAIL", [
+        "no head pids/ports WARNING line for the node",
+        "no 'No available ports' line and no refused fork: the job hung for another reason (CPUs?), not at the "
+        "process limit"])
+
+
+def test_a_many_run_that_goes_on_with_fewer_processes_than_it_asked_for_is_a_documented_failure():
+    # On 58 worker ports, rllib.many asked for 62 env runners. 58 started, and RLlib trained with them
+    # after about 6 min (job COMPLETED). The library page documents this result, so the many run shows the limit.
+    verdict = pairs.verdict
+    pre = {"node_id": "n1", "pids.events": "max 0", "pids.max": "15616", "no_port_errors": 0}
+    post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "15616", "no_port_errors": 4}
+    full = ["WARNING worker 41 is at its process limit: 0 refused forks/threads (+0), pids 1700 of 15616, worker ports in use 58 of 58"]
+    status, [reason] = verdict("many", {"kind": "DEGRADED"}, pre, post, full, limit_max=15616)
+    assert status == "PASS" and reason.startswith("DEGRADED, warning seen")
+    # A tuned run that loses processes is not a completed run.
+    assert verdict("tuned", {"kind": "DEGRADED"}, pre, pre, [])[0] == "FAIL"
+
+
+def test_a_default_run_passes_only_when_it_completes_with_no_process_limit_warning_at_all():
+    # With Ray's defaults on a worker with CPU <= N, the head writes no WARNING.
+    verdict = pairs.verdict
+    pre = post = {"node_id": "n1", "pids.events": "max 0", "pids.max": "1536"}
+    full = ["WARNING worker 41 is at its process limit: 0 refused forks/threads (+0), pids 900 of 1536, worker ports in use 18 of 18"]
+    assert verdict("default", {"kind": "COMPLETED"}, pre, post, []) == ("PASS", ["completed, node alive, no refused fork"])
+    assert verdict("default", {"kind": "COMPLETED"}, pre, post, full) == ("FAIL", ["a head process-limit WARNING line for the node"])
+    assert verdict("default", {"kind": "HUNG"}, pre, post, [])[0] == "FAIL"
+
+
+def test_a_run_without_a_cluster_calls_no_cloud_guard_but_still_sums_up_the_process_scans(tmp_path):
+    run = liverun.Run(tmp_path, "run1")
+    run.record("shim", "none")
+    (run.dir / "scan_gw0.txt").write_text("wheel/x.txt\n")
+
+    def no_cloud(*args):
+        raise AssertionError("a free run calls no cloud API")
+    assert liverun.end_of_run(run.dir, "ray-vast-test-20261016", no_cloud, no_cloud) == (
+        ["the secret scan found 1 file(s): wheel/x.txt"], [])
+
+
+def test_a_false_check_is_recorded_and_the_test_goes_on_and_a_false_require_stops_it(tmp_path):
+    record = liverecords.Recorder(tmp_path, "head_exposure", fixture="aws_only")
+    assert record.check("port 6379 closed", False, "open") is False
+    record.require("port 8265 closed", True)
+    with pytest.raises(AssertionError, match="the head IP is known: none"):
+        record.require("the head IP is known", False, "none")
+    assert record.failed_checks() == ["port 6379 closed", "the head IP is known"]
+    assert [c["ok"] for c in record.result["checks"]] == [False, True, False]
+
+
+def test_a_poller_sample_lists_the_instances_of_its_label_and_keeps_each_join_token_once_as_a_secret(tmp_path):
+    listing = [{"id": 1, "label": "ray-vast:rvtest-x-1a2b", "actual_status": "running", "extra_env": [["RAYVAST_JOIN_TOKEN", "jt-1"]]},
+               {"id": 2, "label": "ray-vast:rvtest-x-1a2b-old", "extra_env": [["RAYVAST_JOIN_TOKEN", "jt-2"]]}]
+
+    class Vast:
+        def list_instances(self):
+            if not listing:
+                raise ConnectionError("vast is down")
+            return list(listing)
+    secrets = ["cluster-token"]
+    poller = livepoller.Poller(Vast, "ray-vast:rvtest-x-1a2b", tmp_path / "timeline.jsonl", secrets)
+    assert [i["id"] for i in poller.sample()["instances"]] == [1] and poller.sample()["instances"][0]["actual_status"] == "running"
+    listing.clear()
+    assert "error" in poller.sample() and len(poller.timeline) == 3  # one failed sample does not end the timeline
+    assert secrets == ["cluster-token", "jt-1"]

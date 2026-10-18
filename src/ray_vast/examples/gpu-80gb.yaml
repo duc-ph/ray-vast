@@ -1,0 +1,36 @@
+# An 80 GB GPU tier, two GPUs in each worker.
+# Every field is listed. A commented-out field keeps its default or does not apply here.
+# Reference: https://duc-ph.github.io/ray-vast/reference/configuration/
+
+cluster_name: gpu-80gb            # names the AWS resources (ray-vast-<name>) and the vast label (ray-vast:<name>)
+# max_workers: 2                # the most workers in all; default: the sum of max_workers of the worker types (2)
+idle_timeout_minutes: 5          # Ray removes a worker after it is idle this long
+# auth:
+#   ssh_user: ray               # Ray needs this field; ray-vast does not use it (default: ray)
+
+provider:
+  image: rayproject/ray:2.59.0-py311-gpu   # image for the head and the workers
+  max_dollars_per_hour: 10.0           # hard limit for the sum of dph_total over all workers and candidates
+  # candidate_factor: 2           # candidates rented for each requested worker (default: 2)
+
+head_node_type: head
+available_node_types:
+  head:
+    resources: {CPU: 0}           # required: the head runs no tasks
+    node_config:
+      region: us-west-2            # required: the AWS region of the EC2 head
+      # instance_type: t3.large    # EC2 instance type of the head (default: t3.large)
+  gpu80:
+    resources: {CPU: 16, GPU: 2}    # CPU: Ray CPUs, and at least this many effective cores; GPU: exactly this many GPUs
+    min_workers: 0                  # the fewest workers of this type
+    max_workers: 2                  # the most workers of this type
+    node_config:
+      disk_gb: 100                  # disk of the instance in GB (default: 50)
+      offer_query:                  # required: which vast offers this type can rent (vast API form)
+        # Highly recommended: keep these two lines (a survey of 431 vast machines). Not started in 12 min: 2% of verified
+        # hosts, 50% of deverified hosts. All identity ports reachable from outside: 100% of datacenter hosts, 77% of
+        # unverified hosts.
+        verified: {eq: true}
+        datacenter: {eq: true}
+        gpu_ram: {gte: 80000}   # MB
+        dlperf: {gte: 100}

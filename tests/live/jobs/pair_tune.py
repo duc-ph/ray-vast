@@ -1,0 +1,64 @@
+# Process-limit pair, Ray Tune: trials that each run their evaluation as a Ray task (a common pattern: parallel evaluation).
+# Each trial has a placement group of 2 bundles of min(0.1, cpus / (2 * trials)) CPU: one for the trial, one for its task.
+#   many:  max(ports + 4, 60) trials, all at once (Tune's default: as many as the CPUs allow). Each trial actor holds one
+#          worker process; the trials take all worker ports, and their evaluation tasks never get a process: the job hangs.
+#          Each trial waits HOLD_S before its first evaluation, so the trials are alive at the same time.
+#   tuned: TuneConfig(max_concurrent_trials=budget // 2) (budget = ports - 4): one process for each trial plus one for its
+#          task. The same trials run in waves and complete.
+#   default: Tune's defaults: the same trials, each with the default 1 CPU, and a trainable that starts no task. At most
+#          cpus trials run at the same time (one process for each CPU).
+# Usage: python pair_tune.py many|tuned|default
+import time
+
+import ray
+from ray import tune
+
+from paircommon import PROGRESS, SCALE, error_info, finish, start, target
+
+ID = "pair_tune"
+mode = start(ID, 600)
+cpus, ports, budget = target()
+TRIALS = max(ports + 4, int(60 * SCALE))  # 2 processes for each trial: more than the ports at any size
+STEPS = 3
+HOLD_S = 60 * SCALE  # each trial waits this long before its first evaluation task
+EVAL_S = 10 * SCALE  # one evaluation task
+
+
+@ray.remote(num_cpus=0)  # it runs in the trial's placement group (its second bundle)
+def evaluate(x, step):
+    # A real evaluation takes seconds. With 0.5 s, one free worker port ran all the evaluations one after the other,
+    # and the many run completed in 4 min (one port was taken by an outbound connection).
+    time.sleep(EVAL_S)
+    return x * step
+
+
+def trainable(config):
+    # The trial holds its process first, so all trials are alive at the same time on any host size. Without it, on
+    # 58 worker ports the 1.5 s trials of `many` ended faster than new ones started, and all completed.
+    time.sleep(HOLD_S)
+    for step in range(STEPS):
+        tune.report({"score": ray.get(evaluate.remote(config["x"], step)), "step": step})
+
+
+def plain(config):  # default mode: the work in the trial's own process
+    for step in range(STEPS):
+        time.sleep(0.5)
+        tune.report({"score": config["x"] * step, "step": step})
+
+
+concurrent = budget // 2 if mode == "tuned" else 0  # 0: Tune's default, no limit
+bundle = min(0.1, cpus / (2 * TRIALS))
+params = {"trials": TRIALS, "bundle_cpu": "default 1" if mode == "default" else round(bundle, 4), "max_concurrent_trials": concurrent or None}
+print(f"JOB_PARAMS {params}", flush=True)
+PROGRESS.update(params)
+try:
+    t = time.time()
+    resources = tune.PlacementGroupFactory([{"CPU": bundle}, {"CPU": bundle}])  # the trial and its evaluation task
+    grid = tune.Tuner(plain if mode == "default" else tune.with_resources(trainable, resources), param_space={"x": tune.uniform(0, 1)},
+                      tune_config=tune.TuneConfig(num_samples=TRIALS, metric="score", mode="max",
+                                                  max_concurrent_trials=concurrent or None)).fit()
+    seconds = time.time() - t
+except Exception as e:
+    finish(ID, mode, "ERROR", dict(error_info(e), progress=dict(PROGRESS)))
+kind = "COMPLETED" if len(grid) == TRIALS and grid.num_errors == 0 else "ERROR"
+finish(ID, mode, kind, dict(params, results=len(grid), errors=grid.num_errors, seconds=round(seconds, 1)))

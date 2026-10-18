@@ -1,0 +1,132 @@
+# Shared parts of the library job scripts. Stdlib and Ray only.
+# Each job prints exactly one final line: `JOB_RESULT <id> PASS|FAIL|LIMIT <json>`, then ends the process.
+# Environment:
+#   JOB_SMALL=1        tiny sizes, for a local check of the scripts
+#   JOB_MIN_NODES=N    the number of worker nodes that a multi-node check needs (default 2; 1 for a local check)
+#   JOB_WAIT_S=S       how long a job waits for its worker nodes or GPUs before it gives up (default 900)
+#   JOB_LOCAL_CPUS=N   a local check only: ray.init(num_cpus=N, _temp_dir=JOB_LOCAL_TMP) starts a small Ray in the process
+#   JOB_GUARD_S=S      overrides the wall-clock guard of the job (each script has its own default)
+#   JOB_GPU=0          a local dry run of the GPU scripts on CPU: they ask for 0 GPUs (the CUDA checks then FAIL)
+#   JOB_DATA_CPU=N     Ray Data uses at most N CPUs of the cluster (DataContext execution_options.resource_limits). A
+#                     workaround: vast containers have a pids limit (1280 on 1-GPU hosts), and each Ray worker process has
+#                     about 50 threads, so a node with 24 or 48 Ray CPUs crashes (pthread_create EAGAIN) when Data uses all CPUs.
+import json
+import os
+import sys
+import threading
+import time
+import traceback
+
+import ray
+
+SMALL = os.environ.get("JOB_SMALL") == "1"
+MIN_NODES = int(os.environ.get("JOB_MIN_NODES", "2"))
+WAIT_S = float(os.environ.get("JOB_WAIT_S", "900"))
+GPU = float(os.environ.get("JOB_GPU", "1"))  # GPUs per GPU task, actor or bundle
+T0 = time.time()
+_lock = threading.Lock()
+_done = False
+
+
+def start(test_id, timeout_s):
+    """Connect to Ray and start the wall-clock guard: after timeout_s, print a FAIL line and end the process."""
+    timeout_s = float(os.environ.get("JOB_GUARD_S", timeout_s))
+    def guard():
+        time.sleep(timeout_s)
+        result(test_id, "FAIL", {"timeout_s": timeout_s, "error": "wall-clock guard fired; the job hung"})
+    threading.Thread(target=guard, daemon=True).start()
+    print(f"JOB_START {test_id} {T0:.1f} small={SMALL} min_nodes={MIN_NODES}", flush=True)
+    if os.environ.get("JOB_LOCAL_CPUS"):
+        context = ray.init(num_cpus=int(os.environ["JOB_LOCAL_CPUS"]), _temp_dir=os.environ.get("JOB_LOCAL_TMP"))
+        os.environ["RAY_API_SERVER_ADDRESS"] = f"http://{context.dashboard_url}"  # the state API ignores RAY_ADDRESS=local
+    else:
+        ray.init()
+    if os.environ.get("JOB_DATA_CPU"):
+        from ray.data import DataContext, ExecutionResources
+        data_context = DataContext.get_current()
+        data_context.execution_options.resource_limits = ExecutionResources(cpu=float(os.environ["JOB_DATA_CPU"]))
+        data_context.max_hash_shuffle_aggregators = 4  # each aggregator is one more worker process (about 50 threads)
+        print(f"JOB_DATA_CPU {os.environ['JOB_DATA_CPU']}", flush=True)
+    return time.time()
+
+
+def result(test_id, status, data):
+    """Print the one result line and end the process at once (no hang in a Ray shutdown). Exit 0 PASS, 1 FAIL, 2 LIMIT."""
+    global _done
+    with _lock:
+        if _done:
+            return
+        _done = True
+        data = dict(data, elapsed_s=round(time.time() - T0, 1))
+        print(f"JOB_RESULT {test_id} {status} {json.dumps(data, default=str, sort_keys=True)}", flush=True)
+        sys.stderr.flush()
+        os._exit({"PASS": 0, "FAIL": 1, "LIMIT": 2}[status])
+
+
+def error_info(exc):
+    """The error class and the first lines of the error text, for a FAIL or LIMIT line."""
+    lines = [line for line in str(exc).splitlines() if line.strip()]
+    return {"error_class": type(exc).__name__, "error_head": lines[:12],
+            "traceback_tail": traceback.format_exception(exc)[-3:]}
+
+
+def node_info():
+    """Called inside a task or actor: where it runs."""
+    return {"node_id": ray.get_runtime_context().get_node_id(), "ip": ray.util.get_node_ip_address(),
+            "container_id": os.environ.get("CONTAINER_ID"), "node_type": os.environ.get("RAY_NODE_TYPE_NAME"),
+            "pid": os.getpid()}
+
+
+def worker_nodes():
+    """Alive nodes that can run tasks (the head has CPU 0). Returns {node_id: {"ip", "CPU", "GPU", "object_store_gb"}}."""
+    nodes = {}
+    for n in ray.nodes():
+        res = n.get("Resources", {})
+        if n.get("Alive") and res.get("CPU", 0) > 0:
+            nodes[n["NodeID"]] = {"ip": n.get("NodeManagerAddress"), "CPU": res.get("CPU", 0), "GPU": res.get("GPU", 0),
+                                  "object_store_gb": round(res.get("object_store_memory", 0) / 1e9, 2)}
+    return nodes
+
+
+def wait_for_nodes(test_id, nodes=MIN_NODES, gpus_per_node=0):
+    """Wait up to JOB_WAIT_S for `nodes` worker nodes with at least `gpus_per_node` GPUs each. Print FAIL and end if not."""
+    deadline = time.time() + WAIT_S
+    while True:
+        found = {k: v for k, v in worker_nodes().items() if v["GPU"] >= gpus_per_node}
+        if len(found) >= nodes:
+            return found
+        if time.time() > deadline:
+            result(test_id, "FAIL", {"error": f"needs {nodes} worker node(s) with GPU >= {gpus_per_node}; found {len(found)}",
+                                     "worker_nodes": worker_nodes(), "waited_s": WAIT_S})
+        time.sleep(5)
+
+
+def short(node_id):
+    return node_id[:8] if node_id else node_id
+
+
+def job_task_nodes():
+    """The nodes where the tasks and actors of this job ran (Ray state API, through the head's dashboard).
+    Returns {short node id: task count}, or {"error": ...} if the state API fails."""
+    import collections
+    from ray.util.state import list_tasks
+    try:
+        job_id = ray.get_runtime_context().get_job_id()
+        tasks = list_tasks(address=ray.get_runtime_context().gcs_address, filters=[("job_id", "=", job_id)], limit=10000,
+                           raise_on_missing_output=False)
+        return dict(collections.Counter(short(t.node_id) for t in tasks if t.node_id))
+    except Exception as e:
+        return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+
+def storage_settings():
+    """(storage_path, storage_filesystem) from JOB_STORAGE. `s3anon://bucket/prefix` is an S3 bucket that allows
+    only the cluster IPs (bucket policy), used without credentials through s3fs (anon=True; needs s3fs from runtime_env pip).
+    pyarrow's own anonymous S3 cannot write there: it always starts a multipart upload, and S3 refuses that to anonymous users."""
+    storage = os.environ.get("JOB_STORAGE")
+    if storage and storage.startswith("s3anon://"):
+        import pyarrow.fs
+        import s3fs
+        fs = pyarrow.fs.PyFileSystem(pyarrow.fs.FSSpecHandler(s3fs.S3FileSystem(anon=True, client_kwargs={"region_name": "us-west-2"})))
+        return storage[len("s3anon://"):], fs
+    return storage, None
