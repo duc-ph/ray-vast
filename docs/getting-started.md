@@ -58,16 +58,13 @@ What `up` makes in AWS is in [AWS permissions](reference/iam.md).
 ## 3. Save the vast API key
 
 1. In the vast console, open **Account**, then **Keys**. Copy your API key, or create one.
-2. Save the key in a file that only you can read:
+2. Put the key in the file `.env`, in the directory where you run ray-vast:
 
 ```bash
-mkdir -p ~/.config/vastai
-(umask 077; cat > ~/.config/vastai/vast_api_key)   # paste the key, press Enter, then Ctrl-D
+VAST_API_KEY=<your key>
 ```
 
-ray-vast can also read the key from the `VAST_API_KEY` environment variable. Never put the key in the cluster YAML.
-
-The `vastai` CLI is optional. The clean-up pages use it to list and destroy instances. To install it, run `pip install vastai`.
+Never put the key in the cluster YAML.
 
 ## 4. Write a cluster YAML
 

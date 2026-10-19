@@ -36,7 +36,7 @@ ray-vast does not use the Ray fields `file_mounts`, `setup_commands`, `initializ
 
 ray-vast sets `type`, `module` and `disable_node_updaters` itself. Do not set them.
 
-The vast API key is not a config field. ray-vast reads it from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`.
+The vast API key is not a config field. ray-vast reads it from the first of these: the `VAST_API_KEY` environment variable, then `VAST_API_KEY` in `.env` in the current directory, then `~/.config/vastai/vast_api_key`.
 
 ## `available_node_types`: the head
 

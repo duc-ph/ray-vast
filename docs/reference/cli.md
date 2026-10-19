@@ -79,7 +79,7 @@ cluster <cluster_name> is up. Head IP <head ip>.
 
 Rules:
 
-- `up` reads the vast key from `VAST_API_KEY`, or from `~/.config/vastai/vast_api_key`. It sends the key to the head. The key is never in the YAML.
+- `up` reads the vast key from the first of these: the `VAST_API_KEY` environment variable, then `VAST_API_KEY` in `.env` in the current directory, then `~/.config/vastai/vast_api_key`. It sends the key to the head. The key is never in the YAML.
 - `up` saves the AWS profile (`--profile` or `AWS_PROFILE`) in the state file. The other commands use it by default.
 - `attach` and `dashboard` use the SSH key that `up` made. So run them on the machine that ran `up`.
 - `up` makes no vast rental. Workers start when a job needs them, or for `min_workers`.
@@ -192,7 +192,7 @@ The cluster name must match `[A-Za-z0-9][A-Za-z0-9_-]{0,39}`: 1 to 40 letters, d
 | Variable | Use |
 |---|---|
 | `AWS_PROFILE` | The default of `--profile`. It wins over the profile that `up` saved. |
-| `VAST_API_KEY` | The vast API key. If it is not set, ray-vast reads `~/.config/vastai/vast_api_key`. |
+| `VAST_API_KEY` | The vast API key. It wins over `VAST_API_KEY` in `.env`. |
 
 ## Ray commands that do not work
 

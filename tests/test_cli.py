@@ -660,6 +660,30 @@ def test_main_down_without_a_vast_key_cleans_aws_warns_and_exits_0(running_clust
     assert what_is_left(aws, FakeVast()) == []
 
 
+def test_the_vast_key_comes_from_dot_env_in_the_current_directory(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("VAST_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("# my keys\nOTHER=1\n\nexport VAST_API_KEY=\"abc123\"\n")
+    assert commands._read_vast_key() == "abc123"
+
+
+def test_the_vast_key_in_the_environment_wins_over_dot_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("VAST_API_KEY", "from-env")
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("VAST_API_KEY=from-file\n")
+    assert commands._read_vast_key() == "from-env"
+
+
+def test_no_vast_key_anywhere_is_an_error_that_names_dot_env(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("VAST_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("OTHER=1\n")
+    with pytest.raises(commands.CliError, match=r"VAST_API_KEY in \.env"):
+        commands._read_vast_key()
+
+
 # --- behaviors that a mutation audit found the tests above did not pin --------------------------------------------------
 
 def no_op_response(**kwargs):

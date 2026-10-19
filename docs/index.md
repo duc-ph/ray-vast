@@ -49,7 +49,7 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 
 ## Quick start
 
-You need an AWS profile and a vast API key in `~/.config/vastai/vast_api_key`.
+You need an AWS profile and a vast API key in `.env` (`VAST_API_KEY=<your key>`).
 The full steps are in [Getting started](getting-started.md).
 
 ```bash

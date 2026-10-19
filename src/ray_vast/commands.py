@@ -142,11 +142,18 @@ def _key_file(state_dir, cluster):
 
 
 def _read_vast_key():
+    """The vast key: the VAST_API_KEY environment variable, then VAST_API_KEY in `.env` in the current directory, then
+    the file of the vastai CLI."""
     key = os.environ.get("VAST_API_KEY")
+    if not key and Path(".env").is_file():
+        for line in Path(".env").read_text().splitlines():
+            name, _, value = line.strip().removeprefix("export ").partition("=")
+            if name.strip() == "VAST_API_KEY":
+                key = value.strip().strip("'\"")
     if not key:
         path = Path.home() / ".config" / "vastai" / "vast_api_key"
         if not path.exists():
-            raise CliError("no vast key: set VAST_API_KEY or put it in ~/.config/vastai/vast_api_key")
+            raise CliError("no vast key: put VAST_API_KEY in .env in the current directory, or set VAST_API_KEY")
         key = path.read_text()
     return key.strip()
 
@@ -344,7 +351,7 @@ def down(cluster, region, session, vast, state_dir, sleep=time.sleep, out=print)
         out(f"terminating head {', '.join(head_ids)}")
 
     if vast is None:
-        out(f"warning: no vast key, so vast instances were not swept. Set VAST_API_KEY and run `ray-vast down` again, or list "
+        out(f"warning: no vast key, so vast instances were not swept. Put VAST_API_KEY in .env and run `ray-vast down` again, or list "
             f"them with `vastai show instances` and destroy those with label {label(cluster)} (`vastai destroy instance ID`).")
     for _ in range(60 if vast else 0):  # list again until vast lists none (a destroy can show late)
         found = sweep(vast, vast.list_instances(), cluster)

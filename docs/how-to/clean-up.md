@@ -44,7 +44,7 @@ To destroy a vast instance, run `vastai destroy instance <instance id>`.
 Without a vast key, `down` cleans AWS only. It prints a warning that it did not sweep the vast instances. It exits with code 0.
 Then do one of these steps:
 
-- Set `VAST_API_KEY`, and run `down` again.
+- Put `VAST_API_KEY` in `.env`, and run `down` again.
 - Run `vastai show instances`. Destroy the instances with the label `ray-vast:<cluster_name>`.
 
 The instances also destroy themselves after the head is gone: a worker within 5 minutes, a candidate within 10 minutes.
