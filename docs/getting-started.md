@@ -1,6 +1,6 @@
 # Getting started
 
-Start a small GPU cluster, run one job, and remove the cluster. About 20 minutes, less than $1.
+This tutorial starts a small GPU cluster, runs one job on it, and removes it.
 
 ## Prerequisites
 
