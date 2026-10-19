@@ -1,18 +1,13 @@
 # Getting started
 
-This tutorial starts a small GPU cluster, runs one job on it, and removes it.
-It takes about 20 minutes and costs less than $1.
+Start a small GPU cluster, run one job, and remove the cluster. About 20 minutes, less than $1.
 
 ## Prerequisites
 
-You need these on your laptop (the operator machine). The CLI is tested on Linux. macOS is not tested.
-
-- **Python 3.10 or later.** Ray 2.59 needs Python 3.10 or later.
-- **`ssh` and `scp`.** ray-vast uses them to reach the head.
-- **An AWS account.**
-- **A vast.ai account with credit.**
-
-You do not need an EC2 key pair. `ray-vast up` makes one SSH key for each cluster.
+- Python 3.10 or later
+- `ssh` and `scp`
+- An AWS account
+- A vast.ai account with credit
 
 ## 1. Install
 
@@ -22,20 +17,9 @@ source .venv/bin/activate
 pip install ray-vast "ray[default]==2.59.*"
 ```
 
-This installs the `ray-vast` command and the `ray` command.
-The pin `ray[default]==2.59.*` keeps Ray on the laptop at the same version as Ray in the cluster image (`rayproject/ray:2.59.0-...`).
-Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59 only.
-`ray-vast up` installs the same ray-vast version on the head, from PyPI.
+Keep the Ray pin: Ray on your laptop must match Ray in the cluster image.
 
 ## 2. Set up AWS { #aws-setup }
-
-ray-vast uses the access key of an AWS user. The user needs permission to:
-
-- start and stop an EC2 instance (the head), and make its key pair and security groups;
-- make an IAM role and an instance profile for the head, and give them to EC2;
-- create one IAM policy, `ray-vast-head-boundary`, at the first `up` in the account.
-
-The policy `AdministratorAccess` gives all of this. To give only these permissions, read [A restricted user](reference/iam.md#a-restricted-user).
 
 1. In the AWS console, create an access key for your user: **IAM**, **Users**, your user, **Security credentials**, **Create access key**, **Command Line Interface (CLI)**.
 2. Put the key in the file `.env`, in the directory where you run ray-vast:
@@ -45,25 +29,20 @@ The policy `AdministratorAccess` gives all of this. To give only these permissio
     AWS_SECRET_ACCESS_KEY=<your secret access key>
     ```
 
-The first `up` in your account creates the IAM policy `ray-vast-head-boundary`. It limits what the head can do in AWS.
-What `up` makes in AWS is in [AWS permissions](reference/iam.md).
+The user needs `AdministratorAccess`, or the restricted policy in [AWS permissions](reference/iam.md#a-restricted-user).
 
 ## 3. Save the vast API key
 
 1. In the vast console, open **Account**, then **Keys**. Copy your API key, or create one.
-2. Add the key to the same file `.env`:
+2. Add the key to `.env`:
 
     ```bash
     VAST_API_KEY=<your key>
     ```
 
-Never put `.env` in git. Never put the keys in the cluster YAML.
-
 ## 4. Write a cluster YAML
 
-The package has three examples in `ray_vast/examples/`: `gpu-24gb.yaml`, `gpu-80gb.yaml` and `cpu-heavy.yaml`.
-Each example lists all fields. A field in a comment keeps its default.
-Copy one:
+Copy an example:
 
 ```bash
 cp "$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/examples/gpu-24gb.yaml" cluster.yaml
@@ -75,16 +54,13 @@ Edit `cluster.yaml`. Set the region of the head and your budget:
 --8<-- "src/ray_vast/examples/gpu-24gb.yaml"
 ```
 
-The fields are in [Configuration](reference/configuration.md).
-To choose other GPUs, read [Choose node types and GPU images](how-to/node-types.md).
+The fields are in [Configuration](reference/configuration.md). Other examples: `gpu-80gb.yaml` and `cpu-heavy.yaml`.
 
 ## 5. Start the cluster
 
 ```bash
 ray-vast up cluster.yaml
 ```
-
-Run all `ray-vast` commands in the directory of `.env`.
 
 The output looks like this:
 
@@ -97,11 +73,8 @@ cluster gpu-24gb is up. Head IP <head ip>.
   shell:     ray-vast attach cluster.yaml
 ```
 
-`up` took 2.5 to 6.5 minutes with the CPU image (`rayproject/ray:2.59.0-py311-cpu`) in our tests.
-It takes about 8 to 10 minutes with the 18 GB GPU image, because the head pulls the image.
-`up` makes no vast rental. Workers start only when a job needs them.
-
-If `up` stops with an error, run `ray-vast down cluster.yaml` and read [Clean up after a failure](how-to/clean-up.md).
+`up` takes about 3 to 10 minutes. It rents no vast worker yet.
+If `up` fails, run `ray-vast down cluster.yaml`.
 
 ## 6. Open the dashboard
 
@@ -117,21 +90,17 @@ for `ray job submit` set:
 dashboard at http://127.0.0.1:8265 (Ctrl-C to close the tunnel); use --address http://127.0.0.1:8265
 ```
 
-The command copies the cluster token to `~/.ray-vast/<cluster_name>/token` (mode 600).
-Then it opens an SSH tunnel to port 8265 of the head.
-Keep this terminal open. Open http://127.0.0.1:8265 in your browser to see the Ray dashboard.
+Keep this terminal open. The dashboard is at http://127.0.0.1:8265.
 
 ## 7. Submit a job
 
-Open a second terminal. Activate the venv, and run the `export` line that `dashboard` printed:
+In a second terminal, activate the venv and run the `export` line that `dashboard` printed:
 
 ```bash
 export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=/home/you/.ray-vast/gpu-24gb/token
 ```
 
-Write a small job, `hello.py`.
-This job needs a GPU worker. The autoscaler rents one on vast.ai, so this step costs money.
-The cluster YAML must allow at least 1 worker of a GPU type (`max_workers` 1 or more).
+Write `hello.py`:
 
 ```python
 import ray
@@ -153,54 +122,21 @@ Submit it:
 ray job submit --address http://127.0.0.1:8265 --working-dir . -- python hello.py
 ```
 
-The task needs a GPU, and the head has none. So the autoscaler rents a worker. This takes from less than 1 minute to several minutes. Read [Worker life cycle and the watchdog](explanation/architecture.md#worker-life-cycle-and-the-watchdog).
-The job then prints the host name and the GPU ID.
+The autoscaler rents a GPU worker on vast.ai. This takes 1 to several minutes. Then the job prints the host name and the GPU ID.
 
-To see the cluster state, open a shell on the head:
+## 8. Remove the cluster
 
-```bash
-ray-vast attach cluster.yaml
-sudo docker exec ray-vast-head ray status
-```
-
-## 8. Watch the cost
-
-- `max_dollars_per_hour` is a hard limit. The provider does not rent above it.
-- The vast console shows each instance and its price. The instances have the label `ray-vast:<cluster_name>`.
-- The EC2 head costs about $0.08 per hour (`t3.large`). It runs until you run `ray-vast down`.
-- After the job, the worker is idle. Ray removes it after `idle_timeout_minutes` (5 in the example).
-
-Read [Control cost](how-to/control-cost.md) for more.
-
-## 9. Remove the cluster
-
-Stop the tunnel with Ctrl-C. The `dashboard` command prints `tunnel closed`. Then run:
+Stop the tunnel with Ctrl-C. Then run:
 
 ```bash
 ray-vast down cluster.yaml
 ```
 
-The output ends with `left: nothing`:
-
-```text
-terminating head <instance id>
-deleted security group <group id>
-...
-deleted key pair ray-vast-gpu-24gb
-deleted instance profile ray-vast-gpu-24gb
-deleted role ray-vast-gpu-24gb
-left: nothing
-```
-
-`down` takes about 40 seconds. It removes all resources of the cluster. The full list is in [CLI](reference/cli.md#ray-vast-down).
-If something is left, `down` lists it and exits with code 1. Run `down` again.
-
-!!! warning
-    Always run `ray-vast down` when you finish. The head costs money until you remove it.
+The output ends with `left: nothing`. If something is left, run `down` again.
 
 ## Next steps
 
-- [Submit jobs](libraries/jobs.md): `--working-dir`, `runtime_env` and credentials.
-- [Ray libraries](libraries/index.md): what works, and the settings for each Ray library.
-- [Choose node types and GPU images](how-to/node-types.md).
-- [Security model](security.md): read it before you use real data.
+- [Submit jobs](libraries/jobs.md)
+- [Ray libraries](libraries/index.md)
+- [Choose node types and GPU images](how-to/node-types.md)
+- [Security model](security.md)
