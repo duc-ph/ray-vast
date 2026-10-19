@@ -25,7 +25,7 @@ pip install ray-vast "ray[default]==2.59.*"
 The Ray pin keeps Ray on your laptop at the same version as Ray in the cluster image. ray-vast is tested with Ray 2.59.
 
 The CLI is tested on Linux. macOS is not tested.
-You need Python 3.10 or later, an AWS profile, and a vast.ai API key.
+You need Python 3.10 or later, an AWS access key, and a vast.ai API key. Put them in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `VAST_API_KEY`.
 Details: [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
 
 ## Quick start
@@ -34,8 +34,8 @@ Copy an example cluster YAML (`gpu-24gb.yaml`, `gpu-80gb.yaml` or `cpu-heavy.yam
 Set the region of the head (`node_config.region` of the head node type) and the budget (`max_dollars_per_hour`). `up` makes an SSH key for the cluster.
 
 ```
-ray-vast up cluster.yaml --profile my-aws-profile
-ray-vast dashboard cluster.yaml   # keep this terminal open; uses the profile that up saved
+ray-vast up cluster.yaml
+ray-vast dashboard cluster.yaml   # keep this terminal open
 ```
 
 In a second terminal, run the `export` line that `dashboard` printed, and submit a job:

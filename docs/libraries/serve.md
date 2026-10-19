@@ -83,7 +83,7 @@ Read [Threads](many-tasks.md#threads).
 1. **The head's `monitor.log`.** Look for the `is at its process limit` WARNING. It names the worker and shows the worker ports in use.
 
     ```bash
-    ray-vast attach cluster.yaml --profile my-aws-profile
+    ray-vast attach cluster.yaml
     # in the shell on the head:
     sudo docker exec ray-vast-head grep "process limit" /tmp/ray/session_latest/logs/monitor.log
     ```

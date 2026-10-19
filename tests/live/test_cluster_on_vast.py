@@ -59,7 +59,6 @@ def test_up_as_the_restricted_user_in_another_region(record, lifecycle, restrict
     role = boto3.Session(profile_name=ADMIN_PROFILE).client("iam").get_role(RoleName=f"ray-vast-{lifecycle.name}")["Role"]
     record.check("the head role has the boundary", role.get("PermissionsBoundary", {}).get("PermissionsBoundaryArn", "").endswith(
         ":policy/ray-vast-head-boundary"), "")
-    record.check("the state file saved the restricted profile", lifecycle.state.get("profile") == restricted_user.profile, "")
 
 
 def test_scale_up_over_two_node_types_then_idle_scale_down(record, lifecycle, session_env):

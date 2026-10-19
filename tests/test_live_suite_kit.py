@@ -382,19 +382,13 @@ def _cluster_of(run, tmp_path, monkeypatch, **kwargs):
     return _cluster_module(monkeypatch).Cluster(run, config, tmp_path / "out", tmp_path / "home", **kwargs)
 
 
-def test_a_down_after_an_earlier_down_deleted_the_state_file_names_the_profile_of_the_cluster(tmp_path, monkeypatch):
-    """A test's own `down` deleted the state file; the teardown's `down` had no AWS profile then (without a state file
-    `down` needs `--profile`), so it failed with `no AWS credentials`."""
+def test_every_command_of_a_cluster_gets_the_aws_profile_of_the_cluster(tmp_path, monkeypatch):
+    """The CLI has no --profile: the profile of the cluster (the admin or the restricted user) goes in AWS_PROFILE, also
+    for a `down` after an earlier `down` deleted the state file."""
+    monkeypatch.setenv("AWS_PROFILE", "someone-else")
     run = liverun.Run(tmp_path / "results", "run1")
     made = _cluster_of(run, tmp_path, monkeypatch, profile="ray-vast-livetest")
-    calls = []
-    monkeypatch.setattr(made, "cli", lambda *args, env=None: calls.append(args) or "done")
-    state = made.state_dir / f"{made.name}.json"
-    state.write_text('{"head_ip": "192.0.2.1"}')
-    made.down()
-    state.unlink()
-    made.down()
-    assert calls == [("down", made.yaml), ("down", made.yaml, "--profile", "ray-vast-livetest")]
+    assert made.env["AWS_PROFILE"] == "ray-vast-livetest"
 
 
 class _FakeVast:
@@ -464,8 +458,15 @@ def test_the_release_cluster_refuses_to_start_when_a_cluster_of_its_name_already
         if key_pair:
             boto3.client("ec2", region_name="us-east-2").create_key_pair(KeyName=key_pair)
         if starts:
+            monkeypatch.setenv("AWS_PROFILE", cluster.ADMIN_PROFILE)
             made = cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")
             assert made.name == "gpu-24gb" and [p.name for p in (run.dir / "opened").glob("*.json")] == ["gpu-24gb.json"]
+            # The tutorial's `.env` holds the keys; no key variable and no AWS profile file reaches the CLI.
+            assert (made.work / ".env").read_text() == ("AWS_ACCESS_KEY_ID=testing\nAWS_SECRET_ACCESS_KEY=testing\n"
+                                                        "VAST_API_KEY=fake-key\n")
+            assert not {"AWS_PROFILE", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "VAST_API_KEY"} & set(made.env)
+            assert not Path(made.env["AWS_CONFIG_FILE"]).exists() and not Path(made.env["AWS_SHARED_CREDENTIALS_FILE"]).exists()
+            assert {"testing", "fake-key"} <= set(made.secrets)
         else:
             with pytest.raises(RuntimeError, match="gpu-24gb already exists"):
                 cluster.ReleaseCluster(run, tmp_path / "out", tmp_path / "home", "us-east-2", "9.9.9")

@@ -9,7 +9,6 @@ You need these on your laptop (the operator machine). The CLI is tested on Linux
 
 - **Python 3.10 or later.** Ray 2.59 needs Python 3.10 or later.
 - **`ssh` and `scp`.** ray-vast uses them to reach the head.
-- **The AWS CLI, version 2.** Step 2 uses it to save your credentials. Install it from the [AWS CLI page](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 - **An AWS account.**
 - **A vast.ai account with credit.**
 
@@ -30,26 +29,20 @@ Without the pin, `pip` installs the newest Ray. ray-vast is tested with Ray 2.59
 
 ## 2. Set up AWS { #aws-setup }
 
-ray-vast uses an AWS profile. The user of the profile needs permission to:
+ray-vast uses the access key of an AWS user. The user needs permission to:
 
 - start and stop an EC2 instance (the head), and make its key pair and security groups;
 - make an IAM role and an instance profile for the head, and give them to EC2;
 - create one IAM policy, `ray-vast-head-boundary`, at the first `up` in the account.
 
 The policy `AdministratorAccess` gives all of this. To give only these permissions, read [A restricted user](reference/iam.md#a-restricted-user).
-If you have a profile already, go to item 3.
 
 1. In the AWS console, create an access key for your user: **IAM**, **Users**, your user, **Security credentials**, **Create access key**, **Command Line Interface (CLI)**.
-2. Save the key in a profile. Type the access key ID, the secret access key, and the region of your head:
+2. Put the key in the file `.env`, in the directory where you run ray-vast:
 
     ```bash
-    aws configure --profile my-aws-profile
-    ```
-
-3. Check the profile. The output shows your AWS account ID:
-
-    ```bash
-    aws sts get-caller-identity --profile my-aws-profile
+    AWS_ACCESS_KEY_ID=<your access key ID>
+    AWS_SECRET_ACCESS_KEY=<your secret access key>
     ```
 
 The first `up` in your account creates the IAM policy `ray-vast-head-boundary`. It limits what the head can do in AWS.
@@ -58,13 +51,13 @@ What `up` makes in AWS is in [AWS permissions](reference/iam.md).
 ## 3. Save the vast API key
 
 1. In the vast console, open **Account**, then **Keys**. Copy your API key, or create one.
-2. Put the key in the file `.env`, in the directory where you run ray-vast:
+2. Add the key to the same file `.env`:
 
-```bash
-VAST_API_KEY=<your key>
-```
+    ```bash
+    VAST_API_KEY=<your key>
+    ```
 
-Never put the key in the cluster YAML.
+Never put `.env` in git. Never put the keys in the cluster YAML.
 
 ## 4. Write a cluster YAML
 
@@ -88,11 +81,10 @@ To choose other GPUs, read [Choose node types and GPU images](how-to/node-types.
 ## 5. Start the cluster
 
 ```bash
-ray-vast up cluster.yaml --profile my-aws-profile
+ray-vast up cluster.yaml
 ```
 
-`--profile` is your AWS profile. Without it, `up` uses `AWS_PROFILE` or the default credentials.
-`up` saves the profile. `dashboard`, `attach` and `down` use the saved profile, so the commands below do not show it. An explicit `--profile` or `AWS_PROFILE` wins over the saved profile.
+Run all `ray-vast` commands in the directory of `.env`.
 
 The output looks like this:
 

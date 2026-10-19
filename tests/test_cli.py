@@ -94,6 +94,12 @@ def make_ubuntu_image(session, region):
     ec2.terminate_instances(InstanceIds=[seed["InstanceId"]])
 
 
+@pytest.fixture(autouse=True)
+def in_an_empty_directory(monkeypatch, tmp_path):
+    """`cli.main` reads `.env` in the current directory: a developer's own `.env` must not reach the tests."""
+    monkeypatch.chdir(tmp_path)
+
+
 @pytest.fixture
 def aws(monkeypatch, tmp_path):
     for k, v in {"AWS_ACCESS_KEY_ID": "x", "AWS_SECRET_ACCESS_KEY": "x", "AWS_DEFAULT_REGION": REGION}.items():
@@ -121,7 +127,7 @@ def wheel(tmp_path):
 
 def run_up(aws, cluster_yaml, wheel, tmp_path, ssh=None, out=None):
     ssh = ssh or FakeSsh()
-    commands.up(str(cluster_yaml), yaml.safe_load(cluster_yaml.read_text()), aws, ssh, profile="my-profile", wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
+    commands.up(str(cluster_yaml), yaml.safe_load(cluster_yaml.read_text()), aws, ssh, wheel=wheel, vast_key=VAST_KEY, operator_ip="203.0.113.7",
            state_dir=tmp_path / "state", sleep=lambda s: None, out=out or (lambda m: None))
     return ssh
 
@@ -483,7 +489,7 @@ def test_down_removes_the_cluster_directory(aws, tmp_path):
 
 # --- the public seam: `ray_vast.cli.main(argv)` -> `commands.run` -----------------------------------------------------
 
-PROFILES = []  # the profile_name of each boto3.Session that `run` built (the `home` fixture records them)
+SESSIONS = []  # the arguments of each boto3.Session that `run` built (the `home` fixture records them)
 
 
 @pytest.fixture
@@ -494,9 +500,9 @@ def home(aws, monkeypatch, tmp_path):
     monkeypatch.delenv("AWS_PROFILE", raising=False)
     monkeypatch.setenv("VAST_API_KEY", VAST_KEY)
     monkeypatch.setattr(commands, "_public_ip", lambda: "203.0.113.7")
-    # `run` builds its own session; give it the moto one (with its hooks), and record the profile it asked for.
-    monkeypatch.setattr(boto3, "Session", lambda **kwargs: PROFILES.append(kwargs.get("profile_name")) or aws)
-    PROFILES.clear()
+    # `run` builds its own session; give it the moto one (with its hooks), and record what it asked for.
+    monkeypatch.setattr(boto3, "Session", lambda **kwargs: SESSIONS.append(kwargs) or aws)
+    SESSIONS.clear()
     return tmp_path / "home"
 
 
@@ -660,26 +666,34 @@ def test_main_down_without_a_vast_key_cleans_aws_warns_and_exits_0(running_clust
     assert what_is_left(aws, FakeVast()) == []
 
 
-def test_the_vast_key_comes_from_dot_env_in_the_current_directory(monkeypatch, tmp_path):
-    monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    monkeypatch.delenv("VAST_API_KEY", raising=False)
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / ".env").write_text("# my keys\nOTHER=1\n\nexport VAST_API_KEY=\"abc123\"\n")
-    assert commands._read_vast_key() == "abc123"
+def main_env(monkeypatch, argv):
+    """Run `cli.main` with `run` stubbed; return the environment that `run` gets."""
+    seen = {}
+    monkeypatch.setattr(os, "environ", dict(os.environ))  # `cli.main` sets variables: they must not outlive the test
+    monkeypatch.setattr(commands, "run", lambda args: seen.update(env=dict(os.environ)) or 0)
+    assert cli.main(argv) == 0
+    return seen["env"]
 
 
-def test_the_vast_key_in_the_environment_wins_over_dot_env(monkeypatch, tmp_path):
+def test_dot_env_in_the_current_directory_sets_the_keys(monkeypatch, tmp_path, cluster_yaml):
+    for name in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "VAST_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    (tmp_path / ".env").write_text("# my keys\nAWS_ACCESS_KEY_ID=AKIAEXAMPLE\nAWS_SECRET_ACCESS_KEY='s3cret=x'\n\n"
+                                   "export VAST_API_KEY=\"abc123\"\n")
+    env = main_env(monkeypatch, ["down", str(cluster_yaml)])
+    assert (env["AWS_ACCESS_KEY_ID"], env["AWS_SECRET_ACCESS_KEY"], env["VAST_API_KEY"]) == ("AKIAEXAMPLE", "s3cret=x", "abc123")
+
+
+def test_a_variable_in_the_environment_wins_over_dot_env(monkeypatch, tmp_path, cluster_yaml):
     monkeypatch.setenv("VAST_API_KEY", "from-env")
-    monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text("VAST_API_KEY=from-file\n")
-    assert commands._read_vast_key() == "from-env"
+    env = main_env(monkeypatch, ["down", str(cluster_yaml)])
+    assert env["VAST_API_KEY"] == "from-env"
 
 
 def test_no_vast_key_anywhere_is_an_error_that_names_dot_env(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
     monkeypatch.delenv("VAST_API_KEY", raising=False)
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / ".env").write_text("OTHER=1\n")
     with pytest.raises(commands.CliError, match=r"VAST_API_KEY in \.env"):
         commands._read_vast_key()
 
@@ -874,7 +888,7 @@ def test_main_up_with_a_failed_head_image_build_names_the_version(aws, home, fak
     assert f"ray-vast down {cluster_yaml}" in err
 
 
-# --- SSH key per cluster, head settings in the head node type, the IAM boundary, the saved profile ------------------
+# --- SSH key per cluster, head settings in the head node type, the IAM boundary, the credentials -------------------
 
 def test_up_makes_a_key_pair_for_the_cluster_and_saves_its_private_key_with_mode_600(aws, cluster_yaml, wheel, tmp_path):
     run_up(aws, cluster_yaml, wheel, tmp_path)
@@ -994,23 +1008,19 @@ def test_up_in_a_region_without_a_default_vpc_stops_with_the_command_and_leaves_
     assert not (tmp_path / "state" / f"{CLUSTER}.json").exists()
 
 
-def test_up_saves_the_profile_in_the_state_file(aws, cluster_yaml, wheel, tmp_path):
-    run_up(aws, cluster_yaml, wheel, tmp_path)
-    assert json.loads((tmp_path / "state" / f"{CLUSTER}.json").read_text())["profile"] == "my-profile"
-
-
-def test_main_down_without_a_profile_uses_the_profile_that_up_saved(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
+def test_main_leaves_the_credentials_to_boto3_and_saves_no_profile(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
     monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
-    assert main_up(cluster_yaml, wheel, "--profile", "saved-profile") == 0
+    assert main_up(cluster_yaml, wheel) == 0
+    assert "profile" not in json.loads((home / ".ray-vast" / f"{CLUSTER}.json").read_text())
     assert cli.main(["down", str(cluster_yaml)]) == 0
-    assert PROFILES == ["saved-profile", "saved-profile"]
+    assert SESSIONS == [{"region_name": REGION}, {"region_name": REGION}]
 
 
-def test_main_down_with_a_profile_uses_it_and_not_the_saved_one(aws, home, fake_ssh, cluster_yaml, wheel, monkeypatch):
-    monkeypatch.setattr(commands, "VastClient", lambda key: FakeVast())
-    assert main_up(cluster_yaml, wheel, "--profile", "saved-profile") == 0
-    assert cli.main(["down", str(cluster_yaml), "--profile", "flag-profile"]) == 0
-    assert PROFILES[-1] == "flag-profile"
+@pytest.mark.parametrize("command", ["up", "down", "attach", "dashboard"])
+def test_main_has_no_profile_flag(cluster_yaml, capsys, command):
+    with pytest.raises(SystemExit) as exit_:
+        cli.main([command, str(cluster_yaml), "--profile", "x"])
+    assert exit_.value.code == 2 and "unrecognized arguments: --profile" in capsys.readouterr().err
 
 
 def test_main_up_connects_with_the_generated_key(aws, home, fake_ssh, cluster_yaml, wheel):
@@ -1040,10 +1050,10 @@ def test_main_with_an_unknown_profile_prints_one_line_without_a_traceback(tmp_pa
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("AWS_CONFIG_FILE", str(tmp_path / "none"))
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", str(tmp_path / "none"))
-    assert cli.main([command, str(cluster_yaml), "--profile", "bogus"]) == 1
+    monkeypatch.setenv("AWS_PROFILE", "bogus")
+    assert cli.main([command, str(cluster_yaml)]) == 1
     err = capsys.readouterr().err
-    assert err.strip().splitlines() == [f"ray-vast {command}: the AWS profile 'bogus' does not exist (--profile, AWS_PROFILE or the profile "
-                                        "that `up` saved)"]
+    assert err.strip().splitlines() == [f"ray-vast {command}: the AWS profile 'bogus' (AWS_PROFILE) does not exist"]
 
 
 def test_main_down_without_aws_credentials_prints_one_line_without_a_traceback(tmp_path, monkeypatch, cluster_yaml, capsys):
@@ -1057,5 +1067,4 @@ def test_main_down_without_aws_credentials_prints_one_line_without_a_traceback(t
     monkeypatch.setenv("VAST_API_KEY", "x")
     assert cli.main(["down", str(cluster_yaml)]) == 1
     err = capsys.readouterr().err
-    assert err.strip().splitlines() == ["ray-vast down: no AWS credentials. Give --profile, set AWS_PROFILE, or set up the default "
-                                        "credentials"]
+    assert err.strip().splitlines() == ["ray-vast down: no AWS credentials. Put AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env"]

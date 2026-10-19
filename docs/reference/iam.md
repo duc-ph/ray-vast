@@ -5,7 +5,7 @@ ray-vast uses two AWS identities:
 - **Your AWS user** runs `ray-vast up` and `ray-vast down` on your laptop.
 - **The head role** is an IAM role that `up` makes for the EC2 head.
 
-With an admin profile, you need nothing from this page. Read it to use a restricted user, or to see what ray-vast does in your account.
+With an admin user, you need nothing from this page. Read it to use a restricted user, or to see what ray-vast does in your account.
 
 ## What `up` makes in AWS
 
@@ -33,8 +33,8 @@ This is true also if somebody changes the role's own policy later.
 --8<-- "src/ray_vast/iam/ray-vast-head-boundary.json"
 ```
 
-`up` creates the policy from this file when it is missing. Your user needs `iam:CreatePolicy` for this. An admin profile has it. A restricted user does not have it.
-Then an admin creates the policy once in the account:
+`up` creates the policy from this file when it is missing. Your user needs `iam:CreatePolicy` for this. An admin user has it. A restricted user does not have it.
+Then an admin creates the policy once in the account, with the AWS CLI:
 
 ```bash
 IAM_DIR="$(python -c 'import ray_vast, os; print(os.path.dirname(ray_vast.__file__))')/iam"
@@ -80,14 +80,7 @@ To make the user:
 
     The last command prints the access key ID and the secret access key. Keep the secret safe.
 
-3. Make the profile `ray-vast` with this key, and check it:
-
-    ```bash
-    aws configure --profile ray-vast
-    aws sts get-caller-identity --profile ray-vast
-    ```
-
-4. Use `--profile ray-vast` on `ray-vast up`, or `export AWS_PROFILE=ray-vast`.
+3. Put this key in `.env`, as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Read [Set up AWS](../getting-started.md#aws-setup).
 
 In the AWS console, step 2 is: **IAM**, **Policies**, **Create policy**, **JSON**, paste `ray-vast-user`. Then **Users**, **Create user** `ray-vast` without console access, **Attach policies directly**, `ray-vast-user`. Then open the user, **Security credentials**, **Create access key**, **Command Line Interface (CLI)**.
 

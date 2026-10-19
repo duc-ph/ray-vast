@@ -87,8 +87,7 @@ class Cluster:
         self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "PYTHONUNBUFFERED": "1",
                     "AWS_CONFIG_FILE": os.environ.get("AWS_CONFIG_FILE", str(aws_dir / "config")),
                     "AWS_SHARED_CREDENTIALS_FILE": str(credentials_file or aws_dir / "credentials"),
-                    "PATH": f"{BIN}:{os.environ['PATH']}"}
-        self.env.pop("AWS_PROFILE", None)
+                    "PATH": f"{BIN}:{os.environ['PATH']}", "AWS_PROFILE": profile}
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
         self.records = [self.dir]  # the directories that liverun.end_cluster scans; Run.record adds each scenario's
         self.up_output = self.last_down = None
@@ -111,7 +110,7 @@ class Cluster:
     def up(self):
         started = time.time()
         self.last_down = None  # a new `up` makes resources again
-        done = self.cli("up", self.yaml, "--profile", self.profile)
+        done = self.cli("up", self.yaml)
         self.up_output = {"returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr, "wall_s": round(time.time() - started, 1)}
         if done.returncode != 0:
             raise RuntimeError(f"ray-vast up {self.name} failed (exit {done.returncode}): {(done.stderr or done.stdout)[-800:]}")
@@ -119,10 +118,7 @@ class Cluster:
         return self
 
     def down(self, *extra, env=None):
-        """`down`; without a state file (an earlier `down` deleted it) `down` needs `--profile` (cli.md), so it gets the
-        cluster's profile. The result is `last_down` (liverun.end_cluster runs no second `down` after a clean one)."""
-        if not self.state and "--profile" not in extra:
-            extra = (*extra, "--profile", self.profile)
+        """`down`. The result is `last_down` (liverun.end_cluster runs no second `down` after a clean one)."""
         self.last_down = self.cli("down", self.yaml, *extra, env=env)
         return self.last_down
 
@@ -279,11 +275,17 @@ class ReleaseCluster:
         self.work.mkdir(parents=True, exist_ok=True)
         self.yaml = self.work / "cluster.yaml"
         self.config = {}  # the packaged YAML, after the `cp` of `up`
-        self.env = {**os.environ, "HOME": str(self.home), "VAST_API_KEY": vast_key(), "AWS_PROFILE": ADMIN_PROFILE,
-                    "AWS_CONFIG_FILE": str(Path("~/.aws/config").expanduser()),
-                    "AWS_SHARED_CREDENTIALS_FILE": str(Path("~/.aws/credentials").expanduser())}
-        self.env.pop("VIRTUAL_ENV", None)
-        self.records, self.secrets = [self.dir], []
+        # The tutorial's `.env`: the AWS keys of the admin profile and the vast key. No AWS profile file and no key
+        # variable reaches the CLI, so the keys can only come from `.env`.
+        aws = boto3.Session(profile_name=ADMIN_PROFILE).get_credentials().get_frozen_credentials()
+        dot_env = {"AWS_ACCESS_KEY_ID": aws.access_key, "AWS_SECRET_ACCESS_KEY": aws.secret_key, "VAST_API_KEY": vast_key()}
+        if aws.token:
+            dot_env["AWS_SESSION_TOKEN"] = aws.token
+        (self.work / ".env").write_text("".join(f"{k}={v}\n" for k, v in dot_env.items()))
+        self.env = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "AWS_PROFILE", *dot_env)}
+        self.env.update(HOME=str(self.home), AWS_CONFIG_FILE=str(self.home / "no-aws-config"),
+                        AWS_SHARED_CREDENTIALS_FILE=str(self.home / "no-aws-credentials"))
+        self.records, self.secrets = [self.dir], [aws.secret_key, dot_env["VAST_API_KEY"]]
         self.poller = Poller(vast, label(self.name), self.dir / "vast_timeline.jsonl", self.secrets)
         self.up_output = self.last_down = self.started = None
         run.register(self)
@@ -322,7 +324,7 @@ class ReleaseCluster:
         if self.config["cluster_name"] != self.name:
             raise RuntimeError(f"the packaged YAML names the cluster {self.config['cluster_name']}, not {self.name}")
         started = time.time()
-        done = self.shell(f"source .venv/bin/activate && ray-vast up cluster.yaml --profile {ADMIN_PROFILE}", timeout=2400)
+        done = self.shell("source .venv/bin/activate && ray-vast up cluster.yaml", timeout=2400)
         self.up_output = {"returncode": done.returncode, "stdout": done.stdout, "stderr": done.stderr, "wall_s": round(time.time() - started, 1)}
         if done.returncode != 0:
             raise RuntimeError(f"ray-vast up {self.name} failed (exit {done.returncode}): {(done.stderr or done.stdout)[-800:]}")

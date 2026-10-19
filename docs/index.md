@@ -49,13 +49,13 @@ Read [Architecture](explanation/architecture.md) for the full picture.
 
 ## Quick start
 
-You need an AWS profile and a vast API key in `.env` (`VAST_API_KEY=<your key>`).
+You need an AWS access key and a vast API key in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `VAST_API_KEY`.
 The full steps are in [Getting started](getting-started.md).
 
 ```bash
 pip install ray-vast "ray[default]==2.59.*"
-ray-vast up cluster.yaml --profile my-aws-profile
-ray-vast dashboard cluster.yaml --profile my-aws-profile   # terminal 1: keep it open
+ray-vast up cluster.yaml
+ray-vast dashboard cluster.yaml   # terminal 1: keep it open
 ```
 
 In a second terminal:
@@ -68,7 +68,7 @@ ray job submit --address http://127.0.0.1:8265 --working-dir . -- python train.p
 When you finish:
 
 ```bash
-ray-vast down cluster.yaml --profile my-aws-profile
+ray-vast down cluster.yaml
 ```
 
 ## Ray libraries

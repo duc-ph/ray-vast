@@ -4,6 +4,13 @@ import sys
 
 
 def main(argv=None):
+    # `.env` in the current directory sets the variables that are not set yet: the AWS keys and VAST_API_KEY.
+    if os.path.isfile(".env"):
+        with open(".env") as f:
+            for line in f:
+                name, sep, value = line.strip().removeprefix("export ").partition("=")
+                if sep and not name.startswith("#"):
+                    os.environ.setdefault(name.strip(), value.strip().strip("'\""))
     parser = argparse.ArgumentParser(prog="ray-vast", description="Ray clusters on vast.ai workers with an AWS EC2 head.")
     subparsers = parser.add_subparsers(dest="command", required=True)
     for name, help_text in [
@@ -14,8 +21,6 @@ def main(argv=None):
     ]:
         sub = subparsers.add_parser(name, help=help_text)
         sub.add_argument("cluster_yaml")
-        sub.add_argument("--profile", default=os.environ.get("AWS_PROFILE"), help="AWS profile (default: AWS_PROFILE; else, for down, attach and dashboard, "
-                                                                          "the profile that up saved; else the default credentials)")
         if name == "up":
             sub.add_argument("--wheel", help="ray-vast wheel to install on the head, for development (default: in a source tree, build "
                                              "the wheel; else install this CLI's own version from PyPI)")

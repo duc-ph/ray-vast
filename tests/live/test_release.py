@@ -27,7 +27,7 @@ print(ray.cluster_resources())
 
 
 def test_install_from_pypi_and_up(record, release):
-    """The `up` of the fixture ran the install, the `cp` command and `ray-vast up cluster.yaml --profile`."""
+    """The `up` of the fixture ran the install, the `cp` command, the `.env` and `ray-vast up cluster.yaml`."""
     up = release.up_output
     record.evidence("up.txt", up["stdout"] + up["stderr"])
     record.data("up_s", up["wall_s"])

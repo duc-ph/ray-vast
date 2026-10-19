@@ -142,14 +142,8 @@ def _key_file(state_dir, cluster):
 
 
 def _read_vast_key():
-    """The vast key: the VAST_API_KEY environment variable, then VAST_API_KEY in `.env` in the current directory, then
-    the file of the vastai CLI."""
+    """The vast key: VAST_API_KEY (the environment or `.env`, which `cli.main` loads), then the file of the vastai CLI."""
     key = os.environ.get("VAST_API_KEY")
-    if not key and Path(".env").is_file():
-        for line in Path(".env").read_text().splitlines():
-            name, _, value = line.strip().removeprefix("export ").partition("=")
-            if name.strip() == "VAST_API_KEY":
-                key = value.strip().strip("'\"")
     if not key:
         path = Path.home() / ".config" / "vastai" / "vast_api_key"
         if not path.exists():
@@ -158,7 +152,7 @@ def _read_vast_key():
     return key.strip()
 
 
-def up(config_path, raw_config, session, ssh, *, profile, wheel=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
+def up(config_path, raw_config, session, ssh, *, wheel=None, vast_key, operator_ip, state_dir, sleep=time.sleep, out=print):
     """`raw_config` is the YAML of `config_path`, which `run` has read and checked (cluster name, old fields)."""
     try:
         config, warnings = config_module.bootstrap_config(raw_config)
@@ -206,7 +200,7 @@ def up(config_path, raw_config, session, ssh, *, profile, wheel=None, vast_key, 
             sleep(5)
     state_file = Path(state_dir) / f"{cluster}.json"
     state_file.parent.mkdir(parents=True, exist_ok=True)
-    state = {"cluster": cluster, "region": region, "profile": profile}  # `down` uses the saved profile by default
+    state = {"cluster": cluster, "region": region}
     state_file.write_text(json.dumps(state, indent=2))
     # The SSH key of the head: one EC2 key pair for each cluster. Its private key exists only in this file.
     private_key = ec2.create_key_pair(KeyName=name, KeyType="ed25519", TagSpecifications=[
@@ -456,15 +450,14 @@ def run(args):
             raise CliError(f"cluster_name {cluster!r} must match {NAME_RE.pattern}")
         state_dir = Path.home() / ".ray-vast"
         state_dir.mkdir(exist_ok=True)
-        # The other commands take the region (and the profile) that `up` saved in the state file. Without a state file, the region comes from the YAML. An explicit --profile (or AWS_PROFILE) wins.
+        # The other commands take the region that `up` saved in the state file. Without a state file, the region comes from the YAML.
         state_file = state_dir / f"{cluster}.json"
         saved = json.loads(state_file.read_text()) if args.command != "up" and state_file.exists() else {}
         head_type = (raw.get("available_node_types") or {}).get(raw.get("head_node_type")) or {}
         region = saved.get("region") or (head_type.get("node_config") or {}).get("region")
         if not region:
             raise CliError("the YAML needs node_config.region of the head node type")
-        profile = args.profile if args.profile is not None else saved.get("profile")
-        session = boto3.Session(profile_name=profile, region_name=region)
+        session = boto3.Session(region_name=region)  # the credentials: the AWS keys (`.env`), AWS_PROFILE, or the default
         ssh = Ssh(_key_file(state_dir, cluster), state_dir / f"{cluster}.known_hosts")
 
         if args.command == "up":
@@ -480,7 +473,7 @@ def run(args):
                     print(f"installing ray-vast from the wheel {wheel}")
                 else:
                     print(f"installing ray-vast=={__version__} from PyPI")
-                up(args.cluster_yaml, raw, session, ssh, profile=args.profile, wheel=wheel, vast_key=_read_vast_key(),
+                up(args.cluster_yaml, raw, session, ssh, wheel=wheel, vast_key=_read_vast_key(),
                    operator_ip=_public_ip(), state_dir=state_dir)
         elif args.command == "down":
             try:
@@ -511,11 +504,10 @@ def run(args):
         print(message, file=sys.stderr)
         return 1
     except botocore.exceptions.ProfileNotFound as e:  # user errors: one line, no traceback
-        print(f"ray-vast {args.command}: the AWS profile {e.kwargs.get('profile')!r} does not exist (--profile, AWS_PROFILE or the "
-              "profile that `up` saved)", file=sys.stderr)
+        print(f"ray-vast {args.command}: the AWS profile {e.kwargs.get('profile')!r} (AWS_PROFILE) does not exist", file=sys.stderr)
         return 1
     except botocore.exceptions.NoCredentialsError:
-        print(f"ray-vast {args.command}: no AWS credentials. Give --profile, set AWS_PROFILE, or set up the default credentials",
+        print(f"ray-vast {args.command}: no AWS credentials. Put AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env",
               file=sys.stderr)
         return 1
     except subprocess.TimeoutExpired as e:

@@ -81,7 +81,7 @@ def test_up_creates_the_missing_boundary_policy_and_down_keeps_it(record, new_cl
                 return bool(iam.get_role(RoleName=role))
             except iam.exceptions.NoSuchEntityException:
                 return False
-        out = run_until(cluster, ["up", cluster.yaml, "--profile", ADMIN_PROFILE], role_exists)
+        out = run_until(cluster, ["up", cluster.yaml], role_exists)
         record.check("up made the head role", role_exists(), out[-300:])
         policy = iam.get_policy(PolicyArn=arn)["Policy"]
         document = iam.get_policy_version(PolicyArn=arn, VersionId=policy["DefaultVersionId"])["PolicyVersion"]["Document"]
@@ -109,10 +109,10 @@ def test_up_creates_the_missing_boundary_policy_and_down_keeps_it(record, new_cl
 
 def test_down_removes_everything_after_an_interrupted_up_and_a_lost_state_file(record, new_cluster, tmp_path):
     """(a) Ctrl-C of `up` after the key pair exists, then `down`. (b, c, d) Ctrl-C after the head started; the head is
-    terminated by hand; the state file and the SSH key are deleted; `down --profile` still removes everything. The end of
+    terminated by hand; the state file and the SSH key are deleted; `down` still removes everything. The end of
     the test checks AWS and vast after each `down` (the `new_cluster` factory: liverun.end_cluster)."""
     a = new_cluster(small_config("inta"), record.dir / "a", tmp_path / "home_a")
-    out = run_until(a, ["up", a.yaml, "--profile", ADMIN_PROFILE], lambda: a.key_file.exists())
+    out = run_until(a, ["up", a.yaml], lambda: a.key_file.exists())
     record.data("a_up_output_tail", out[-300:])
     record.check("(a) up was stopped after the key pair", a.key_file.exists() or "Traceback" in out or "KeyboardInterrupt" in out, out[-200:])
     done = a.down()
@@ -121,7 +121,7 @@ def test_down_removes_everything_after_an_interrupted_up_and_a_lost_state_file(r
     b = new_cluster(small_config("intb"), record.dir / "b", tmp_path / "home_b")
     ec2 = admin("ec2")
     from ray_vast import commands
-    run_until(b, ["up", b.yaml, "--profile", ADMIN_PROFILE], lambda: bool(commands._head_instances(ec2, b.name)))
+    run_until(b, ["up", b.yaml], lambda: bool(commands._head_instances(ec2, b.name)))
     heads = commands._head_instances(ec2, b.name)
     record.require("(c) a head exists", heads, [h["InstanceId"] for h in heads])
     ids = [h["InstanceId"] for h in heads]
@@ -137,7 +137,7 @@ def test_down_removes_everything_after_an_interrupted_up_and_a_lost_state_file(r
     (b.state_dir / f"{b.name}.json").unlink(missing_ok=True)
     import shutil
     shutil.rmtree(b.state_dir / b.name, ignore_errors=True)  # the SSH key: `down` needs none
-    done = b.down()  # no state file: `down --profile`
+    done = b.down()  # no state file
     record.check("(b, c, d) down without state file, key or head: left nothing", done.returncode == 0 and "left: nothing" in done.stdout,
          done.stdout[-300:])
 
@@ -297,9 +297,9 @@ print("BOUNDARY", json.dumps(out))
         ec2.delete_security_group(GroupId=untagged)
 
 
-def test_head_only_life_cycle_with_a_saved_profile(record, aws_only):
-    """The `up` of the fixture ran with `--profile` and no AWS_PROFILE. Then: the state file, the key, the head, attach,
-    dashboard (saved profile, explicit profile wins, Ctrl-C), the missing-key error, and `down` with no flag (last)."""
+def test_head_only_life_cycle(record, aws_only):
+    """The `up` of the fixture ran with the credentials of AWS_PROFILE. Then: the state file, the key, the head, attach,
+    dashboard (Ctrl-C, a bad AWS_PROFILE), the missing-key error, and `down` (last)."""
     if aws_only.kept:
         pytest.skip("--keep-cluster: the cluster stays")
     up = aws_only.up_output
@@ -312,8 +312,8 @@ def test_head_only_life_cycle_with_a_saved_profile(record, aws_only):
         record.check(f"up output line {pattern}", any(re.match(pattern, line) for line in lines), "")
     state = aws_only.state
     record.evidence("state.json", json.dumps(state, indent=1))
-    record.check("state file: region, profile, head, groups, role, instance profile",
-         state.get("region") == REGION and state.get("profile") == ADMIN_PROFILE and state.get("head_instance_id") and
+    record.check("state file: region, head, groups, role, instance profile; no AWS profile",
+         state.get("region") == REGION and "profile" not in state and state.get("head_instance_id") and
          len(state.get("security_group_ids", [])) == 5 and state.get("role_name") == state.get("instance_profile_name") == f"ray-vast-{aws_only.name}",
          {k: v for k, v in state.items() if k != "security_group_ids"})
     key = aws_only.key_file
@@ -348,9 +348,8 @@ def test_head_only_life_cycle_with_a_saved_profile(record, aws_only):
     record.check("the head YAML has the measured image_size_gb", isinstance(head_yaml["provider"].get("image_size_gb"), int),
          head_yaml["provider"].get("image_size_gb"))
 
-    # attach and dashboard with the saved profile (no --profile, no AWS_PROFILE)
     done = aws_only.cli("attach", aws_only.yaml, input="echo ATTACH_OK $(whoami)\nexit\n", timeout=120)
-    record.check("attach with the saved profile opens a shell on the head", "ATTACH_OK ubuntu" in done.stdout, done.stdout[-200:])
+    record.check("attach opens a shell on the head", "ATTACH_OK ubuntu" in done.stdout, done.stdout[-200:])
     proc = subprocess.Popen([str(BIN / "ray-vast"), "dashboard", str(aws_only.yaml)], env=aws_only.env, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, text=True, start_new_session=True)
     try:
@@ -368,10 +367,9 @@ def test_head_only_life_cycle_with_a_saved_profile(record, aws_only):
             os.killpg(proc.pid, signal.SIGKILL)
     record.evidence("dashboard.txt", "".join(first) + rest)
     record.check("Ctrl-C prints `tunnel closed`, exit 0", "tunnel closed" in rest and proc.returncode == 0, (rest[-100:], proc.returncode))
-    for how, extra, env in (("AWS_PROFILE=bogus", [], {"AWS_PROFILE": "bogus"}), ("--profile bogus", ["--profile", "bogus"], {})):
-        done = aws_only.cli("dashboard", aws_only.yaml, *extra, env=env, timeout=120)
-        record.check(f"dashboard with {how} fails on that profile (it wins over the saved one)", done.returncode != 0 and
-             "bogus" in done.stderr, done.stderr.strip()[-200:])
+    done = aws_only.cli("dashboard", aws_only.yaml, env={"AWS_PROFILE": "bogus"}, timeout=120)
+    record.check("dashboard with AWS_PROFILE=bogus: the documented error", done.returncode == 1 and
+         "the AWS profile 'bogus' (AWS_PROFILE) does not exist" in done.stderr, done.stderr.strip()[-200:])
     hidden = aws_only.key_file.with_suffix(".hidden")
     aws_only.key_file.rename(hidden)
     try:
@@ -382,7 +380,6 @@ def test_head_only_life_cycle_with_a_saved_profile(record, aws_only):
         hidden.rename(aws_only.key_file)
     record.check("0 vast rentals", not any(r.get("instances") for r in aws_only.timeline), "")
 
-    # down with no flag: the saved profile
     started = time.time()
     done = aws_only.down()
     record.evidence("down.txt", done.stdout + done.stderr)

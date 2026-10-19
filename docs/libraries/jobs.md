@@ -14,8 +14,8 @@ Use an example cluster YAML, for example [`gpu-24gb.yaml`](https://github.com/du
 Terminal 1: start the cluster and the tunnel. Keep the tunnel open.
 
 ```bash
-ray-vast up cluster.yaml --profile my-aws-profile
-ray-vast dashboard cluster.yaml --profile my-aws-profile
+ray-vast up cluster.yaml
+ray-vast dashboard cluster.yaml
 ```
 
 Terminal 2: run the `export` line that `dashboard` printed. Then submit the job.
@@ -32,7 +32,7 @@ ray job stop <job id>
 When you finish:
 
 ```bash
-ray-vast down cluster.yaml --profile my-aws-profile
+ray-vast down cluster.yaml
 ```
 
 Every Ray call needs the cluster token. Without the `export` line, `ray job submit` fails with an authentication error.
@@ -91,7 +91,7 @@ The head has `CPU: 0`. So every task and actor with resources runs on a vast wor
 ### Check the cluster
 
 ```bash
-ray-vast attach cluster.yaml --profile my-aws-profile
+ray-vast attach cluster.yaml
 sudo docker exec ray-vast-head ray status
 ```
 
@@ -119,7 +119,7 @@ Ray traffic between workers goes over the public internet. Large objects moved a
 1. **The head's `monitor.log`.** Look for the `is at its process limit` WARNING. It names the worker and shows the worker ports in use.
 
     ```bash
-    ray-vast attach cluster.yaml --profile my-aws-profile
+    ray-vast attach cluster.yaml
     # in the shell on the head:
     sudo docker exec ray-vast-head grep "process limit" /tmp/ray/session_latest/logs/monitor.log
     ```
