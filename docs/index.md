@@ -1,6 +1,8 @@
 # ray-vast
 
-ray-vast runs a Ray cluster with the head on AWS EC2 and the workers on vast.ai.
+(This document is a work in progress)
+
+ray-vast runs a Ray cluster with the head on AWS EC2 and the workers on [vast.ai](https://vast.ai/).
 You keep the normal Ray workflow. Only the cluster commands change: `ray-vast up`, `ray-vast dashboard` and `ray-vast down`.
 
 ## Why

@@ -3,7 +3,7 @@
 Run a Ray cluster with the head on AWS EC2 and the workers on vast.ai.
 You keep the normal Ray workflow. Only the cluster commands change: `ray-vast up`, `ray-vast dashboard` and `ray-vast down`.
 
-**Documentation: https://duc-ph.github.io/ray-vast/**
+**Documentation (WIP): https://duc-ph.github.io/ray-vast/**
 
 ## Why
 
