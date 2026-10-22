@@ -1,63 +1,29 @@
 # ray-vast
 
-Run a Ray cluster with the head on AWS EC2 and GPU workers on vast.ai.
-
-- The Ray head runs on one EC2 instance in your AWS account.
-- The Ray autoscaler rents GPU workers from vast.ai when your jobs need them, and removes them when they are idle.
-- The workers talk to the head over the public internet, across NAT, with TLS and a token.
-- You do not need a VPN or an overlay network.
+Run a Ray cluster with the head on AWS EC2 and the workers on vast.ai.
+You keep the normal Ray workflow. Only the cluster commands change: `ray-vast up`, `ray-vast dashboard` and `ray-vast down`.
 
 **Documentation: https://duc-ph.github.io/ray-vast/**
 
 ## Why
 
-- vast.ai has cheap GPUs. But a vast instance can stop at any time, and its IP can change.
-- ray-vast keeps the head on EC2, so the cluster stays up. Only workers come and go.
-- You keep the normal Ray workflow. Only the cluster commands change.
-- A worker that loses the head destroys its own instance. You do not pay for lost workers.
+Usually, all nodes of a Ray cluster come from one cloud provider, such as AWS, GCP or Azure. The nodes are in one private network. In this network, they communicate simply and securely.
 
-## Install
+vast.ai is a market with cheaper GPUs. But vast instances have many constraints:
 
-```
-pip install ray-vast "ray[default]==2.59.*"
-```
+- An instance is not a VM. It is a container on a host machine. Many renters (co-tenants) can share one host.
+- The instances communicate over the internet, not over a private network.
+- An instance can stop at any time. Its IP address can change.
+- The number of ports and the number of processes and threads have hard limits.
 
-The Ray pin keeps Ray on your laptop at the same version as Ray in the cluster image. ray-vast is tested with Ray 2.59.
+## What ray-vast does
 
-The CLI is tested on Linux. macOS is not tested.
-You need Python 3.10 or later, an AWS access key, and a vast.ai API key. Put them in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `VAST_API_KEY`.
-Details: [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
+- It implements a Ray autoscaler that works with these constraints.
+- It solves the communication between the nodes over the internet.
+- No critical endpoint is accessible without credentials. All traffic is encrypted. Co-tenants on the same host cannot read it.
+- It evaluates the Ray libraries on vast: Core, Data, Train, Tune, Serve and RLlib. The results are in the table below.
 
-## Quick start
-
-Copy an example cluster YAML (`gpu-24gb.yaml`, `gpu-80gb.yaml` or `cpu-heavy.yaml` in `ray_vast/examples/`).
-Set the region of the head (`node_config.region` of the head node type) and the budget (`max_dollars_per_hour`). `up` makes an SSH key for the cluster.
-
-```
-ray-vast up cluster.yaml
-ray-vast dashboard cluster.yaml   # keep this terminal open
-```
-
-In a second terminal, run the `export` line that `dashboard` printed, and submit a job:
-
-```
-export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=...     # the line that dashboard printed
-ray job submit --address http://127.0.0.1:8265 --working-dir . -- python train.py
-```
-
-When you finish:
-
-```
-ray-vast down cluster.yaml
-```
-
-| Plain Ray | ray-vast |
-|---|---|
-| `ray up` | `ray-vast up` |
-| `ray dashboard` | `ray-vast dashboard` |
-| `ray down` | `ray-vast down` |
-
-Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/ray-vast/reference/limits/#some-ray-commands-do-not-work). Use `--working-dir` and `runtime_env` to send code to the cluster.
+The vast host has root access to the worker container. Read the [security model](https://duc-ph.github.io/ray-vast/security/) before you use private data.
 
 ## Ray libraries
 
@@ -71,6 +37,15 @@ Some `ray` cluster commands do not work. Read [limits](https://duc-ph.github.io/
 | [RLlib](https://duc-ph.github.io/ray-vast/libraries/rllib/) | ✅ | 🟨 | Put all learners on one worker. Learners across workers fail behind the NAT of vast. |
 
 ✅ works. 🟨 works with an extra change. ❌ the main use fails.
+
+## Install
+
+```
+pip install ray-vast "ray[default]==2.59.*"
+```
+
+Keep the Ray pin: Ray on your laptop must match Ray in the cluster image.
+Then follow [Getting started](https://duc-ph.github.io/ray-vast/getting-started/).
 
 ## Documentation
 

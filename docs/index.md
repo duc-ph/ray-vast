@@ -1,24 +1,27 @@
 # ray-vast
 
 ray-vast runs a Ray cluster with the head on AWS EC2 and the workers on vast.ai.
-
-- The Ray head runs on one EC2 instance in your AWS account.
-- The Ray autoscaler rents GPU workers from vast.ai when your jobs need them.
-- The autoscaler removes the workers when they are idle.
-- The workers talk to the head over the public internet, across NAT, with TLS and a token.
-- You do not need a VPN or an overlay network.
-
 You keep the normal Ray workflow. Only the cluster commands change: `ray-vast up`, `ray-vast dashboard` and `ray-vast down`.
 
-## Who is it for
+## Why
 
-ray-vast is for you if:
+Usually, all nodes of a Ray cluster come from one cloud provider, such as AWS, GCP or Azure. The nodes are in one private network. In this network, they communicate simply and securely.
 
-- you use Ray, and you want cheap GPUs from the vast.ai market;
-- you want a stable head that vast cannot stop;
-- you accept the security model of rented hosts (read [Security model](security.md) first).
+vast.ai is a market with cheaper GPUs. But vast instances have many constraints:
 
-ray-vast is not for you if your data must not go to third-party hosts. A vast host has root access to the worker container.
+- An instance is not a VM. It is a container on a host machine. Many renters (co-tenants) can share one host.
+- The instances communicate over the internet, not over a private network.
+- An instance can stop at any time. Its IP address can change.
+- The number of ports and the number of processes and threads have hard limits.
+
+## What ray-vast does
+
+- It implements a Ray autoscaler that works with these constraints.
+- It solves the communication between the nodes over the internet.
+- No critical endpoint is accessible without credentials. All traffic is encrypted. Co-tenants on the same host cannot read it.
+- It evaluates the Ray libraries on vast: Core, Data, Train, Tune, Serve and RLlib. Read the results in [Ray libraries](libraries/index.md).
+
+The vast host has root access to the worker container. Read the [Security model](security.md) before you use private data.
 
 ## How it works
 
@@ -46,35 +49,6 @@ flowchart LR
 5. Ray removes an idle worker after `idle_timeout_minutes`. A worker that loses the head destroys itself.
 
 Read [Architecture](explanation/architecture.md) for the full picture.
-
-## Quick start
-
-You need an AWS access key and a vast API key in `.env`: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `VAST_API_KEY`.
-The full steps are in [Getting started](getting-started.md).
-
-```bash
-pip install ray-vast "ray[default]==2.59.*"
-ray-vast up cluster.yaml
-ray-vast dashboard cluster.yaml   # terminal 1: keep it open
-```
-
-In a second terminal:
-
-```bash
-export RAY_AUTH_MODE=token RAY_AUTH_TOKEN_PATH=~/.ray-vast/<cluster_name>/token   # the line that dashboard printed
-ray job submit --address http://127.0.0.1:8265 --working-dir . -- python train.py
-```
-
-When you finish:
-
-```bash
-ray-vast down cluster.yaml
-```
-
-## Ray libraries
-
-All Ray libraries run on a ray-vast cluster: Core, Data, Train, Tune, Serve and RLlib. Some need an extra change on vast, for example a cloud bucket for checkpoints.
-Read [Ray libraries](libraries/index.md).
 
 ## Links
 
