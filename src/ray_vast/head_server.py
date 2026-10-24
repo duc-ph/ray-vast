@@ -151,7 +151,8 @@ class HeadServer:
             checks = body["checks"]
             ports = {int(k): int(v) for k, v in body["ports"].items()}
             cpu_count, gpu_count, cpu_quota = int(body["cpu_count"]), int(body["gpu_count"]), body["cpu_quota"]
-            if not isinstance(checks, dict):
+            hairpin = body["hairpin"]
+            if not isinstance(checks, dict) or type(hairpin) is not bool:
                 raise ValueError("types")
             if cpu_quota is not None and (type(cpu_quota) not in (int, float) or not 0 < cpu_quota <= 4096):
                 raise ValueError("cpu_quota")  # type(): a bool is not a quota
@@ -222,20 +223,36 @@ class HeadServer:
 
         # The cert comes before the slot is taken, so a failure here leaves nothing half-enrolled.
         cert_pem, key_pem = pki.make_leaf(self.ca_cert_pem, self.ca_key_pem, cand.public_ip, instance_id=instance_id)
+        # Two workers on one public IP each have their own network namespace. One reaches the other only through hairpin
+        # NAT on that IP (the shim sends a connection to the other's port to the public IP). So an IP where a worker
+        # found no hairpin takes one worker only. The check and the slot claim are in one locked section: two
+        # candidates on one IP that enroll at the same time cannot both pass.
+        slot = hairpin_refusal = None
         with state.lock:
             if instance_id in state.enrolled or instance_id not in state.candidates:
                 return 403, {"reason": "already enrolled"}  # a parallel request won; keep the instance
-            wanted = state.slots.get(cand.slot_id)
-            if wanted is not None and wanted.instance_id is None:
-                slot = wanted
+            if not hairpin:
+                state.no_hairpin_ips.add(cand.public_ip)
+            if state.no_hairpin_ip_has_worker(cand.public_ip):
+                hairpin_refusal = ("no hairpin NAT on public IP %s, and a worker is already on it: workers on one IP "
+                                   "could not reach each other" % cand.public_ip)
             else:
-                slot = next((s for s in state.slots.values() if s.node_type == cand.node_type and s.instance_id is None),
-                            None)
-            if slot is not None:
-                state.mark_enrolled(instance_id)
-                slot.instance_id, slot.status = instance_id, "setting-up"
-                cand.join_token = None  # one enrollment only
-                state.slot_enrolled(slot.node_type)
+                wanted = state.slots.get(cand.slot_id)
+                if wanted is not None and wanted.instance_id is None:
+                    slot = wanted
+                else:
+                    slot = next((s for s in state.slots.values()
+                                 if s.node_type == cand.node_type and s.instance_id is None), None)
+                if slot is not None:
+                    state.mark_enrolled(instance_id)
+                    slot.instance_id, slot.status = instance_id, "setting-up"
+                    cand.join_token = None  # one enrollment only
+                    state.slot_enrolled(slot.node_type)
+        if hairpin_refusal:
+            # No block: the host is good for one worker. The provider does not rent on this IP again while it is in use.
+            log.warning("enroll refused for instance %s from %s: %s", instance_id, source_ip, hairpin_refusal)
+            self.end(cand, hairpin_refusal)
+            return 403, {"reason": hairpin_refusal}
         if slot is None:
             self.end(cand, "no free slot")
             return 403, {"reason": "no free slot"}

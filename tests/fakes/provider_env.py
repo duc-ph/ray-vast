@@ -70,9 +70,9 @@ class Clock:
         return self.now
 
 
-def offer(offer_id, machine_id, dph=0.5, inet_down=1000, direct_port_count=64):
+def offer(offer_id, machine_id, dph=0.5, inet_down=1000, direct_port_count=64, **fields):
     return {"id": offer_id, "machine_id": machine_id, "dph_total": dph, "inet_down": inet_down,
-            "direct_port_count": direct_port_count}
+            "direct_port_count": direct_port_count, **fields}
 
 
 @pytest.fixture(scope="session")

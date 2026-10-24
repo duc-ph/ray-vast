@@ -111,6 +111,29 @@ def test_an_ending_on_the_pull_limit_or_after_a_missing_listing_has_its_cause():
         "pull_limit", "gone_from_vast", "enroll_timeout"]
 
 
+def test_a_refusal_for_no_hairpin_is_a_refused_event_and_its_ending_has_the_cause_no_hairpin():
+    reason = ("no hairpin NAT on public IP 203.0.113.12, and a worker is already on it: workers on one IP could not reach "
+              "each other")
+    head = FakeHead([
+        f"2026-10-16 17:40:01,100\tWARNING head_server.py:250 -- enroll refused for instance 56322080 from 203.0.113.12: {reason}",
+        f"2026-10-16 17:40:01,200\tWARNING provider.py:220 -- ending instance 56322080 (machine 8966, ip 203.0.113.12): {reason!r}",
+    ])
+    w = window.Window(head, clock=FakeClock(), from_start=True)
+    [refused] = w.events("refused")
+    assert (refused.instance, refused.fields["ip"], refused.reason) == (56322080, "203.0.113.12", reason)
+    [ending] = w.events("ending")
+    assert (ending.instance, ending.cause) == (56322080, "no_hairpin")
+
+
+def test_a_skip_of_the_offers_on_a_no_hairpin_ip_is_a_hairpin_skip_event_with_its_node_type_and_ip():
+    head = FakeHead([
+        "2026-10-16 17:41:05,300\tINFO provider.py:258 -- create 1 x pair: skipped the offers on public IP 203.0.113.12: "
+        "no hairpin NAT there, and a worker is already on it",
+    ])
+    [skip] = window.Window(head, clock=FakeClock(), from_start=True).events("hairpin_skip")
+    assert (skip.fields["node_type"], skip.fields["ip"]) == ("pair", "203.0.113.12")
+
+
 def test_a_reboot_gives_an_unknown_status_line_and_a_refused_enrollment():
     w = window.Window(FakeHead(recorded("head_loss_monitor.log")), clock=FakeClock(), from_start=True)
     [unknown] = w.events("unknown_status")

@@ -6,38 +6,24 @@ tests of its host change: the cluster shape (which workers run) and the S3 acces
 How a test gets its hosts. The head's autoscaler reads `/home/ubuntu/ray-vast-<cluster>/cluster.yaml` again in each
 loop (Ray 2.59: autoscaler/v2/autoscaler.py calls `FileConfigReader.refresh_cached_autoscaling_config()` before each
 reconcile, and node_provider.py takes the `node_config` of a launch from that config). `LibrariesCluster.set_shape()` writes
-min_workers = max_workers for every worker type there (`shaped_config`). So the autoscaler starts exactly the workers of a
+min_workers = max_workers for every worker type there (`cluster.shaped_config`). So the autoscaler starts exactly the workers of a
 test and ends the others; the library code needs no node pinning, and no demand can start a worker of another type."""
 import json
 import re
 import secrets
 import shutil
-import subprocess
 import time
 from pathlib import Path
 
 import boto3
 import yaml
 
-from cluster import ADMIN_PROFILE, Cluster
+from cluster import ADMIN_PROFILE, Cluster, alive_workers
 from liverun import assert_ours, wait_until
 
 HERE = Path(__file__).parent
 SHAPE_TIMEOUT_S = 2400  # a GPU image pull can take 10 min; a failed candidate is replaced
 DATE8 = time.strftime("%Y%m%d", time.gmtime())
-
-
-def shaped_config(config, shape):
-    """The head's cluster YAML for one cluster shape ({node type: workers}): every worker type gets min_workers =
-    max_workers = its count (0 if not named), so the autoscaler starts exactly these workers and no other. Returns a copy."""
-    import copy
-    config = copy.deepcopy(config)
-    for name, node_type in config["available_node_types"].items():
-        if name == config["head_node_type"]:
-            continue
-        node_type["min_workers"] = node_type["max_workers"] = shape.get(name, 0)
-    config["max_workers"] = sum(shape.values())
-    return config
 
 
 def host_facts(row, machine_id):
@@ -172,22 +158,7 @@ class LibrariesCluster(Cluster):
         config["available_node_types"] = {name: t for name, t in config["available_node_types"].items() if name in ("head", host)}
         super().__init__(run, config, group_dir, home, kept)
         self.host = self.kind = host
-        self.shape = {}
         self._s3 = None
-
-    @property
-    def head_yaml(self):
-        return f"/home/ubuntu/ray-vast-{self.name}/cluster.yaml"
-
-    def set_shape(self, shape):
-        """Write the shape into the head's YAML (atomic: a new file, then mv). The autoscaler acts on its next loop."""
-        config = yaml.safe_load(self.ssh(f"cat {self.head_yaml}"))
-        text = yaml.safe_dump(shaped_config(config, shape), sort_keys=False)
-        subprocess.run([*self.ssh_args(), f"cat > {self.head_yaml}.new && mv {self.head_yaml}.new {self.head_yaml}"],
-                       input=text, text=True, capture_output=True, timeout=120, check=True)
-        self.shape = dict(shape)
-        with open(self.dir / "shapes.log", "a") as f:
-            f.write(json.dumps({"t": round(time.time(), 1), "shape": shape}) + "\n")
 
     def wait_shape(self, shape, timeout=SHAPE_TIMEOUT_S):
         """Wait until Ray has exactly the workers of `shape` and vast has no other instance of the cluster (the losing
@@ -243,16 +214,6 @@ class LibrariesCluster(Cluster):
                 user_gone = True
             checks += [("the S3 test bucket is deleted", bucket_gone, s3.bucket), ("the IAM test user is deleted", user_gone, s3.user)]
         return [name for name, ok, detail in checks if not record.check(name, ok, detail)]
-
-
-def alive_workers(cluster):
-    """{node type: [Ray node id, ...]} of the ALIVE worker nodes (the node label `ray.io/node-group` is the node type)."""
-    out = cluster.head_exec("ray list nodes --detail --format json --filter state=ALIVE --limit 1000", timeout=120)
-    found = {}
-    for node in json.loads(out[out.index("["):]):
-        if not node.get("is_head_node"):
-            found.setdefault((node.get("labels") or {}).get("ray.io/node-group"), []).append(node["node_id"])
-    return found
 
 
 def node_facts(cluster, env, out_dir, name="node_facts"):

@@ -91,10 +91,25 @@ Without help, the bind fails (`Errno 99`), and the Ray node stops.
 ray-vast loads a small `LD_PRELOAD` library, the shim, into all Ray processes on the head and on the workers:
 
 - A bind to the public IP becomes a bind to the private IP.
-- A connect to the node's own public IP becomes a connect to the private IP. So the node does not need hairpin NAT.
+- A connect to the node's own public IP becomes a connect to the private IP. So the traffic inside one node does not need hairpin NAT.
+- On a worker, this connect rule has a limit. It is only for the worker's own identity ports, and for a port that a process of the worker listens on. A connect to another port of the public IP goes to the public IP.
 - The job port and the runtime-env agent port bind to 127.0.0.1 only. So the token never goes over the network for these ports.
 
 The head sends the shim to each worker when the worker enrolls.
+
+### Workers on one public IP
+
+Two workers can have the same public IP: two instances on one host, or two hosts behind one NAT IP.
+Each container has its own network namespace.
+When worker A connects to the public IP and a port of worker B, the connection must leave A's container. The NAT router then sends it back to B. This is hairpin NAT.
+
+Hairpin NAT does not work on every host. In a survey of vast hosts, it worked on about two thirds of them.
+So each worker tests hairpin NAT before it enrolls. It connects to its own public IP and first identity port. Then it checks that a random value arrives at its own listener.
+
+- With hairpin NAT, the IP can have more workers.
+- Without hairpin NAT, the IP has one worker only. The provider does not rent another instance on that IP while a worker runs there.
+- Two candidates on one IP can enroll at the same time. Then the head refuses the second one and destroys it. The host does not go on the blocklist.
+- The provider keeps the IPs without hairpin NAT in memory until `down`.
 
 ## Head ports
 
@@ -138,7 +153,8 @@ sequenceDiagram
   W->>H: GET /bootstrap (port A), check SHA-256
   W->>H: GET /ca.pem (port A), check CA fingerprint
   W->>W: local host checks, open listeners on its identity ports
-  W->>H: POST /enroll (instance ID, join token, checks, port map)
+  W->>W: hairpin check on its own public IP
+  W->>H: POST /enroll (instance ID, join token, checks, port map, hairpin result)
   H->>W: port check: TCP connect to all its identity ports
   H->>W: 200: node cert and key, cluster token, shim, Ray parameters
   W->>W: start Ray (TLS, token, shim)
@@ -155,8 +171,8 @@ sequenceDiagram
     - the container has no `NET_RAW` or `NET_ADMIN` capability;
     - the container has its own network namespace;
     - `/dev/shm` is empty.
-5. **Enroll.** The bootstrap sends `POST /enroll` with its instance ID, the join token, the check results, its port map, its CPU affinity and CPU quota, and its GPU count.
-6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results, the GPU count and the CPU cores. Then it connects to all its identity ports from outside (the port check).
+5. **Enroll.** The bootstrap tests hairpin NAT. Read [Workers on one public IP](#workers-on-one-public-ip). Then it sends `POST /enroll` with its instance ID, the join token, the check results and its port map. The request also has its CPU affinity, its CPU quota, its GPU count and the hairpin result.
+6. **Head checks.** The head accepts the request only for a known candidate, from its own public IP, with its own join token, once. Then it checks the host check results, the GPU count and the CPU cores. Then it connects to all its identity ports from outside (the port check). Then it checks the IP: an IP without hairpin NAT takes one worker only.
 7. **Secrets.** If a slot of the node type is free, the head makes a node key and certificate. It answers with the certificate, the key, the cluster token, the shim and the Ray parameters (the GCS address and the `CPU` of the node type). The worker already has the CA: it pinned it in step 3.
 8. **Ray.** The bootstrap removes the secrets from Ray's environment, and starts Ray. Ray joins the head with TLS and the token.
 
@@ -184,6 +200,7 @@ After a valid token, a failed check destroys the candidate:
 | A GPU count other than the node type's `GPU` | `security`, 30 days |
 | Fewer CPU cores than 90 % of the node type's `CPU` | `security`, 30 days |
 | Egress IP check or port check | `network`, 1 day |
+| No hairpin NAT, and a worker already has the IP | none |
 | No free slot | none |
 
 The blocklist is in the provider's memory. It is lost at `down`.

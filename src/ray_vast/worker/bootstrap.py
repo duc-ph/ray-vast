@@ -46,6 +46,8 @@ DESTROY_RETRY_S = 5
 CA_RETRY_S = 5
 ENROLL_RETRY_S = 10
 TOKEN_CHECK_TIMEOUT_S = 180
+HAIRPIN_TIMEOUT_S = 5
+HAIRPIN_READ_S = 1  # for each accepted connection: a silent one (a port scan) is closed after this
 HEARTBEAT_INTERVAL_S = 30
 HEARTBEAT_TIMEOUT_S = 300  # no successful heartbeat for this long: destroy (the head side has the same limit)
 CALL_THREADS = {}  # url -> the thread of the last call to it (`call`); only the main thread calls `call`
@@ -169,6 +171,37 @@ def egress_ip(echo_urls):
     return None
 
 
+def hairpin_ok(public_ip, port, listener, timeout, read_timeout):
+    """True when a connection to (public_ip, port) reaches `listener`, our own listener of that port: hairpin NAT works.
+
+    It sends a random nonce and accepts connections on `listener` until the nonce arrives or `timeout` ends. Another
+    connection (a port scan) gets `read_timeout` to send the nonce, then it is closed.
+    """
+    nonce = os.urandom(16).hex().encode()
+    deadline = time.monotonic() + timeout
+    try:
+        with socket.create_connection((public_ip, port), timeout=timeout) as probe:
+            probe.sendall(nonce)
+            while deadline - time.monotonic() > 0:
+                listener.settimeout(max(deadline - time.monotonic(), 0.01))  # never negative: a ValueError
+                conn, _ = listener.accept()
+                with conn:
+                    conn.settimeout(max(min(read_timeout, deadline - time.monotonic()), 0.01))
+                    got = b""
+                    try:
+                        while len(got) < len(nonce) and (chunk := conn.recv(len(nonce) - len(got))):
+                            got += chunk
+                    except OSError:  # this connection sent nothing in time: accept the next one
+                        pass
+                    if got == nonce:
+                        return True
+    except OSError:  # no connection, or no nonce before the deadline
+        pass
+    finally:
+        listener.settimeout(None)
+    return False
+
+
 def destroy(state, reason):
     """Report the reason to the head (best effort, at most 10 s), delete this vast instance, and wait. Never returns."""
     for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
@@ -277,15 +310,25 @@ def main():
 
         # 3. Open a listener on every host port, for the head's port check.
         ports = {str(p): int(env[f"VAST_TCP_PORT_{p}"]) for p in IDENTITY_PORT_IDS if f"VAST_TCP_PORT_{p}" in env}
-        listeners = []
+        listeners = {}  # host port -> its listener
         for port in ports.values():
             listener = socket.socket()
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("0.0.0.0", port))
             listener.listen(16)
-            listeners.append(listener)
+            listeners[port] = listener
 
-        # 4. Enroll. The head checks the cores against the node type's CPU: the affinity count, and the cgroup CPU quota
+        # 4. Hairpin check: does a connection to our own public IP reach us? Another worker can get the same public IP
+        # (two containers on one host, or two hosts behind one NAT IP). Its shim sends a connection to one of our ports
+        # to the public IP, so it reaches us only through hairpin NAT. The head decides what "no" means.
+        # The first mapped identity port. A port map without 70000 still goes to /enroll: the head answers 400 (the body
+        # check), and the worker destroys itself with "enrollment failed with HTTP 400".
+        first_port = next(iter(ports.values()), None)
+        hairpin = first_port is not None and hairpin_ok(public_ip, first_port, listeners[first_port],
+                                                        HAIRPIN_TIMEOUT_S / state.scale, HAIRPIN_READ_S / state.scale)
+        log(f"hairpin: {hairpin}")
+
+        # 5. Enroll. The head checks the cores against the node type's CPU: the affinity count, and the cgroup CPU quota
         # (cores, None for no limit) from cgroup v2 `cpu.max`, else cgroup v1 `cpu/cpu.cfs_quota_us` and
         # `cpu/cpu.cfs_period_us` (microseconds; a quota of -1 is no limit).
         cgroup_version = "v2" if os.path.exists(f"{CGROUP_DIR}/cgroup.controllers") else "v1"
@@ -303,7 +346,7 @@ def main():
         gpu_count = count_gpus(os.listdir("/dev"))
         enroll_body = {
             "instance_id": state.instance_id, "join_token": state.join_token, "checks": checks, "ports": ports,
-            "cpu_count": cpu_count, "cpu_quota": quota_cores, "gpu_count": gpu_count,
+            "cpu_count": cpu_count, "cpu_quota": quota_cores, "gpu_count": gpu_count, "hairpin": hairpin,
         }
         while True:
             try:
@@ -322,7 +365,7 @@ def main():
             destroy(state, f"enrollment failed with HTTP {status}")
         answer = json.loads(answer)
 
-        # 5. Write the files, close the listeners, start Ray.
+        # 6. Write the files, close the listeners, start Ray.
         os.makedirs(RAYVAST_DIR, mode=0o700, exist_ok=True)
         os.chmod(RAYVAST_DIR, 0o700)
         files = {
@@ -336,7 +379,7 @@ def main():
             fd = os.open(f"{RAYVAST_DIR}/{name}", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             with os.fdopen(fd, "wb") as f:
                 f.write(content)
-        for listener in listeners:
+        for listener in listeners.values():
             listener.close()
         node_ctx = ssl.create_default_context(cadata=ca_pem.decode())
         node_ctx.load_cert_chain(f"{RAYVAST_DIR}/node.pem", f"{RAYVAST_DIR}/node.key")
@@ -376,6 +419,7 @@ def main():
             LD_PRELOAD=f"{RAYVAST_DIR}/librayvast_shim.so",
             RAYVAST_PUBLIC_IP=public_ip, RAYVAST_PRIVATE_IP=private_ip,
             RAYVAST_LOCALHOST_PORTS=",".join(map(str, agent_ports)),
+            RAYVAST_OWN_PORTS=",".join(map(str, ports.values())),
             RAY_num_workers_soft_limit=str(soft_limit),
             RAY_num_grpc_internal_threads=str(GRPC_THREADS),
             RAY_worker_maximum_startup_concurrency=str(STARTUP_CONCURRENCY),
@@ -386,7 +430,7 @@ def main():
             f"processes at once {max(0, port_count - LIBRARY_PORTS)}, worker ports {len(worker_ports)}, soft limit {soft_limit}, "
             f"grpc threads {GRPC_THREADS}, startup concurrency {STARTUP_CONCURRENCY}")
 
-        # 6. Watchdog: heartbeat, token check, reap children, destroy on any exit.
+        # 7. Watchdog: heartbeat, token check, reap children, destroy on any exit.
         heartbeat_interval = HEARTBEAT_INTERVAL_S / state.scale
         heartbeat_timeout = HEARTBEAT_TIMEOUT_S / state.scale
         last_ok = next_heartbeat = time.monotonic()

@@ -190,6 +190,10 @@ class VastNodeProvider(NodeProvider):
             "RAYVAST_CLUSTER": self.cluster_name,
         }
         rented, over_budget = 0, False
+        # One candidate on each offer IP in one call: on an IP without hairpin NAT the head refuses all but one, and each
+        # refused slot counts for the rent-loop breaker. An offer without an IP is not limited.
+        rented_ips = set()
+        skipped_ips = set()  # the IPs skipped for no hairpin NAT, logged once for each call
         try:
             offers = self._vast.search_offers(query)
             for offer in offers:
@@ -198,6 +202,13 @@ class VastNodeProvider(NodeProvider):
                 dph = offer["dph_total"]
                 with self.state.lock:
                     if self.state.is_blocked(offer["machine_id"], self._clock()):
+                        continue
+                    # The head refuses a second worker on an IP without hairpin NAT (head_server.enroll).
+                    ip = offer.get("public_ipaddr")
+                    if ip in rented_ips:
+                        continue
+                    if self.state.no_hairpin_ip_has_worker(ip):
+                        skipped_ips.add(ip)
                         continue
                     if self.state.total_dph() + self._reserved_dph + dph > self._max_dph:
                         over_budget = True
@@ -228,12 +239,17 @@ class VastNodeProvider(NodeProvider):
                 if instance_id is None:
                     continue
                 rented += 1
+                if ip:
+                    rented_ips.add(ip)
         finally:
             with self.state.lock:
                 self._creating.difference_update(s.id for s in slots)
                 if rented == 0:
                     for slot in slots:
                         self.state.remove_slot(slot.id)
+        for ip in sorted(skipped_ips):
+            log.info("create %d x %s: skipped the offers on public IP %s: no hairpin NAT there, and a worker is already on it",
+                     count, node_type, ip)
         if rented == 0:
             category, why = ("budget", f"every matching offer would pass max_dollars_per_hour {self._max_dph}") if over_budget \
                 else ("no offers", "no rentable offer matches the node type query")

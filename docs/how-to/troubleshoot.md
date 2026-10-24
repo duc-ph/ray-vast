@@ -43,6 +43,28 @@ The head container logs in the local time zone of the head.
 | `every matching offer would pass max_dollars_per_hour` | The budget stops the rental. | Raise `max_dollars_per_hour`, or wait for workers to end. |
 | `slots in a row ended with no enrolled worker` | The rent-loop breaker. 3 slots of this node type ended without a worker. The provider stops this node type for 10 minutes. | Read the `enroll refused` and `ending instance` lines before it. Fix the cause (often the image). |
 
+### A worker is refused for no hairpin NAT
+
+`monitor.log` has this line:
+
+```text
+ending instance <id> (machine <id>, ip <ip>): 'no hairpin NAT on public IP <ip>, and a worker is already on it: workers on one IP could not reach each other'
+```
+
+The candidate has the same public IP as a worker of the cluster, and a worker on that IP found no hairpin NAT.
+The provider destroys the candidate and rents on other IPs. It does not block the host. You do not have to do anything.
+
+When the provider skips the offers on such an IP, `monitor.log` has this line, once for each IP in each create call:
+
+```text
+create <n> x <node type>: skipped the offers on public IP <ip>: no hairpin NAT there, and a worker is already on it
+```
+
+The line repeats about every 5 s while the autoscaler waits for workers of the node type.
+If all offers of the node type are on such IPs, the launch then fails with `no rentable offer matches the node type query`.
+Make the offer query wider, or wait until the worker on that IP ends.
+Read [Workers on one public IP](../explanation/architecture.md#workers-on-one-public-ip).
+
 ### A worker is refused for its CPU or GPU count
 
 `monitor.log` has one of these lines:

@@ -63,6 +63,9 @@ class ClusterState:
         self.candidates = {}  # vast instance id -> Candidate
         self.enrolled = set()  # instance IDs; never removed while the provider lives
         self.ip_refs = {}  # public ip -> number of candidates and workers on it
+        # Public IPs where a worker found no hairpin NAT (a connection to its own public IP did not reach it). Such an IP
+        # takes one worker at a time. Never removed while the provider lives: one "no" is enough.
+        self.no_hairpin_ips = set()
         self.blocklist = {}  # machine id -> BlockEntry
         self._failed_slots = {}  # node type -> slots in a row that ended with no enrolled worker (rent-loop breaker)
         self._paused_until = {}  # node type -> time until which the rent-loop breaker refuses launches
@@ -108,6 +111,13 @@ class ClusterState:
             else:
                 self.ip_refs.pop(ip, None)
             return count
+
+    def no_hairpin_ip_has_worker(self, ip):
+        """True when a worker found no hairpin NAT on `ip` and an enrolled worker is on it. Such an IP takes no other
+        worker."""
+        with self.lock:
+            return ip in self.no_hairpin_ips and any(
+                c.public_ip == ip and c.instance_id in self.enrolled for c in self.candidates.values())
 
     def block(self, machine_id, reason, kind, now):
         with self.lock:

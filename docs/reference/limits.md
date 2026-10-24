@@ -11,6 +11,12 @@ The default AWS quota is 60 rules for each group, and the SSH rule uses one. So 
 - When all 5 groups are full, the provider destroys the candidate. The error says to raise the quota.
 - No test had this many workers.
 
+## One worker on an IP without hairpin NAT
+
+Two workers on one public IP reach each other through hairpin NAT. Some hosts do not have it.
+On such an IP, the cluster has one worker only. The provider rents other hosts for the other workers.
+Read [Workers on one public IP](../explanation/architecture.md#workers-on-one-public-ip).
+
 ## At most 54 processes at once on a worker
 
 Each Ray worker process (a task or an actor) needs one port of the worker. The driver of a job runs on the head and uses no worker port.

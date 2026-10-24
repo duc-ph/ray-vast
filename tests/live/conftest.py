@@ -57,8 +57,8 @@ TEST_LABEL = f"ray-vast-test-{DATE.replace('-', '')}"
 CLUSTERS = Path(__file__).parent / "clusters"
 KEEP_HOME = Path.home() / ".cache" / "ray-vast-live"  # the HOME of each kept cluster (its state file and SSH key)
 # In one process a session cluster lives until the end of the session: the files without a cluster or with a cheap one first.
-FILE_ORDER = ["test_offer_search.py", "test_cluster_on_aws.py", "test_cluster_on_vast.py", "test_ray_libraries_on_vast.py",
-              "test_release.py"]
+FILE_ORDER = ["test_offer_search.py", "test_cluster_on_aws.py", "test_cluster_on_vast.py", "test_shared_ip_on_vast.py",
+              "test_ray_libraries_on_vast.py", "test_release.py"]
 EC2_PRICE = {"t3.large": 0.0832, "t3.medium": 0.0416}  # $/h, us regions on-demand
 EXCLUSIVE_WAIT_S = 1200  # the longest that a cluster `up` waits for the `exclusive_account` tests; then it fails
 

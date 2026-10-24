@@ -18,6 +18,7 @@ LINE = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d),(\d{3})\s+(\w+) (\S+) -- (
 # Each kind: the start of the message of its line (provider.py, head_server.py, Ray's node_provider.py and util.py).
 KINDS = {
     "rented": re.compile(r"create (?P<count>\d+) x (?P<node_type>\S+): rented (?P<rented>\d+) candidates"),
+    "hairpin_skip": re.compile(r"create \d+ x (?P<node_type>\S+): skipped the offers on public IP (?P<ip>\S+): no hairpin NAT"),
     "enrolled": re.compile(r"enrolled instance (?P<instance>\d+) \(machine (?P<machine>\d+), ip (?P<ip>[\d.]+)\) into (?P<slot>\S+)"),
     "ending": re.compile(r"ending instance (?P<instance>\d+) \(machine (?P<machine>\S+), ip (?P<ip>\S+)\): (?P<reason>.*)"),
     "refused": re.compile(r"enroll refused for instance (?P<instance>\d+) from (?P<ip>\S+): (?P<reason>.*)"),
@@ -29,10 +30,10 @@ KINDS = {
     "launch_failed": re.compile(r"Failed to launch (?P<count>\d+) nodes of type (?P<node_type>\S+): (?P<reason>.*)"),
     "legacy_field": re.compile(r"Dropping the empty legacy field (?P<name>\w+)\."),
 }
-# The cause of an `ending` line, from the start of its reason (the reasons of provider.py).
+# The cause of an `ending` line, from the start of its reason (the reasons of provider.py and head_server.py).
 CAUSES = {"its request has no free slot left": "no_free_slot", "terminated by the autoscaler": "autoscaler",
           "not running with an IP after ": "pull_limit", "instance is gone from vast": "gone_from_vast",
-          "not enrolled ": "enroll_timeout"}
+          "not enrolled ": "enroll_timeout", "no hairpin NAT on public IP ": "no_hairpin"}
 
 
 def _value(text):
@@ -60,7 +61,7 @@ class Event:
 
     @property
     def cause(self):
-        """For an `ending`: no_free_slot, autoscaler, pull_limit, gone_from_vast, enroll_timeout or other."""
+        """For an `ending`: no_free_slot, autoscaler, pull_limit, gone_from_vast, enroll_timeout, no_hairpin or other."""
         return next((c for start, c in CAUSES.items() if (self.reason or "").startswith(start)), "other")
 
 

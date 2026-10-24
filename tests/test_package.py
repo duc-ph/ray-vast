@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 PROJECT = Path(__file__).resolve().parents[1]
-COMMITTED_SHIM_SHA256 = "79055dea6e913180c362c81e2b0c9903dd7a39bac5e3d5bab0e491bb9b3817fd"
+COMMITTED_SHIM_SHA256 = "4921d52d75b70f1a9f6613c16f40f73a9f1f938c4929ecd951ed96174fbab4d6"
 
 
 @pytest.fixture(scope="module")

@@ -1,6 +1,7 @@
 import logging
 import socket
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 import requests
@@ -20,10 +21,11 @@ class StubEnd:
     test_provider.py."""
 
     def __init__(self):
-        self.ended = []
+        self.ended, self.blocks = [], []
 
     def __call__(self, cand, reason, block_kind=None):
         self.ended.append(cand.instance_id)
+        self.blocks.append(block_kind)
 
 
 @pytest.fixture
@@ -97,12 +99,14 @@ def add_candidate(env, instance_id, slot_id="slot-1", ip="127.0.0.1", token=JOIN
             env.state.ip_ref_add(ip)
 
 
-def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None, gpu_count=1, cpu_count=16, cpu_quota=7.68):
+def enroll(env, instance_id, token=JOIN_TOKEN, checks=None, ports=None, gpu_count=1, cpu_count=16, cpu_quota=7.68,
+           hairpin=True):
     body = {
         "instance_id": instance_id, "join_token": token,
         "checks": checks or {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True,
                              "details": ""},
         "ports": ports or env.ports, "cpu_count": cpu_count, "cpu_quota": cpu_quota, "gpu_count": gpu_count,
+        "hairpin": hairpin,
     }
     return requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
 
@@ -152,7 +156,7 @@ def test_body_without_the_join_token_field_is_refused_without_a_destroy(env):
     add_candidate(env, 11)
     body = {"instance_id": 11, "checks": {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True,
                                           "shm_empty": True, "details": ""},
-            "ports": env.ports, "cpu_count": 8, "cpu_quota": 7.68, "gpu_count": 1}
+            "ports": env.ports, "cpu_count": 8, "cpu_quota": 7.68, "gpu_count": 1, "hairpin": True}
     resp = requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file, timeout=30)
     assert resp.status_code == 403 and env.end.ended == [] and 11 in env.state.candidates
 
@@ -206,7 +210,7 @@ def test_identity_ports_other_than_70000_up_to_a_count_of_10_to_64_are_a_400(env
 def test_out_of_range_cpu_or_gpu_count_is_a_400(env, cpu, gpu):
     add_candidate(env, 11)
     body = {"instance_id": 11, "join_token": JOIN_TOKEN, "checks": {}, "ports": env.ports,
-            "cpu_count": cpu, "cpu_quota": None, "gpu_count": gpu}
+            "cpu_count": cpu, "cpu_quota": None, "gpu_count": gpu, "hairpin": True}
     assert requests.post(f"https://127.0.0.1:{env.port_a}/enroll", json=body, verify=env.ca_file).status_code == 400
 
 
@@ -238,6 +242,54 @@ def test_second_candidate_takes_another_free_slot_of_the_same_node_type(env):
     env.state.add_slot(Slot("slot-2", "gpu"))
     assert enroll(env, 11).status_code == 200
     assert enroll(env, 12).json()["slot_id"] == "slot-2"
+
+
+@pytest.mark.parametrize("hairpin", [None, "true", 1])
+def test_a_hairpin_value_that_is_not_a_bool_is_a_400(env, hairpin):
+    add_candidate(env, 11)
+    assert enroll(env, 11, hairpin=hairpin).status_code == 400 and env.end.ended == []
+
+
+# Two workers can share one public IP, each in its own network namespace. One reaches the other only through hairpin
+# NAT on that IP. The worker measures it on its own listener and sends `hairpin`.
+def test_a_candidate_without_hairpin_on_the_ip_of_an_enrolled_worker_is_refused_and_ended_without_a_block(env, caplog):
+    add_candidate(env, 11)
+    add_candidate(env, 12)
+    env.state.add_slot(Slot("slot-2", "gpu"))
+    assert enroll(env, 11).status_code == 200
+    with caplog.at_level(logging.WARNING, logger="ray_vast.head_server"):
+        second = enroll(env, 12, hairpin=False)
+    assert second.status_code == 403 and "hairpin" in second.json()["reason"]
+    assert env.end.ended == [12] and env.end.blocks == [None]  # the host is fine for a worker alone on its IP
+    assert "127.0.0.1" in env.state.no_hairpin_ips
+    assert env.state.slots["slot-2"].instance_id is None
+    assert "hairpin" in caplog.text and "127.0.0.1" in caplog.text
+
+
+def test_a_worker_without_hairpin_enrolls_alone_on_its_ip_and_then_its_ip_takes_no_second_worker(env):
+    add_candidate(env, 11)
+    add_candidate(env, 12)
+    env.state.add_slot(Slot("slot-2", "gpu"))
+    assert enroll(env, 11, hairpin=False).status_code == 200
+    second = enroll(env, 12, hairpin=True)  # one "no" is enough: the IP stays marked while the provider lives
+    assert second.status_code == 403 and env.end.ended == [12]
+
+
+def test_a_candidate_without_hairpin_enrolls_when_the_last_worker_on_its_ip_has_ended(env):
+    add_candidate(env, 11)
+    add_candidate(env, 12)
+    env.state.add_slot(Slot("slot-2", "gpu"))
+    assert enroll(env, 11, hairpin=False).status_code == 200
+    env.state.remove_candidate(11)  # the provider ended the worker
+    assert enroll(env, 12, hairpin=False).status_code == 200
+
+
+def test_two_candidates_without_hairpin_on_one_ip_that_enroll_at_once_give_one_worker(env):
+    for iid in (11, 12):
+        add_candidate(env, iid, slot_id=f"slot-{iid}")
+    with ThreadPoolExecutor(2) as pool:
+        codes = sorted(pool.map(lambda iid: enroll(env, iid, hairpin=False).status_code, (11, 12)))
+    assert codes == [200, 403] and len(env.end.ended) == 1
 
 
 def test_failed_security_check_is_refused_and_ends_the_candidate(env):

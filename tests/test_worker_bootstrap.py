@@ -138,6 +138,7 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert set(enroll["checks"]) == {"egress_ip_ok", "no_net_raw_admin", "own_netns", "shm_empty", "details"}
     assert enroll["cpu_count"] == len(os.sched_getaffinity(0)) and enroll["cpu_quota"] == 2.0
     assert enroll["gpu_count"] == 0
+    assert enroll["hairpin"] is True  # its own listener got the nonce through the public IP (127.0.0.1 here)
 
     p = world.port_base
     argv = run.ray["argv"]
@@ -158,6 +159,7 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     assert env["LD_PRELOAD"] == f"{run.dir}/librayvast_shim.so"
     assert env["RAYVAST_PUBLIC_IP"] == "127.0.0.1" and env["RAYVAST_PRIVATE_IP"] == "127.0.0.1"
     assert env["RAYVAST_LOCALHOST_PORTS"] == f"{p + 4},{p + 5}"
+    assert env["RAYVAST_OWN_PORTS"] == ",".join(str(p + i) for i in range(64))
     assert env["RAY_num_workers_soft_limit"] == "5"  # min(the declared CPU 5, 58 ports // 2)
     assert env["RAY_num_grpc_internal_threads"] == "4" and env["RAY_worker_maximum_startup_concurrency"] == "8"
     assert "CONTAINER_API_KEY" not in env and "RAYVAST_JOIN_TOKEN" not in env
@@ -167,6 +169,25 @@ def test_enrolls_and_starts_ray_with_the_right_flags_and_env(world, tmp_path):
     for name in ("ca.pem", "node.pem", "node.key", "token", "librayvast_shim.so"):
         assert oct(os.stat(f"{run.dir}/{name}").st_mode & 0o777) == "0o600", name
     assert Path(run.dir / "token").read_text() == world.token
+
+
+@pytest.mark.slow
+def test_a_worker_whose_public_ip_does_not_lead_back_to_it_reports_no_hairpin_and_still_enrolls(new_world):
+    world = new_world(public_ip="192.0.2.1")  # a documentation address: the nonce never reaches its own listener
+    world.start()
+    run = world.run()
+    assert wait_for(lambda: world.head.bodies("B", "/heartbeat")), run.stdout
+    assert world.head.bodies("A", "/enroll")[0]["hairpin"] is False
+
+
+@pytest.mark.slow
+def test_a_worker_without_identity_port_70000_still_sends_its_ports_to_the_head(world):
+    # The head decides about the ports (it refuses this port map with a 400). The hairpin check must not stop the worker.
+    world.head.refuse_enroll = True
+    run = world.run(VAST_TCP_PORT_70000=None)
+    assert wait_for(lambda: world.head.bodies("A", "/enroll")), run.stdout
+    enroll = world.head.bodies("A", "/enroll")[0]
+    assert "70000" not in enroll["ports"] and enroll["hairpin"] is True  # tested on the first mapped port
 
 
 @pytest.mark.parametrize("cpus, pids_max, ports, soft_limit", [
@@ -633,6 +654,36 @@ def test_capbnd_parse_reads_the_bounding_set():
     assert bootstrap.parse_capbnd("CapBnd:\t00000000a80405fb\n") & (3 << 12) == 0  # after --cap-drop NET_RAW
     with pytest.raises(ValueError):
         bootstrap.parse_capbnd("CapEff:\t0\n")
+
+
+def test_the_hairpin_check_passes_after_a_silent_foreign_connection_that_came_first():
+    # A port scanner can connect to the identity port before the check. It sends nothing; it must not use up the time limit.
+    import socket
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(16)
+    port = listener.getsockname()[1]
+    scanner = socket.create_connection(("127.0.0.1", port))
+    try:
+        started = time.monotonic()
+        assert bootstrap.hairpin_ok("127.0.0.1", port, listener, timeout=5, read_timeout=0.5)
+        assert time.monotonic() - started < 2
+    finally:
+        scanner.close()
+        listener.close()
+
+
+def test_the_hairpin_check_fails_when_the_public_ip_does_not_lead_to_the_listener():
+    import socket
+    listener, other = socket.socket(), socket.socket()
+    for s in (listener, other):
+        s.bind(("127.0.0.1", 0))
+        s.listen(16)
+    try:  # the "public IP and port" lead to another listener (a neighbor), not to ours
+        assert not bootstrap.hairpin_ok("127.0.0.1", other.getsockname()[1], listener, timeout=0.5, read_timeout=0.2)
+    finally:
+        listener.close()
+        other.close()
 
 
 def test_egress_ip_tries_the_next_echo_url_after_a_non_200():

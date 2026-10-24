@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import textwrap
+import time
 from pathlib import Path
 
 import pytest
@@ -224,7 +225,104 @@ def test_log_survives_overwritten_environment_memory(shimmed):
     assert shimmed.log.exists() and len(shimmed.log.read_text().splitlines()) == 1
 
 
+# A worker sets RAYVAST_OWN_PORTS (its identity ports). Another worker can share its public IP: two containers on one
+# host, or two hosts behind one NAT IP. Each has its own network namespace, so a connect to the public IP goes to this
+# container only for an own port, or for a port that a socket in this namespace listens on.
+def test_with_own_ports_a_connect_to_another_port_of_the_public_ip_is_not_rewritten(shimmed):
+    port, own = free_port(), free_port()  # no listener on `port` in this namespace
+    errno = shimmed(f"""
+        c = socket.socket(); c.settimeout(1)
+        try:
+            c.connect(("{PUBLIC}", {port}))
+        except OSError as e:
+            print(json.dumps(e.errno))
+    """, RAYVAST_OWN_PORTS=str(own))
+    assert errno != 111  # not ECONNREFUSED from the private IP: the connect went to the public IP
+    assert not shimmed.log.exists() or shimmed.log.read_text() == ""
+
+
+def test_with_own_ports_a_connect_to_an_own_port_of_the_public_ip_goes_to_the_private_ip(shimmed):
+    own = free_port()  # no listener: the rewrite does not depend on one
+    errno = shimmed(f"""
+        c = socket.socket(); c.settimeout(5)
+        try:
+            c.connect(("{PUBLIC}", {own}))
+        except OSError as e:
+            print(json.dumps(e.errno))
+    """, RAYVAST_OWN_PORTS=f"{free_port()},{own}")
+    assert errno == 111  # ECONNREFUSED from the private IP
+    assert f"connect {PUBLIC}:{own} -> {PRIVATE}:{own}" in shimmed.log.read_text()
+
+
+@pytest.mark.parametrize("family", ["ipv4", "dual-stack ipv6"])
+def test_with_own_ports_a_connect_to_a_port_that_this_namespace_listens_on_goes_to_the_private_ip(shimmed, family):
+    # Ray Serve's HTTP port and a torch MASTER_PORT are not identity ports. gRPC listens on dual-stack IPv6 sockets.
+    port = free_port()
+    server = ('socket.socket(); server.bind(("0.0.0.0", %d))' % port if family == "ipv4" else
+              'socket.socket(socket.AF_INET6); server.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0); '
+              'server.bind(("::", %d))' % port)
+    peer = shimmed(f"""
+        server = {server}; server.listen()
+        c = socket.socket(); c.settimeout(5); c.connect(("{PUBLIC}", {port}))
+        print(json.dumps(c.getpeername()))
+    """, RAYVAST_OWN_PORTS=str(free_port()))
+    assert peer == [PRIVATE, port]
+
+
 RAY_IMAGE = "rayproject/ray:2.59.0-py311-cpu"
+# Answer every connection on each port in argv with the container's name, until killed.
+NAME_SERVER = """
+import socket, sys, threading
+def serve(port):
+    s = socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); s.bind(("0.0.0.0", port)); s.listen()
+    while True:
+        c, _ = s.accept(); c.sendall(sys.argv[1].encode()); c.close()
+for p in sys.argv[2:]:
+    threading.Thread(target=serve, args=(int(p),)).start()
+print("ready", flush=True)
+"""
+NAME_CLIENT = """
+import socket, sys, time
+out = []
+for p in sys.argv[2:]:
+    try:
+        c = socket.create_connection((sys.argv[1], int(p)), timeout=5); out.append(c.recv(10).decode())
+    except OSError as e:
+        out.append(type(e).__name__)
+print("ANSWERS", " ".join(out))
+"""
+
+
+@pytest.mark.skipif(shutil.which("docker") is None, reason="needs Docker")
+@pytest.mark.timeout(300)
+def test_a_worker_reaches_a_neighbor_container_on_its_own_public_ip_and_keeps_its_own_ports():
+    """Two containers, each in its own network namespace. A advertises B's IP as its public IP, as two workers do on one
+    vast host (there, hairpin NAT takes the connection from the public IP to B). A connects to: B's own port, which goes
+    to B; its own port and a port that it listens on, which go to A. Each port answers with its container's name."""
+    from fakes.worker_world import CONTAINER_PREFIX
+    a, b = CONTAINER_PREFIX + "shim-a", CONTAINER_PREFIX + "shim-b"
+    own_a, own_b, other = 41001, 41002, 41003
+    try:
+        for name, ports in ((a, (own_a, other)), (b, (own_a, own_b, other))):
+            subprocess.run(["docker", "run", "-d", "--name", name, "-v", f"{SHIM}:/shim/librayvast_shim.so:ro", RAY_IMAGE,
+                            "python", "-c", NAME_SERVER, name[-1], *map(str, ports)], check=True, capture_output=True)
+        for name in (a, b):
+            deadline = time.monotonic() + 60
+            while "ready" not in subprocess.run(["docker", "logs", name], capture_output=True, text=True).stdout:
+                assert time.monotonic() < deadline, f"{name} did not start"
+                time.sleep(0.5)
+        b_ip = subprocess.run(["docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", b],
+                              check=True, capture_output=True, text=True).stdout.strip()
+        client = subprocess.run(
+            ["docker", "exec", "-e", "LD_PRELOAD=/shim/librayvast_shim.so", "-e", f"RAYVAST_PUBLIC_IP={b_ip}",
+             "-e", "RAYVAST_PRIVATE_IP=127.0.0.1", "-e", "RAYVAST_LOCALHOST_PORTS=1", "-e", f"RAYVAST_OWN_PORTS={own_a}",
+             a, "python", "-c", NAME_CLIENT, b_ip, str(own_b), str(own_a), str(other)],
+            capture_output=True, text=True, timeout=60)
+    finally:
+        subprocess.run(["docker", "rm", "-f", a, b], capture_output=True)
+    assert "ANSWERS b a a" in client.stdout, client.stdout + client.stderr
+
+
 RAY_PORTS = ("--port=6379 --dashboard-host=127.0.0.1 --node-manager-port=6380 --object-manager-port=6381 --metrics-export-port=6382 "
              "--dashboard-agent-grpc-port=6383 --dashboard-agent-listen-port=6384 --runtime-env-agent-port=6385 "
              "--min-worker-port=10002 --max-worker-port=10100")

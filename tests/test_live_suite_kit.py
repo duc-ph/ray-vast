@@ -10,12 +10,15 @@ from moto import mock_aws
 
 LIVE = Path(__file__).resolve().parent / "live"
 sys.path.insert(0, str(LIVE))  # the live suite imports its modules by their own names, as its conftest does
+import cluster  # noqa: E402
 import libraries_setup  # noqa: E402
 import livepoller  # noqa: E402
 import liverecords  # noqa: E402
 import liverun  # noqa: E402
 import liveschedule  # noqa: E402
 import pairs  # noqa: E402
+import sharedip  # noqa: E402
+from fakes.provider_env import offer  # noqa: E402
 
 
 def test_a_finished_record_writes_result_json_with_outcome_checks_and_evidence(tmp_path):
@@ -163,7 +166,7 @@ def test_a_cluster_shape_sets_min_and_max_workers_of_every_worker_type():
         "head": {"resources": {"CPU": 0}, "node_config": {"region": "us-west-2"}},
         "big-a": {"min_workers": 0, "max_workers": 1, "node_config": {"disk_gb": 60, "offer_query": {"verified": {"eq": True}}}},
         "gpu": {"min_workers": 0, "max_workers": 2, "node_config": {"disk_gb": 60, "offer_query": {"gpu_ram": {"gte": 8000}}}}}}
-    shaped = libraries_setup.shaped_config(config, {"gpu": 2})
+    shaped = cluster.shaped_config(config, {"gpu": 2})
     types = shaped["available_node_types"]
     assert (types["gpu"]["min_workers"], types["gpu"]["max_workers"]) == (2, 2)
     assert (types["big-a"]["min_workers"], types["big-a"]["max_workers"]) == (0, 0)
@@ -796,3 +799,90 @@ def test_a_poller_sample_lists_the_instances_of_its_label_and_keeps_each_join_to
     listing.clear()
     assert "error" in poller.sample() and len(poller.timeline) == 3  # one failed sample does not end the timeline
     assert secrets == ["cluster-token", "jt-1"]
+
+
+# --- two workers on one public IP (sharedip.py) ------------------------------------------------------------------------
+def test_the_hosts_for_two_workers_are_the_public_ips_of_two_or_more_machines_cheapest_pair_first():
+    a, b, c, d = "203.0.113.20", "203.0.113.21", "203.0.113.22", "203.0.113.23"
+    offers = [
+        offer(11, 1, 0.30, public_ipaddr=a),
+        offer(12, 1, 0.05, public_ipaddr=a),  # a second offer of machine 1: its cheapest offer counts
+        offer(21, 2, 0.10, public_ipaddr=a),
+        offer(31, 3, 0.02, public_ipaddr=b),  # one machine on the IP, with two offers: no second worker on the IP
+        offer(32, 3, 0.03, public_ipaddr=b),
+        offer(41, 4, 0.01, public_ipaddr=c),
+        offer(51, 5, 0.50, public_ipaddr=c),
+        offer(61, 6, 0.04, public_ipaddr=c),
+        offer(71, 7, 0.01),  # no public IP in the offer
+        offer(81, 8, 0.01, public_ipaddr=None),
+        offer(91, 9, 0.20, public_ipaddr=d),
+        offer(101, 10, 0.20, public_ipaddr=d),
+    ]
+    # The cheapest two machines: c 0.01 + 0.04, a 0.05 + 0.10, d 0.20 + 0.20. The machines of a group cheapest first.
+    assert sharedip.public_ip_groups(offers, 2) == [(c, [4, 6, 5]), (a, [1, 2])]
+    assert sharedip.public_ip_groups(offers, 9) == [(c, [4, 6, 5]), (a, [1, 2]), (d, [9, 10])]
+
+
+def test_a_cluster_shape_can_add_fields_to_the_offer_query_of_a_worker_type():
+    config = {"head_node_type": "head", "available_node_types": {
+        "head": {"resources": {"CPU": 0}},
+        "pair": {"max_workers": 2, "node_config": {"offer_query": {"verified": {"eq": True}}}}}}
+    shaped = cluster.shaped_config(config, {"pair": 2}, query={"pair": {"machine_id": {"in": [77, 78]}}})
+    assert shaped["available_node_types"]["pair"]["node_config"]["offer_query"] == {"verified": {"eq": True},
+                                                                                    "machine_id": {"in": [77, 78]}}
+    assert config["available_node_types"]["pair"]["node_config"]["offer_query"] == {"verified": {"eq": True}}  # a copy
+
+
+def test_the_hairpin_value_of_each_worker_from_its_container_log_with_one_retry_of_a_failed_fetch():
+    logs = {
+        1: ["bootstrap: hairpin: True\nbootstrap: enrolled as slot slot-1"],
+        2: ["", "bootstrap: hairpin: False\nbootstrap: enrolled as slot slot-2"],  # the first fetch failed
+        3: ["bootstrap: enrolled as slot slot-3"],  # an older worker with no hairpin line
+        4: ["bootstrap: hairpin: True"],  # a candidate, not enrolled yet: not a worker
+        5: ["", ""],  # no log after the retry
+    }
+    fetched = []
+
+    def fetch(instance_id):
+        fetched.append(instance_id)
+        return logs[instance_id].pop(0)
+
+    assert sharedip.worker_hairpin([1, 2, 3, 4, 5], fetch) == ({1: True, 2: False, 3: None}, [5])
+    assert fetched == [1, 2, 2, 3, 4, 5, 5]
+
+
+NO_OFFER = "Node Launch Exception (no offers): node type 'pair': no rentable offer matches the node type query"
+PAUSED = "Node Launch Exception (repeated enrollment failures): node type 'pair': 3 slots in a row ended ..."
+
+
+@pytest.mark.parametrize("counts, rents, failures, expected", [
+    ([0, 0], [], [(1500, NO_OFFER)], True),  # 300 s since the window opened, no instance, only "no rentable offer"
+    ([0, 0], [1250], [(1500, NO_OFFER)], False),  # a rental 250 s ago
+    ([0, 0], [1100], [(1500, NO_OFFER)], True),
+    ([0, 1], [], [(1500, NO_OFFER)], False),  # an instance is still there
+    ([1, 0], [], [(1500, NO_OFFER)], False),  # one empty listing can miss an instance: two in a row are needed
+    ([0], [], [(1500, NO_OFFER)], False),
+    ([3, 0, 0], [], [(1500, NO_OFFER)], True),  # only the last two listings count
+    ([0, 0], [], [], False),  # nobody asked: no proof that vast lists nothing
+    ([0, 0], [], [(1500, NO_OFFER), (1550, PAUSED)], False),  # the rent-loop breaker: launches can come back
+    ([0, 0], [], [(1150, PAUSED), (1500, NO_OFFER)], True),  # a pause before the last 300 s
+])
+def test_the_wait_on_one_public_ip_ends_with_no_outcome_after_5_min_of_no_rentable_offer(counts, rents, failures,
+                                                                                       expected):
+    assert sharedip.stalled(now=1500, since=1200, instance_counts=counts, rent_times=rents, failures=failures,
+                            stall_s=300) is expected
+
+
+@pytest.mark.parametrize("ips, skipped_ips, refused, expected", [
+    (["203.0.113.20", "203.0.113.20"], [], False, "hairpin"),
+    # The head refused the second candidate: it was rented before the first worker enrolled with no hairpin NAT.
+    (["203.0.113.20"], [], True, "no_hairpin"),
+    # The provider skipped the offers on the worker's IP (its `skipped the offers on public IP` line).
+    (["203.0.113.20"], ["203.0.113.20"], False, "no_hairpin"),
+    (["203.0.113.20"], ["203.0.113.99"], False, None),  # a skip on another IP proves nothing here
+    (["203.0.113.20"], [], False, None),  # the second worker can still come
+    (["203.0.113.20", "203.0.113.21"], [], False, None),
+    ([], [], False, None),
+])
+def test_the_outcome_on_one_public_ip(ips, skipped_ips, refused, expected):
+    assert sharedip.outcome(ips, skipped_ips=skipped_ips, refused=refused) == expected

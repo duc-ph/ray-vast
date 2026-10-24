@@ -98,6 +98,57 @@ def test_blocklisted_machine_is_skipped(env):
     assert [r["offer_id"] for r in env.vast.requests] == [2]
 
 
+def test_an_offer_on_a_no_hairpin_ip_that_has_a_worker_is_skipped(env):
+    # The head refuses a second worker there; without the skip, the cheapest-first loop would rent the same host again.
+    env.vast.offers = [offer(1, 11, public_ipaddr="198.51.100.55"), offer(2, 12, public_ipaddr="198.51.100.56")]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.run(101, "198.51.100.55")
+    p.reconcile_once()
+    enroll(p, 101)
+    p.state.no_hairpin_ips.add("198.51.100.55")
+    create(p)
+    assert [r["offer_id"] for r in env.vast.requests] == [1, 2]
+
+
+def test_the_offers_skipped_on_a_no_hairpin_ip_give_one_log_line_with_the_ip_in_each_create_call(env, caplog):
+    # vast can list a just-rented offer for a while, and renting it fails, so "no rentable offer" alone does not show the
+    # skip. The line does.
+    caplog.set_level(logging.INFO)
+    ip = "198.51.100.55"
+    env.vast.offers = [offer(1, 11, public_ipaddr=ip)]
+    p = env.make(candidate_factor=1)
+    create(p)
+    env.vast.run(101, ip)
+    p.reconcile_once()
+    enroll(p, 101)
+    p.state.no_hairpin_ips.add(ip)
+    env.vast.offers = [offer(2, 12, public_ipaddr=ip), offer(3, 13, public_ipaddr=ip)]
+    for _ in range(2):
+        with pytest.raises(NodeLaunchException):
+            create(p)
+    skips = [r.getMessage() for r in caplog.records if "skipped the offers on public IP" in r.getMessage()]
+    assert skips == [f"create 1 x gpu: skipped the offers on public IP {ip}: no hairpin NAT there, and a worker is "
+                     "already on it"] * 2
+
+
+def test_an_offer_on_a_no_hairpin_ip_without_a_worker_or_without_an_ip_is_rented(env):
+    env.vast.offers = [offer(1, 11, public_ipaddr="198.51.100.55"), offer(2, 12)]
+    p = env.make(candidate_factor=2)
+    p.state.no_hairpin_ips.add("198.51.100.55")
+    create(p)
+    assert [r["offer_id"] for r in env.vast.requests] == [1, 2]
+
+
+def test_one_create_call_rents_at_most_one_candidate_on_each_offer_ip(env):
+    # On a host without hairpin NAT, the head refuses all but one of them, and each refused slot counts for the breaker.
+    env.vast.offers = [offer(1, 11, public_ipaddr="198.51.100.55"), offer(2, 12, public_ipaddr="198.51.100.55"),
+                       offer(3, 13), offer(4, 14), offer(5, 15, public_ipaddr="198.51.100.56")]
+    p = env.make(candidate_factor=2)
+    create(p, count=2)
+    assert [r["offer_id"] for r in env.vast.requests] == [1, 3, 4, 5]  # offers without an IP are not limited
+
+
 def test_rental_error_tries_next_offer_and_all_failing_raises(env):
     env.vast.offers = [offer(1, 11)]
     env.vast.fail_create = True
@@ -723,7 +774,8 @@ def test_an_enrollment_with_the_join_token_resets_the_failure_count(env, identit
     p.reconcile_once()
     checks = {"egress_ip_ok": True, "no_net_raw_admin": True, "own_netns": True, "shm_empty": True, "details": ""}
     body = {"instance_id": iid, "join_token": env.vast.requests[-1]["env"]["RAYVAST_JOIN_TOKEN"], "checks": checks,
-            "ports": identity_listeners, "cpu_count": 4, "cpu_quota": 3.84, "gpu_count": 1}
+            "ports": identity_listeners, "cpu_count": 4, "cpu_quota": 3.84, "gpu_count": 1,
+            "hairpin": True}
     status, answer = p.head_server.enroll(body, "127.0.0.1")
     assert status == 200, answer
     fail_one_slot(env, p)
@@ -759,10 +811,10 @@ def running_candidate(env, p):
     return slot_id, iid
 
 
-def head_enroll(env, p, iid, ports, checks=GOOD_CHECKS):
+def head_enroll(env, p, iid, ports, checks=GOOD_CHECKS, hairpin=True):
     token = env.vast.requests[iid - 101]["env"]["RAYVAST_JOIN_TOKEN"]
     body = {"instance_id": iid, "join_token": token, "checks": checks, "ports": ports, "cpu_count": 4, "cpu_quota": 3.84,
-            "gpu_count": 1}
+            "gpu_count": 1, "hairpin": hairpin}
     return p.head_server.enroll(body, "127.0.0.1")
 
 
@@ -776,6 +828,19 @@ def test_a_candidate_the_head_refuses_is_destroyed_its_host_blocked_and_its_rule
     assert instance_ids(env) == [] and env.rules() == []
     create(p)
     assert [r["offer_id"] for r in env.vast.requests] == [1, 2]  # host 11 is blocked: the next rental skips it
+
+
+def test_a_second_candidate_on_a_no_hairpin_ip_is_destroyed_without_a_block_and_the_first_keeps_the_rule(
+        env, identity_listeners):
+    env.vast.offers = [offer(1, 11), offer(2, 12)]
+    p = env.make(candidate_factor=1)
+    _, first = running_candidate(env, p)
+    assert head_enroll(env, p, first, identity_listeners, hairpin=False)[0] == 200
+    _, second = running_candidate(env, p)
+    status, answer = head_enroll(env, p, second, identity_listeners)
+    assert status == 403 and "hairpin" in answer["reason"]
+    assert instance_ids(env) == [first] and env.rules() == ["127.0.0.1/32"]
+    assert not p.state.is_blocked(12, env.clock())
 
 
 def test_a_worker_the_head_ends_loses_its_slot_at_once(env, identity_listeners):
@@ -924,7 +989,7 @@ def test_a_head_refusal_blocks_the_host_for_30_days_on_a_security_failure_and_1_
             "cpu_quota": 3.5 if failure == "cpu quota" else 3.84,  # the node type declares CPU 4 (RESOURCES)
             "checks": {**GOOD_CHECKS, "egress_ip_ok": False} if failure == "egress check" else
             BAD_CHECKS if failure == "security check" else GOOD_CHECKS,
-            "gpu_count": 2 if failure == "gpu count" else 1,
+            "gpu_count": 2 if failure == "gpu count" else 1, "hairpin": True,
             "ports": {**identity_listeners, "70000": 1} if failure == "port check" else identity_listeners}
     assert p.head_server.enroll(body, "127.0.0.1")[0] == 403
     assert p.state.is_blocked(11, env.clock())

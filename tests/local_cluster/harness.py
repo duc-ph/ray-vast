@@ -64,7 +64,10 @@ def netns():
 def box_ip():
     """The scenario's "public IP": a holder container on the default bridge owns a network namespace, and the head and
     every worker join it (`--network container:<holder>`). So they share one IP, as on one host with host networking,
-    and another scenario at the same time has its own ports."""
+    and another scenario at the same time has its own ports. On vast, two workers with one IP have two network
+    namespaces, and one reaches the other through hairpin NAT. This harness does not model that: the shim test
+    `test_a_worker_reaches_a_neighbor_container_on_its_own_public_ip_and_keeps_its_own_ports` does, and the live test
+    tests/live/test_shared_ip_on_vast.py runs Ray traffic between two such workers."""
     docker("run", "-d", "--init", "--name", netns(), RAY_IMAGE, "sleep", "infinity")
     yield docker("inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", netns()).stdout.strip()
     docker("rm", "-f", netns(), check=False)

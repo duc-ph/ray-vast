@@ -1,6 +1,7 @@
 """The two cluster kinds of the suite (their interface: livecloud.py) and the cloud guards. `Cluster`: a suite cluster, the
 `ray-vast` CLI in a private HOME, SSH to the head, a tunnel, jobs. `ReleaseCluster`: the getting-started tutorial. Every
 command output goes to `<dir>/cli.log`. Secrets (the cluster token, join tokens) stay in memory."""
+import copy
 import json
 import os
 import re
@@ -48,6 +49,21 @@ def invoices():
     return vast()._request("GET", "/users/me/invoices/?owner=me").json().get("invoices", [])
 
 
+def shaped_config(config, shape, query=None):
+    """The head's cluster YAML for one cluster shape ({node type: workers}): every worker type gets min_workers =
+    max_workers = its count (0 if not named), so the autoscaler starts exactly these workers and no other. `query`
+    ({node type: {field: condition}}) adds fields to the offer query of a node type, for example a `machine_id`. Returns a
+    copy."""
+    config = copy.deepcopy(config)
+    for name, node_type in config["available_node_types"].items():
+        if name == config["head_node_type"]:
+            continue
+        node_type["min_workers"] = node_type["max_workers"] = shape.get(name, 0)
+        node_type["node_config"]["offer_query"].update((query or {}).get(name, {}))
+    config["max_workers"] = sum(shape.values())
+    return config
+
+
 def free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -91,6 +107,7 @@ class Cluster:
         self.secrets = []  # the cluster token and the join tokens, for the secret scan; never written
         self.records = [self.dir]  # the directories that liverun.end_cluster scans; Run.record adds each scenario's
         self.up_output = self.last_down = None
+        self.shape = {}  # the workers that `set_shape` asked for
         self.poller = Poller(vast, label(self.name), self.dir / "vast_timeline.jsonl", self.secrets)
         self.run = run
         run.register(self)
@@ -158,6 +175,22 @@ class Cluster:
     def head_exec(self, command, timeout=300, check=True):
         import shlex
         return self.ssh(f"sudo docker exec ray-vast-head bash -c {shlex.quote(command)}", timeout=timeout, check=check)
+
+    @property
+    def head_yaml(self):
+        return f"/home/ubuntu/ray-vast-{self.name}/cluster.yaml"
+
+    def set_shape(self, shape, query=None):
+        """Write the shape (and the offer query fields, `shaped_config`) into the head's YAML (atomic: a new file, then
+        mv). The autoscaler reads the file again in each loop (Ray 2.59: autoscaler/v2/autoscaler.py calls
+        `FileConfigReader.refresh_cached_autoscaling_config()` before each reconcile), so it acts on its next loop."""
+        config = yaml.safe_load(self.ssh(f"cat {self.head_yaml}"))
+        text = yaml.safe_dump(shaped_config(config, shape, query), sort_keys=False)
+        subprocess.run([*self.ssh_args(), f"cat > {self.head_yaml}.new && mv {self.head_yaml}.new {self.head_yaml}"],
+                       input=text, text=True, capture_output=True, timeout=120, check=True)
+        self.shape = dict(shape)
+        with open(self.dir / "shapes.log", "a") as f:
+            f.write(json.dumps({"t": round(time.time(), 1), "shape": shape, "query": query}) + "\n")
 
     def head_runs(self):
         """True when the state file exists and the head container runs (a kept cluster can be reused)."""
@@ -339,6 +372,17 @@ class ReleaseCluster:
             return subprocess.CompletedProcess(["ray-vast", "down"], 0, "the install failed before `up`: nothing to end\nleft: nothing\n", "")
         self.last_down = self.shell("source .venv/bin/activate && ray-vast down cluster.yaml")
         return self.last_down
+
+
+def alive_workers(cluster, field="node_id"):
+    """{node type: [the `field` of each node, ...]} of the ALIVE worker nodes (the node label `ray.io/node-group` is the
+    node type). `field`: a field of `ray list nodes`, for example `node_id` or `node_ip`."""
+    out = cluster.head_exec("ray list nodes --detail --format json --filter state=ALIVE --limit 1000", timeout=120)
+    found = {}
+    for node in json.loads(out[out.index("["):]):
+        if not node.get("is_head_node"):
+            found.setdefault((node.get("labels") or {}).get("ray.io/node-group"), []).append(node[field])
+    return found
 
 
 VOLUME_GONE_S = 180
